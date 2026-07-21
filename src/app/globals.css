@@ -1,26 +1,94 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Navigation (dark charcoal sidebar) */
+  --rc-nav: oklch(0.115 0.005 250);
+  --rc-nav-text: oklch(0.55 0.010 250);
+  --rc-nav-hover: oklch(0.178 0.006 250);
+  --rc-nav-active-bg: oklch(0.215 0.012 250);
+  --rc-nav-border: oklch(0.195 0.007 250);
+
+  /* Page surfaces */
+  --rc-bg: oklch(0.978 0.000 0);
+  --rc-surface: oklch(1.000 0.000 0);
+  --rc-surface-2: oklch(0.967 0.003 250);
+  --rc-ink: oklch(0.12 0.008 250);
+  --rc-muted: oklch(0.42 0.008 250);
+  --rc-faint: oklch(0.57 0.005 250);
+  --rc-border: oklch(0.898 0.004 250);
+  --rc-border-subtle: oklch(0.942 0.003 250);
+
+  /* Brand — emerald */
+  --rc-primary: oklch(0.46 0.16 162);
+  --rc-primary-mid: oklch(0.54 0.18 162);
+  --rc-primary-light: oklch(0.94 0.05 162);
+  --rc-accent: oklch(0.68 0.16 55);
+  --rc-accent-dark: oklch(0.50 0.13 55);
+
+  /* Elevation */
+  --rc-shadow-sm: 0 1px 3px oklch(0.10 0.005 250 / 0.07), 0 1px 2px oklch(0.10 0.005 250 / 0.04);
+  --rc-shadow: 0 2px 8px oklch(0.10 0.005 250 / 0.10), 0 1px 3px oklch(0.10 0.005 250 / 0.05);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-background: var(--rc-bg);
+  --color-foreground: var(--rc-ink);
+  --font-sans: var(--font-inter);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--rc-bg);
+  color: var(--rc-ink);
+  font-family: var(--font-inter), system-ui, sans-serif;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-inter), system-ui, sans-serif;
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+  text-wrap: balance;
+}
+
+p {
+  max-width: 68ch;
+  text-wrap: pretty;
+}
+
+/* Scroll reveal */
+.reveal {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+.reveal.revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
 }
