@@ -5555,7 +5555,7 @@ function RoleBadge({ role }: { role: "super_user" | "standard" }) {
   );
 }
 
-function AccountSettingsPage({ agencyName, userEmail }: { agencyName: string; userEmail: string | null }) {
+function AccountSettingsPage({ agencyName, agencyAbn, userEmail }: { agencyName: string; agencyAbn: string; userEmail: string | null }) {
   const [newPassword, setNewPassword] = useState("");
   const [pwLoading, setPwLoading] = useState(false);
   const [pwMsg, setPwMsg] = useState("");
@@ -5584,6 +5584,7 @@ function AccountSettingsPage({ agencyName, userEmail }: { agencyName: string; us
           <p style={{ fontSize: "12px", fontWeight: 700, color: "var(--rc-faint)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "10px", maxWidth: "none" }}>Organisation</p>
           <div style={CARD}>
             <SettingsRow label="Agency name" value={agencyName} />
+            <SettingsRow label="ABN" value={agencyAbn ? agencyAbn.replace(/^(\d{2})(\d{3})(\d{3})(\d{3})$/, "$1 $2 $3 $4") : "—"} />
             <SettingsRow label="Account email" value={userEmail ?? "—"} />
             <div style={{ padding: "16px 24px", display: "flex", alignItems: "center" }}>
               <span style={{ width: "180px", fontSize: "13px", fontWeight: 500, color: "var(--rc-muted)", flexShrink: 0 }}>Role</span>
@@ -5913,8 +5914,8 @@ function TeamInvitesPage({ userId, agencyName, staffRows }: { userId: string | n
   );
 }
 
-function StaticSubPage({ label, agencyName, userEmail, userId, staffRows, policies, onPolicySaved, onPolicyUpdated, onPolicyDeleted }: {
-  label: string; agencyName: string; userEmail: string | null; userId: string | null; staffRows: StaffRow[];
+function StaticSubPage({ label, agencyName, agencyAbn, userEmail, userId, staffRows, policies, onPolicySaved, onPolicyUpdated, onPolicyDeleted }: {
+  label: string; agencyName: string; agencyAbn: string; userEmail: string | null; userId: string | null; staffRows: StaffRow[];
   policies: PolicyRow[]; onPolicySaved: (p: PolicyRow) => void; onPolicyUpdated: (p: PolicyRow) => void; onPolicyDeleted: (id: string) => void;
 }) {
   const savedNames = policies.filter(p => p.source === "template").map(p => p.name);
@@ -5932,7 +5933,7 @@ function StaticSubPage({ label, agencyName, userEmail, userId, staffRows, polici
     case "Audit Reports":           return <AuditReportsPage />;
     case "Transaction Log":         return <TransactionLogPage />;
     case "AML Compliance":          return <AMLCompliancePage />;
-    case "Account":                 return <AccountSettingsPage agencyName={agencyName} userEmail={userEmail} />;
+    case "Account":                 return <AccountSettingsPage agencyName={agencyName} agencyAbn={agencyAbn} userEmail={userEmail} />;
     case "Billing":                 return <BillingSettingsPage userId={userId} />;
     case "Team & Invites":          return <TeamInvitesPage userId={userId} agencyName={agencyName} staffRows={staffRows} />;
     default:                        return null;
@@ -5956,6 +5957,7 @@ export default function DashboardPage() {
   const [userId, setUserId] = useState<string | null>(null);
   const [orgOwnerId, setOrgOwnerId] = useState<string | null>(null);
   const [agencyName, setAgencyName] = useState<string>("Your Agency");
+  const [agencyAbn, setAgencyAbn] = useState<string>("");
   const [userRole, setUserRole] = useState<"owner" | "standard">("standard");
 
   useEffect(() => {
@@ -5966,6 +5968,8 @@ export default function DashboardPage() {
       setUserId(uid);
       const name = data.session.user.user_metadata?.agency_name;
       if (name) setAgencyName(name);
+      const abnMeta = data.session.user.user_metadata?.abn as string | undefined;
+      if (abnMeta) setAgencyAbn(abnMeta);
 
       // Resolve the org owner — invited staff store their org owner's id in user_metadata
       const metaOrgOwnerId = data.session.user.user_metadata?.organisation_owner_id as string | undefined;
@@ -6198,7 +6202,7 @@ export default function DashboardPage() {
             <PropertyChecklist key={selected.id} propertyId={selected.id} address={selected.address} type={selected.section} onRemove={() => handleRemoveProperty(selected.id, "management")} />
           )
         ) : selected?.type === "static" ? (
-          <StaticSubPage label={selected.label} agencyName={agencyName} userEmail={userEmail} userId={userId} staffRows={staffRows} policies={policies} onPolicySaved={handlePolicySaved} onPolicyUpdated={handlePolicyUpdated} onPolicyDeleted={handlePolicyDeleted} />
+          <StaticSubPage label={selected.label} agencyName={agencyName} agencyAbn={agencyAbn} userEmail={userEmail} userId={userId} staffRows={staffRows} policies={policies} onPolicySaved={handlePolicySaved} onPolicyUpdated={handlePolicyUpdated} onPolicyDeleted={handlePolicyDeleted} />
         ) : activeModule && activeModule !== "settings" ? (
           <ModuleOverview moduleId={activeModule} onSelectProperty={setSelected} salesProps={salesProps} mgmtProps={mgmtProps} onAddSalesProperty={handleAddSalesProperty} onAddMgmtProperty={handleAddMgmtProperty} staffRows={staffRows} policies={policies} />
         ) : (
