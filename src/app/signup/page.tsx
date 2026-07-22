@@ -34,15 +34,6 @@ const plans = [
   },
 ];
 
-function formatCardNumber(val: string) {
-  return val.replace(/\D/g, "").slice(0, 16).replace(/(.{4})/g, "$1 ").trim();
-}
-
-function formatExpiry(val: string) {
-  const digits = val.replace(/\D/g, "").slice(0, 4);
-  if (digits.length >= 3) return digits.slice(0, 2) + "/" + digits.slice(2);
-  return digits;
-}
 
 export default function SignUpPage() {
   const [step, setStep] = useState(1);
@@ -54,12 +45,6 @@ export default function SignUpPage() {
 
   // Step 2
   const [selectedPlan, setSelectedPlan] = useState("standard");
-
-  // Step 3
-  const [cardName, setCardName] = useState("");
-  const [cardNumber, setCardNumber] = useState("");
-  const [expiry, setExpiry] = useState("");
-  const [cvc, setCvc] = useState("");
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -89,6 +74,8 @@ export default function SignUpPage() {
     e.preventDefault();
     setError("");
     setLoading(true);
+
+    // 1. Create the Supabase account
     const { error: authError } = await supabase.auth.signUp({
       email,
       password,
@@ -97,10 +84,23 @@ export default function SignUpPage() {
     if (authError) {
       setError(authError.message);
       setLoading(false);
-    } else {
-      setSuccess(true);
-      setTimeout(() => router.push("/dashboard"), 1500);
+      return;
     }
+
+    // 2. Create Stripe Checkout Session and redirect
+    const res = await fetch("/api/create-checkout-session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, agency, plan: selectedPlan }),
+    });
+    const data = await res.json();
+    if (!res.ok || !data.url) {
+      setError(data.error ?? "Failed to start checkout. Please try again.");
+      setLoading(false);
+      return;
+    }
+
+    window.location.href = data.url;
   }
 
   const plan = plans.find((p) => p.id === selectedPlan)!;
@@ -252,64 +252,34 @@ export default function SignUpPage() {
 
           ) : (
             <>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "28px" }}>
-                <div>
-                  <h1 style={{ fontSize: "1.75rem", fontWeight: 800, color: "var(--rc-ink)", letterSpacing: "-0.035em", marginBottom: "4px" }}>Payment details</h1>
-                  <p style={{ fontSize: "15px", color: "var(--rc-muted)", maxWidth: "none", margin: 0 }}>Your card will be charged ${plan.price}/month.</p>
-                </div>
-                <div style={{ textAlign: "right" }}>
-                  <div style={{ fontSize: "12px", fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--rc-muted)", marginBottom: "2px" }}>{plan.name}</div>
-                  <div style={{ fontSize: "1.4rem", fontWeight: 800, color: "var(--rc-ink)", letterSpacing: "-0.03em" }}>${plan.price}<span style={{ fontSize: "13px", fontWeight: 400, color: "var(--rc-muted)" }}>/mo</span></div>
-                </div>
-              </div>
+              <h1 style={{ fontSize: "1.75rem", fontWeight: 800, color: "var(--rc-ink)", letterSpacing: "-0.035em", marginBottom: "8px" }}>Review your order</h1>
+              <p style={{ fontSize: "15px", color: "var(--rc-muted)", marginBottom: "32px", maxWidth: "none" }}>You&apos;ll complete payment securely on the next screen.</p>
 
               <form onSubmit={handleStep3} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                  <label style={{ fontSize: "14px", fontWeight: 500, color: "var(--rc-ink)" }}>Cardholder name</label>
-                  <input type="text" required value={cardName} onChange={(e) => setCardName(e.target.value)}
-                    placeholder="Name on card" style={inputStyle}
-                    onFocus={(e) => (e.target.style.borderColor = "var(--rc-primary)")}
-                    onBlur={(e) => (e.target.style.borderColor = "var(--rc-border)")} />
-                </div>
-
-                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                  <label style={{ fontSize: "14px", fontWeight: 500, color: "var(--rc-ink)" }}>Card number</label>
-                  <div style={{ position: "relative" }}>
-                    <input type="text" inputMode="numeric" required value={cardNumber}
-                      onChange={(e) => setCardNumber(formatCardNumber(e.target.value))}
-                      placeholder="1234 5678 9012 3456"
-                      style={{ ...inputStyle, paddingRight: "48px", letterSpacing: cardNumber ? "0.08em" : "normal" }}
-                      onFocus={(e) => (e.target.style.borderColor = "var(--rc-primary)")}
-                      onBlur={(e) => (e.target.style.borderColor = "var(--rc-border)")} />
-                    <div style={{ position: "absolute", right: "14px", top: "50%", transform: "translateY(-50%)", display: "flex", gap: "4px" }}>
-                      <div style={{ width: "28px", height: "18px", borderRadius: "3px", background: "oklch(0.60 0.18 25)", opacity: 0.85 }} />
-                      <div style={{ width: "28px", height: "18px", borderRadius: "3px", background: "oklch(0.70 0.18 60)", opacity: 0.85 }} />
+                {/* Order summary */}
+                <div style={{ border: "1px solid var(--rc-border)", borderRadius: "12px", overflow: "hidden" }}>
+                  <div style={{ padding: "20px 24px", borderBottom: "1px solid var(--rc-border)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <div>
+                      <div style={{ fontSize: "13px", fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--rc-muted)", marginBottom: "2px" }}>{plan.name} Plan</div>
+                      <div style={{ fontSize: "13px", color: "var(--rc-muted)" }}>Monthly subscription</div>
+                    </div>
+                    <div style={{ fontSize: "1.5rem", fontWeight: 800, color: "var(--rc-ink)", letterSpacing: "-0.03em" }}>
+                      ${plan.price}<span style={{ fontSize: "13px", fontWeight: 400, color: "var(--rc-muted)" }}>/mo</span>
+                    </div>
+                  </div>
+                  <div style={{ padding: "16px 24px", background: "var(--rc-surface-2)" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", color: "var(--rc-muted)", marginBottom: "6px" }}>
+                      <span>Agency</span><span style={{ color: "var(--rc-ink)", fontWeight: 500 }}>{agency}</span>
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", color: "var(--rc-muted)" }}>
+                      <span>Account</span><span style={{ color: "var(--rc-ink)", fontWeight: 500 }}>{email}</span>
                     </div>
                   </div>
                 </div>
 
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
-                  <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                    <label style={{ fontSize: "14px", fontWeight: 500, color: "var(--rc-ink)" }}>Expiry</label>
-                    <input type="text" inputMode="numeric" required value={expiry}
-                      onChange={(e) => setExpiry(formatExpiry(e.target.value))}
-                      placeholder="MM/YY" style={inputStyle}
-                      onFocus={(e) => (e.target.style.borderColor = "var(--rc-primary)")}
-                      onBlur={(e) => (e.target.style.borderColor = "var(--rc-border)")} />
-                  </div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                    <label style={{ fontSize: "14px", fontWeight: 500, color: "var(--rc-ink)" }}>CVC</label>
-                    <input type="text" inputMode="numeric" required maxLength={4} value={cvc}
-                      onChange={(e) => setCvc(e.target.value.replace(/\D/g, "").slice(0, 4))}
-                      placeholder="•••" style={inputStyle}
-                      onFocus={(e) => (e.target.style.borderColor = "var(--rc-primary)")}
-                      onBlur={(e) => (e.target.style.borderColor = "var(--rc-border)")} />
-                  </div>
-                </div>
-
-                <div style={{ display: "flex", alignItems: "center", gap: "8px", padding: "12px 14px", background: "var(--rc-surface-2)", borderRadius: "8px", marginTop: "4px" }}>
-                  <span style={{ fontSize: "16px" }}>🔒</span>
-                  <span style={{ fontSize: "13px", color: "var(--rc-muted)", maxWidth: "none" }}>Payments are encrypted and processed securely. We never store your card details.</span>
+                <div style={{ display: "flex", alignItems: "center", gap: "10px", padding: "14px 16px", background: "var(--rc-surface-2)", borderRadius: "8px" }}>
+                  <span style={{ fontSize: "18px" }}>🔒</span>
+                  <span style={{ fontSize: "13px", color: "var(--rc-muted)", maxWidth: "none" }}>Powered by Stripe. Your card details are entered securely and never touch our servers.</span>
                 </div>
 
                 {error && (
@@ -323,7 +293,7 @@ export default function SignUpPage() {
                     ← Back
                   </button>
                   <button type="submit" disabled={loading} style={{ padding: "13px 32px", background: "var(--rc-primary)", color: "white", borderRadius: "8px", fontWeight: 700, fontSize: "15px", border: "none", cursor: loading ? "not-allowed" : "pointer", opacity: loading ? 0.7 : 1, fontFamily: "var(--font-inter)" }}>
-                    {loading ? "Setting up…" : `Start ${plan.name} — $${plan.price}/mo`}
+                    {loading ? "Redirecting to Stripe…" : `Pay $${plan.price}/mo →`}
                   </button>
                 </div>
               </form>
