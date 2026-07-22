@@ -3753,6 +3753,18 @@ export default function DashboardPage() {
   const [activeModule, setActiveModule] = useState<string | null>(null);
   const [selected, setSelected] = useState<Selected>(null);
   const [salesProps, setSalesProps] = useState<SalesPropItem[]>(initialSalesProperties);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      if (!data.session) { window.location.href = "/signin"; return; }
+      setUserEmail(data.session.user.email ?? null);
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session) window.location.href = "/signin";
+    });
+    return () => subscription.unsubscribe();
+  }, []);
 
   type SidebarModule =
     | { id: string; label: string; icon: React.ReactNode; type: "properties"; properties: { id: string; address: string }[] }
@@ -3859,10 +3871,13 @@ export default function DashboardPage() {
             <p style={{ fontSize: "10.5px", fontWeight: 600, color: "var(--rc-nav-text)", maxWidth: "none", letterSpacing: "0.05em", textTransform: "uppercase" }}>Agency</p>
             <p style={{ fontSize: "12.5px", color: "oklch(0.80 0.014 260)", maxWidth: "none", marginTop: "3px", fontWeight: 500, lineHeight: 1.3 }}>Ray White Bondi Junction</p>
           </div>
-          <Link href="/signin" style={{ display: "flex", alignItems: "center", gap: "8px", padding: "9px 12px", borderRadius: "8px", fontSize: "13px", fontWeight: 500, color: "var(--rc-nav-text)", textDecoration: "none", transition: "color 0.12s ease" }}>
+          <button
+            onClick={async () => { await supabase.auth.signOut(); window.location.href = "/signin"; }}
+            style={{ display: "flex", alignItems: "center", gap: "8px", padding: "9px 12px", borderRadius: "8px", fontSize: "13px", fontWeight: 500, color: "var(--rc-nav-text)", background: "transparent", border: "none", cursor: "pointer", fontFamily: "var(--font-inter)", width: "100%", textAlign: "left" }}
+          >
             <svg width="15" height="15" viewBox="0 0 18 18" fill="none"><path d="M7 3H4a1 1 0 00-1 1v10a1 1 0 001 1h3M12 13l4-4-4-4M16 9H7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
             Sign out
-          </Link>
+          </button>
         </div>
       </aside>
 
