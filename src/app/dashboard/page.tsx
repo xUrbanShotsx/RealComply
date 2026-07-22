@@ -5567,10 +5567,18 @@ function RoleBadge({ role }: { role: "super_user" | "standard" }) {
   );
 }
 
-function AccountSettingsPage({ agencyName, agencyAbn, userEmail }: { agencyName: string; agencyAbn: string; userEmail: string | null }) {
+function AccountSettingsPage({ agencyName, agencyAbn: agencyAbnProp, userEmail }: { agencyName: string; agencyAbn: string; userEmail: string | null }) {
+  const orgOwnerId = useContext(OrgContext);
+  const [agencyAbn, setAgencyAbn] = useState(agencyAbnProp);
   const [newPassword, setNewPassword] = useState("");
   const [pwLoading, setPwLoading] = useState(false);
   const [pwMsg, setPwMsg] = useState("");
+
+  useEffect(() => {
+    if (!orgOwnerId) return;
+    supabase.from("organisations").select("abn").eq("owner_user_id", orgOwnerId).maybeSingle()
+      .then(({ data }) => { if (data?.abn) setAgencyAbn(data.abn); });
+  }, [orgOwnerId]);
 
   async function handleChangePassword(e: React.FormEvent) {
     e.preventDefault();
