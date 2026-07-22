@@ -7,21 +7,6 @@ import type { Document } from "@/lib/supabase";
 
 // --- Data ---
 
-const initialSalesProperties: { id: string; address: string; vendorName?: string; addedAt?: string }[] = [
-  { id: "s1", address: "42 Harbour View Rd, Balmain" },
-  { id: "s2", address: "8/15 Park Lane, Surry Hills" },
-  { id: "s3", address: "3 Clifton Ave, Mosman" },
-  { id: "s4", address: "12 Marine Parade, Manly" },
-  { id: "s5", address: "7 Rose Bay Dr, Rose Bay" },
-];
-
-const managementProperties = [
-  { id: "m1", address: "14 Brunswick St, Newtown" },
-  { id: "m2", address: "2/88 Oxford St, Paddington" },
-  { id: "m3", address: "5 Crown St, Darlinghurst" },
-  { id: "m4", address: "31 King St, Randwick" },
-  { id: "m5", address: "19 Glebe Point Rd, Glebe" },
-];
 
 const salesChecklist = [
   "Agency Agreement signed",
@@ -63,6 +48,22 @@ const defaultChecked: Record<string, number[]> = {
 };
 
 type SalesPropItem = { id: string; address: string; vendorName?: string; addedAt?: string };
+
+type StaffRow = {
+  id: string;
+  name: string;
+  role: string;
+  licence: "current" | "renewal-due" | "exempt";
+  expiry: string;
+  cpd: "complete" | "due-soon" | "overdue" | "na";
+  email: string;
+  phone: string;
+  start_date: string;
+  licence_number: string;
+  cpd_required: number;
+  cpd_completed: number;
+  cpd_deadline: string;
+};
 
 // --- Icons ---
 function PolIcon() { return <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M4 4h10M4 8h7M4 12h9" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /></svg>; }
@@ -1480,18 +1481,6 @@ const modulePolicies = [
   { name: "Record Keeping & Document Retention Policy", status: "review-due" as const, lastReviewed: "Aug 2025", nextReview: "Aug 2026" },
 ];
 
-const staffMembers = [
-  { name: "Sarah Mitchell", role: "Principal", licence: "current" as const, expiry: "Nov 2026", cpd: "complete" as const },
-  { name: "James Chen", role: "Sales Agent", licence: "current" as const, expiry: "Mar 2027", cpd: "complete" as const },
-  { name: "Emma Watson", role: "Property Manager", licence: "current" as const, expiry: "Jun 2026", cpd: "complete" as const },
-  { name: "Tom Richards", role: "Sales Agent", licence: "current" as const, expiry: "Sep 2026", cpd: "due-soon" as const },
-  { name: "Lisa Park", role: "Property Manager", licence: "current" as const, expiry: "Feb 2027", cpd: "complete" as const },
-  { name: "Mark Johnson", role: "Sales Agent", licence: "current" as const, expiry: "Dec 2026", cpd: "complete" as const },
-  { name: "Anna Brown", role: "Admin", licence: "exempt" as const, expiry: "—", cpd: "na" as const },
-  { name: "Chris Davis", role: "Sales Agent", licence: "renewal-due" as const, expiry: "Aug 2026", cpd: "overdue" as const },
-  { name: "Olivia Taylor", role: "Property Manager", licence: "current" as const, expiry: "Jan 2027", cpd: "complete" as const },
-  { name: "Ryan White", role: "Business Dev", licence: "current" as const, expiry: "May 2027", cpd: "complete" as const },
-];
 
 const trustAccounts = [
   { name: "Sales Trust Account", bank: "CommBank ****4521", balance: "$284,500", lastReconciled: "Today", status: "reconciled" as const },
@@ -1516,11 +1505,13 @@ function StatusPill({ label, color, bg, border }: { label: string; color: string
   );
 }
 
-function ModuleOverview({ moduleId, onSelectProperty, salesProps, onAddSalesProperty }: {
+function ModuleOverview({ moduleId, onSelectProperty, salesProps, mgmtProps, onAddSalesProperty, staffRows }: {
   moduleId: string;
   onSelectProperty: (prop: { type: "property"; section: "sales" | "management"; id: string; address: string }) => void;
   salesProps: SalesPropItem[];
-  onAddSalesProperty: (prop: Required<SalesPropItem>) => void;
+  mgmtProps: SalesPropItem[];
+  onAddSalesProperty: (prop: Required<SalesPropItem>) => Promise<void>;
+  staffRows: StaffRow[];
 }) {
   const [showAdd, setShowAdd] = useState(false);
   const [addrInput, setAddrInput] = useState("");
@@ -1581,7 +1572,7 @@ function ModuleOverview({ moduleId, onSelectProperty, salesProps, onAddSalesProp
   }
 
   if (moduleId === "sales" || moduleId === "management") {
-    const props = moduleId === "sales" ? salesProps : managementProperties;
+    const props = moduleId === "sales" ? salesProps : mgmtProps;
     const section = moduleId as "sales" | "management";
     const checklist = moduleId === "sales" ? salesChecklist : managementChecklist;
     const compliant = props.filter(p => (defaultChecked[p.id]?.length ?? 0) === checklist.length).length;
@@ -1634,23 +1625,27 @@ function ModuleOverview({ moduleId, onSelectProperty, salesProps, onAddSalesProp
   }
 
   if (moduleId === "staff") {
-    const current = staffMembers.filter(s => s.licence === "current" || s.licence === "exempt").length;
-    const renewalDue = staffMembers.filter(s => s.licence === "renewal-due").length;
-    const cpdDue = staffMembers.filter(s => s.cpd === "due-soon" || s.cpd === "overdue").length;
+    const current = staffRows.filter(s => s.licence === "current" || s.licence === "exempt").length;
+    const renewalDue = staffRows.filter(s => s.licence === "renewal-due").length;
+    const cpdDue = staffRows.filter(s => s.cpd === "due-soon" || s.cpd === "overdue").length;
     stats = [
-      { label: "Team members", value: String(staffMembers.length), sub: "Total staff" },
+      { label: "Team members", value: String(staffRows.length), sub: "Total staff" },
       { label: "Licensed", value: String(current), sub: "Current or exempt" },
       { label: "Renewal due", value: String(renewalDue), sub: "Action needed" },
       { label: "CPD attention", value: String(cpdDue), sub: "Due or overdue" },
     ];
-    content = (
+    content = staffRows.length === 0 ? (
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "12px", border: "1px dashed var(--rc-border)", borderRadius: "12px", background: "var(--rc-surface)" }}>
+        <p style={{ fontSize: "13.5px", color: "var(--rc-faint)", maxWidth: "none", textAlign: "center" }}>No staff yet. Add them via Staff → Onboarding.</p>
+      </div>
+    ) : (
       <div style={{ border: "1px solid var(--rc-border)", borderRadius: "12px", overflow: "hidden", flex: 1, display: "flex", flexDirection: "column", boxShadow: "var(--rc-shadow-sm)" }}>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 140px 130px 90px 100px", padding: "10px 20px", borderBottom: "1px solid var(--rc-border)", background: "var(--rc-surface)", flexShrink: 0 }}>
           {["Name", "Role", "Licence", "Expiry", "CPD"].map(h => (
             <span key={h} style={{ fontSize: "11.5px", color: "var(--rc-faint)" }}>{h}</span>
           ))}
         </div>
-        {staffMembers.map((s, i) => {
+        {staffRows.map((s, i) => {
           const licenceEl = s.licence === "current"
             ? <div style={{ display: "flex", alignItems: "center", gap: "7px" }}><div style={{ width: "6px", height: "6px", borderRadius: "50%", background: "oklch(0.55 0.16 145)" }} /><span style={{ fontSize: "12.5px", color: "oklch(0.42 0.12 145)" }}>Licensed</span></div>
             : s.licence === "renewal-due"
@@ -1664,11 +1659,11 @@ function ModuleOverview({ moduleId, onSelectProperty, salesProps, onAddSalesProp
             ? <div style={{ display: "flex", alignItems: "center", gap: "7px" }}><div style={{ width: "6px", height: "6px", borderRadius: "50%", background: "oklch(0.55 0.20 25)" }} /><span style={{ fontSize: "12.5px", color: "oklch(0.46 0.18 25)" }}>Overdue</span></div>
             : <span style={{ fontSize: "12.5px", color: "var(--rc-faint)" }}>N/A</span>;
           return (
-            <div key={s.name} style={{ display: "grid", gridTemplateColumns: "1fr 140px 130px 90px 100px", padding: "0 20px", flex: 1, borderBottom: i < staffMembers.length - 1 ? "1px solid var(--rc-border)" : "none", background: "var(--rc-bg)", alignItems: "center" }}>
+            <div key={s.id} style={{ display: "grid", gridTemplateColumns: "1fr 140px 130px 90px 100px", padding: "0 20px", flex: 1, borderBottom: i < staffRows.length - 1 ? "1px solid var(--rc-border)" : "none", background: "var(--rc-bg)", alignItems: "center" }}>
               <span style={{ fontSize: "13px", fontWeight: 500, color: "var(--rc-ink)" }}>{s.name}</span>
               <span style={{ fontSize: "12.5px", color: "var(--rc-faint)" }}>{s.role}</span>
               {licenceEl}
-              <span style={{ fontSize: "12.5px", color: "var(--rc-faint)" }}>{s.expiry}</span>
+              <span style={{ fontSize: "12.5px", color: "var(--rc-faint)" }}>{s.expiry || "—"}</span>
               {cpdEl}
             </div>
           );
@@ -1992,12 +1987,6 @@ const onboardingItems: OBItemConfig[] = [
   },
 ];
 
-const cpdData = staffMembers.map((s, i) => ({
-  ...s,
-  required: s.licence === "exempt" ? 0 : 12,
-  completed: [12, 12, 12, 8, 12, 12, 0, 4, 12, 12][i],
-  deadline: ["Nov 2026", "Mar 2027", "Jun 2026", "Sep 2026", "Feb 2027", "Dec 2026", "—", "Aug 2026", "Jan 2027", "May 2027"][i],
-}));
 
 // --- Sub-page components ---
 
@@ -2559,72 +2548,7 @@ function UploadDocumentPage() {
   );
 }
 
-const licenceNumbers = ["REA-102847", "REA-093412", "REA-115632", "REA-087241", "REA-121089", "REA-098754", "—", "REA-074316", "REA-118920", "REA-131045"];
-const staffStartDates = ["12 Jan 2019", "3 Mar 2021", "8 Jun 2020", "15 Sep 2022", "1 Feb 2021", "22 Nov 2023", "7 Apr 2018", "10 Aug 2020", "28 Oct 2021", "5 May 2024"];
-const staffEmails = ["sarah.mitchell@raywhite.com.au","james.chen@raywhite.com.au","emma.watson@raywhite.com.au","tom.richards@raywhite.com.au","lisa.park@raywhite.com.au","mark.johnson@raywhite.com.au","anna.brown@raywhite.com.au","chris.davis@raywhite.com.au","olivia.taylor@raywhite.com.au","ryan.white@raywhite.com.au"];
-const staffPhones = ["0412 001 001","0423 002 002","0434 003 003","0445 004 004","0456 005 005","0467 006 006","0478 007 007","0489 008 008","0490 009 009","0401 010 010"];
 
-const staffDocsByName: Record<string, { title: string; category: string; date: string }[]> = {
-  "Sarah Mitchell": [
-    { title: "Employment Contract", category: "Contract", date: "12 Jan 2019" },
-    { title: "Licence Certificate — REA-102847", category: "Licence", date: "Nov 2024" },
-    { title: "Privacy Policy Acknowledgement", category: "Compliance", date: "1 Jul 2024" },
-    { title: "WHS Induction Record", category: "WHS", date: "12 Jan 2019" },
-    { title: "CPD Completion — 2024 Cycle", category: "CPD", date: "Oct 2024" },
-  ],
-  "James Chen": [
-    { title: "Employment Contract", category: "Contract", date: "3 Mar 2021" },
-    { title: "Licence Certificate — REA-093412", category: "Licence", date: "Mar 2025" },
-    { title: "Office Induction Record", category: "Induction", date: "3 Mar 2021" },
-    { title: "CPD Completion — 2024 Cycle", category: "CPD", date: "Dec 2024" },
-  ],
-  "Emma Watson": [
-    { title: "Employment Contract", category: "Contract", date: "8 Jun 2020" },
-    { title: "Licence Certificate — REA-115632", category: "Licence", date: "Jun 2024" },
-    { title: "Trust Accounting Training Record", category: "Training", date: "9 Jun 2020" },
-    { title: "Privacy Policy Acknowledgement", category: "Compliance", date: "1 Jul 2024" },
-    { title: "CPD Completion — 2024 Cycle", category: "CPD", date: "May 2024" },
-  ],
-  "Tom Richards": [
-    { title: "Employment Contract", category: "Contract", date: "15 Sep 2022" },
-    { title: "Licence Certificate — REA-087241", category: "Licence", date: "Sep 2024" },
-    { title: "WHS Induction Record", category: "WHS", date: "15 Sep 2022" },
-  ],
-  "Lisa Park": [
-    { title: "Employment Contract", category: "Contract", date: "1 Feb 2021" },
-    { title: "Licence Certificate — REA-121089", category: "Licence", date: "Feb 2025" },
-    { title: "Office Induction Record", category: "Induction", date: "1 Feb 2021" },
-    { title: "CPD Completion — 2024 Cycle", category: "CPD", date: "Jan 2025" },
-  ],
-  "Mark Johnson": [
-    { title: "Employment Contract", category: "Contract", date: "22 Nov 2023" },
-    { title: "Licence Certificate — REA-098754", category: "Licence", date: "Dec 2024" },
-    { title: "Mentor Assignment", category: "Onboarding", date: "22 Nov 2023" },
-    { title: "CPD Completion — 2024 Cycle", category: "CPD", date: "Nov 2024" },
-  ],
-  "Anna Brown": [
-    { title: "Employment Contract", category: "Contract", date: "7 Apr 2018" },
-    { title: "Privacy Policy Acknowledgement", category: "Compliance", date: "1 Jul 2024" },
-    { title: "IT Access Record", category: "Onboarding", date: "7 Apr 2018" },
-  ],
-  "Chris Davis": [
-    { title: "Employment Contract", category: "Contract", date: "10 Aug 2020" },
-    { title: "Licence Certificate — REA-074316", category: "Licence", date: "Aug 2024" },
-    { title: "CPD Registration — 2025 Cycle", category: "CPD", date: "Sep 2024" },
-  ],
-  "Olivia Taylor": [
-    { title: "Employment Contract", category: "Contract", date: "28 Oct 2021" },
-    { title: "Licence Certificate — REA-118920", category: "Licence", date: "Jan 2025" },
-    { title: "Trust Accounting Training Record", category: "Training", date: "29 Oct 2021" },
-    { title: "CPD Completion — 2024 Cycle", category: "CPD", date: "Dec 2024" },
-  ],
-  "Ryan White": [
-    { title: "Employment Contract", category: "Contract", date: "5 May 2024" },
-    { title: "Licence Certificate — REA-131045", category: "Licence", date: "May 2024" },
-    { title: "Office Induction Record", category: "Induction", date: "6 May 2024" },
-    { title: "Mentor Assignment", category: "Onboarding", date: "5 May 2024" },
-  ],
-};
 
 const docCategoryColor: Record<string, { bg: string; color: string }> = {
   Contract: { bg: "var(--rc-primary-light)", color: "var(--rc-primary)" },
@@ -2637,9 +2561,9 @@ const docCategoryColor: Record<string, { bg: string; color: string }> = {
   Onboarding: { bg: "var(--rc-surface-2)", color: "var(--rc-muted)" },
 };
 
-function renderDocContent(doc: { title: string; category: string; date: string }, s: typeof staffMembers[0], memberIdx: number, agencyName = "Your Agency"): React.ReactNode {
-  const licNum = licenceNumbers[memberIdx];
-  const startDate = staffStartDates[memberIdx];
+function _renderDocContent_unused(doc: { title: string; category: string; date: string }, s: StaffRow, agencyName = "Your Agency"): React.ReactNode {
+  const licNum = s.licence_number;
+  const startDate = s.start_date;
   const h2: React.CSSProperties = { fontSize: "11px", fontWeight: 700, color: "var(--rc-faint)", textTransform: "uppercase" as const, letterSpacing: "0.08em", margin: "20px 0 6px" };
   const p: React.CSSProperties = { fontSize: "13px", color: "var(--rc-ink)", lineHeight: 1.7, margin: "0 0 8px", maxWidth: "68ch" };
   const sig: React.CSSProperties = { display: "flex", flexDirection: "column" as const, gap: "4px", marginTop: "6px" };
@@ -2775,7 +2699,7 @@ function renderDocContent(doc: { title: string; category: string; date: string }
       <p style={{ fontSize: "10px", fontWeight: 700, color: "var(--rc-faint)", letterSpacing: "0.1em", textTransform: "uppercase", margin: "0 0 16px", maxWidth: "none" }}>{agencyName}</p>
       <p style={{ fontSize: "18px", fontWeight: 700, color: "var(--rc-ink)", letterSpacing: "-0.02em", margin: "0 0 4px", maxWidth: "none" }}>Trust Accounting Training Record</p>
       <p style={{ fontSize: "12px", color: "var(--rc-faint)", margin: "0 0 24px", maxWidth: "none" }}>Dated {doc.date}</p>
-      {[["Employee", s.name], ["Role", s.role], ["Training date", doc.date], ["Provider", "REINSW — Trust Accounting Module"], ["Duration", "4 hours"], ["Certificate ref", `TA-2026-${memberIdx + 1001}`]].map(([l, v]) => (
+      {[["Employee", s.name], ["Role", s.role], ["Training date", doc.date], ["Provider", "REINSW — Trust Accounting Module"], ["Duration", "4 hours"], ["Certificate ref", `TA-2026-${s.name.replace(/ /g, "").slice(0, 4).toUpperCase()}`]].map(([l, v]) => (
         <div key={l} style={{ display: "flex", gap: "20px", marginBottom: "10px" }}>
           <p style={{ fontSize: "11px", fontWeight: 600, color: "var(--rc-faint)", textTransform: "uppercase", letterSpacing: "0.06em", margin: 0, width: "140px", flexShrink: 0, maxWidth: "none" }}>{l}</p>
           <p style={{ fontSize: "13px", color: "var(--rc-ink)", margin: 0, maxWidth: "none" }}>{v}</p>
@@ -2870,14 +2794,13 @@ function renderDocContent(doc: { title: string; category: string; date: string }
   );
 }
 
-function StaffFilePage({ memberIdx, onBack, agencyName }: { memberIdx: number; onBack: () => void; agencyName: string }) {
-  const s = staffMembers[memberIdx];
-  const licNum = licenceNumbers[memberIdx];
-  const cpd = cpdData[memberIdx];
+function StaffFilePage({ staffRow, onBack, agencyName }: { staffRow: StaffRow; onBack: () => void; agencyName: string }) {
+  const s = staffRow;
+  const licNum = s.licence_number;
   const initials = s.name.split(" ").map(n => n[0]).join("").slice(0, 2);
   const licOk = s.licence === "current" || s.licence === "exempt";
   const cpdOk = s.cpd === "complete" || s.cpd === "na";
-  const cpdPct = cpd.required === 0 ? null : Math.min(100, Math.round((cpd.completed / cpd.required) * 100));
+  const cpdPct = s.cpd_required === 0 ? null : Math.min(100, Math.round((s.cpd_completed / s.cpd_required) * 100));
   const [selectedDocIdx, setSelectedDocIdx] = useState<number | null>(null);
   const [docs, setDocs] = useState<Document[]>([]);
   const [docsLoading, setDocsLoading] = useState(true);
@@ -2953,7 +2876,7 @@ function StaffFilePage({ memberIdx, onBack, agencyName }: { memberIdx: number; o
             </div>
             <div>
               <h1 style={PAGE_H1}>{s.name}</h1>
-              <p style={PAGE_SUB}>{s.role} · Started {staffStartDates[memberIdx]}</p>
+              <p style={PAGE_SUB}>{s.role}{s.start_date ? ` · Started ${s.start_date}` : ""}</p>
             </div>
           </div>
         </div>
@@ -2974,9 +2897,9 @@ function StaffFilePage({ memberIdx, onBack, agencyName }: { memberIdx: number; o
         <div style={{ width: "260px", flexShrink: 0, display: "flex", flexDirection: "column", gap: "14px", overflowY: "auto" }}>
           <div style={{ border: "1px solid var(--rc-border)", borderRadius: "12px", padding: "18px 20px", background: "var(--rc-surface)", boxShadow: "var(--rc-shadow-sm)", display: "flex", flexDirection: "column", gap: "14px" }}>
             <p style={{ fontSize: "11.5px", fontWeight: 700, color: "var(--rc-ink)", margin: 0, letterSpacing: "-0.01em" }}>Contact</p>
-            {infoRow("Email", staffEmails[memberIdx])}
-            {infoRow("Phone", staffPhones[memberIdx])}
-            {infoRow("Start date", staffStartDates[memberIdx])}
+            {infoRow("Email", s.email)}
+            {infoRow("Phone", s.phone)}
+            {infoRow("Start date", s.start_date)}
           </div>
           <div style={{ border: "1px solid var(--rc-border)", borderRadius: "12px", padding: "18px 20px", background: "var(--rc-surface)", boxShadow: "var(--rc-shadow-sm)", display: "flex", flexDirection: "column", gap: "14px" }}>
             <p style={{ fontSize: "11.5px", fontWeight: 700, color: "var(--rc-ink)", margin: 0, letterSpacing: "-0.01em" }}>Licence</p>
@@ -2991,13 +2914,13 @@ function StaffFilePage({ memberIdx, onBack, agencyName }: { memberIdx: number; o
               <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <span style={{ fontSize: "11px", color: "var(--rc-faint)" }}>Hours</span>
-                  <span style={{ fontSize: "13px", fontWeight: 600, color: "var(--rc-ink)" }}>{cpd.completed}/{cpd.required}</span>
+                  <span style={{ fontSize: "13px", fontWeight: 600, color: "var(--rc-ink)" }}>{s.cpd_completed}/{s.cpd_required}</span>
                 </div>
                 <div style={{ height: "4px", background: "var(--rc-border)", borderRadius: "100px", overflow: "hidden" }}>
                   <div style={{ width: `${cpdPct}%`, height: "100%", background: cpdPct === 100 ? "oklch(0.60 0.16 145)" : cpdPct! >= 60 ? "oklch(0.60 0.14 55)" : "var(--rc-primary)", borderRadius: "100px" }} />
                 </div>
               </div>
-              {infoRow("Deadline", cpd.deadline)}
+              {infoRow("Deadline", s.cpd_deadline)}
             </div>
           )}
         </div>
@@ -3088,11 +3011,12 @@ function StaffFilePage({ memberIdx, onBack, agencyName }: { memberIdx: number; o
   );
 }
 
-function TeamOverviewPage({ agencyName }: { agencyName: string }) {
-  const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
+function TeamOverviewPage({ agencyName, staffRows }: { agencyName: string; staffRows: StaffRow[] }) {
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const selectedRow = staffRows.find(r => r.id === selectedId) ?? null;
 
-  if (selectedIdx !== null) {
-    return <StaffFilePage memberIdx={selectedIdx} onBack={() => setSelectedIdx(null)} agencyName={agencyName} />;
+  if (selectedId !== null && selectedRow) {
+    return <StaffFilePage staffRow={selectedRow} onBack={() => setSelectedId(null)} agencyName={agencyName} />;
   }
 
   return (
@@ -3100,16 +3024,22 @@ function TeamOverviewPage({ agencyName }: { agencyName: string }) {
       <div style={PAGE_HEADER}>
         <div>
           <h1 style={PAGE_H1}>Team Overview</h1>
-          <p style={PAGE_SUB}>{staffMembers.length} staff members · {agencyName}</p>
+          <p style={PAGE_SUB}>{staffRows.length} staff member{staffRows.length !== 1 ? "s" : ""} · {agencyName}</p>
         </div>
       </div>
+      {staffRows.length === 0 ? (
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "12px", border: "1px dashed var(--rc-border)", borderRadius: "12px", background: "var(--rc-surface)" }}>
+          <svg width="32" height="32" viewBox="0 0 32 32" fill="none"><circle cx="16" cy="10" r="5" stroke="var(--rc-faint)" strokeWidth="1.6" /><path d="M6 26c0-5.523 4.477-10 10-10s10 4.477 10 10" stroke="var(--rc-faint)" strokeWidth="1.6" strokeLinecap="round" /></svg>
+          <p style={{ fontSize: "13.5px", color: "var(--rc-faint)", maxWidth: "none", textAlign: "center" }}>No staff members yet.<br />Add staff from the Licence Tracking or Onboarding pages.</p>
+        </div>
+      ) : (
       <div style={{ flex: 1, overflowY: "auto", display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "12px", alignContent: "start" }}>
-        {staffMembers.map((s, idx) => {
+        {staffRows.map((s) => {
           const initials = s.name.split(" ").map(n => n[0]).join("").slice(0, 2);
           const licOk = s.licence === "current" || s.licence === "exempt";
           const cpdOk = s.cpd === "complete" || s.cpd === "na";
           return (
-            <div key={s.name} onClick={() => setSelectedIdx(idx)}
+            <div key={s.id} onClick={() => setSelectedId(s.id)}
               style={{ border: "1px solid var(--rc-border)", borderRadius: "12px", padding: "18px 20px", background: "var(--rc-bg)", boxShadow: "var(--rc-shadow-sm)", display: "flex", gap: "16px", alignItems: "center", cursor: "pointer", transition: "box-shadow 0.15s ease, border-color 0.15s ease" }}
               onMouseEnter={e => { e.currentTarget.style.boxShadow = "var(--rc-shadow)"; e.currentTarget.style.borderColor = "oklch(0.82 0.015 260)"; }}
               onMouseLeave={e => { e.currentTarget.style.boxShadow = "var(--rc-shadow-sm)"; e.currentTarget.style.borderColor = "var(--rc-border)"; }}
@@ -3137,20 +3067,29 @@ function TeamOverviewPage({ agencyName }: { agencyName: string }) {
           );
         })}
       </div>
+      )}
     </div>
   );
 }
 
-function LicenceTrackingPage() {
+function LicenceTrackingPage({ staffRows }: { staffRows: StaffRow[] }) {
   const cols = "minmax(0,1fr) 140px 130px 110px 110px 100px";
+  const licensed = staffRows.filter(s => s.licence !== "exempt").length;
+  const renewalDue = staffRows.filter(s => s.licence === "renewal-due").length;
   return (
     <div style={PAGE_WRAP}>
       <div style={PAGE_HEADER}>
         <div>
           <h1 style={PAGE_H1}>Licence Tracking</h1>
-          <p style={PAGE_SUB}>{staffMembers.filter(s => s.licence !== "exempt").length} licensed agents · 1 renewal due</p>
+          <p style={PAGE_SUB}>{licensed} licensed agent{licensed !== 1 ? "s" : ""}{renewalDue > 0 ? ` · ${renewalDue} renewal due` : ""}</p>
         </div>
       </div>
+      {staffRows.length === 0 ? (
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "12px", border: "1px dashed var(--rc-border)", borderRadius: "12px", background: "var(--rc-surface)" }}>
+          <svg width="32" height="32" viewBox="0 0 32 32" fill="none"><rect x="6" y="4" width="20" height="24" rx="3" stroke="var(--rc-faint)" strokeWidth="1.5" /><path d="M10 10h12M10 16h8" stroke="var(--rc-faint)" strokeWidth="1.5" strokeLinecap="round" /></svg>
+          <p style={{ fontSize: "13.5px", color: "var(--rc-faint)", maxWidth: "none", textAlign: "center" }}>No staff members yet. Add staff via Onboarding.</p>
+        </div>
+      ) : (
       <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, border: "1px solid var(--rc-border)", borderRadius: "12px", overflow: "hidden", boxShadow: "var(--rc-shadow-sm)" }}>
         <div style={{ display: "grid", gridTemplateColumns: cols, flexShrink: 0, background: "var(--rc-surface)", borderBottom: "1px solid var(--rc-border)" }}>
           {["Name", "Role", "Licence no.", "Type", "Expiry", "Status"].map(h => (
@@ -3158,13 +3097,13 @@ function LicenceTrackingPage() {
           ))}
         </div>
         <div style={{ flex: 1, overflowY: "auto" }}>
-          {staffMembers.map((s, i) => (
-            <div key={s.name} style={{ display: "grid", gridTemplateColumns: cols, alignItems: "center", borderBottom: i < staffMembers.length - 1 ? "1px solid var(--rc-border)" : "none", background: "var(--rc-bg)" }}>
+          {staffRows.map((s, i) => (
+            <div key={s.id} style={{ display: "grid", gridTemplateColumns: cols, alignItems: "center", borderBottom: i < staffRows.length - 1 ? "1px solid var(--rc-border)" : "none", background: "var(--rc-bg)" }}>
               <span style={{ fontSize: "13px", fontWeight: 500, color: "var(--rc-ink)", padding: "13px 20px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.name}</span>
               <span style={{ fontSize: "12.5px", color: "var(--rc-faint)", padding: "0 20px" }}>{s.role}</span>
-              <span style={{ fontSize: "12.5px", color: "var(--rc-muted)", fontFamily: "monospace", padding: "0 20px" }}>{licenceNumbers[i]}</span>
+              <span style={{ fontSize: "12.5px", color: "var(--rc-muted)", fontFamily: "monospace", padding: "0 20px" }}>{s.licence_number || "—"}</span>
               <span style={{ fontSize: "12.5px", color: "var(--rc-faint)", padding: "0 20px" }}>{s.licence === "exempt" ? "—" : "Class 2"}</span>
-              <span style={{ fontSize: "12.5px", color: s.licence === "renewal-due" ? "oklch(0.46 0.12 55)" : "var(--rc-faint)", padding: "0 20px" }}>{s.expiry}</span>
+              <span style={{ fontSize: "12.5px", color: s.licence === "renewal-due" ? "oklch(0.46 0.12 55)" : "var(--rc-faint)", padding: "0 20px" }}>{s.expiry || "—"}</span>
               <div style={{ display: "flex", alignItems: "center", gap: "6px", padding: "0 20px" }}>
                 {s.licence === "current" ? <><GreenDot /><span style={{ fontSize: "12px", color: "oklch(0.42 0.12 145)" }}>Current</span></> :
                  s.licence === "renewal-due" ? <><AmberDot /><span style={{ fontSize: "12px", color: "oklch(0.46 0.12 55)" }}>Due</span></> :
@@ -3174,11 +3113,12 @@ function LicenceTrackingPage() {
           ))}
         </div>
       </div>
+      )}
     </div>
   );
 }
 
-function CPDRecordsPage() {
+function CPDRecordsPage({ staffRows }: { staffRows: StaffRow[] }) {
   const cols = "minmax(0,1fr) 130px 90px 90px 110px 100px";
   return (
     <div style={PAGE_WRAP}>
@@ -3188,6 +3128,12 @@ function CPDRecordsPage() {
           <p style={PAGE_SUB}>Continuing professional development — {new Date().getFullYear()} cycle</p>
         </div>
       </div>
+      {staffRows.length === 0 ? (
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "12px", border: "1px dashed var(--rc-border)", borderRadius: "12px", background: "var(--rc-surface)" }}>
+          <svg width="32" height="32" viewBox="0 0 32 32" fill="none"><circle cx="16" cy="12" r="6" stroke="var(--rc-faint)" strokeWidth="1.6" /><path d="M10 22h12M13 26h6" stroke="var(--rc-faint)" strokeWidth="1.6" strokeLinecap="round" /></svg>
+          <p style={{ fontSize: "13.5px", color: "var(--rc-faint)", maxWidth: "none", textAlign: "center" }}>No staff members yet. Add staff via Onboarding.</p>
+        </div>
+      ) : (
       <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, border: "1px solid var(--rc-border)", borderRadius: "12px", overflow: "hidden", boxShadow: "var(--rc-shadow-sm)" }}>
         <div style={{ display: "grid", gridTemplateColumns: cols, flexShrink: 0, background: "var(--rc-surface)", borderBottom: "1px solid var(--rc-border)" }}>
           {["Name", "Role", "Required", "Completed", "Deadline", "Status"].map(h => (
@@ -3195,26 +3141,26 @@ function CPDRecordsPage() {
           ))}
         </div>
         <div style={{ flex: 1, overflowY: "auto" }}>
-          {cpdData.map((s, i) => {
-            const pct = s.required === 0 ? null : Math.min(100, Math.round((s.completed / s.required) * 100));
+          {staffRows.map((s, i) => {
+            const pct = s.cpd_required === 0 ? null : Math.min(100, Math.round((s.cpd_completed / s.cpd_required) * 100));
             const done = s.cpd === "complete" || s.cpd === "na";
             const barColor = done ? "oklch(0.60 0.16 145)" : s.cpd === "due-soon" ? "oklch(0.60 0.14 55)" : "oklch(0.55 0.20 25)";
             return (
-              <div key={s.name} style={{ display: "grid", gridTemplateColumns: cols, alignItems: "center", borderBottom: i < cpdData.length - 1 ? "1px solid var(--rc-border)" : "none", background: "var(--rc-bg)" }}>
+              <div key={s.id} style={{ display: "grid", gridTemplateColumns: cols, alignItems: "center", borderBottom: i < staffRows.length - 1 ? "1px solid var(--rc-border)" : "none", background: "var(--rc-bg)" }}>
                 <span style={{ fontSize: "13px", fontWeight: 500, color: "var(--rc-ink)", padding: "13px 20px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.name}</span>
                 <span style={{ fontSize: "12.5px", color: "var(--rc-faint)", padding: "0 20px" }}>{s.role}</span>
-                <span style={{ fontSize: "12.5px", color: "var(--rc-muted)", padding: "0 20px" }}>{s.required === 0 ? "—" : `${s.required} hrs`}</span>
+                <span style={{ fontSize: "12.5px", color: "var(--rc-muted)", padding: "0 20px" }}>{s.cpd_required === 0 ? "—" : `${s.cpd_required} hrs`}</span>
                 <div style={{ padding: "0 20px", display: "flex", flexDirection: "column", gap: "4px" }}>
                   {pct !== null ? (
                     <>
-                      <span style={{ fontSize: "12.5px", color: "var(--rc-muted)" }}>{s.completed} hrs</span>
+                      <span style={{ fontSize: "12.5px", color: "var(--rc-muted)" }}>{s.cpd_completed} hrs</span>
                       <div style={{ height: "2px", background: "var(--rc-border)", borderRadius: "100px", overflow: "hidden" }}>
                         <div style={{ width: `${pct}%`, height: "100%", background: barColor, borderRadius: "100px" }} />
                       </div>
                     </>
                   ) : <span style={{ fontSize: "12.5px", color: "var(--rc-faint)" }}>—</span>}
                 </div>
-                <span style={{ fontSize: "12.5px", color: "var(--rc-faint)", padding: "0 20px" }}>{s.deadline}</span>
+                <span style={{ fontSize: "12.5px", color: "var(--rc-faint)", padding: "0 20px" }}>{s.cpd_deadline || "—"}</span>
                 <div style={{ display: "flex", alignItems: "center", gap: "6px", padding: "0 20px" }}>
                   {s.cpd === "complete" ? <><GreenDot /><span style={{ fontSize: "12px", color: "oklch(0.42 0.12 145)" }}>Complete</span></> :
                    s.cpd === "due-soon" ? <><AmberDot /><span style={{ fontSize: "12px", color: "oklch(0.46 0.12 55)" }}>Due soon</span></> :
@@ -3226,13 +3172,14 @@ function CPDRecordsPage() {
           })}
         </div>
       </div>
+      )}
     </div>
   );
 }
 
 type OnboardingMember = { id: string; name: string; role: string; startDate: string; addedAt: string; checkData: (Record<string, string> | null)[] };
 
-function OnboardingChecklist({ member, onBack }: { member: OnboardingMember; onBack: () => void }) {
+function OnboardingChecklist({ member, onBack, onUpdateMember }: { member: OnboardingMember; onBack: () => void; onUpdateMember: (updated: OnboardingMember) => void }) {
   const [checkData, setCheckData] = useState<(Record<string, string> | null)[]>(member.checkData);
   const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
   const [formValues, setFormValues] = useState<Record<string, string>>({});
@@ -3250,12 +3197,15 @@ function OnboardingChecklist({ member, onBack }: { member: OnboardingMember; onB
     setSavedAnim(false);
   }
 
-  function saveItem() {
+  async function saveItem() {
     if (selectedIdx === null) return;
     const saved = { ...formValues, _savedAt: new Date().toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" }) };
-    setCheckData(prev => prev.map((d, i) => i === selectedIdx ? saved : d));
+    const next = checkData.map((d, i) => i === selectedIdx ? saved : d);
+    setCheckData(next);
     setSavedAnim(true);
     setEditing(false);
+    await supabase.from("onboarding_members").update({ check_data: next }).eq("id", member.id);
+    onUpdateMember({ ...member, checkData: next });
   }
 
   const inputSty: React.CSSProperties = { fontSize: "13px", color: "var(--rc-ink)", background: "var(--rc-bg)", border: "1px solid var(--rc-border)", borderRadius: "8px", padding: "9px 12px", outline: "none", fontFamily: "var(--font-inter)", width: "100%", boxSizing: "border-box" };
@@ -3411,25 +3361,53 @@ function OnboardingPage() {
   const [roleInput, setRoleInput] = useState("");
   const [startInput, setStartInput] = useState("");
 
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      if (!data.user) return;
+      supabase.from("onboarding_members").select("*").eq("user_id", data.user.id).order("created_at").then(({ data: rows }) => {
+        if (!rows) return;
+        setMembers(rows.map(r => ({
+          id: r.id,
+          name: r.name,
+          role: r.role,
+          startDate: r.start_date,
+          addedAt: r.added_at,
+          checkData: Array.isArray(r.check_data) ? r.check_data : Array(onboardingItems.length).fill(null),
+        })));
+      });
+    });
+  }, []);
+
   const inputSty2: React.CSSProperties = { fontSize: "13px", color: "var(--rc-ink)", background: "var(--rc-surface)", border: "1px solid var(--rc-border)", borderRadius: "8px", padding: "9px 12px", outline: "none", fontFamily: "var(--font-inter)", width: "100%", boxSizing: "border-box" };
 
-  function submitAdd() {
+  async function submitAdd() {
     if (!nameInput.trim()) return;
-    const m: OnboardingMember = {
-      id: `ob${Date.now()}`,
+    const { data: user } = await supabase.auth.getUser();
+    if (!user.user) return;
+    const addedAt = new Date().toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" });
+    const emptyCheck = Array(onboardingItems.length).fill(null);
+    const { data: row } = await supabase.from("onboarding_members").insert({
+      user_id: user.user.id,
       name: nameInput.trim(),
       role: roleInput.trim(),
-      startDate: startInput.trim(),
-      addedAt: new Date().toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" }),
-      checkData: Array(onboardingItems.length).fill(null),
-    };
-    setMembers(prev => [...prev, m]);
+      start_date: startInput.trim(),
+      added_at: addedAt,
+      check_data: emptyCheck,
+    }).select().single();
+    if (row) {
+      setMembers(prev => [...prev, { id: row.id, name: row.name, role: row.role, startDate: row.start_date, addedAt: row.added_at, checkData: emptyCheck }]);
+    }
     setNameInput(""); setRoleInput(""); setStartInput("");
     setShowAdd(false);
   }
 
+  function handleUpdateMember(updated: OnboardingMember) {
+    setMembers(prev => prev.map(m => m.id === updated.id ? updated : m));
+    if (selected?.id === updated.id) setSelected(updated);
+  }
+
   if (selected) {
-    return <OnboardingChecklist member={selected} onBack={() => setSelected(null)} />;
+    return <OnboardingChecklist member={selected} onBack={() => setSelected(null)} onUpdateMember={handleUpdateMember} />;
   }
 
   return (
@@ -3725,15 +3703,15 @@ function AMLCompliancePage() {
   );
 }
 
-function StaticSubPage({ label }: { label: string }) {
+function StaticSubPage({ label, agencyName, staffRows }: { label: string; agencyName: string; staffRows: StaffRow[] }) {
   switch (label) {
     case "All Policies":            return <AllPoliciesPage />;
     case "Policy Templates":        return <PolicyTemplatesPage />;
     case "Review Schedule":         return <ReviewSchedulePage />;
     case "Upload Document":         return <UploadDocumentPage />;
-    case "Team Overview":           return <TeamOverviewPage agencyName={agencyName} />;
-    case "Licence Tracking":        return <LicenceTrackingPage />;
-    case "CPD Records":             return <CPDRecordsPage />;
+    case "Team Overview":           return <TeamOverviewPage agencyName={agencyName} staffRows={staffRows} />;
+    case "Licence Tracking":        return <LicenceTrackingPage staffRows={staffRows} />;
+    case "CPD Records":             return <CPDRecordsPage staffRows={staffRows} />;
     case "Onboarding":              return <OnboardingPage />;
     case "Account Reconciliation":  return <AccountReconciliationPage />;
     case "Audit Reports":           return <AuditReportsPage />;
@@ -3752,16 +3730,45 @@ type Selected =
 export default function DashboardPage() {
   const [activeModule, setActiveModule] = useState<string | null>(null);
   const [selected, setSelected] = useState<Selected>(null);
-  const [salesProps, setSalesProps] = useState<SalesPropItem[]>(initialSalesProperties);
+  const [salesProps, setSalesProps] = useState<SalesPropItem[]>([]);
+  const [mgmtProps, setMgmtProps] = useState<SalesPropItem[]>([]);
+  const [staffRows, setStaffRows] = useState<StaffRow[]>([]);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [agencyName, setAgencyName] = useState<string>("Your Agency");
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
+    supabase.auth.getSession().then(async ({ data }) => {
       if (!data.session) { window.location.href = "/signin"; return; }
+      const uid = data.session.user.id;
       setUserEmail(data.session.user.email ?? null);
       const name = data.session.user.user_metadata?.agency_name;
       if (name) setAgencyName(name);
+
+      const [{ data: staffData }, { data: propsData }] = await Promise.all([
+        supabase.from("staff_members").select("*").eq("user_id", uid).order("created_at"),
+        supabase.from("properties").select("*").eq("user_id", uid).order("created_at"),
+      ]);
+      if (staffData) {
+        setStaffRows(staffData.map(r => ({
+          id: r.id,
+          name: r.name,
+          role: r.role,
+          licence: r.licence as StaffRow["licence"],
+          expiry: r.licence_expiry,
+          cpd: r.cpd_status as StaffRow["cpd"],
+          email: r.email,
+          phone: r.phone,
+          start_date: r.start_date,
+          licence_number: r.licence_number,
+          cpd_required: r.cpd_required,
+          cpd_completed: r.cpd_completed,
+          cpd_deadline: r.cpd_deadline,
+        })));
+      }
+      if (propsData) {
+        setSalesProps(propsData.filter(p => p.type === "sales").map(p => ({ id: p.id, address: p.address, vendorName: p.vendor_name ?? undefined, addedAt: p.added_at ?? undefined })));
+        setMgmtProps(propsData.filter(p => p.type === "management").map(p => ({ id: p.id, address: p.address })));
+      }
     });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!session) { window.location.href = "/signin"; return; }
@@ -3771,6 +3778,19 @@ export default function DashboardPage() {
     return () => subscription.unsubscribe();
   }, []);
 
+  async function handleAddSalesProperty(prop: Required<SalesPropItem>) {
+    const { data: user } = await supabase.auth.getUser();
+    if (!user.user) return;
+    const { data: row } = await supabase.from("properties").insert({
+      user_id: user.user.id,
+      address: prop.address,
+      type: "sales",
+      vendor_name: prop.vendorName || null,
+      added_at: prop.addedAt || null,
+    }).select().single();
+    if (row) setSalesProps(prev => [...prev, { id: row.id, address: row.address, vendorName: row.vendor_name ?? undefined, addedAt: row.added_at ?? undefined }]);
+  }
+
   type SidebarModule =
     | { id: string; label: string; icon: React.ReactNode; type: "properties"; properties: { id: string; address: string }[] }
     | { id: string; label: string; icon: React.ReactNode; type: "static"; children: string[] };
@@ -3778,7 +3798,7 @@ export default function DashboardPage() {
   const modules: SidebarModule[] = [
     { id: "policies", label: "Policies & Procedures", icon: <PolIcon />, type: "static", children: ["All Policies", "Policy Templates", "Review Schedule", "Upload Document"] },
     { id: "sales", label: "Residential Sales", icon: <SalesIcon />, type: "properties", properties: salesProps },
-    { id: "management", label: "Residential Management", icon: <MgmtIcon />, type: "properties", properties: managementProperties },
+    { id: "management", label: "Residential Management", icon: <MgmtIcon />, type: "properties", properties: mgmtProps },
     { id: "staff", label: "Staff", icon: <StaffIcon />, type: "static", children: ["Team Overview", "Licence Tracking", "CPD Records", "Onboarding"] },
     { id: "trust", label: "Trust Accounting", icon: <TrustIcon />, type: "static", children: ["Account Reconciliation", "Audit Reports", "Transaction Log", "AML Compliance"] },
   ];
@@ -3895,9 +3915,9 @@ export default function DashboardPage() {
             <PropertyChecklist key={selected.id} propertyId={selected.id} address={selected.address} type={selected.section} />
           )
         ) : selected?.type === "static" ? (
-          <StaticSubPage label={selected.label} />
+          <StaticSubPage label={selected.label} agencyName={agencyName} staffRows={staffRows} />
         ) : activeModule ? (
-          <ModuleOverview moduleId={activeModule} onSelectProperty={setSelected} salesProps={salesProps} onAddSalesProperty={(prop) => setSalesProps(prev => [...prev, prop])} />
+          <ModuleOverview moduleId={activeModule} onSelectProperty={setSelected} salesProps={salesProps} mgmtProps={mgmtProps} onAddSalesProperty={handleAddSalesProperty} staffRows={staffRows} />
         ) : (
           <DashboardHome onNavigate={openModule} agencyName={agencyName} />
         )}
