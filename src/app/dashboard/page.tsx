@@ -5934,7 +5934,11 @@ export default function DashboardPage() {
 
   const module = modules.find((m) => m.id === activeModule) ?? null;
 
-  function openModule(id: string) { setActiveModule(id); setSelected(null); }
+  function openModule(id: string) {
+    setActiveModule(id);
+    if (id === "settings") setSelected({ type: "static", label: "Account" });
+    else setSelected(null);
+  }
   function goBack() { setActiveModule(null); setSelected(null); }
 
   return (
@@ -6042,7 +6046,7 @@ export default function DashboardPage() {
           )
         ) : selected?.type === "static" ? (
           <StaticSubPage label={selected.label} agencyName={agencyName} userEmail={userEmail} userId={userId} staffRows={staffRows} policies={policies} onPolicySaved={handlePolicySaved} onPolicyUpdated={handlePolicyUpdated} onPolicyDeleted={handlePolicyDeleted} />
-        ) : activeModule ? (
+        ) : activeModule && activeModule !== "settings" ? (
           <ModuleOverview moduleId={activeModule} onSelectProperty={setSelected} salesProps={salesProps} mgmtProps={mgmtProps} onAddSalesProperty={handleAddSalesProperty} onAddMgmtProperty={handleAddMgmtProperty} staffRows={staffRows} policies={policies} />
         ) : (
           <DashboardHome onNavigate={openModule} agencyName={agencyName} staffRows={staffRows} salesProps={salesProps} mgmtProps={mgmtProps} policies={policies} />
