@@ -6453,7 +6453,7 @@ export default function DashboardPage() {
         {/* Logo */}
         <div style={{ padding: "20px 16px 16px", flexShrink: 0 }}>
           <Link href="/" style={{ display: "flex", alignItems: "center", textDecoration: "none" }}>
-            <img src="/RealComply (2000 x 1000 px).png" alt="RealComply" style={{ height: "32px", width: "auto", objectFit: "contain", filter: "brightness(0) invert(1)" }} />
+            <img src="/RealComply (2000 x 1000 px).png" alt="RealComply" style={{ height: "32px", width: "auto", objectFit: "contain", filter: "brightness(0)" }} />
           </Link>
         </div>
 
@@ -6469,7 +6469,7 @@ export default function DashboardPage() {
             {modules.map((m) => (
               <button key={m.id} onClick={() => openModule(m.id)}
                 style={{ width: "100%", display: "flex", alignItems: "center", gap: "9px", padding: "9px 12px", borderRadius: "8px", border: "none", background: "transparent", color: "var(--rc-nav-text)", fontSize: "13.5px", fontWeight: 500, cursor: "pointer", textAlign: "left", marginBottom: "1px", fontFamily: "var(--font-inter)", transition: "background 0.12s ease, color 0.12s ease" }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "var(--rc-nav-hover)"; (e.currentTarget as HTMLButtonElement).style.color = "oklch(0.90 0.007 260)"; }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "var(--rc-nav-hover)"; (e.currentTarget as HTMLButtonElement).style.color = "oklch(0.14 0.10 162)"; }}
                 onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; (e.currentTarget as HTMLButtonElement).style.color = "var(--rc-nav-text)"; }}
               >
                 <span style={{ flexShrink: 0, opacity: 0.75 }}>{m.icon}</span>
@@ -6483,16 +6483,16 @@ export default function DashboardPage() {
         {activeModule && module && (
           <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
             <button onClick={goBack} style={{ display: "flex", alignItems: "center", gap: "6px", padding: "12px 16px", border: "none", borderBottom: "1px solid var(--rc-nav-border)", background: "transparent", color: "var(--rc-nav-text)", fontSize: "12px", fontWeight: 500, cursor: "pointer", fontFamily: "var(--font-inter)", textAlign: "left", flexShrink: 0, transition: "color 0.12s ease" }}
-              onMouseEnter={(e) => { e.currentTarget.style.color = "oklch(0.90 0.007 260)"; }}
+              onMouseEnter={(e) => { e.currentTarget.style.color = "oklch(0.14 0.10 162)"; }}
               onMouseLeave={(e) => { e.currentTarget.style.color = "var(--rc-nav-text)"; }}
             >
               <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M9 3L5 7l4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
               All modules
             </button>
             <button onClick={() => setSelected(null)}
-              style={{ width: "100%", display: "flex", alignItems: "center", gap: "9px", padding: "14px 16px", border: "none", background: !selected ? "var(--rc-bg)" : "transparent", color: !selected ? "var(--rc-ink)" : "oklch(0.97 0.006 260)", borderRadius: !selected ? "8px 0 0 8px" : "0", fontSize: "13px", fontWeight: 700, letterSpacing: "-0.015em", cursor: "pointer", textAlign: "left", flexShrink: 0, fontFamily: "var(--font-inter)", transition: "background 0.12s ease, color 0.12s ease" }}
-              onMouseEnter={(e) => { if (selected) { e.currentTarget.style.background = "var(--rc-nav-hover)"; e.currentTarget.style.color = "oklch(0.96 0.006 260)"; } }}
-              onMouseLeave={(e) => { if (selected) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "oklch(0.97 0.006 260)"; } }}
+              style={{ width: "100%", display: "flex", alignItems: "center", gap: "9px", padding: "14px 16px", border: "none", background: !selected ? "var(--rc-bg)" : "transparent", color: !selected ? "var(--rc-ink)" : "var(--rc-nav-text)", borderRadius: !selected ? "8px 0 0 8px" : "0", fontSize: "13px", fontWeight: 700, letterSpacing: "-0.015em", cursor: "pointer", textAlign: "left", flexShrink: 0, fontFamily: "var(--font-inter)", transition: "background 0.12s ease, color 0.12s ease" }}
+              onMouseEnter={(e) => { if (selected) { e.currentTarget.style.background = "var(--rc-nav-hover)"; e.currentTarget.style.color = "oklch(0.14 0.10 162)"; } }}
+              onMouseLeave={(e) => { if (selected) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--rc-nav-text)"; } }}
             >
               <span style={{ flexShrink: 0, opacity: !selected ? 1 : 0.8 }}>{iconMap[activeModule]}</span>
               <span>{module.label}</span>
@@ -6503,7 +6503,7 @@ export default function DashboardPage() {
                 return (
                   <button key={prop.id} onClick={() => setSelected({ type: "property", section: module.id as "sales" | "management", id: prop.id, address: prop.address })}
                     style={{ width: "100%", display: "flex", alignItems: "flex-start", gap: "8px", padding: "9px 12px", paddingRight: isActive ? "22px" : "12px", border: "none", background: isActive ? "var(--rc-bg)" : "transparent", color: isActive ? "var(--rc-ink)" : "var(--rc-nav-text)", fontSize: "13px", fontWeight: isActive ? 600 : 400, cursor: "pointer", textAlign: "left", borderRadius: isActive ? "8px 0 0 8px" : "8px", marginBottom: "2px", marginRight: isActive ? "-10px" : "0", transition: "background 0.1s ease, color 0.1s ease", fontFamily: "var(--font-inter)", lineHeight: 1.4 }}
-                    onMouseEnter={(e) => { if (!isActive) { (e.currentTarget as HTMLButtonElement).style.background = "var(--rc-nav-hover)"; (e.currentTarget as HTMLButtonElement).style.color = "oklch(0.96 0.006 260)"; } }}
+                    onMouseEnter={(e) => { if (!isActive) { (e.currentTarget as HTMLButtonElement).style.background = "var(--rc-nav-hover)"; (e.currentTarget as HTMLButtonElement).style.color = "oklch(0.14 0.10 162)"; } }}
                     onMouseLeave={(e) => { if (!isActive) { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; (e.currentTarget as HTMLButtonElement).style.color = "var(--rc-nav-text)"; } }}
                   >
                     <span style={{ flexShrink: 0, marginTop: "3px", opacity: 0.35, fontSize: "8px" }}>●</span>
@@ -6516,7 +6516,7 @@ export default function DashboardPage() {
                 return (
                   <button key={child} onClick={() => setSelected({ type: "static", label: child })}
                     style={{ width: "100%", display: "block", padding: "9px 12px", paddingRight: isActive ? "22px" : "12px", border: "none", background: isActive ? "var(--rc-bg)" : "transparent", color: isActive ? "var(--rc-ink)" : "var(--rc-nav-text)", fontSize: "13.5px", fontWeight: isActive ? 600 : 400, cursor: "pointer", textAlign: "left", borderRadius: isActive ? "8px 0 0 8px" : "8px", marginBottom: "2px", marginRight: isActive ? "-10px" : "0", transition: "background 0.1s ease, color 0.1s ease", fontFamily: "var(--font-inter)" }}
-                    onMouseEnter={(e) => { if (!isActive) { (e.currentTarget as HTMLButtonElement).style.background = "var(--rc-nav-hover)"; (e.currentTarget as HTMLButtonElement).style.color = "oklch(0.96 0.006 260)"; } }}
+                    onMouseEnter={(e) => { if (!isActive) { (e.currentTarget as HTMLButtonElement).style.background = "var(--rc-nav-hover)"; (e.currentTarget as HTMLButtonElement).style.color = "oklch(0.14 0.10 162)"; } }}
                     onMouseLeave={(e) => { if (!isActive) { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; (e.currentTarget as HTMLButtonElement).style.color = "var(--rc-nav-text)"; } }}
                   >
                     {child}
@@ -6531,7 +6531,7 @@ export default function DashboardPage() {
         <div style={{ padding: "10px 10px 16px", borderTop: "1px solid var(--rc-nav-border)", flexShrink: 0 }}>
           <div style={{ padding: "8px 12px 6px" }}>
             <p style={{ fontSize: "10.5px", fontWeight: 600, color: "var(--rc-nav-text)", maxWidth: "none", letterSpacing: "0.05em", textTransform: "uppercase" }}>Agency</p>
-            <p style={{ fontSize: "12.5px", color: "oklch(0.80 0.014 260)", maxWidth: "none", marginTop: "3px", fontWeight: 500, lineHeight: 1.3 }}>{agencyName}</p>
+            <p style={{ fontSize: "12.5px", color: "var(--rc-nav-text)", maxWidth: "none", marginTop: "3px", fontWeight: 500, lineHeight: 1.3 }}>{agencyName}</p>
           </div>
           <button
             onClick={async () => { await supabase.auth.signOut(); window.location.href = "/signin"; }}
