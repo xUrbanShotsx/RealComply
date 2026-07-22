@@ -1891,6 +1891,7 @@ function ModuleOverview({ moduleId, onSelectProperty, salesProps, mgmtProps, onA
   const [vendorInput, setVendorInput] = useState("");
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   async function submitAdd() {
     if (!addrInput.trim()) return;
@@ -1955,20 +1956,53 @@ function ModuleOverview({ moduleId, onSelectProperty, salesProps, mgmtProps, onA
   }
 
   if (moduleId === "sales" || moduleId === "management") {
-    const props = moduleId === "sales" ? salesProps : mgmtProps;
+    const allProps = moduleId === "sales" ? salesProps : mgmtProps;
+    const q = searchQuery.trim().toLowerCase();
+    const props = q
+      ? allProps.filter(p =>
+          p.address.toLowerCase().includes(q) ||
+          (p.vendorName ?? "").toLowerCase().includes(q)
+        )
+      : allProps;
     const section = moduleId as "sales" | "management";
     const checklist = moduleId === "sales" ? salesChecklist : managementChecklist;
-    const compliant = props.filter(p => (defaultChecked[p.id]?.length ?? 0) === checklist.length).length;
-    const inProgress = props.filter(p => { const n = defaultChecked[p.id]?.length ?? 0; return n > 0 && n < checklist.length; }).length;
-    const notStarted = props.filter(p => (defaultChecked[p.id]?.length ?? 0) === 0).length;
+    const compliant = allProps.filter(p => (defaultChecked[p.id]?.length ?? 0) === checklist.length).length;
+    const inProgress = allProps.filter(p => { const n = defaultChecked[p.id]?.length ?? 0; return n > 0 && n < checklist.length; }).length;
+    const notStarted = allProps.filter(p => (defaultChecked[p.id]?.length ?? 0) === 0).length;
     stats = [
-      { label: "Total properties", value: String(props.length), sub: "Under management" },
+      { label: "Total properties", value: String(allProps.length), sub: "Under management" },
       { label: "Fully compliant", value: String(compliant), sub: "All items complete" },
       { label: "In progress", value: String(inProgress), sub: "Checklist started" },
       { label: "Needs attention", value: String(notStarted), sub: "Not yet started" },
     ];
     content = (
+      <div style={{ display: "flex", flexDirection: "column", gap: "12px", flex: 1 }}>
+        {/* Search */}
+        <div style={{ position: "relative" }}>
+          <svg width="15" height="15" viewBox="0 0 15 15" fill="none" style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: "var(--rc-faint)", pointerEvents: "none" }}>
+            <circle cx="6.5" cy="6.5" r="4.5" stroke="currentColor" strokeWidth="1.4" />
+            <path d="M10 10l3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+          </svg>
+          <input
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search properties…"
+            style={{ width: "100%", padding: "9px 12px 9px 34px", border: "1px solid var(--rc-border)", borderRadius: "8px", fontSize: "13.5px", color: "var(--rc-ink)", background: "var(--rc-bg)", outline: "none", fontFamily: "var(--font-inter)", boxSizing: "border-box", transition: "border-color 0.15s" }}
+            onFocus={(e) => (e.target.style.borderColor = "var(--rc-primary)")}
+            onBlur={(e) => (e.target.style.borderColor = "var(--rc-border)")}
+          />
+          {searchQuery && (
+            <button onClick={() => setSearchQuery("")} style={{ position: "absolute", right: "10px", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "var(--rc-faint)", padding: "2px", display: "flex", alignItems: "center" }}>
+              <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2.5 2.5l8 8M10.5 2.5l-8 8" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" /></svg>
+            </button>
+          )}
+        </div>
       <div style={{ border: "1px solid var(--rc-border)", borderRadius: "12px", overflow: "hidden", flex: 1, display: "flex", flexDirection: "column", boxShadow: "var(--rc-shadow-sm)" }}>
+        {props.length === 0 && (
+          <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "40px 24px", color: "var(--rc-faint)", fontSize: "13.5px" }}>
+            {q ? `No properties match "${searchQuery}"` : "No properties yet."}
+          </div>
+        )}
         {props.map((prop, i) => {
           const done = defaultChecked[prop.id]?.length ?? 0;
           const total = checklist.length;
@@ -2001,6 +2035,7 @@ function ModuleOverview({ moduleId, onSelectProperty, salesProps, mgmtProps, onA
             </div>
           );
         })}
+      </div>
       </div>
     );
   }
