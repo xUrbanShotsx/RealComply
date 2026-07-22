@@ -13,6 +13,7 @@ function InviteContent() {
   const token = searchParams.get("token");
 
   const [agencyName, setAgencyName] = useState("");
+  const [orgOwnerId, setOrgOwnerId] = useState<string | null>(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -21,10 +22,11 @@ function InviteContent() {
 
   useEffect(() => {
     if (!token) { setTokenValid(false); return; }
-    supabase.from("invites").select("agency_name, email, accepted_at").eq("token", token).single().then(({ data }) => {
+    supabase.from("invites").select("agency_name, email, accepted_at, invited_by").eq("token", token).single().then(({ data }) => {
       if (!data || data.accepted_at) { setTokenValid(false); return; }
       setTokenValid(true);
       setAgencyName(data.agency_name ?? "");
+      setOrgOwnerId(data.invited_by ?? null);
       if (data.email) setEmail(data.email);
     });
   }, [token]);
@@ -37,7 +39,7 @@ function InviteContent() {
     const { error: authError } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { agency_name: agencyName, invite_token: token, role: "staff" } },
+      options: { data: { agency_name: agencyName, invite_token: token, role: "staff", organisation_owner_id: orgOwnerId } },
     });
 
     if (authError) { setError(authError.message); setLoading(false); return; }

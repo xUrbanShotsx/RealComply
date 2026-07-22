@@ -2,10 +2,13 @@
 
 export const dynamic = "force-dynamic";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, createContext, useContext } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import type { Document } from "@/lib/supabase";
+
+// Org context — provides the org owner's user_id to all sub-components
+const OrgContext = createContext<string | null>(null);
 
 // --- Data ---
 
@@ -3528,6 +3531,7 @@ Date: ${date}`;
 ];
 
 function PolicyTemplatesPage({ onPolicySaved, savedNames }: { onPolicySaved: (p: PolicyRow) => void; savedNames: string[] }) {
+  const orgOwnerId = useContext(OrgContext);
   const [view, setView] = useState<"list" | "questionnaire" | "review" | "saved">("list");
   const [selectedTemplate, setSelectedTemplate] = useState<PTConfig | null>(null);
   const [step, setStep] = useState(0);
@@ -3555,16 +3559,14 @@ function PolicyTemplatesPage({ onPolicySaved, savedNames }: { onPolicySaved: (p:
   }
 
   async function savePolicy() {
-    if (!selectedTemplate) return;
+    if (!selectedTemplate || !orgOwnerId) return;
     setSaving(true);
-    const { data: user } = await supabase.auth.getUser();
-    if (!user.user) { setSaving(false); return; }
     const today = new Date();
     const fmtDate = (d: Date) => d.toLocaleDateString("en-AU", { month: "short", year: "numeric" });
     const nextYear = new Date(today); nextYear.setFullYear(nextYear.getFullYear() + 1);
     const content = selectedTemplate.generate(answers);
     const { data, error } = await supabase.from("policies").insert({
-      user_id: user.user.id,
+      user_id: orgOwnerId,
       name: selectedTemplate.name,
       category: selectedTemplate.category,
       status: "current",
@@ -3848,6 +3850,7 @@ function ReviewSchedulePage({ policies, onPolicyUpdated, onPolicyDeleted }: { po
 }
 
 function UploadDocumentPage({ onPolicySaved }: { onPolicySaved: (p: PolicyRow) => void }) {
+  const orgOwnerId = useContext(OrgContext);
   const fileRef = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
   const [rawFiles, setRawFiles] = useState<File[]>([]);
@@ -3866,23 +3869,21 @@ function UploadDocumentPage({ onPolicySaved }: { onPolicySaved: (p: PolicyRow) =
   }
 
   async function handleUpload() {
-    if (!rawFiles.length || !name.trim()) return;
+    if (!rawFiles.length || !name.trim() || !orgOwnerId) return;
     setUploading(true);
     setUploadError(null);
-    const { data: user } = await supabase.auth.getUser();
-    if (!user.user) { setUploading(false); setUploadError("Not signed in."); return; }
     const today = new Date();
     const fmtDate = (d: Date) => d.toLocaleDateString("en-AU", { month: "short", year: "numeric" });
     const nextYear = new Date(today); nextYear.setFullYear(nextYear.getFullYear() + 1);
     // Upload first file to storage
     const file = rawFiles[0];
-    const storagePath = `${user.user.id}/${Date.now()}_${file.name}`;
+    const storagePath = `${orgOwnerId}/${Date.now()}_${file.name}`;
     const { error: storageErr } = await supabase.storage.from("policy-docs").upload(storagePath, file, { upsert: false });
     if (storageErr && storageErr.message !== "The resource already exists") {
       setUploading(false); setUploadError(storageErr.message); return;
     }
     const { data, error } = await supabase.from("policies").insert({
-      user_id: user.user.id,
+      user_id: orgOwnerId,
       name: name.trim(),
       category,
       status: "current",
@@ -4794,6 +4795,7 @@ function OnboardingChecklist({ member, onBack, onUpdateMember }: { member: Onboa
 }
 
 function OnboardingPage() {
+  const orgOwnerId = useContext(OrgContext);
   const [members, setMembers] = useState<OnboardingMember[]>([]);
   const [selected, setSelected] = useState<OnboardingMember | null>(null);
   const [showAdd, setShowAdd] = useState(false);
@@ -4802,9 +4804,8 @@ function OnboardingPage() {
   const [startInput, setStartInput] = useState("");
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      if (!data.user) return;
-      supabase.from("onboarding_members").select("*").eq("user_id", data.user.id).order("created_at").then(({ data: rows }) => {
+    if (!orgOwnerId) return;
+    supabase.from("onboarding_members").select("*").eq("user_id", orgOwnerId).order("created_at").then(({ data: rows }) => {
         if (!rows) return;
         setMembers(rows.map(r => ({
           id: r.id,
@@ -4814,20 +4815,17 @@ function OnboardingPage() {
           addedAt: r.added_at,
           checkData: Array.isArray(r.check_data) ? r.check_data : Array(onboardingItems.length).fill(null),
         })));
-      });
     });
-  }, []);
+  }, [orgOwnerId]);
 
   const inputSty2: React.CSSProperties = { fontSize: "13px", color: "var(--rc-ink)", background: "var(--rc-surface)", border: "1px solid var(--rc-border)", borderRadius: "8px", padding: "9px 12px", outline: "none", fontFamily: "var(--font-inter)", width: "100%", boxSizing: "border-box" };
 
   async function submitAdd() {
-    if (!nameInput.trim()) return;
-    const { data: user } = await supabase.auth.getUser();
-    if (!user.user) return;
+    if (!nameInput.trim() || !orgOwnerId) return;
     const addedAt = new Date().toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" });
     const emptyCheck = Array(onboardingItems.length).fill(null);
     const { data: row } = await supabase.from("onboarding_members").insert({
-      user_id: user.user.id,
+      user_id: orgOwnerId,
       name: nameInput.trim(),
       role: roleInput.trim(),
       start_date: startInput.trim(),
@@ -4942,6 +4940,7 @@ function OnboardingPage() {
 }
 
 function AccountReconciliationPage() {
+  const orgOwnerId = useContext(OrgContext);
   const [accounts, setAccounts] = useState<TrustAccountRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
@@ -4951,14 +4950,13 @@ function AccountReconciliationPage() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
+    if (!orgOwnerId) { setLoading(false); return; }
     (async () => {
-      const { data: user } = await supabase.auth.getUser();
-      if (!user.user) { setLoading(false); return; }
-      const { data } = await supabase.from("trust_accounts").select("*").eq("user_id", user.user.id).order("created_at");
+      const { data } = await supabase.from("trust_accounts").select("*").eq("user_id", orgOwnerId).order("created_at");
       if (data) setAccounts(data.map(r => ({ id: r.id, name: r.name, bank: r.bank, balance: r.balance, last_reconciled: r.last_reconciled, status: r.status as TrustAccountRow["status"] })));
       setLoading(false);
     })();
-  }, []);
+  }, [orgOwnerId]);
 
   async function toggleStatus(acc: TrustAccountRow) {
     const newStatus = acc.status === "reconciled" ? "pending" : "reconciled";
@@ -4968,11 +4966,9 @@ function AccountReconciliationPage() {
   }
 
   async function addAccount() {
-    if (!nameInput.trim() || !bankInput.trim()) return;
+    if (!nameInput.trim() || !bankInput.trim() || !orgOwnerId) return;
     setSaving(true);
-    const { data: user } = await supabase.auth.getUser();
-    if (!user.user) { setSaving(false); return; }
-    const { data, error } = await supabase.from("trust_accounts").insert({ user_id: user.user.id, name: nameInput.trim(), bank: bankInput.trim(), balance: balanceInput.trim() || "$0", status: "pending", last_reconciled: null }).select().single();
+    const { data, error } = await supabase.from("trust_accounts").insert({ user_id: orgOwnerId, name: nameInput.trim(), bank: bankInput.trim(), balance: balanceInput.trim() || "$0", status: "pending", last_reconciled: null }).select().single();
     setSaving(false);
     if (!error && data) {
       setAccounts(prev => [...prev, { id: data.id, name: data.name, bank: data.bank, balance: data.balance, last_reconciled: data.last_reconciled, status: data.status }]);
@@ -5092,6 +5088,7 @@ function AuditReportsPage() {
 }
 
 function TransactionLogPage() {
+  const orgOwnerId = useContext(OrgContext);
   const [transactions, setTransactions] = useState<TrustTransactionRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("All");
@@ -5104,27 +5101,24 @@ function TransactionLogPage() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
+    if (!orgOwnerId) { setLoading(false); return; }
     (async () => {
-      const { data: user } = await supabase.auth.getUser();
-      if (!user.user) { setLoading(false); return; }
-      const { data } = await supabase.from("trust_transactions").select("*").eq("user_id", user.user.id).order("created_at", { ascending: false });
+      const { data } = await supabase.from("trust_transactions").select("*").eq("user_id", orgOwnerId).order("created_at", { ascending: false });
       if (data) setTransactions(data.map(r => ({ id: r.id, description: r.description, account: r.account, amount: r.amount, type: r.type as TrustTransactionRow["type"], date: r.date })));
       setLoading(false);
     })();
-  }, []);
+  }, [orgOwnerId]);
 
   const accountNames = ["All", ...Array.from(new Set(transactions.map(t => t.account)))];
   const filtered = filter === "All" ? transactions : transactions.filter(t => t.account === filter);
   const cols = "minmax(0,1fr) 130px 110px 90px 100px";
 
   async function addTransaction() {
-    if (!desc.trim() || !account.trim() || !amount.trim()) return;
+    if (!desc.trim() || !account.trim() || !amount.trim() || !orgOwnerId) return;
     setSaving(true);
-    const { data: user } = await supabase.auth.getUser();
-    if (!user.user) { setSaving(false); return; }
     const dateLabel = txDate ? new Date(txDate).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" }) : new Date().toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" });
     const displayAmount = (txType === "credit" ? "+" : "-") + (amount.trim().startsWith("$") ? amount.trim() : "$" + amount.trim());
-    const { data, error } = await supabase.from("trust_transactions").insert({ user_id: user.user.id, description: desc.trim(), account: account.trim(), amount: displayAmount, type: txType, date: dateLabel }).select().single();
+    const { data, error } = await supabase.from("trust_transactions").insert({ user_id: orgOwnerId, description: desc.trim(), account: account.trim(), amount: displayAmount, type: txType, date: dateLabel }).select().single();
     setSaving(false);
     if (!error && data) {
       setTransactions(prev => [{ id: data.id, description: data.description, account: data.account, amount: data.amount, type: data.type, date: data.date }, ...prev]);
@@ -5233,6 +5227,7 @@ function TransactionLogPage() {
 }
 
 function AMLCompliancePage() {
+  const orgOwnerId = useContext(OrgContext);
   const [checks, setChecks] = useState<AMLCheckRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
@@ -5243,21 +5238,18 @@ function AMLCompliancePage() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
+    if (!orgOwnerId) { setLoading(false); return; }
     (async () => {
-      const { data: user } = await supabase.auth.getUser();
-      if (!user.user) { setLoading(false); return; }
-      const { data } = await supabase.from("aml_checks").select("*").eq("user_id", user.user.id).order("created_at", { ascending: false });
+      const { data } = await supabase.from("aml_checks").select("*").eq("user_id", orgOwnerId).order("created_at", { ascending: false });
       if (data) setChecks(data.map(r => ({ id: r.id, address: r.address, party: r.party, party_type: r.party_type, verified: r.verified, verified_date: r.verified_date, method: r.method })));
       setLoading(false);
     })();
-  }, []);
+  }, [orgOwnerId]);
 
   async function addCheck() {
-    if (!addrInput.trim() || !partyInput.trim()) return;
+    if (!addrInput.trim() || !partyInput.trim() || !orgOwnerId) return;
     setSaving(true);
-    const { data: user } = await supabase.auth.getUser();
-    if (!user.user) { setSaving(false); return; }
-    const { data, error } = await supabase.from("aml_checks").insert({ user_id: user.user.id, address: addrInput.trim(), party: partyInput.trim(), party_type: partyTypeInput, verified: false, verified_date: null, method: methodInput.trim() || null }).select().single();
+    const { data, error } = await supabase.from("aml_checks").insert({ user_id: orgOwnerId, address: addrInput.trim(), party: partyInput.trim(), party_type: partyTypeInput, verified: false, verified_date: null, method: methodInput.trim() || null }).select().single();
     setSaving(false);
     if (!error && data) {
       setChecks(prev => [{ id: data.id, address: data.address, party: data.party, party_type: data.party_type, verified: data.verified, verified_date: data.verified_date, method: data.method }, ...prev]);
@@ -5376,6 +5368,7 @@ function AMLCompliancePage() {
 }
 
 function MonthlyTrustReportsPage() {
+  const orgOwnerId = useContext(OrgContext);
   const [reports, setReports] = useState<TrustReportRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
@@ -5387,26 +5380,23 @@ function MonthlyTrustReportsPage() {
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
+    if (!orgOwnerId) { setLoading(false); return; }
     (async () => {
-      const { data: user } = await supabase.auth.getUser();
-      if (!user.user) { setLoading(false); return; }
-      const { data } = await supabase.from("trust_reports").select("*").eq("user_id", user.user.id).order("created_at", { ascending: false });
+      const { data } = await supabase.from("trust_reports").select("*").eq("user_id", orgOwnerId).order("created_at", { ascending: false });
       if (data) setReports(data.map(r => ({ id: r.id, month: r.month, account: r.account, notes: r.notes, file_url: r.file_url, file_name: r.file_name, uploaded_at: r.uploaded_at })));
       setLoading(false);
     })();
-  }, []);
+  }, [orgOwnerId]);
 
   function resetModal() { setMonthInput(""); setAccountInput(""); setNotesInput(""); setFileInput(null); if (fileRef.current) fileRef.current.value = ""; setShowAdd(false); }
 
   async function addReport() {
-    if (!monthInput || !accountInput.trim()) return;
+    if (!monthInput || !accountInput.trim() || !orgOwnerId) return;
     setSaving(true);
-    const { data: user } = await supabase.auth.getUser();
-    if (!user.user) { setSaving(false); return; }
     let fileUrl: string | null = null;
     let fileName: string | null = null;
     if (fileInput) {
-      const path = `trust-reports/${user.user.id}/${Date.now()}-${fileInput.name}`;
+      const path = `trust-reports/${orgOwnerId}/${Date.now()}-${fileInput.name}`;
       const { error: upErr } = await supabase.storage.from("policy-docs").upload(path, fileInput);
       if (!upErr) {
         const { data: urlData } = supabase.storage.from("policy-docs").getPublicUrl(path);
@@ -5415,7 +5405,7 @@ function MonthlyTrustReportsPage() {
       }
     }
     const uploadedAt = new Date().toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" });
-    const { data, error } = await supabase.from("trust_reports").insert({ user_id: user.user.id, month: monthInput, account: accountInput.trim(), notes: notesInput.trim() || null, file_url: fileUrl, file_name: fileName, uploaded_at: uploadedAt }).select().single();
+    const { data, error } = await supabase.from("trust_reports").insert({ user_id: orgOwnerId, month: monthInput, account: accountInput.trim(), notes: notesInput.trim() || null, file_url: fileUrl, file_name: fileName, uploaded_at: uploadedAt }).select().single();
     setSaving(false);
     if (!error && data) {
       setReports(prev => [{ id: data.id, month: data.month, account: data.account, notes: data.notes, file_url: data.file_url, file_name: data.file_name, uploaded_at: data.uploaded_at }, ...prev]);
@@ -5964,6 +5954,7 @@ export default function DashboardPage() {
   const [policies, setPolicies] = useState<PolicyRow[]>([]);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
+  const [orgOwnerId, setOrgOwnerId] = useState<string | null>(null);
   const [agencyName, setAgencyName] = useState<string>("Your Agency");
   const [userRole, setUserRole] = useState<"owner" | "standard">("standard");
 
@@ -5972,9 +5963,14 @@ export default function DashboardPage() {
       if (!data.session) { window.location.href = "/signin"; return; }
       const uid = data.session.user.id;
       setUserEmail(data.session.user.email ?? null);
-      setUserId(data.session.user.id);
+      setUserId(uid);
       const name = data.session.user.user_metadata?.agency_name;
       if (name) setAgencyName(name);
+
+      // Resolve the org owner — invited staff store their org owner's id in user_metadata
+      const metaOrgOwnerId = data.session.user.user_metadata?.organisation_owner_id as string | undefined;
+      const effectiveOrgOwnerId = metaOrgOwnerId ?? uid;
+      setOrgOwnerId(effectiveOrgOwnerId);
 
       // Determine role: owner has a subscriptions record; invited staff are standard by default
       const { data: sub } = await supabase.from("subscriptions").select("id").eq("user_id", uid).maybeSingle();
@@ -5987,9 +5983,9 @@ export default function DashboardPage() {
       }
 
       const [{ data: staffData }, { data: propsData }, { data: policiesData }] = await Promise.all([
-        supabase.from("staff_members").select("*").eq("user_id", uid).order("created_at"),
-        supabase.from("properties").select("*").eq("user_id", uid).order("created_at"),
-        supabase.from("policies").select("*").eq("user_id", uid).order("created_at"),
+        supabase.from("staff_members").select("*").eq("user_id", effectiveOrgOwnerId).order("created_at"),
+        supabase.from("properties").select("*").eq("user_id", effectiveOrgOwnerId).order("created_at"),
+        supabase.from("policies").select("*").eq("user_id", effectiveOrgOwnerId).order("created_at"),
       ]);
       if (staffData) {
         setStaffRows(staffData.map(r => ({
@@ -6025,10 +6021,9 @@ export default function DashboardPage() {
   }, []);
 
   async function handleAddSalesProperty(prop: Required<SalesPropItem>): Promise<string | null> {
-    const { data: user } = await supabase.auth.getUser();
-    if (!user.user) return "Not signed in";
+    if (!orgOwnerId) return "Not signed in";
     const { data: row, error } = await supabase.from("properties").insert({
-      user_id: user.user.id,
+      user_id: orgOwnerId,
       address: prop.address,
       type: "sales",
       vendor_name: prop.vendorName || null,
@@ -6048,10 +6043,9 @@ export default function DashboardPage() {
   }
 
   async function handleAddMgmtProperty(prop: Required<SalesPropItem>): Promise<string | null> {
-    const { data: user } = await supabase.auth.getUser();
-    if (!user.user) return "Not signed in";
+    if (!orgOwnerId) return "Not signed in";
     const { data: row, error } = await supabase.from("properties").insert({
-      user_id: user.user.id,
+      user_id: orgOwnerId,
       address: prop.address,
       type: "management",
       vendor_name: prop.vendorName || null,
@@ -6100,7 +6094,8 @@ export default function DashboardPage() {
   function goBack() { setActiveModule(null); setSelected(null); }
 
   return (
-    <div style={{ display: "flex", minHeight: "100svh", background: "var(--rc-bg)" }}>
+    <OrgContext.Provider value={orgOwnerId}>
+      <div style={{ display: "flex", minHeight: "100svh", background: "var(--rc-bg)" }}>
       {/* Sidebar */}
       <aside style={{ width: "252px", flexShrink: 0, background: "var(--rc-nav)", display: "flex", flexDirection: "column", position: "fixed", top: 0, left: 0, bottom: 0, overflowY: "auto", zIndex: 10 }}>
         {/* Logo */}
@@ -6211,5 +6206,6 @@ export default function DashboardPage() {
         )}
       </div>
     </div>
+    </OrgContext.Provider>
   );
 }

@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
+import { createClient } from "@supabase/supabase-js";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
+  process.env.SUPABASE_SERVICE_ROLE_KEY ?? ""
+);
 
 const PRICE_IDS: Record<string, string> = {
   essentials: "price_1TvuRBEGKrM2hd0SlE7XjBmj",
@@ -10,11 +16,26 @@ const PRICE_IDS: Record<string, string> = {
 };
 
 export async function POST(req: NextRequest) {
-  const { email, agency, plan } = await req.json();
+  const { email, agency, abn, plan } = await req.json();
 
   const priceId = PRICE_IDS[plan];
   if (!priceId) {
     return NextResponse.json({ error: "Invalid plan" }, { status: 400 });
+  }
+
+  // Enforce one organisation per ABN
+  if (abn) {
+    const { data: existing } = await supabaseAdmin
+      .from("organisations")
+      .select("id")
+      .eq("abn", abn)
+      .maybeSingle();
+    if (existing) {
+      return NextResponse.json(
+        { error: "An organisation with this ABN already exists. If you're a staff member, ask your agency owner for an invite link." },
+        { status: 409 }
+      );
+    }
   }
 
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? req.headers.get("origin") ?? "http://localhost:3000";
@@ -24,7 +45,7 @@ export async function POST(req: NextRequest) {
     payment_method_types: ["card"],
     customer_email: email,
     line_items: [{ price: priceId, quantity: 1 }],
-    metadata: { email, agency, plan },
+    metadata: { email, agency, abn: abn ?? "", plan },
     success_url: `${baseUrl}/signup/success?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${baseUrl}/signup`,
   });

@@ -40,6 +40,7 @@ export default function SignUpPage() {
 
   // Step 1
   const [agency, setAgency] = useState("");
+  const [abn, setAbn] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
@@ -79,7 +80,7 @@ export default function SignUpPage() {
     const { error: authError } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { agency_name: agency, plan: selectedPlan } },
+      options: { data: { agency_name: agency, abn, plan: selectedPlan } },
     });
     if (authError) {
       setError(authError.message);
@@ -91,7 +92,7 @@ export default function SignUpPage() {
     const res = await fetch("/api/create-checkout-session", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, agency, plan: selectedPlan }),
+      body: JSON.stringify({ email, agency, abn, plan: selectedPlan }),
     });
     const data = await res.json();
     if (!res.ok || !data.url) {
@@ -164,6 +165,23 @@ export default function SignUpPage() {
                     onBlur={(e) => (e.target.style.borderColor = "var(--rc-border)")} />
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                  <label htmlFor="abn" style={{ fontSize: "14px", fontWeight: 500, color: "var(--rc-ink)" }}>ABN</label>
+                  <input id="abn" type="text" required inputMode="numeric" value={abn}
+                    onChange={(e) => {
+                      const digits = e.target.value.replace(/\D/g, "").slice(0, 11);
+                      setAbn(digits);
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = "var(--rc-border)";
+                      if (abn.length > 0 && abn.length !== 11) setError("ABN must be 11 digits.");
+                      else setError("");
+                    }}
+                    onFocus={(e) => { e.target.style.borderColor = "var(--rc-primary)"; setError(""); }}
+                    placeholder="e.g. 12345678901"
+                    style={inputStyle} />
+                  <p style={{ fontSize: "12px", color: "var(--rc-faint)", margin: 0, maxWidth: "none" }}>11-digit Australian Business Number. One organisation per ABN.</p>
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                   <label htmlFor="email" style={{ fontSize: "14px", fontWeight: 500, color: "var(--rc-ink)" }}>Email</label>
                   <input id="email" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)}
                     placeholder="you@youragency.com.au" style={inputStyle}
@@ -177,7 +195,12 @@ export default function SignUpPage() {
                     onFocus={(e) => (e.target.style.borderColor = "var(--rc-primary)")}
                     onBlur={(e) => (e.target.style.borderColor = "var(--rc-border)")} />
                 </div>
-                <button type="submit" style={{ marginTop: "8px", padding: "13px 24px", background: "var(--rc-primary)", color: "white", borderRadius: "8px", fontWeight: 700, fontSize: "15px", border: "none", cursor: "pointer", fontFamily: "var(--font-inter)", width: "100%" }}>
+                {error && (
+                  <p style={{ fontSize: "14px", color: "oklch(0.55 0.18 25)", background: "oklch(0.97 0.02 25)", border: "1px solid oklch(0.88 0.06 25)", borderRadius: "8px", padding: "10px 14px", maxWidth: "none", margin: 0 }}>
+                    {error}
+                  </p>
+                )}
+                <button type="submit" disabled={abn.length !== 11} style={{ marginTop: "8px", padding: "13px 24px", background: "var(--rc-primary)", color: "white", borderRadius: "8px", fontWeight: 700, fontSize: "15px", border: "none", cursor: abn.length !== 11 ? "not-allowed" : "pointer", opacity: abn.length !== 11 ? 0.6 : 1, fontFamily: "var(--font-inter)", width: "100%" }}>
                   Continue
                 </button>
               </form>
@@ -270,6 +293,9 @@ export default function SignUpPage() {
                   <div style={{ padding: "16px 24px", background: "var(--rc-surface-2)" }}>
                     <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", color: "var(--rc-muted)", marginBottom: "6px" }}>
                       <span>Agency</span><span style={{ color: "var(--rc-ink)", fontWeight: 500 }}>{agency}</span>
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", color: "var(--rc-muted)", marginBottom: "6px" }}>
+                      <span>ABN</span><span style={{ color: "var(--rc-ink)", fontWeight: 500 }}>{abn}</span>
                     </div>
                     <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", color: "var(--rc-muted)" }}>
                       <span>Account</span><span style={{ color: "var(--rc-ink)", fontWeight: 500 }}>{email}</span>

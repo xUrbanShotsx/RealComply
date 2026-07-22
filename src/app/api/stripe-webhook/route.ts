@@ -22,13 +22,15 @@ export async function POST(req: NextRequest) {
 
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
-    const { email, agency, plan } = session.metadata ?? {};
+    const { email, agency, abn, plan } = session.metadata ?? {};
 
     if (email && session.subscription) {
-      // Record subscription in Supabase — look up user by email
+      // Look up user by email
       const { data: users } = await supabaseAdmin.auth.admin.listUsers();
       const user = users?.users.find((u) => u.email === email);
+
       if (user) {
+        // Record subscription
         await supabaseAdmin.from("subscriptions").upsert({
           user_id: user.id,
           stripe_customer_id: session.customer as string,
@@ -38,6 +40,14 @@ export async function POST(req: NextRequest) {
           status: "active",
           created_at: new Date().toISOString(),
         });
+
+        // Create organisation record (one per ABN)
+        if (abn) {
+          await supabaseAdmin.from("organisations").upsert(
+            { abn, agency_name: agency ?? "", owner_user_id: user.id },
+            { onConflict: "abn" }
+          );
+        }
       }
     }
   }
