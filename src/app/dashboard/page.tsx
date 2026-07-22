@@ -1366,7 +1366,7 @@ function ComplianceChart() {
 
 
 
-function DashboardHome({ onNavigate }: { onNavigate: (id: string) => void }) {
+function DashboardHome({ onNavigate, agencyName }: { onNavigate: (id: string) => void; agencyName: string }) {
   const overallScore = Math.round(moduleOverview.reduce((sum, m) => sum + m.score, 0) / moduleOverview.length);
   const scoreLabel = overallScore >= 85 ? "Good standing" : overallScore >= 65 ? "Needs attention" : "Action required";
   const badgeColor = overallScore >= 85 ? "oklch(0.46 0.13 145)" : overallScore >= 65 ? "oklch(0.50 0.12 55)" : "oklch(0.46 0.18 25)";
@@ -1387,7 +1387,7 @@ function DashboardHome({ onNavigate }: { onNavigate: (id: string) => void }) {
         <div>
           <h1 style={{ fontSize: "1.35rem", fontWeight: 700, color: "var(--rc-ink)", letterSpacing: "-0.035em", lineHeight: 1.15 }}>Business Overview</h1>
           <p style={{ fontSize: "13px", color: "var(--rc-faint)", maxWidth: "none", marginTop: "5px" }}>
-            Ray White Bondi Junction · {new Date().toLocaleDateString("en-AU", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
+            {agencyName} · {new Date().toLocaleDateString("en-AU", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
           </p>
         </div>
         <span style={{ fontSize: "12px", fontWeight: 600, color: badgeColor, background: badgeBg, padding: "5px 13px", borderRadius: "100px", marginTop: "3px", flexShrink: 0, letterSpacing: "0.01em" }}>
@@ -2637,7 +2637,7 @@ const docCategoryColor: Record<string, { bg: string; color: string }> = {
   Onboarding: { bg: "var(--rc-surface-2)", color: "var(--rc-muted)" },
 };
 
-function renderDocContent(doc: { title: string; category: string; date: string }, s: typeof staffMembers[0], memberIdx: number): React.ReactNode {
+function renderDocContent(doc: { title: string; category: string; date: string }, s: typeof staffMembers[0], memberIdx: number, agencyName = "Your Agency"): React.ReactNode {
   const licNum = licenceNumbers[memberIdx];
   const startDate = staffStartDates[memberIdx];
   const h2: React.CSSProperties = { fontSize: "11px", fontWeight: 700, color: "var(--rc-faint)", textTransform: "uppercase" as const, letterSpacing: "0.08em", margin: "20px 0 6px" };
@@ -2648,7 +2648,7 @@ function renderDocContent(doc: { title: string; category: string; date: string }
 
   if (doc.category === "Contract") return (
     <div>
-      <p style={{ fontSize: "10px", fontWeight: 700, color: "var(--rc-faint)", letterSpacing: "0.1em", textTransform: "uppercase", margin: "0 0 16px", maxWidth: "none" }}>Ray White Bondi Junction · ABN 23 456 789 012</p>
+      <p style={{ fontSize: "10px", fontWeight: 700, color: "var(--rc-faint)", letterSpacing: "0.1em", textTransform: "uppercase", margin: "0 0 16px", maxWidth: "none" }}>{agencyName}</p>
       <p style={{ fontSize: "18px", fontWeight: 700, color: "var(--rc-ink)", letterSpacing: "-0.02em", margin: "0 0 4px", maxWidth: "none" }}>Employment Agreement</p>
       <p style={{ fontSize: "12px", color: "var(--rc-faint)", margin: "0 0 24px", maxWidth: "none" }}>Dated {doc.date}</p>
       <div style={{ display: "flex", gap: "40px", marginBottom: "24px" }}>
@@ -2658,7 +2658,7 @@ function renderDocContent(doc: { title: string; category: string; date: string }
       </div>
       <div style={{ borderTop: "1px solid var(--rc-border)", paddingTop: "20px" }}>
         <p style={h2}>1. Position</p>
-        <p style={p}>Ray White Bondi Junction ("the Employer") engages {s.name} ("the Employee") as {s.role}. The Employee will report to the Principal and perform all duties consistent with this role in accordance with the agency's standards and NSW Fair Trading requirements.</p>
+        <p style={p}>{agencyName} ("the Employer") engages {s.name} ("the Employee") as {s.role}. The Employee will report to the Principal and perform all duties consistent with this role in accordance with the agency's standards and NSW Fair Trading requirements.</p>
         <p style={h2}>2. Hours of Work</p>
         <p style={p}>Standard working hours are 38 hours per week, Monday to Friday. The Employee may be required to work reasonable additional hours to meet client and agency obligations. Overtime arrangements are in accordance with the Real Estate Industry Award.</p>
         <p style={h2}>3. Remuneration</p>
@@ -2705,10 +2705,10 @@ function renderDocContent(doc: { title: string; category: string; date: string }
 
   if (doc.category === "Compliance") return (
     <div>
-      <p style={{ fontSize: "10px", fontWeight: 700, color: "var(--rc-faint)", letterSpacing: "0.1em", textTransform: "uppercase", margin: "0 0 16px", maxWidth: "none" }}>Ray White Bondi Junction</p>
+      <p style={{ fontSize: "10px", fontWeight: 700, color: "var(--rc-faint)", letterSpacing: "0.1em", textTransform: "uppercase", margin: "0 0 16px", maxWidth: "none" }}>{agencyName}</p>
       <p style={{ fontSize: "18px", fontWeight: 700, color: "var(--rc-ink)", letterSpacing: "-0.02em", margin: "0 0 4px", maxWidth: "none" }}>Privacy Policy Acknowledgement</p>
       <p style={{ fontSize: "12px", color: "var(--rc-faint)", margin: "0 0 24px", maxWidth: "none" }}>Dated {doc.date}</p>
-      <p style={p}>I, <strong>{s.name}</strong>, acknowledge that I have read, understood, and agree to comply with the Ray White Bondi Junction Privacy Policy (v2.1, July 2026) in all aspects of my role as {s.role}.</p>
+      <p style={p}>I, <strong>{s.name}</strong>, acknowledge that I have read, understood, and agree to comply with the {agencyName} Privacy Policy in all aspects of my role as {s.role}.</p>
       <p style={h2}>The policy covers</p>
       {["Collection, use and storage of personal information relating to clients, vendors, tenants and landlords", "How personal data is protected and disclosed to third parties in compliance with Australian Privacy Principles", "My obligations to keep client information confidential and use it only for authorised purposes", "Clients' rights to access and correct their personal information", "Procedures for handling privacy complaints and data breach notifications"].map((item, i) => (
         <div key={i} style={{ display: "flex", gap: "10px", marginBottom: "8px" }}><span style={{ fontSize: "13px", color: "var(--rc-faint)", flexShrink: 0 }}>—</span><p style={{ ...p, margin: 0 }}>{item}</p></div>
@@ -2725,7 +2725,7 @@ function renderDocContent(doc: { title: string; category: string; date: string }
 
   if (doc.category === "WHS") return (
     <div>
-      <p style={{ fontSize: "10px", fontWeight: 700, color: "var(--rc-faint)", letterSpacing: "0.1em", textTransform: "uppercase", margin: "0 0 16px", maxWidth: "none" }}>Ray White Bondi Junction</p>
+      <p style={{ fontSize: "10px", fontWeight: 700, color: "var(--rc-faint)", letterSpacing: "0.1em", textTransform: "uppercase", margin: "0 0 16px", maxWidth: "none" }}>{agencyName}</p>
       <p style={{ fontSize: "18px", fontWeight: 700, color: "var(--rc-ink)", letterSpacing: "-0.02em", margin: "0 0 4px", maxWidth: "none" }}>WHS Induction Record</p>
       <p style={{ fontSize: "12px", color: "var(--rc-faint)", margin: "0 0 24px", maxWidth: "none" }}>Work Health & Safety Act 2011 (NSW) · Dated {doc.date}</p>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "24px" }}>
@@ -2772,7 +2772,7 @@ function renderDocContent(doc: { title: string; category: string; date: string }
 
   if (doc.category === "Training") return (
     <div>
-      <p style={{ fontSize: "10px", fontWeight: 700, color: "var(--rc-faint)", letterSpacing: "0.1em", textTransform: "uppercase", margin: "0 0 16px", maxWidth: "none" }}>Ray White Bondi Junction</p>
+      <p style={{ fontSize: "10px", fontWeight: 700, color: "var(--rc-faint)", letterSpacing: "0.1em", textTransform: "uppercase", margin: "0 0 16px", maxWidth: "none" }}>{agencyName}</p>
       <p style={{ fontSize: "18px", fontWeight: 700, color: "var(--rc-ink)", letterSpacing: "-0.02em", margin: "0 0 4px", maxWidth: "none" }}>Trust Accounting Training Record</p>
       <p style={{ fontSize: "12px", color: "var(--rc-faint)", margin: "0 0 24px", maxWidth: "none" }}>Dated {doc.date}</p>
       {[["Employee", s.name], ["Role", s.role], ["Training date", doc.date], ["Provider", "REINSW — Trust Accounting Module"], ["Duration", "4 hours"], ["Certificate ref", `TA-2026-${memberIdx + 1001}`]].map(([l, v]) => (
@@ -2796,7 +2796,7 @@ function renderDocContent(doc: { title: string; category: string; date: string }
 
   if (doc.category === "Induction") return (
     <div>
-      <p style={{ fontSize: "10px", fontWeight: 700, color: "var(--rc-faint)", letterSpacing: "0.1em", textTransform: "uppercase", margin: "0 0 16px", maxWidth: "none" }}>Ray White Bondi Junction</p>
+      <p style={{ fontSize: "10px", fontWeight: 700, color: "var(--rc-faint)", letterSpacing: "0.1em", textTransform: "uppercase", margin: "0 0 16px", maxWidth: "none" }}>{agencyName}</p>
       <p style={{ fontSize: "18px", fontWeight: 700, color: "var(--rc-ink)", letterSpacing: "-0.02em", margin: "0 0 4px", maxWidth: "none" }}>Office Induction Record</p>
       <p style={{ fontSize: "12px", color: "var(--rc-faint)", margin: "0 0 24px", maxWidth: "none" }}>Dated {doc.date}</p>
       {[["Employee", s.name], ["Role", s.role], ["Date", doc.date], ["Conducted by", "Sarah Mitchell, Principal"]].map(([l, v]) => (
@@ -2820,7 +2820,7 @@ function renderDocContent(doc: { title: string; category: string; date: string }
 
   if (doc.category === "Onboarding" && doc.title.includes("Mentor")) return (
     <div>
-      <p style={{ fontSize: "10px", fontWeight: 700, color: "var(--rc-faint)", letterSpacing: "0.1em", textTransform: "uppercase", margin: "0 0 16px", maxWidth: "none" }}>Ray White Bondi Junction</p>
+      <p style={{ fontSize: "10px", fontWeight: 700, color: "var(--rc-faint)", letterSpacing: "0.1em", textTransform: "uppercase", margin: "0 0 16px", maxWidth: "none" }}>{agencyName}</p>
       <p style={{ fontSize: "18px", fontWeight: 700, color: "var(--rc-ink)", letterSpacing: "-0.02em", margin: "0 0 4px", maxWidth: "none" }}>Mentor Assignment</p>
       <p style={{ fontSize: "12px", color: "var(--rc-faint)", margin: "0 0 24px", maxWidth: "none" }}>Dated {doc.date}</p>
       {[["New staff member", s.name], ["Role", s.role], ["Mentor assigned", "James Chen"], ["Mentor role", "Senior Sales Agent"], ["Assignment date", doc.date], ["Meeting schedule", "Fortnightly (first 6 months), then monthly"]].map(([l, v]) => (
@@ -2845,7 +2845,7 @@ function renderDocContent(doc: { title: string; category: string; date: string }
   // IT Access / other
   return (
     <div>
-      <p style={{ fontSize: "10px", fontWeight: 700, color: "var(--rc-faint)", letterSpacing: "0.1em", textTransform: "uppercase", margin: "0 0 16px", maxWidth: "none" }}>Ray White Bondi Junction</p>
+      <p style={{ fontSize: "10px", fontWeight: 700, color: "var(--rc-faint)", letterSpacing: "0.1em", textTransform: "uppercase", margin: "0 0 16px", maxWidth: "none" }}>{agencyName}</p>
       <p style={{ fontSize: "18px", fontWeight: 700, color: "var(--rc-ink)", letterSpacing: "-0.02em", margin: "0 0 4px", maxWidth: "none" }}>{doc.title}</p>
       <p style={{ fontSize: "12px", color: "var(--rc-faint)", margin: "0 0 24px", maxWidth: "none" }}>Dated {doc.date}</p>
       {[["Employee", s.name], ["Role", s.role], ["Date", doc.date]].map(([l, v]) => (
@@ -2870,7 +2870,7 @@ function renderDocContent(doc: { title: string; category: string; date: string }
   );
 }
 
-function StaffFilePage({ memberIdx, onBack }: { memberIdx: number; onBack: () => void }) {
+function StaffFilePage({ memberIdx, onBack, agencyName }: { memberIdx: number; onBack: () => void; agencyName: string }) {
   const s = staffMembers[memberIdx];
   const licNum = licenceNumbers[memberIdx];
   const cpd = cpdData[memberIdx];
@@ -3088,11 +3088,11 @@ function StaffFilePage({ memberIdx, onBack }: { memberIdx: number; onBack: () =>
   );
 }
 
-function TeamOverviewPage() {
+function TeamOverviewPage({ agencyName }: { agencyName: string }) {
   const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
 
   if (selectedIdx !== null) {
-    return <StaffFilePage memberIdx={selectedIdx} onBack={() => setSelectedIdx(null)} />;
+    return <StaffFilePage memberIdx={selectedIdx} onBack={() => setSelectedIdx(null)} agencyName={agencyName} />;
   }
 
   return (
@@ -3100,7 +3100,7 @@ function TeamOverviewPage() {
       <div style={PAGE_HEADER}>
         <div>
           <h1 style={PAGE_H1}>Team Overview</h1>
-          <p style={PAGE_SUB}>{staffMembers.length} staff members · Ray White Bondi Junction</p>
+          <p style={PAGE_SUB}>{staffMembers.length} staff members · {agencyName}</p>
         </div>
       </div>
       <div style={{ flex: 1, overflowY: "auto", display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "12px", alignContent: "start" }}>
@@ -3731,7 +3731,7 @@ function StaticSubPage({ label }: { label: string }) {
     case "Policy Templates":        return <PolicyTemplatesPage />;
     case "Review Schedule":         return <ReviewSchedulePage />;
     case "Upload Document":         return <UploadDocumentPage />;
-    case "Team Overview":           return <TeamOverviewPage />;
+    case "Team Overview":           return <TeamOverviewPage agencyName={agencyName} />;
     case "Licence Tracking":        return <LicenceTrackingPage />;
     case "CPD Records":             return <CPDRecordsPage />;
     case "Onboarding":              return <OnboardingPage />;
@@ -3754,14 +3754,19 @@ export default function DashboardPage() {
   const [selected, setSelected] = useState<Selected>(null);
   const [salesProps, setSalesProps] = useState<SalesPropItem[]>(initialSalesProperties);
   const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [agencyName, setAgencyName] = useState<string>("Your Agency");
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       if (!data.session) { window.location.href = "/signin"; return; }
       setUserEmail(data.session.user.email ?? null);
+      const name = data.session.user.user_metadata?.agency_name;
+      if (name) setAgencyName(name);
     });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!session) window.location.href = "/signin";
+      if (!session) { window.location.href = "/signin"; return; }
+      const name = session.user.user_metadata?.agency_name;
+      if (name) setAgencyName(name);
     });
     return () => subscription.unsubscribe();
   }, []);
@@ -3869,7 +3874,7 @@ export default function DashboardPage() {
         <div style={{ padding: "10px 10px 16px", borderTop: "1px solid var(--rc-nav-border)", flexShrink: 0 }}>
           <div style={{ padding: "8px 12px 6px" }}>
             <p style={{ fontSize: "10.5px", fontWeight: 600, color: "var(--rc-nav-text)", maxWidth: "none", letterSpacing: "0.05em", textTransform: "uppercase" }}>Agency</p>
-            <p style={{ fontSize: "12.5px", color: "oklch(0.80 0.014 260)", maxWidth: "none", marginTop: "3px", fontWeight: 500, lineHeight: 1.3 }}>Ray White Bondi Junction</p>
+            <p style={{ fontSize: "12.5px", color: "oklch(0.80 0.014 260)", maxWidth: "none", marginTop: "3px", fontWeight: 500, lineHeight: 1.3 }}>{agencyName}</p>
           </div>
           <button
             onClick={async () => { await supabase.auth.signOut(); window.location.href = "/signin"; }}
@@ -3894,7 +3899,7 @@ export default function DashboardPage() {
         ) : activeModule ? (
           <ModuleOverview moduleId={activeModule} onSelectProperty={setSelected} salesProps={salesProps} onAddSalesProperty={(prop) => setSalesProps(prev => [...prev, prop])} />
         ) : (
-          <DashboardHome onNavigate={openModule} />
+          <DashboardHome onNavigate={openModule} agencyName={agencyName} />
         )}
       </div>
     </div>
