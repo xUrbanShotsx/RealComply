@@ -258,6 +258,263 @@ function ItemDetail({
   );
 }
 
+// --- Marketing checklist ---
+
+const SYSTEM_TEMPLATES = [
+  {
+    id: "standard",
+    name: "Standard Process",
+    items: [
+      "Install signboard",
+      "Order brochures",
+      "Schedule professional photography",
+      "Create online listing",
+      "Letterbox drop surrounding area",
+      "Call prospect database",
+      "Email marketing blast",
+      "Schedule open home",
+    ],
+  },
+  {
+    id: "expert",
+    name: "Expert Process",
+    items: [
+      "Install signboard",
+      "Order premium brochures",
+      "Schedule professional photography & video",
+      "Schedule aerial/drone photography",
+      "Create online listing — premium placement",
+      "Letterbox drop 2km radius",
+      "Call A-grade buyer database",
+      "Social media campaign launched",
+      "Email marketing blast to full database",
+      "Schedule 2 open homes per week",
+      "Vendor update call booked",
+      "Print advertising booked",
+    ],
+  },
+  {
+    id: "super_agent",
+    name: "Super Agent Process",
+    items: [
+      "Install signboard + feature lighting",
+      "Order luxury property brochures",
+      "Schedule photography, video & virtual tour",
+      "Schedule aerial/drone package",
+      "Create online listing — top spot placement",
+      "Letterbox drop 5km radius",
+      "Personal calls to all A & B grade buyers",
+      "Social media campaign with paid ads",
+      "Email blast to full database",
+      "Schedule 3 open homes per week",
+      "Buyer feedback calls after each open",
+      "Weekly vendor update meeting booked",
+      "Print advertising — feature spread",
+      "PR/editorial opportunity explored",
+      "Competitor buyer database contacted",
+    ],
+  },
+];
+
+type MktItem = { id: string; text: string; done: boolean };
+
+function MarketingChecklist({ propertyId }: { propertyId: string }) {
+  const orgOwnerId = useContext(OrgContext);
+  const [items, setItems] = useState<MktItem[]>([]);
+  const [customTemplates, setCustomTemplates] = useState<{ id: string; name: string; items: string[] }[]>([]);
+  const [phase, setPhase] = useState<"loading" | "pick" | "list">("loading");
+  const [saveMode, setSaveMode] = useState(false);
+  const [templateName, setTemplateName] = useState("");
+  const [savingTemplate, setSavingTemplate] = useState(false);
+
+  useEffect(() => {
+    if (!orgOwnerId) return;
+    Promise.all([
+      supabase.from("marketing_checklists").select("items").eq("property_id", propertyId).eq("user_id", orgOwnerId).maybeSingle(),
+      supabase.from("marketing_templates").select("id, name, items").eq("user_id", orgOwnerId).order("created_at"),
+    ]).then(([{ data: cl }, { data: tmpl }]) => {
+      if (tmpl) setCustomTemplates((tmpl as { id: string; name: string; items: string[] }[]).map((t) => ({ id: t.id, name: t.name, items: t.items })));
+      if (cl?.items) { setItems(cl.items as MktItem[]); setPhase("list"); }
+      else setPhase("pick");
+    });
+  }, [propertyId, orgOwnerId]);
+
+  async function persist(next: MktItem[]) {
+    if (!orgOwnerId) return;
+    await supabase.from("marketing_checklists").upsert(
+      { property_id: propertyId, user_id: orgOwnerId, items: next, updated_at: new Date().toISOString() },
+      { onConflict: "property_id,user_id" }
+    );
+  }
+
+  function applyTemplate(templateItems: string[]) {
+    const next: MktItem[] = templateItems.map((text) => ({ id: crypto.randomUUID(), text, done: false }));
+    setItems(next); setPhase("list"); persist(next);
+  }
+
+  async function toggleItem(id: string) {
+    const next = items.map((it) => it.id === id ? { ...it, done: !it.done } : it);
+    setItems(next); await persist(next);
+  }
+
+  function updateText(id: string, text: string) { setItems((prev) => prev.map((it) => it.id === id ? { ...it, text } : it)); }
+
+  async function blurText(id: string, text: string) {
+    const next = items.map((it) => it.id === id ? { ...it, text } : it);
+    setItems(next); await persist(next);
+  }
+
+  async function addItem() {
+    const next = [...items, { id: crypto.randomUUID(), text: "", done: false }];
+    setItems(next); await persist(next);
+  }
+
+  async function removeItem(id: string) {
+    const next = items.filter((it) => it.id !== id);
+    setItems(next); await persist(next);
+  }
+
+  async function saveAsTemplate() {
+    if (!templateName.trim() || !orgOwnerId) return;
+    setSavingTemplate(true);
+    const { data } = await supabase.from("marketing_templates")
+      .insert({ name: templateName.trim(), items: items.map((it) => it.text).filter(Boolean), user_id: orgOwnerId })
+      .select("id, name, items").single();
+    if (data) setCustomTemplates((prev) => [...prev, { id: data.id, name: data.name, items: data.items as string[] }]);
+    setTemplateName(""); setSaveMode(false); setSavingTemplate(false);
+  }
+
+  async function resetChecklist() {
+    if (!window.confirm("Clear this checklist and choose a new template?")) return;
+    if (orgOwnerId) await supabase.from("marketing_checklists").delete().eq("property_id", propertyId).eq("user_id", orgOwnerId);
+    setItems([]); setPhase("pick");
+  }
+
+  const tabPad: React.CSSProperties = { flex: 1, padding: "48px", minWidth: 0, overflowY: "auto" };
+  const done = items.filter((it) => it.done).length;
+  const pct = items.length ? Math.round((done / items.length) * 100) : 0;
+
+  if (phase === "loading") return (
+    <div style={{ ...tabPad, display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <p style={{ color: "var(--rc-faint)", fontSize: "14px" }}>Loading…</p>
+    </div>
+  );
+
+  if (phase === "pick") return (
+    <div style={tabPad}>
+      <div style={{ maxWidth: "600px" }}>
+        <h1 style={{ fontSize: "1.4rem", fontWeight: 800, color: "var(--rc-ink)", letterSpacing: "-0.03em", marginBottom: "6px" }}>Choose a template</h1>
+        <p style={{ fontSize: "14px", color: "var(--rc-muted)", marginBottom: "28px", maxWidth: "none" }}>Select a starting point or build your own checklist from scratch.</p>
+        <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+          {[...SYSTEM_TEMPLATES, ...customTemplates].map((tmpl) => (
+            <button key={tmpl.id} onClick={() => applyTemplate(tmpl.items)}
+              style={{ textAlign: "left", padding: "16px 20px", border: "1px solid var(--rc-border)", borderRadius: "10px", background: "var(--rc-bg)", cursor: "pointer", fontFamily: "var(--font-inter)", transition: "border-color 0.15s, background 0.15s" }}
+              onMouseEnter={(e) => { e.currentTarget.style.borderColor = "var(--rc-primary)"; e.currentTarget.style.background = "var(--rc-surface)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--rc-border)"; e.currentTarget.style.background = "var(--rc-bg)"; }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px" }}>
+                <div>
+                  <p style={{ fontSize: "14px", fontWeight: 700, color: "var(--rc-ink)", margin: 0 }}>{tmpl.name}</p>
+                  <p style={{ fontSize: "12px", color: "var(--rc-faint)", margin: "3px 0 0", maxWidth: "none" }}>{tmpl.items.length} items</p>
+                </div>
+                {SYSTEM_TEMPLATES.some((s) => s.id === tmpl.id) && (
+                  <span style={{ fontSize: "11px", fontWeight: 600, color: "var(--rc-primary)", background: "oklch(0.96 0.025 260)", border: "1px solid oklch(0.85 0.06 260)", padding: "2px 8px", borderRadius: "100px", flexShrink: 0, whiteSpace: "nowrap" }}>Built-in</span>
+                )}
+              </div>
+            </button>
+          ))}
+          <button onClick={() => applyTemplate([])}
+            style={{ textAlign: "left", padding: "16px 20px", border: "1.5px dashed var(--rc-border)", borderRadius: "10px", background: "transparent", cursor: "pointer", fontFamily: "var(--font-inter)", transition: "border-color 0.15s" }}
+            onMouseEnter={(e) => { e.currentTarget.style.borderColor = "var(--rc-primary)"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--rc-border)"; }}>
+            <p style={{ fontSize: "14px", fontWeight: 700, color: "var(--rc-ink)", margin: 0 }}>Blank checklist</p>
+            <p style={{ fontSize: "12px", color: "var(--rc-faint)", margin: "3px 0 0", maxWidth: "none" }}>Start from scratch and build your own</p>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  return (
+    <div style={tabPad}>
+      <div style={{ maxWidth: "600px" }}>
+        {/* Header */}
+        <div style={{ marginBottom: "28px" }}>
+          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "16px", marginBottom: "18px" }}>
+            <h1 style={{ fontSize: "1.4rem", fontWeight: 800, color: "var(--rc-ink)", letterSpacing: "-0.03em", margin: 0 }}>Marketing</h1>
+            <div style={{ display: "flex", gap: "8px", flexShrink: 0 }}>
+              <button onClick={resetChecklist} style={{ fontSize: "12px", fontWeight: 500, color: "var(--rc-faint)", background: "transparent", border: "1px solid var(--rc-border)", borderRadius: "7px", padding: "6px 12px", cursor: "pointer", fontFamily: "var(--font-inter)" }}>
+                Change template
+              </button>
+              <button onClick={() => { setSaveMode((v) => !v); setTemplateName(""); }} style={{ fontSize: "12px", fontWeight: 600, color: "var(--rc-primary)", background: "transparent", border: "1px solid var(--rc-primary)", borderRadius: "7px", padding: "6px 12px", cursor: "pointer", fontFamily: "var(--font-inter)" }}>
+                Save as template
+              </button>
+            </div>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <div style={{ flex: 1, height: "6px", background: "var(--rc-border)", borderRadius: "100px", overflow: "hidden" }}>
+              <div style={{ width: `${pct}%`, height: "100%", background: pct === 100 ? "oklch(0.60 0.16 145)" : "var(--rc-primary)", borderRadius: "100px", transition: "width 0.3s ease" }} />
+            </div>
+            <span style={{ fontSize: "13px", fontWeight: 700, color: pct === 100 ? "oklch(0.45 0.14 145)" : "var(--rc-primary)", flexShrink: 0 }}>{done}/{items.length} done</span>
+          </div>
+        </div>
+
+        {/* Save-as-template inline form */}
+        {saveMode && (
+          <div style={{ marginBottom: "16px", padding: "14px 16px", background: "var(--rc-surface)", border: "1px solid var(--rc-border)", borderRadius: "10px", display: "flex", gap: "8px", alignItems: "center" }}>
+            <input autoFocus value={templateName} onChange={(e) => setTemplateName(e.target.value)} placeholder="Template name…"
+              onKeyDown={(e) => { if (e.key === "Enter") saveAsTemplate(); if (e.key === "Escape") setSaveMode(false); }}
+              style={{ flex: 1, padding: "8px 12px", border: "1px solid var(--rc-border)", borderRadius: "7px", fontSize: "13px", color: "var(--rc-ink)", background: "var(--rc-bg)", outline: "none", fontFamily: "var(--font-inter)" }}
+              onFocus={(e) => (e.target.style.borderColor = "var(--rc-primary)")}
+              onBlur={(e) => (e.target.style.borderColor = "var(--rc-border)")} />
+            <button onClick={saveAsTemplate} disabled={!templateName.trim() || savingTemplate}
+              style={{ padding: "8px 16px", background: "var(--rc-primary)", color: "white", border: "none", borderRadius: "7px", fontWeight: 600, fontSize: "13px", cursor: "pointer", fontFamily: "var(--font-inter)", opacity: !templateName.trim() ? 0.5 : 1 }}>
+              {savingTemplate ? "Saving…" : "Save"}
+            </button>
+            <button onClick={() => setSaveMode(false)} style={{ padding: "6px", background: "none", border: "none", cursor: "pointer", color: "var(--rc-faint)" }}>
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 3l8 8M11 3L3 11" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" /></svg>
+            </button>
+          </div>
+        )}
+
+        {/* Items */}
+        <div style={{ border: "1px solid var(--rc-border)", borderRadius: "12px", overflow: "hidden", marginBottom: "12px" }}>
+          {items.length === 0 && (
+            <div style={{ padding: "28px 20px", textAlign: "center", color: "var(--rc-faint)", fontSize: "13px" }}>No items yet — add one below.</div>
+          )}
+          {items.map((item, i) => (
+            <div key={item.id} style={{ display: "flex", alignItems: "center", gap: "12px", padding: "13px 18px", borderBottom: i < items.length - 1 ? "1px solid var(--rc-border)" : "none", background: item.done ? "oklch(0.985 0.006 145)" : "var(--rc-bg)", transition: "background 0.15s" }}>
+              <button onClick={() => toggleItem(item.id)}
+                style={{ width: "20px", height: "20px", borderRadius: "6px", border: item.done ? "none" : "1.5px solid var(--rc-border)", background: item.done ? "oklch(0.60 0.16 145)" : "transparent", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, cursor: "pointer", padding: 0, transition: "all 0.15s" }}>
+                {item.done && <svg width="11" height="9" viewBox="0 0 11 9" fill="none"><path d="M1 4l3.5 3.5L10 1" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>}
+              </button>
+              <input value={item.text} onChange={(e) => updateText(item.id, e.target.value)} onBlur={(e) => blurText(item.id, e.target.value)} placeholder="Task…"
+                style={{ flex: 1, border: "none", outline: "none", background: "transparent", fontSize: "14px", fontWeight: 500, color: item.done ? "var(--rc-faint)" : "var(--rc-ink)", textDecoration: item.done ? "line-through" : "none", fontFamily: "var(--font-inter)", padding: 0 }} />
+              <button onClick={() => removeItem(item.id)}
+                style={{ background: "none", border: "none", cursor: "pointer", color: "var(--rc-faint)", padding: "2px", flexShrink: 0, opacity: 0.4, transition: "opacity 0.15s" }}
+                onMouseEnter={(e) => (e.currentTarget.style.opacity = "1")}
+                onMouseLeave={(e) => (e.currentTarget.style.opacity = "0.4")}>
+                <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2.5 2.5l8 8M10.5 2.5l-8 8" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" /></svg>
+              </button>
+            </div>
+          ))}
+        </div>
+
+        <button onClick={addItem} style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "13px", fontWeight: 600, color: "var(--rc-primary)", background: "transparent", border: "none", cursor: "pointer", padding: "4px 0", fontFamily: "var(--font-inter)" }}>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /></svg>
+          Add item
+        </button>
+
+        {pct === 100 && items.length > 0 && (
+          <div style={{ marginTop: "20px", padding: "14px 18px", background: "oklch(0.96 0.025 145)", border: "1px solid oklch(0.82 0.08 145)", borderRadius: "10px", display: "flex", alignItems: "center", gap: "10px" }}>
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="7" fill="oklch(0.60 0.16 145)" /><path d="M5.5 9l2.5 2.5 4-5" stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            <span style={{ fontSize: "14px", fontWeight: 600, color: "oklch(0.38 0.13 145)" }}>All marketing tasks complete.</span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // --- Property checklist view ---
 function PropertyChecklist({
   propertyId,
@@ -283,6 +540,7 @@ function PropertyChecklist({
   });
 
   const [openItem, setOpenItem] = useState<number | null>(null);
+  const [activeTab, setActiveTab] = useState<"compliance" | "marketing">("compliance");
 
   function updateItem(key: string, data: ItemData) {
     setItemData((prev) => ({ ...prev, [key]: data }));
@@ -291,10 +549,25 @@ function PropertyChecklist({
   const done = items.filter((_, i) => itemData[`${propertyId}_${i}`]?.status === "complete").length;
   const pct = Math.round((done / items.length) * 100);
 
+  const tabBtnStyle = (active: boolean): React.CSSProperties => ({
+    padding: "14px 0", marginRight: "28px", fontSize: "13px", fontWeight: active ? 700 : 500,
+    color: active ? "var(--rc-ink)" : "var(--rc-faint)", background: "none", border: "none",
+    borderBottom: active ? "2px solid var(--rc-primary)" : "2px solid transparent",
+    cursor: "pointer", fontFamily: "var(--font-inter)", transition: "all 0.15s",
+  });
+
   return (
-    <div style={{ display: "flex", flex: 1, minHeight: 0, alignItems: "flex-start" }}>
+    <div style={{ display: "flex", flex: 1, minHeight: 0, flexDirection: "column" }}>
+      {/* Tab bar */}
+      <div style={{ display: "flex", padding: "0 48px", borderBottom: "1px solid var(--rc-border)", flexShrink: 0 }}>
+        <button style={tabBtnStyle(activeTab === "compliance")} onClick={() => { setActiveTab("compliance"); }}>Compliance</button>
+        <button style={tabBtnStyle(activeTab === "marketing")} onClick={() => { setActiveTab("marketing"); setOpenItem(null); }}>Marketing</button>
+      </div>
+
+      {activeTab === "marketing" ? <MarketingChecklist propertyId={propertyId} /> : (
+      <div style={{ display: "flex", flex: 1, minHeight: 0, alignItems: "flex-start" }}>
       {/* Checklist */}
-      <div style={{ flex: 1, padding: "48px", minWidth: 0 }}>
+      <div style={{ flex: 1, padding: "48px", minWidth: 0, overflowY: "auto" }}>
         <div style={{ maxWidth: "600px" }}>
           {/* Header */}
           <div style={{ marginBottom: "32px" }}>
@@ -436,6 +709,8 @@ function PropertyChecklist({
           onChange={updateItem}
           onClose={() => setOpenItem(null)}
         />
+      )}
+    </div>
       )}
     </div>
   );
@@ -999,6 +1274,7 @@ function SalesPropertyChecklist({
   onRemove: () => void;
 }) {
   const [selectedItem, setSelectedItem] = useState<keyof SalesPropertyState | null>(null);
+  const [activeTab, setActiveTab] = useState<"compliance" | "marketing">("compliance");
   const [savedSlots, setSavedSlots] = useState<Set<string>>(new Set());
 
   useEffect(() => {
@@ -1068,9 +1344,24 @@ function SalesPropertyChecklist({
   const completeCount = items.filter((item) => state[item.key].status === "complete").length;
   const pct = Math.round((completeCount / items.length) * 100);
 
+  const tabBtnSty = (active: boolean): React.CSSProperties => ({
+    padding: "14px 0", marginRight: "28px", fontSize: "13px", fontWeight: active ? 700 : 500,
+    color: active ? "var(--rc-ink)" : "var(--rc-faint)", background: "none", border: "none",
+    borderBottom: active ? "2px solid var(--rc-primary)" : "2px solid transparent",
+    cursor: "pointer", fontFamily: "var(--font-inter)", transition: "all 0.15s",
+  });
+
   return (
-    <div style={{ display: "flex", flex: 1, minHeight: 0, alignItems: "flex-start" }}>
-      <div style={{ flex: 1, padding: "48px", minWidth: 0 }}>
+    <div style={{ display: "flex", flex: 1, minHeight: 0, flexDirection: "column" }}>
+      {/* Tab bar */}
+      <div style={{ display: "flex", padding: "0 48px", borderBottom: "1px solid var(--rc-border)", flexShrink: 0 }}>
+        <button style={tabBtnSty(activeTab === "compliance")} onClick={() => setActiveTab("compliance")}>Compliance</button>
+        <button style={tabBtnSty(activeTab === "marketing")} onClick={() => { setActiveTab("marketing"); setSelectedItem(null); }}>Marketing</button>
+      </div>
+
+      {activeTab === "marketing" ? <MarketingChecklist propertyId={propertyId} /> : (
+      <div style={{ display: "flex", flex: 1, minHeight: 0, alignItems: "flex-start" }}>
+      <div style={{ flex: 1, padding: "48px", minWidth: 0, overflowY: "auto" }}>
         <div style={{ maxWidth: "600px" }}>
           <div style={{ marginBottom: "32px" }}>
             <p style={{ fontSize: "13px", fontWeight: 600, color: "var(--rc-accent-dark)", letterSpacing: "0.04em", textTransform: "uppercase", marginBottom: "6px", maxWidth: "none" }}>
@@ -1202,6 +1493,8 @@ function SalesPropertyChecklist({
           onClose={() => setSelectedItem(null)}
           onFileChange={handleFileChange}
         />
+      )}
+    </div>
       )}
     </div>
   );
