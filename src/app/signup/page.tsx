@@ -166,7 +166,8 @@ export default function SignUpPage() {
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                   <label htmlFor="abn" style={{ fontSize: "14px", fontWeight: 500, color: "var(--rc-ink)" }}>ABN</label>
-                  <input id="abn" type="text" required inputMode="numeric" value={abn}
+                  <input id="abn" type="text" required inputMode="numeric"
+                    value={abn.replace(/^(\d{2})(\d{3})(\d{3})(\d{3})$/, "$1 $2 $3 $4").replace(/^(\d{2})(\d{3})(\d{3})(\d{1,3})$/, "$1 $2 $3 $4").replace(/^(\d{2})(\d{3})(\d{1,3})$/, "$1 $2 $3").replace(/^(\d{2})(\d{1,3})$/, "$1 $2")}
                     onChange={(e) => {
                       const digits = e.target.value.replace(/\D/g, "").slice(0, 11);
                       setAbn(digits);
@@ -295,7 +296,7 @@ export default function SignUpPage() {
                       <span>Agency</span><span style={{ color: "var(--rc-ink)", fontWeight: 500 }}>{agency}</span>
                     </div>
                     <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", color: "var(--rc-muted)", marginBottom: "6px" }}>
-                      <span>ABN</span><span style={{ color: "var(--rc-ink)", fontWeight: 500 }}>{abn}</span>
+                      <span>ABN</span><span style={{ color: "var(--rc-ink)", fontWeight: 500 }}>{abn.replace(/^(\d{2})(\d{3})(\d{3})(\d{3})$/, "$1 $2 $3 $4")}</span>
                     </div>
                     <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", color: "var(--rc-muted)" }}>
                       <span>Account</span><span style={{ color: "var(--rc-ink)", fontWeight: 500 }}>{email}</span>
