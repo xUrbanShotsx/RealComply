@@ -9,9 +9,9 @@
   --rc-nav-border: oklch(0.195 0.007 250);
 
   /* Page surfaces */
-  --rc-bg: oklch(0.978 0.000 0);
-  --rc-surface: oklch(1.000 0.000 0);
-  --rc-surface-2: oklch(0.967 0.003 250);
+  --rc-bg: #ffffff;
+  --rc-surface: #ffffff;
+  --rc-surface-2: oklch(0.962 0.004 250);
   --rc-ink: oklch(0.12 0.008 250);
   --rc-muted: oklch(0.42 0.008 250);
   --rc-faint: oklch(0.57 0.005 250);

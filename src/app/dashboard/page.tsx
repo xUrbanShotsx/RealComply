@@ -77,6 +77,17 @@ const iconMap: Record<string, React.ReactNode> = {
 };
 
 // --- Types ---
+type PolicyRow = {
+  id: string;
+  name: string;
+  category: string | null;
+  status: "current" | "review-due";
+  last_reviewed: string | null;
+  next_review: string | null;
+  content: string | null;
+  source: "template" | "upload";
+};
+
 type ItemStatus = "not_started" | "in_progress" | "complete" | "na";
 interface UploadedFile { name: string; size: string; addedAt: string; }
 interface ItemData { status: ItemStatus; notes: string; files: UploadedFile[]; }
@@ -327,10 +338,12 @@ function PropertyChecklist({
   propertyId,
   address,
   type,
+  onRemove,
 }: {
   propertyId: string;
   address: string;
   type: "sales" | "management";
+  onRemove: () => void;
 }) {
   const items = type === "sales" ? salesChecklist : managementChecklist;
 
@@ -473,6 +486,17 @@ function PropertyChecklist({
               <span style={{ fontSize: "14px", fontWeight: 600, color: "oklch(0.38 0.13 145)" }}>All compliance items complete.</span>
             </div>
           )}
+
+          <div style={{ marginTop: "40px", paddingTop: "24px", borderTop: "1px solid var(--rc-border)" }}>
+            <button
+              onClick={() => { if (window.confirm(`Remove "${address}" from your properties? This cannot be undone.`)) onRemove(); }}
+              style={{ fontSize: "13px", fontWeight: 500, color: "oklch(0.50 0.18 25)", background: "transparent", border: "1px solid oklch(0.82 0.06 25)", borderRadius: "8px", padding: "8px 16px", cursor: "pointer", fontFamily: "var(--font-inter)", transition: "background 0.15s ease, color 0.15s ease" }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = "oklch(0.96 0.02 25)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+            >
+              Remove property
+            </button>
+          </div>
         </div>
       </div>
 
@@ -961,9 +985,11 @@ function SalesItemPanel({
 function SalesPropertyChecklist({
   propertyId,
   address,
+  onRemove,
 }: {
   propertyId: string;
   address: string;
+  onRemove: () => void;
 }) {
   const [selectedItem, setSelectedItem] = useState<keyof SalesPropertyState | null>(null);
   const [state, setState] = useState<SalesPropertyState>({
@@ -1136,6 +1162,17 @@ function SalesPropertyChecklist({
               <span style={{ fontSize: "14px", fontWeight: 600, color: "oklch(0.38 0.13 145)" }}>All compliance items complete.</span>
             </div>
           )}
+
+          <div style={{ marginTop: "40px", paddingTop: "24px", borderTop: "1px solid var(--rc-border)" }}>
+            <button
+              onClick={() => { if (window.confirm(`Remove "${address}" from your properties? This cannot be undone.`)) onRemove(); }}
+              style={{ fontSize: "13px", fontWeight: 500, color: "oklch(0.50 0.18 25)", background: "transparent", border: "1px solid oklch(0.82 0.06 25)", borderRadius: "8px", padding: "8px 16px", cursor: "pointer", fontFamily: "var(--font-inter)", transition: "background 0.15s ease, color 0.15s ease" }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = "oklch(0.96 0.02 25)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+            >
+              Remove property
+            </button>
+          </div>
         </div>
       </div>
 
@@ -1166,7 +1203,8 @@ function computeModuleData(
   moduleId: string,
   staffRows: StaffRow[] = [],
   salesProps: SalesPropItem[] = [],
-  mgmtProps: SalesPropItem[] = []
+  mgmtProps: SalesPropItem[] = [],
+  policies: PolicyRow[] = []
 ): { score: number; detail: string } {
   if (moduleId === "staff") {
     const total = staffRows.length;
@@ -1213,8 +1251,9 @@ function computeModuleData(
     };
   }
   if (moduleId === "policies") {
-    const current = modulePolicies.filter(p => p.status === "current").length;
-    const total = modulePolicies.length;
+    const total = policies.length;
+    if (total === 0) return { score: 0, detail: "No policies added yet" };
+    const current = policies.filter(p => p.status === "current").length;
     const due = total - current;
     return {
       score: Math.round(current / total * 100),
@@ -1222,12 +1261,7 @@ function computeModuleData(
     };
   }
   if (moduleId === "trust") {
-    const reconciled = trustAccounts.filter(a => a.status === "reconciled").length;
-    const total = trustAccounts.length;
-    return {
-      score: Math.round(reconciled / total * 100),
-      detail: reconciled === total ? "All accounts reconciled" : `${total - reconciled} account${total - reconciled !== 1 ? "s" : ""} need attention`,
-    };
+    return { score: 0, detail: "Add trust accounts to track reconciliation" };
   }
   return { score: 0, detail: "" };
 }
@@ -1387,14 +1421,15 @@ function ComplianceChart({ currentScore }: { currentScore: number }) {
 
 
 
-function DashboardHome({ onNavigate, agencyName, staffRows, salesProps, mgmtProps }: {
+function DashboardHome({ onNavigate, agencyName, staffRows, salesProps, mgmtProps, policies }: {
   onNavigate: (id: string) => void;
   agencyName: string;
   staffRows: StaffRow[];
   salesProps: SalesPropItem[];
   mgmtProps: SalesPropItem[];
+  policies: PolicyRow[];
 }) {
-  const moduleScores = moduleOverview.map(m => computeModuleData(m.id, staffRows, salesProps, mgmtProps).score);
+  const moduleScores = moduleOverview.map(m => computeModuleData(m.id, staffRows, salesProps, mgmtProps, policies).score);
   const overallScore = Math.round(moduleScores.reduce((a, b) => a + b, 0) / moduleScores.length);
   const scoreLabel = overallScore >= 85 ? "Good standing" : overallScore >= 65 ? "Needs attention" : "Action required";
   const badgeColor = overallScore >= 85 ? "oklch(0.46 0.13 145)" : overallScore >= 65 ? "oklch(0.50 0.12 55)" : "oklch(0.46 0.18 25)";
@@ -1404,10 +1439,8 @@ function DashboardHome({ onNavigate, agencyName, staffRows, salesProps, mgmtProp
   const totalStaff = staffRows.length;
   const licensedStaff = staffRows.filter(s => s.licence === "current" || s.licence === "exempt").length;
   const renewalDue = totalStaff - licensedStaff;
-  const policiesCurrent = modulePolicies.filter(p => p.status === "current").length;
-  const policiesDue = modulePolicies.length - policiesCurrent;
-  const allReconciled = trustAccounts.every(a => a.status === "reconciled");
-
+  const policiesCurrent = policies.filter(p => p.status === "current").length;
+  const policiesDue = policies.length - policiesCurrent;
   const stats: { label: string; value: string; detail: string; warn: boolean }[] = [
     {
       label: "Properties",
@@ -1423,15 +1456,15 @@ function DashboardHome({ onNavigate, agencyName, staffRows, salesProps, mgmtProp
     },
     {
       label: "Policies current",
-      value: `${policiesCurrent} of ${modulePolicies.length}`,
+      value: policies.length === 0 ? "None yet" : `${policiesCurrent} of ${policies.length}`,
       detail: policiesDue === 0 ? "All policies current" : `${policiesDue} due for review`,
       warn: policiesDue > 0,
     },
     {
       label: "Trust accounts",
-      value: allReconciled ? "Reconciled" : "Needs attention",
-      detail: allReconciled ? "As of today" : `${trustAccounts.filter(a => a.status !== "reconciled").length} account${trustAccounts.filter(a => a.status !== "reconciled").length !== 1 ? "s" : ""} unreconciled`,
-      warn: !allReconciled,
+      value: "—",
+      detail: "Set up in Trust Accounting",
+      warn: false,
     },
   ];
 
@@ -1480,7 +1513,7 @@ function DashboardHome({ onNavigate, agencyName, staffRows, salesProps, mgmtProp
       {/* Module list */}
       <div style={{ flexShrink: 0, background: "var(--rc-surface)", border: "1px solid var(--rc-border)", borderRadius: "14px", overflow: "hidden", boxShadow: "var(--rc-shadow-sm)" }}>
         {moduleOverview.map((m, i) => {
-          const { score } = computeModuleData(m.id, staffRows, salesProps, mgmtProps);
+          const { score } = computeModuleData(m.id, staffRows, salesProps, mgmtProps, policies);
           const trackColor = score >= 85 ? "var(--rc-primary)" : score >= 65 ? "oklch(0.58 0.13 55)" : "oklch(0.52 0.18 25)";
           const pctColor = score >= 85 ? "oklch(0.38 0.12 260)" : score >= 65 ? "oklch(0.44 0.12 55)" : "oklch(0.44 0.17 25)";
           return (
@@ -1522,35 +1555,6 @@ function DashboardHome({ onNavigate, agencyName, staffRows, salesProps, mgmtProp
   );
 }
 
-// --- Module overview data ---
-
-const modulePolicies = [
-  { name: "Supervision Guidelines", status: "current" as const, lastReviewed: "Feb 2026", nextReview: "Feb 2027" },
-  { name: "Privacy & Data Collection Policy", status: "review-due" as const, lastReviewed: "Sep 2025", nextReview: "Sep 2026" },
-  { name: "AML & Counter-Terrorism Financing Policy", status: "review-due" as const, lastReviewed: "Oct 2025", nextReview: "Oct 2026" },
-  { name: "Trust Accounting Procedures", status: "current" as const, lastReviewed: "Mar 2026", nextReview: "Mar 2027" },
-  { name: "Work Health & Safety Policy", status: "review-due" as const, lastReviewed: "Nov 2025", nextReview: "Nov 2026" },
-  { name: "Complaints Handling Procedure", status: "current" as const, lastReviewed: "Dec 2025", nextReview: "Dec 2026" },
-  { name: "Social Media & Marketing Policy", status: "current" as const, lastReviewed: "Apr 2026", nextReview: "Apr 2027" },
-  { name: "Residential Tenancies Act Compliance Procedure", status: "current" as const, lastReviewed: "Jan 2026", nextReview: "Jan 2027" },
-  { name: "Conflicts of Interest Policy", status: "current" as const, lastReviewed: "Mar 2026", nextReview: "Mar 2027" },
-  { name: "Record Keeping & Document Retention Policy", status: "review-due" as const, lastReviewed: "Aug 2025", nextReview: "Aug 2026" },
-];
-
-
-const trustAccounts = [
-  { name: "Sales Trust Account", bank: "CommBank ****4521", balance: "$284,500", lastReconciled: "Today", status: "reconciled" as const },
-  { name: "Rental Trust Account", bank: "CommBank ****8834", balance: "$42,180", lastReconciled: "Today", status: "reconciled" as const },
-];
-
-const trustTransactions = [
-  { description: "Deposit — 8/15 Park Lane", amount: "+$22,000", date: "Today", type: "credit" as const },
-  { description: "Bond lodged — 14 Brunswick St", amount: "+$2,400", date: "Yesterday", type: "credit" as const },
-  { description: "Disbursement — 3 Clifton Ave", amount: "-$18,500", date: "19 Jul", type: "debit" as const },
-  { description: "Rent receipt — 5 Crown St", amount: "+$2,800", date: "18 Jul", type: "credit" as const },
-  { description: "Agent fees — 12 Marine Parade", amount: "-$4,200", date: "17 Jul", type: "debit" as const },
-];
-
 // --- Module Overview ---
 
 function StatusPill({ label, color, bg, border }: { label: string; color: string; bg: string; border: string }) {
@@ -1561,33 +1565,40 @@ function StatusPill({ label, color, bg, border }: { label: string; color: string
   );
 }
 
-function ModuleOverview({ moduleId, onSelectProperty, salesProps, mgmtProps, onAddSalesProperty, staffRows }: {
+function ModuleOverview({ moduleId, onSelectProperty, salesProps, mgmtProps, onAddSalesProperty, onAddMgmtProperty, staffRows, policies }: {
   moduleId: string;
   onSelectProperty: (prop: { type: "property"; section: "sales" | "management"; id: string; address: string }) => void;
   salesProps: SalesPropItem[];
   mgmtProps: SalesPropItem[];
-  onAddSalesProperty: (prop: Required<SalesPropItem>) => Promise<void>;
+  onAddSalesProperty: (prop: Required<SalesPropItem>) => Promise<string | null>;
+  onAddMgmtProperty: (prop: Required<SalesPropItem>) => Promise<string | null>;
   staffRows: StaffRow[];
+  policies: PolicyRow[];
 }) {
   const [showAdd, setShowAdd] = useState(false);
   const [addrInput, setAddrInput] = useState("");
   const [vendorInput, setVendorInput] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
-  function submitAdd() {
+  async function submitAdd() {
     if (!addrInput.trim()) return;
-    onAddSalesProperty({
-      id: `s${Date.now()}`,
-      address: addrInput.trim(),
-      vendorName: vendorInput.trim(),
-      addedAt: new Date().toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" }),
-    });
+    setSaving(true);
+    setSaveError(null);
+    const addedAt = new Date().toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" });
+    const prop: Required<SalesPropItem> = { id: `tmp-${Date.now()}`, address: addrInput.trim(), vendorName: vendorInput.trim(), addedAt };
+    const err = moduleId === "management"
+      ? await onAddMgmtProperty(prop)
+      : await onAddSalesProperty(prop);
+    setSaving(false);
+    if (err) { setSaveError(err); return; }
     setAddrInput("");
     setVendorInput("");
     setShowAdd(false);
   }
 
   const mod = moduleOverview.find(m => m.id === moduleId)!;
-  const { score: modScore, detail: modDetail } = computeModuleData(moduleId, staffRows, salesProps, mgmtProps);
+  const { score: modScore, detail: modDetail } = computeModuleData(moduleId, staffRows, salesProps, mgmtProps, policies);
   const scoreColor = modScore >= 85 ? "oklch(0.42 0.14 145)" : modScore >= 65 ? "oklch(0.50 0.14 55)" : "oklch(0.50 0.20 25)";
   const barColor = modScore >= 85 ? "oklch(0.60 0.16 145)" : modScore >= 65 ? "oklch(0.65 0.16 55)" : "oklch(0.58 0.20 25)";
   const scoreLabel = modScore >= 85 ? "Good standing" : modScore >= 65 ? "Needs attention" : "Action required";
@@ -1598,30 +1609,34 @@ function ModuleOverview({ moduleId, onSelectProperty, salesProps, mgmtProps, onA
   let content: React.ReactNode = null;
 
   if (moduleId === "policies") {
-    const current = modulePolicies.filter(p => p.status === "current").length;
-    const due = modulePolicies.filter(p => p.status === "review-due").length;
+    const current = policies.filter(p => p.status === "current").length;
+    const due = policies.filter(p => p.status === "review-due").length;
     stats = [
-      { label: "Total policies", value: String(modulePolicies.length), sub: "In library" },
+      { label: "Total policies", value: String(policies.length), sub: "In library" },
       { label: "Current", value: String(current), sub: "Up to date" },
       { label: "Due for review", value: String(due), sub: "Action needed" },
       { label: "Overdue", value: "0", sub: "None overdue" },
     ];
-    content = (
+    content = policies.length === 0 ? (
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "12px", border: "1px dashed var(--rc-border)", borderRadius: "12px", background: "var(--rc-surface)" }}>
+        <p style={{ fontSize: "13.5px", color: "var(--rc-faint)", maxWidth: "none", textAlign: "center" }}>No policies yet. Create one via Policy Templates or upload a document.</p>
+      </div>
+    ) : (
       <div style={{ border: "1px solid var(--rc-border)", borderRadius: "12px", overflow: "hidden", flex: 1, display: "flex", flexDirection: "column", boxShadow: "var(--rc-shadow-sm)" }}>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 100px 110px 110px", padding: "10px 20px", borderBottom: "1px solid var(--rc-border)", background: "var(--rc-surface)", flexShrink: 0 }}>
           {["Policy", "Status", "Last reviewed", "Next review"].map(h => (
             <span key={h} style={{ fontSize: "11.5px", color: "var(--rc-faint)" }}>{h}</span>
           ))}
         </div>
-        {modulePolicies.map((p, i) => (
-          <div key={p.name} style={{ display: "grid", gridTemplateColumns: "1fr 100px 110px 110px", padding: "0 20px", flex: 1, borderBottom: i < modulePolicies.length - 1 ? "1px solid var(--rc-border)" : "none", background: "var(--rc-bg)", alignItems: "center" }}>
+        {policies.map((p, i) => (
+          <div key={p.id} style={{ display: "grid", gridTemplateColumns: "1fr 100px 110px 110px", padding: "0 20px", flex: 1, borderBottom: i < policies.length - 1 ? "1px solid var(--rc-border)" : "none", background: "var(--rc-bg)", alignItems: "center" }}>
             <span style={{ fontSize: "13px", fontWeight: 500, color: "var(--rc-ink)" }}>{p.name}</span>
             <div style={{ display: "flex", alignItems: "center", gap: "7px" }}>
               <div style={{ width: "6px", height: "6px", borderRadius: "50%", flexShrink: 0, background: p.status === "current" ? "oklch(0.55 0.16 145)" : "oklch(0.60 0.14 55)" }} />
               <span style={{ fontSize: "12.5px", color: p.status === "current" ? "oklch(0.42 0.12 145)" : "oklch(0.46 0.12 55)" }}>{p.status === "current" ? "Current" : "Review due"}</span>
             </div>
-            <span style={{ fontSize: "12.5px", color: "var(--rc-faint)" }}>{p.lastReviewed}</span>
-            <span style={{ fontSize: "12.5px", color: p.status === "review-due" ? "oklch(0.46 0.12 55)" : "var(--rc-faint)" }}>{p.nextReview}</span>
+            <span style={{ fontSize: "12.5px", color: "var(--rc-faint)" }}>{p.last_reviewed ?? "—"}</span>
+            <span style={{ fontSize: "12.5px", color: p.status === "review-due" ? "oklch(0.46 0.12 55)" : "var(--rc-faint)" }}>{p.next_review ?? "—"}</span>
           </div>
         ))}
       </div>
@@ -1650,7 +1665,13 @@ function ModuleOverview({ moduleId, onSelectProperty, salesProps, mgmtProps, onA
           const trackColor = pct === 100 ? "var(--rc-primary)" : pct >= 50 ? "oklch(0.60 0.14 55)" : "oklch(0.55 0.20 25)";
           const pctColor = pct === 100 ? "oklch(0.38 0.12 145)" : pct >= 50 ? "oklch(0.46 0.12 55)" : "oklch(0.46 0.18 25)";
           return (
-            <div key={prop.id} style={{ display: "grid", gridTemplateColumns: "1fr 200px 56px 110px", alignItems: "center", gap: "20px", padding: "12px 24px", borderBottom: i < props.length - 1 ? "1px solid var(--rc-border)" : "none", background: "var(--rc-bg)" }}>
+            <div
+              key={prop.id}
+              onClick={() => onSelectProperty({ type: "property", section, id: prop.id, address: prop.address })}
+              style={{ display: "grid", gridTemplateColumns: "1fr 200px 56px", alignItems: "center", gap: "20px", padding: "12px 24px", borderBottom: i < props.length - 1 ? "1px solid var(--rc-border)" : "none", background: "var(--rc-bg)", cursor: "pointer", transition: "background 0.12s ease" }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.background = "var(--rc-surface)"; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.background = "var(--rc-bg)"; }}
+            >
               <div style={{ minWidth: 0 }}>
                 <p style={{ fontSize: "13.5px", fontWeight: 500, color: "var(--rc-ink)", margin: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{prop.address}</p>
                 {(prop.vendorName || prop.addedAt) && (
@@ -1666,14 +1687,6 @@ function ModuleOverview({ moduleId, onSelectProperty, salesProps, mgmtProps, onA
                 <span style={{ fontSize: "11.5px", color: "var(--rc-faint)", flexShrink: 0 }}>{done}/{total}</span>
               </div>
               <span style={{ fontSize: "13px", fontWeight: 600, color: pctColor, textAlign: "right" }}>{pct}%</span>
-              <button
-                onClick={() => onSelectProperty({ type: "property", section, id: prop.id, address: prop.address })}
-                style={{ fontSize: "12px", fontWeight: 500, color: "var(--rc-faint)", background: "transparent", border: "none", padding: "0", cursor: "pointer", fontFamily: "var(--font-inter)", whiteSpace: "nowrap", textAlign: "right", transition: "color 0.1s ease" }}
-                onMouseEnter={(e) => { e.currentTarget.style.color = "var(--rc-ink)"; }}
-                onMouseLeave={(e) => { e.currentTarget.style.color = "var(--rc-faint)"; }}
-              >
-                View checklist →
-              </button>
             </div>
           );
         })}
@@ -1731,46 +1744,16 @@ function ModuleOverview({ moduleId, onSelectProperty, salesProps, mgmtProps, onA
 
   if (moduleId === "trust") {
     stats = [
-      { label: "Trust accounts", value: "2", sub: "Sales & rental" },
-      { label: "Last reconciled", value: "Today", sub: "Both accounts" },
-      { label: "Entries this month", value: "47", sub: "Transactions" },
-      { label: "AML checks", value: "100%", sub: "All complete" },
+      { label: "Trust accounts", value: "—", sub: "Set up in Account Reconciliation" },
+      { label: "Transactions", value: "—", sub: "Log entries in Transaction Log" },
+      { label: "AML checks", value: "—", sub: "Track in AML Compliance" },
+      { label: "Audit reports", value: "—", sub: "Upload in Audit Reports" },
     ];
     content = (
-      <div style={{ flex: 1, display: "flex", gap: "16px", minHeight: 0 }}>
-        {/* Account cards */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "12px", width: "260px", flexShrink: 0 }}>
-          {trustAccounts.map(acc => (
-            <div key={acc.name} style={{ border: "1px solid var(--rc-border)", background: "var(--rc-bg)", borderRadius: "12px", padding: "20px 20px", flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between", boxShadow: "var(--rc-shadow-sm)" }}>
-              <div>
-                <div style={{ display: "flex", alignItems: "center", gap: "7px", marginBottom: "12px" }}>
-                  <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: "oklch(0.55 0.16 145)" }} />
-                  <span style={{ fontSize: "11.5px", color: "oklch(0.42 0.12 145)" }}>Reconciled</span>
-                </div>
-                <p style={{ fontSize: "13.5px", fontWeight: 600, color: "var(--rc-ink)", marginBottom: "3px" }}>{acc.name}</p>
-                <p style={{ fontSize: "12px", color: "var(--rc-faint)", maxWidth: "none" }}>{acc.bank}</p>
-              </div>
-              <div>
-                <p style={{ fontSize: "1.4rem", fontWeight: 600, color: "var(--rc-ink)", letterSpacing: "-0.03em", marginBottom: "2px" }}>{acc.balance}</p>
-                <p style={{ fontSize: "11px", color: "var(--rc-faint)", maxWidth: "none" }}>Reconciled {acc.lastReconciled.toLowerCase()}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-        {/* Transactions */}
-        <div style={{ flex: 1, border: "1px solid var(--rc-border)", borderRadius: "12px", overflow: "hidden", display: "flex", flexDirection: "column", boxShadow: "var(--rc-shadow-sm)" }}>
-          <div style={{ padding: "11px 20px", borderBottom: "1px solid var(--rc-border)", background: "var(--rc-surface)" }}>
-            <span style={{ fontSize: "11.5px", color: "var(--rc-faint)" }}>Recent transactions</span>
-          </div>
-          {trustTransactions.map((tx, i) => (
-            <div key={i} style={{ display: "grid", gridTemplateColumns: "20px 1fr 70px 80px", alignItems: "center", gap: "14px", padding: "0 20px", flex: 1, borderBottom: i < trustTransactions.length - 1 ? "1px solid var(--rc-border)" : "none", background: "var(--rc-bg)" }}>
-              <span style={{ fontSize: "13px", color: tx.type === "credit" ? "oklch(0.50 0.14 145)" : "oklch(0.50 0.14 25)", fontWeight: 500 }}>{tx.type === "credit" ? "↑" : "↓"}</span>
-              <p style={{ fontSize: "13px", color: "var(--rc-ink)", fontWeight: 500, margin: 0 }}>{tx.description}</p>
-              <span style={{ fontSize: "12px", color: "var(--rc-faint)", textAlign: "right" }}>{tx.date}</span>
-              <span style={{ fontSize: "13px", fontWeight: 600, color: tx.type === "credit" ? "oklch(0.38 0.12 145)" : "oklch(0.46 0.18 25)", textAlign: "right" }}>{tx.amount}</span>
-            </div>
-          ))}
-        </div>
+      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <p style={{ fontSize: "14px", color: "var(--rc-faint)", textAlign: "center", maxWidth: "none" }}>
+          Use the sections on the left to set up trust accounts, log transactions, and manage AML checks.
+        </p>
       </div>
     );
   }
@@ -1787,7 +1770,7 @@ function ModuleOverview({ moduleId, onSelectProperty, salesProps, mgmtProps, onA
           <p style={{ fontSize: "12.5px", color: "var(--rc-faint)", maxWidth: "none", marginTop: "1px" }}>{modDetail}</p>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          {moduleId === "sales" && (
+          {(moduleId === "sales" || moduleId === "management") && (
             <button
               onClick={() => setShowAdd(true)}
               style={{ fontSize: "12.5px", fontWeight: 600, color: "white", background: "var(--rc-primary)", border: "none", borderRadius: "8px", padding: "7px 14px", cursor: "pointer", fontFamily: "var(--font-inter)" }}
@@ -1821,7 +1804,7 @@ function ModuleOverview({ moduleId, onSelectProperty, salesProps, mgmtProps, onA
       {/* Add property modal */}
       {showAdd && (
         <div
-          onClick={() => setShowAdd(false)}
+          onClick={() => { if (!saving) { setShowAdd(false); setSaveError(null); } }}
           style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.35)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center" }}
         >
           <div
@@ -1839,34 +1822,43 @@ function ModuleOverview({ moduleId, onSelectProperty, salesProps, mgmtProps, onA
                   autoFocus
                   value={addrInput}
                   onChange={(e) => setAddrInput(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === "Enter") submitAdd(); if (e.key === "Escape") setShowAdd(false); }}
+                  onKeyDown={(e) => { if (e.key === "Enter") submitAdd(); if (e.key === "Escape") { setShowAdd(false); setSaveError(null); } }}
                   placeholder="e.g. 42 Harbour View Rd, Balmain"
                   style={inputSty2}
+                  disabled={saving}
                 />
               </div>
               <div>
-                <p style={{ fontSize: "11.5px", fontWeight: 600, color: "var(--rc-faint)", margin: "0 0 6px", textTransform: "uppercase", letterSpacing: "0.04em" }}>Vendor name <span style={{ fontWeight: 400, textTransform: "none" }}>(optional)</span></p>
+                <p style={{ fontSize: "11.5px", fontWeight: 600, color: "var(--rc-faint)", margin: "0 0 6px", textTransform: "uppercase", letterSpacing: "0.04em" }}>{moduleId === "management" ? "Owner name" : "Vendor name"} <span style={{ fontWeight: 400, textTransform: "none" }}>(optional)</span></p>
                 <input
                   value={vendorInput}
                   onChange={(e) => setVendorInput(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === "Enter") submitAdd(); if (e.key === "Escape") setShowAdd(false); }}
-                  placeholder="e.g. John & Mary Thompson"
+                  onKeyDown={(e) => { if (e.key === "Enter") submitAdd(); if (e.key === "Escape") { setShowAdd(false); setSaveError(null); } }}
+                  placeholder={moduleId === "management" ? "e.g. Sarah & James Nguyen" : "e.g. John & Mary Thompson"}
                   style={inputSty2}
+                  disabled={saving}
                 />
               </div>
+              {saveError && (
+                <p style={{ fontSize: "12px", color: "oklch(0.50 0.20 25)", margin: 0, maxWidth: "none", background: "oklch(0.97 0.02 25)", border: "1px solid oklch(0.88 0.06 25)", borderRadius: "8px", padding: "8px 12px" }}>
+                  Save failed: {saveError}
+                </p>
+              )}
             </div>
             <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}>
               <button
-                onClick={() => setShowAdd(false)}
+                onClick={() => { setShowAdd(false); setSaveError(null); }}
+                disabled={saving}
                 style={{ fontSize: "13px", fontWeight: 500, color: "var(--rc-faint)", background: "transparent", border: "1px solid var(--rc-border)", borderRadius: "8px", padding: "8px 16px", cursor: "pointer", fontFamily: "var(--font-inter)" }}
               >
                 Cancel
               </button>
               <button
                 onClick={submitAdd}
-                style={{ fontSize: "13px", fontWeight: 600, color: "white", background: "var(--rc-primary)", border: "none", borderRadius: "8px", padding: "8px 16px", cursor: "pointer", fontFamily: "var(--font-inter)" }}
+                disabled={saving}
+                style={{ fontSize: "13px", fontWeight: 600, color: "white", background: saving ? "var(--rc-faint)" : "var(--rc-primary)", border: "none", borderRadius: "8px", padding: "8px 16px", cursor: saving ? "default" : "pointer", fontFamily: "var(--font-inter)" }}
               >
-                Add property
+                {saving ? "Saving…" : "Add property"}
               </button>
             </div>
           </div>
@@ -1889,40 +1881,12 @@ const policyTemplates = [
   { name: "Record Keeping Policy Template", category: "Compliance", updated: "Aug 2025" },
 ];
 
-const auditReports = [
-  { name: "Annual Compliance Report — FY 2025/26", generated: "1 Jul 2026", type: "Annual", pages: 24 },
-  { name: "Trust Account Audit — Q4 2025/26", generated: "30 Jun 2026", type: "Trust", pages: 8 },
-  { name: "AML/CTF Compliance Review — Jun 2026", generated: "15 Jun 2026", type: "AML", pages: 12 },
-  { name: "Staff Licencing Audit — Jun 2026", generated: "10 Jun 2026", type: "Staff", pages: 6 },
-  { name: "Trust Account Audit — Q3 2025/26", generated: "31 Mar 2026", type: "Trust", pages: 9 },
-  { name: "Annual Compliance Report — FY 2024/25", generated: "1 Jul 2025", type: "Annual", pages: 22 },
-];
+const auditReports: { name: string; generated: string; type: string; pages: number }[] = [];
 
-const allTransactions = [
-  { description: "Deposit — 8/15 Park Lane", account: "Sales Trust", amount: "+$22,000", date: "Today", type: "credit" as const },
-  { description: "Bond lodged — 14 Brunswick St", account: "Rental Trust", amount: "+$2,400", date: "Yesterday", type: "credit" as const },
-  { description: "Disbursement — 3 Clifton Ave", account: "Sales Trust", amount: "-$18,500", date: "19 Jul", type: "debit" as const },
-  { description: "Rent received — 5 Crown St", account: "Rental Trust", amount: "+$2,800", date: "18 Jul", type: "credit" as const },
-  { description: "Agent fees — 12 Marine Parade", account: "Sales Trust", amount: "-$4,200", date: "17 Jul", type: "debit" as const },
-  { description: "Bond lodged — 31 King St", account: "Rental Trust", amount: "+$2,200", date: "16 Jul", type: "credit" as const },
-  { description: "Rent received — 19 Glebe Point Rd", account: "Rental Trust", amount: "+$3,100", date: "15 Jul", type: "credit" as const },
-  { description: "Disbursement — 7 Rose Bay Dr", account: "Sales Trust", amount: "-$32,000", date: "14 Jul", type: "debit" as const },
-  { description: "Deposit — 42 Harbour View Rd", account: "Sales Trust", amount: "+$45,000", date: "12 Jul", type: "credit" as const },
-  { description: "Management fees — Jul 2026", account: "Rental Trust", amount: "-$8,400", date: "11 Jul", type: "debit" as const },
-];
-
-const amlChecks = [
-  { address: "42 Harbour View Rd, Balmain", party: "John & Mary Thompson", type: "Vendor", verified: true, date: "12 May 2026", method: "Document verification" },
-  { address: "8/15 Park Lane, Surry Hills", party: "David Chen", type: "Vendor", verified: true, date: "3 Jun 2026", method: "Document verification" },
-  { address: "3 Clifton Ave, Mosman", party: "Sarah & Peter Williams", type: "Vendor", verified: true, date: "28 Apr 2026", method: "Document verification" },
-  { address: "12 Marine Parade, Manly", party: "Estate of R. Jones", type: "Vendor", verified: false, date: "—", method: "Pending" },
-  { address: "7 Rose Bay Dr, Rose Bay", party: "Michael & Lisa Park", type: "Vendor", verified: true, date: "15 Mar 2026", method: "Document verification" },
-  { address: "14 Brunswick St, Newtown", party: "Jake Morrison", type: "Tenant", verified: true, date: "1 Jul 2026", method: "Document verification" },
-  { address: "2/88 Oxford St, Paddington", party: "Aisha Patel", type: "Tenant", verified: true, date: "20 Jun 2026", method: "Document verification" },
-  { address: "5 Crown St, Darlinghurst", party: "Tom & Linda Harris", type: "Tenant", verified: true, date: "15 Jun 2026", method: "Document verification" },
-  { address: "31 King St, Randwick", party: "Zhang Wei", type: "Tenant", verified: true, date: "10 Jun 2026", method: "Document verification" },
-  { address: "19 Glebe Point Rd, Glebe", party: "Sophie & Marcus Young", type: "Tenant", verified: true, date: "5 Jun 2026", method: "Document verification" },
-];
+type TrustAccountRow = { id: string; name: string; bank: string; balance: string; last_reconciled: string | null; status: "reconciled" | "pending" };
+type TrustTransactionRow = { id: string; description: string; account: string; amount: string; type: "credit" | "debit"; date: string };
+type AMLCheckRow = { id: string; address: string; party: string; party_type: string; verified: boolean; verified_date: string | null; method: string | null };
+type TrustReportRow = { id: string; month: string; account: string; notes: string | null; file_url: string | null; file_name: string | null; uploaded_at: string };
 
 type OBField = { id: string; label: string; placeholder: string; type?: "text" | "date" | "textarea" };
 type OBItemConfig = { id: string; label: string; description: string; fields: OBField[]; docTitle: string };
@@ -2079,7 +2043,7 @@ function RedDot() { return <div style={{ width: "6px", height: "6px", borderRadi
 function TableWrap({ children, cols }: { children: React.ReactNode; cols: string }) {
   return (
     <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, border: "1px solid var(--rc-border)", borderRadius: "12px", overflow: "hidden", boxShadow: "var(--rc-shadow-sm)" }}>
-      <div style={{ display: "grid", gridTemplateColumns: cols, ...TH, padding: "10px 20px", display: "contents" }}>
+      <div style={{ gridTemplateColumns: cols, ...TH, display: "contents" }}>
         {/* children render as display:contents */}
       </div>
       {children}
@@ -2087,47 +2051,199 @@ function TableWrap({ children, cols }: { children: React.ReactNode; cols: string
   );
 }
 
-function AllPoliciesPage() {
+function downloadPolicyPDF(p: PolicyRow) {
+  const content = p.content ?? "(No content stored for this policy.)";
+  const statusLabel = p.status === "current" ? "Current" : "Review Due";
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${p.name}</title><style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:'Times New Roman',Times,serif;font-size:11pt;line-height:1.65;color:#1a1a1a;padding:40px 48px}
+    .meta{font-size:9.5pt;color:#555;border-bottom:1px solid #ccc;padding-bottom:12px;margin-bottom:24px;display:flex;justify-content:space-between;align-items:flex-start}
+    .meta-left{display:flex;flex-direction:column;gap:3px}
+    .meta-badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:8.5pt;font-weight:700;background:${p.status==="current"?"#e6f4ec":"#fef3e2"};color:${p.status==="current"?"#276f43":"#92450a"};border:1px solid ${p.status==="current"?"#a8d5b5":"#f5c97a"}}
+    pre{white-space:pre-wrap;word-wrap:break-word;font-family:'Times New Roman',Times,serif;font-size:11pt;line-height:1.7}
+    @media print{body{padding:20px 28px}@page{margin:18mm 20mm;size:A4}}
+  </style></head><body>
+    <div class="meta">
+      <div class="meta-left">
+        <span style="font-size:8.5pt;color:#888">REALCOMPLY — POLICY DOCUMENT</span>
+        <span style="font-size:9pt;color:#555">Category: ${p.category ?? "General"} &nbsp;·&nbsp; Last reviewed: ${p.last_reviewed ?? "—"} &nbsp;·&nbsp; Next review: ${p.next_review ?? "—"}</span>
+      </div>
+      <span class="meta-badge">${statusLabel}</span>
+    </div>
+    <pre>${content.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}</pre>
+  </body></html>`;
+  const win = window.open("", "_blank");
+  if (!win) return;
+  win.document.write(html);
+  win.document.close();
+  win.focus();
+  setTimeout(() => { win.print(); }, 400);
+}
+
+function PolicyDetailView({ policy, onBack, onMarkReviewed, onDelete }: { policy: PolicyRow; onBack: () => void; onMarkReviewed?: (p: PolicyRow) => void; onDelete?: (p: PolicyRow) => void }) {
+  const [marking, setMarking] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  async function handleMarkReviewed() {
+    if (!onMarkReviewed) return;
+    setMarking(true);
+    await onMarkReviewed(policy);
+    setMarking(false);
+  }
+
+  async function handleDelete() {
+    if (!onDelete) return;
+    if (!window.confirm(`Delete "${policy.name}"? This cannot be undone.`)) return;
+    setDeleting(true);
+    await onDelete(policy);
+  }
+
+  const cat = catColors[policy.category ?? ""] ?? catColors["Admin"];
+
+  return (
+    <div style={{ ...PAGE_WRAP, position: "relative" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "20px", flexShrink: 0 }}>
+        <button onClick={onBack} style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "13px", color: "var(--rc-faint)", background: "transparent", border: "none", cursor: "pointer", fontFamily: "var(--font-inter)", padding: 0, transition: "color 0.15s ease" }}
+          onMouseEnter={e => (e.currentTarget.style.color = "var(--rc-ink)")} onMouseLeave={e => (e.currentTarget.style.color = "var(--rc-faint)")}>
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9 2L4 7l5 5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          Back to policies
+        </button>
+      </div>
+
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "16px", marginBottom: "20px", flexShrink: 0, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+          <h1 style={{ ...PAGE_H1, marginBottom: 0 }}>{policy.name}</h1>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+            {policy.category && (
+              <span style={{ fontSize: "11.5px", fontWeight: 600, padding: "3px 10px", borderRadius: "6px", background: cat.bg, color: cat.color }}>{policy.category}</span>
+            )}
+            <span style={{ fontSize: "12px", color: policy.status === "current" ? "oklch(0.42 0.12 145)" : "oklch(0.46 0.12 55)", display: "flex", alignItems: "center", gap: "5px" }}>
+              {policy.status === "current" ? <GreenDot /> : <AmberDot />}
+              {policy.status === "current" ? "Current" : "Review due"}
+            </span>
+            {policy.last_reviewed && <span style={{ fontSize: "12px", color: "var(--rc-faint)" }}>Last reviewed: {policy.last_reviewed}</span>}
+            {policy.next_review && <span style={{ fontSize: "12px", color: policy.status === "review-due" ? "oklch(0.46 0.12 55)" : "var(--rc-faint)" }}>Next review: {policy.next_review}</span>}
+          </div>
+        </div>
+
+        <div style={{ display: "flex", gap: "10px", alignItems: "center", flexShrink: 0 }}>
+          {policy.status === "review-due" && onMarkReviewed && (
+            <button onClick={handleMarkReviewed} disabled={marking} style={{ fontSize: "13px", fontWeight: 500, color: "var(--rc-ink)", background: "var(--rc-surface)", border: "1px solid var(--rc-border)", borderRadius: "8px", padding: "8px 16px", cursor: "pointer", fontFamily: "var(--font-inter)", transition: "background 0.15s ease", opacity: marking ? 0.6 : 1 }}>
+              {marking ? "Saving…" : "Mark reviewed"}
+            </button>
+          )}
+          <button onClick={() => downloadPolicyPDF(policy)} style={{ display: "flex", alignItems: "center", gap: "7px", fontSize: "13px", fontWeight: 600, color: "white", background: "var(--rc-primary)", border: "none", borderRadius: "8px", padding: "8px 18px", cursor: "pointer", fontFamily: "var(--font-inter)", transition: "opacity 0.15s ease" }}
+            onMouseEnter={e => (e.currentTarget.style.opacity = "0.88")} onMouseLeave={e => (e.currentTarget.style.opacity = "1")}>
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v8M4 6l3 3 3-3M2 11h10" stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            Download PDF
+          </button>
+          {onDelete && (
+            <button onClick={handleDelete} disabled={deleting} style={{ display: "flex", alignItems: "center", gap: "7px", fontSize: "13px", fontWeight: 500, color: "oklch(0.50 0.18 25)", background: "transparent", border: "1px solid oklch(0.82 0.06 25)", borderRadius: "8px", padding: "8px 16px", cursor: "pointer", fontFamily: "var(--font-inter)", transition: "background 0.15s ease, color 0.15s ease", opacity: deleting ? 0.5 : 1 }}
+              onMouseEnter={e => { e.currentTarget.style.background = "oklch(0.96 0.02 25)"; }} onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}>
+              <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 3h9M5 3V2h3v1M3.5 3l.5 8h5l.5-8" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              {deleting ? "Deleting…" : "Delete"}
+            </button>
+          )}
+        </div>
+      </div>
+
+      <div style={{ flex: 1, minHeight: 0, border: "1px solid var(--rc-border)", borderRadius: "12px", overflow: "hidden", boxShadow: "var(--rc-shadow-sm)", background: "var(--rc-bg)" }}>
+        <div style={{ overflowY: "auto", height: "100%", padding: "28px 32px" }}>
+          {policy.content ? (
+            <pre style={{ whiteSpace: "pre-wrap", wordWrap: "break-word", fontFamily: "'Georgia', serif", fontSize: "13.5px", lineHeight: 1.8, color: "var(--rc-ink)", margin: 0 }}>
+              {policy.content}
+            </pre>
+          ) : (
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "200px" }}>
+              <p style={{ fontSize: "14px", color: "var(--rc-faint)", maxWidth: "none" }}>No content stored for this policy. Re-generate it from Policy Templates to store the full text.</p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AllPoliciesPage({ policies, onPolicyUpdated, onPolicyDeleted }: { policies: PolicyRow[]; onPolicyUpdated: (p: PolicyRow) => void; onPolicyDeleted: (id: string) => void }) {
   const [search, setSearch] = useState("");
-  const filtered = modulePolicies.filter(p => p.name.toLowerCase().includes(search.toLowerCase()));
+  const [viewPolicy, setViewPolicy] = useState<PolicyRow | null>(null);
+  const filtered = policies.filter(p => p.name.toLowerCase().includes(search.toLowerCase()));
   const cols = "minmax(0,1fr) 110px 130px 130px 110px";
+
+  async function markReviewed(p: PolicyRow) {
+    const today = new Date();
+    const fmtDate = (d: Date) => d.toLocaleDateString("en-AU", { month: "short", year: "numeric" });
+    const nextYear = new Date(today); nextYear.setFullYear(nextYear.getFullYear() + 1);
+    const { data, error } = await supabase.from("policies").update({
+      status: "current", last_reviewed: fmtDate(today), next_review: fmtDate(nextYear),
+    }).eq("id", p.id).select().single();
+    if (!error && data) {
+      const updated = { ...p, status: "current" as const, last_reviewed: data.last_reviewed, next_review: data.next_review };
+      onPolicyUpdated(updated);
+      if (viewPolicy?.id === p.id) setViewPolicy(updated);
+    }
+  }
+
+  async function deletePolicy(p: PolicyRow) {
+    const { error } = await supabase.from("policies").delete().eq("id", p.id);
+    if (!error) { onPolicyDeleted(p.id); setViewPolicy(null); }
+  }
+
+  if (viewPolicy) {
+    return <PolicyDetailView policy={viewPolicy} onBack={() => setViewPolicy(null)} onMarkReviewed={viewPolicy.status === "review-due" ? markReviewed : undefined} onDelete={deletePolicy} />;
+  }
+
   return (
     <div style={PAGE_WRAP}>
       <div style={PAGE_HEADER}>
         <div>
           <h1 style={PAGE_H1}>All Policies</h1>
-          <p style={PAGE_SUB}>{modulePolicies.length} documents in library</p>
+          <p style={PAGE_SUB}>{policies.length} document{policies.length !== 1 ? "s" : ""} in library</p>
         </div>
         <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search policies…"
           style={{ padding: "8px 14px", borderRadius: "8px", border: "1px solid var(--rc-border)", fontSize: "13px", color: "var(--rc-ink)", background: "var(--rc-bg)", fontFamily: "var(--font-inter)", outline: "none", width: "220px" }}
           onFocus={e => (e.target.style.borderColor = "var(--rc-primary)")} onBlur={e => (e.target.style.borderColor = "var(--rc-border)")} />
       </div>
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, border: "1px solid var(--rc-border)", borderRadius: "12px", overflow: "hidden", boxShadow: "var(--rc-shadow-sm)" }}>
-        <div style={{ display: "grid", gridTemplateColumns: cols, flexShrink: 0, background: "var(--rc-surface)", borderBottom: "1px solid var(--rc-border)" }}>
-          {["Policy name", "Status", "Last reviewed", "Next review", "Action"].map(h => (
-            <span key={h} style={{ fontSize: "11.5px", color: "var(--rc-faint)", padding: "10px 20px" }}>{h}</span>
-          ))}
+      {policies.length === 0 ? (
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "10px" }}>
+          <p style={{ fontSize: "14px", color: "var(--rc-faint)", maxWidth: "none", textAlign: "center" }}>No policies yet. Use Policy Templates or Upload Document to add your first one.</p>
         </div>
-        <div style={{ flex: 1, overflowY: "auto" }}>
-          {filtered.map((p, i) => (
-            <div key={p.name} style={{ display: "grid", gridTemplateColumns: cols, alignItems: "center", borderBottom: i < filtered.length - 1 ? "1px solid var(--rc-border)" : "none", background: "var(--rc-bg)" }}>
-              <span style={{ fontSize: "13px", fontWeight: 500, color: "var(--rc-ink)", padding: "14px 20px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</span>
-              <div style={{ display: "flex", alignItems: "center", gap: "7px", padding: "0 20px" }}>
-                {p.status === "current" ? <GreenDot /> : <AmberDot />}
-                <span style={{ fontSize: "12.5px", color: p.status === "current" ? "oklch(0.42 0.12 145)" : "oklch(0.46 0.12 55)" }}>{p.status === "current" ? "Current" : "Review due"}</span>
-              </div>
-              <span style={{ fontSize: "12.5px", color: "var(--rc-faint)", padding: "0 20px" }}>{p.lastReviewed}</span>
-              <span style={{ fontSize: "12.5px", color: p.status === "review-due" ? "oklch(0.46 0.12 55)" : "var(--rc-faint)", padding: "0 20px" }}>{p.nextReview}</span>
-              <div style={{ padding: "0 20px" }}>
-                <button style={{ fontSize: "12px", fontWeight: 500, color: "var(--rc-faint)", background: "transparent", border: "none", padding: 0, cursor: "pointer", fontFamily: "var(--font-inter)", transition: "color 0.1s ease" }}
-                  onMouseEnter={e => (e.currentTarget.style.color = "var(--rc-ink)")} onMouseLeave={e => (e.currentTarget.style.color = "var(--rc-faint)")}>
-                  {p.status === "review-due" ? "Mark reviewed →" : "View →"}
+      ) : (
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, border: "1px solid var(--rc-border)", borderRadius: "12px", overflow: "hidden", boxShadow: "var(--rc-shadow-sm)" }}>
+          <div style={{ display: "grid", gridTemplateColumns: cols, flexShrink: 0, background: "var(--rc-surface)", borderBottom: "1px solid var(--rc-border)" }}>
+            {["Policy name", "Status", "Last reviewed", "Next review", "Action"].map(h => (
+              <span key={h} style={{ fontSize: "11.5px", color: "var(--rc-faint)", padding: "10px 20px" }}>{h}</span>
+            ))}
+          </div>
+          <div style={{ flex: 1, overflowY: "auto" }}>
+            {filtered.map((p, i) => (
+              <div key={p.id} style={{ display: "grid", gridTemplateColumns: cols, alignItems: "center", borderBottom: i < filtered.length - 1 ? "1px solid var(--rc-border)" : "none", background: "var(--rc-bg)", cursor: "pointer", transition: "background 0.1s ease" }}
+                onMouseEnter={e => (e.currentTarget.style.background = "var(--rc-surface)")} onMouseLeave={e => (e.currentTarget.style.background = "var(--rc-bg)")}>
+                <button onClick={() => setViewPolicy(p)} style={{ fontSize: "13px", fontWeight: 500, color: "var(--rc-primary)", padding: "14px 20px", background: "transparent", border: "none", cursor: "pointer", fontFamily: "var(--font-inter)", textAlign: "left", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", transition: "opacity 0.1s ease" }}
+                  onMouseEnter={e => (e.currentTarget.style.opacity = "0.75")} onMouseLeave={e => (e.currentTarget.style.opacity = "1")}>
+                  {p.name}
                 </button>
+                <div style={{ display: "flex", alignItems: "center", gap: "7px", padding: "0 20px" }}>
+                  {p.status === "current" ? <GreenDot /> : <AmberDot />}
+                  <span style={{ fontSize: "12.5px", color: p.status === "current" ? "oklch(0.42 0.12 145)" : "oklch(0.46 0.12 55)" }}>{p.status === "current" ? "Current" : "Review due"}</span>
+                </div>
+                <span style={{ fontSize: "12.5px", color: "var(--rc-faint)", padding: "0 20px" }}>{p.last_reviewed ?? "—"}</span>
+                <span style={{ fontSize: "12.5px", color: p.status === "review-due" ? "oklch(0.46 0.12 55)" : "var(--rc-faint)", padding: "0 20px" }}>{p.next_review ?? "—"}</span>
+                <div style={{ padding: "0 20px" }}>
+                  {p.status === "review-due" ? (
+                    <button onClick={e => { e.stopPropagation(); markReviewed(p); }} style={{ fontSize: "12px", fontWeight: 500, color: "var(--rc-faint)", background: "transparent", border: "none", padding: 0, cursor: "pointer", fontFamily: "var(--font-inter)", transition: "color 0.1s ease" }}
+                      onMouseEnter={e => (e.currentTarget.style.color = "var(--rc-ink)")} onMouseLeave={e => (e.currentTarget.style.color = "var(--rc-faint)")}>
+                      Mark reviewed →
+                    </button>
+                  ) : (
+                    <span style={{ fontSize: "12px", color: "var(--rc-faint)" }}>—</span>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
@@ -2150,113 +2266,1270 @@ const policyTemplateConfigs: PTConfig[] = [
     description: "Defines how licensed staff are supervised in line with NSW Fair Trading requirements.",
     questions: [
       { id: "agency", label: "Agency / business name", placeholder: "e.g. Ray White Bondi Junction" },
-      { id: "principal", label: "Principal licensee name", placeholder: "e.g. Sarah Mitchell" },
-      { id: "staffCount", label: "Number of licensed staff supervised", placeholder: "e.g. 9" },
-      { id: "method", label: "Primary supervision method", placeholder: "e.g. weekly team meetings and daily check-ins", multiline: true },
-      { id: "records", label: "How are supervision records kept?", placeholder: "e.g. recorded in RealComply and reviewed monthly", multiline: true },
-      { id: "review", label: "How often is this policy reviewed?", placeholder: "e.g. Annually, or following any regulatory change" },
+      { id: "abn", label: "Agency ABN", placeholder: "e.g. 12 345 678 901" },
+      { id: "principal", label: "Principal licensee full name", placeholder: "e.g. Sarah Mitchell" },
+      { id: "licenceNo", label: "Principal licence number", placeholder: "e.g. 1234567" },
+      { id: "staffCount", label: "Number of licensed staff and certificate holders supervised", placeholder: "e.g. 9" },
+      { id: "absenceDelegate", label: "Nominated senior licensee to act in principal's absence", placeholder: "e.g. James Chen (Licence No. 7654321)" },
+      { id: "meetingFreq", label: "Team meeting / supervision meeting frequency", placeholder: "e.g. Weekly team meetings every Monday at 8:30am, plus daily morning check-ins" },
+      { id: "checkInMethod", label: "Day-to-day supervision method", placeholder: "e.g. open-door policy, daily activity logs reviewed each afternoon, CRM pipeline reviewed weekly", multiline: true },
+      { id: "cpdMethod", label: "How CPD obligations are monitored", placeholder: "e.g. tracked in RealComply with automated expiry alerts 90 and 30 days before deadline" },
+      { id: "breach", label: "Process when a compliance breach or concern is identified", placeholder: "e.g. immediate verbal counselling, written incident report filed within 24 hours, principal reviews and determines remedial action", multiline: true },
+      { id: "records", label: "How are supervision records kept and where?", placeholder: "e.g. documented in RealComply and individual staff files; reviewed monthly by the principal" },
+      { id: "review", label: "How often is this policy reviewed?", placeholder: "e.g. Annually in July, or immediately following any regulatory change or Fair Trading audit" },
     ],
-    generate: (a) => `SUPERVISION GUIDELINES\n${a.agency}\n\nEFFECTIVE DATE: ${new Date().toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" })}\n\n1. PURPOSE\nThis document sets out the supervision arrangements for ${a.agency} in accordance with the Property and Stock Agents Act 2002 (NSW) and associated Regulation.\n\n2. PRINCIPAL LICENSEE\n${a.principal} is the Principal Licensee responsible for supervising all licensed and certificate-holding staff. The Principal Licensee ensures that all agency activities comply with applicable legislation, regulations, and codes of conduct.\n\n3. SCOPE\nThese guidelines apply to all ${a.staffCount} licensed staff and certificate holders employed by or engaged under ${a.agency}.\n\n4. SUPERVISION METHOD\n${a.method}\n\nThe Principal Licensee is available during all business hours and maintains open communication with all staff. Where the Principal Licensee is absent, a nominated senior licensee will act in a supervisory capacity.\n\n5. RECORD KEEPING\n${a.records}\n\nSupervision records are retained for a minimum of three (3) years and are available for inspection by NSW Fair Trading on request.\n\n6. REVIEW\nThis policy is reviewed ${a.review}. The Principal Licensee is responsible for ensuring the policy remains current and reflects any changes in legislation or agency practice.\n\n_________________________\n${a.principal} — Principal Licensee\n${a.agency}`,
+    generate: (a) => {
+      const date = new Date().toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" });
+      return `SUPERVISION GUIDELINES
+${a.agency} (ABN ${a.abn})
+
+EFFECTIVE DATE: ${date}
+DOCUMENT OWNER: ${a.principal} — Principal Licensee (Licence No. ${a.licenceNo})
+NEXT REVIEW DATE: ${new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" })}
+
+────────────────────────────────────────
+
+1. LEGISLATIVE FRAMEWORK
+
+These Supervision Guidelines are issued pursuant to:
+  • Property and Stock Agents Act 2002 (NSW), ss 32, 33, 34 and 47
+  • Property and Stock Agents Regulation 2022 (NSW), Part 3
+  • Agents Code of Conduct (contained in Schedule 1 of the Regulation)
+
+Under s32 of the Act, the Licensee in Charge (LIC) of a real estate agency must ensure that the business of the agency is properly supervised. Failure to properly supervise licensed and certificate-holding staff is grounds for disciplinary action by NSW Fair Trading, including suspension or revocation of licence.
+
+────────────────────────────────────────
+
+2. PURPOSE AND SCOPE
+
+These Guidelines set out the supervision arrangements for ${a.agency} and apply to all ${a.staffCount} persons employed or engaged by the agency who hold a real estate licence or certificate of registration under the Property and Stock Agents Act 2002 (NSW).
+
+The Guidelines are designed to ensure that:
+  (a) all agency activities are conducted lawfully and ethically;
+  (b) staff understand their obligations under the Act, the Regulation and the Code of Conduct;
+  (c) any non-compliance is identified and addressed promptly;
+  (d) clients receive professional and compliant service at all times.
+
+────────────────────────────────────────
+
+3. LICENSEE IN CHARGE — RESPONSIBILITIES
+
+${a.principal} (Licence No. ${a.licenceNo}) is the Licensee in Charge of ${a.agency} and carries ultimate responsibility for:
+
+  (a) Supervising all licensed agents and certificate holders employed or engaged by the agency;
+  (b) Ensuring all staff are appropriately licensed or hold a valid certificate of registration for the functions they perform;
+  (c) Verifying that CPD requirements are met by all staff within required timeframes;
+  (d) Ensuring agency agreements, contracts, and all client-facing documents comply with the Act and associated legislation;
+  (e) Maintaining a proper trust accounting system and ensuring statutory audit obligations are met;
+  (f) Ensuring the agency's advertising and marketing comply with the Australian Consumer Law and the REIA Code of Conduct;
+  (g) Providing mentoring, guidance and support to less experienced staff;
+  (h) Ensuring that this policy and all related procedures remain current and are communicated to all staff.
+
+────────────────────────────────────────
+
+4. ABSENCE OF THE LICENSEE IN CHARGE
+
+When ${a.principal} is absent from the principal place of business, ${a.absenceDelegate} will act as the supervising licensee for that period. The acting supervisory licensee has the same obligations as the LIC during the period of absence.
+
+All periods of LIC absence exceeding five (5) consecutive business days will be documented, and the acting supervisory licensee will be notified in writing prior to commencement of the absence period.
+
+────────────────────────────────────────
+
+5. SUPERVISION METHODS AND PROCEDURES
+
+5.1  Structured Meetings
+${a.meetingFreq}. Meetings are minuted and attendance is recorded. Staff are encouraged to raise compliance questions, client concerns, and procedural issues at these forums.
+
+5.2  Day-to-Day Supervision
+${a.checkInMethod}
+
+5.3  File and Transaction Review
+The LIC or delegate reviews client files, agency agreements, contracts of sale, management agreements and trust accounting entries on a sampling basis not less than quarterly. Any errors, omissions or non-compliant conduct identified during review are communicated to the relevant staff member and remedied promptly.
+
+5.4  Licence and Certificate Verification
+All staff are required to maintain a current licence or certificate of registration at all times. The LIC maintains a register of all staff licences and certificates, including expiry dates. Staff are required to provide evidence of renewal prior to the expiry of their current authority to act.
+
+5.5  Continuing Professional Development (CPD)
+${a.cpdMethod}. Staff who fail to complete mandatory CPD by the required deadline must cease performing functions requiring a licence or certificate until CPD obligations are met and the relevant regulatory body has been notified as required.
+
+5.6  New Staff Induction
+All new staff members undergo an induction covering: agency policies and procedures; the Act and Regulation; the Code of Conduct; trust accounting obligations; client care standards; and the agency's filing and document management requirements. Induction is completed before the new staff member undertakes any unsupervised client-facing activity.
+
+────────────────────────────────────────
+
+6. BREACH IDENTIFICATION AND RESPONSE
+
+${a.breach}
+
+Breaches of the Act, the Regulation, the Code of Conduct, or this policy are taken seriously. Depending on the nature and severity of the breach, the agency may take one or more of the following steps:
+  (a) Formal counselling and documented warning;
+  (b) Increased supervision and performance monitoring;
+  (c) Mandatory additional training;
+  (d) Referral to NSW Fair Trading where required by law;
+  (e) Disciplinary action up to and including termination of engagement.
+
+────────────────────────────────────────
+
+7. RECORD KEEPING
+
+${a.records}
+
+All supervision records — including meeting minutes, staff attendance, file review outcomes, CPD records, licence registers, and breach incident reports — are retained for a minimum of three (3) years and are made available to NSW Fair Trading on request in accordance with s118 of the Act.
+
+────────────────────────────────────────
+
+8. REVIEW OF THIS POLICY
+
+This policy is reviewed ${a.review}. The LIC is responsible for ensuring the policy reflects any changes to the Act, the Regulation, the Code of Conduct, or Fair Trading guidance. Staff are notified of any material changes promptly.
+
+────────────────────────────────────────
+
+SIGN-OFF
+
+_________________________
+${a.principal}
+Licensee in Charge — Licence No. ${a.licenceNo}
+${a.agency} (ABN ${a.abn})
+
+Date: ${date}`;
+    },
   },
   {
     name: "Privacy Policy", category: "Compliance",
-    description: "Outlines how your agency collects, uses, stores and discloses personal information.",
+    description: "Outlines how your agency collects, uses, stores and discloses personal information under the APPs.",
     questions: [
       { id: "agency", label: "Agency / business name", placeholder: "e.g. Ray White Bondi Junction" },
+      { id: "abn", label: "Agency ABN", placeholder: "e.g. 12 345 678 901" },
       { id: "principal", label: "Privacy officer / principal name", placeholder: "e.g. Sarah Mitchell" },
-      { id: "infoTypes", label: "Types of personal information collected", placeholder: "e.g. names, contact details, financial information, identification documents", multiline: true },
-      { id: "purpose", label: "Primary purpose for collecting information", placeholder: "e.g. to facilitate property sales, leasing and property management services", multiline: true },
-      { id: "storage", label: "How is personal information stored?", placeholder: "e.g. secure cloud-based CRM and encrypted physical files" },
-      { id: "retention", label: "Retention period for records", placeholder: "e.g. 7 years after the conclusion of the relevant transaction" },
-      { id: "contact", label: "Privacy enquiries contact (email or phone)", placeholder: "e.g. privacy@agency.com.au" },
+      { id: "website", label: "Agency website (if applicable)", placeholder: "e.g. www.rwbondijunction.com.au" },
+      { id: "infoTypes", label: "Types of personal information collected", placeholder: "e.g. full name, date of birth, contact details, financial information, photo ID, tax file numbers (for property management only), rental history", multiline: true },
+      { id: "sensitiveInfo", label: "Any sensitive information collected? (health, criminal, financial)", placeholder: "e.g. financial statements and bank details for rental applicants; no health or criminal records collected" },
+      { id: "purpose", label: "Primary purposes for collecting personal information", placeholder: "e.g. facilitating property sales and purchases, leasing properties, providing property management services, AML/CTF compliance", multiline: true },
+      { id: "thirdParties", label: "Third parties to whom information may be disclosed", placeholder: "e.g. solicitors and conveyancers, financiers and mortgage brokers, REI NSW, AUSTRAC, NSW Fair Trading, tenant reference agencies, utilities connection services", multiline: true },
+      { id: "overseas", label: "Is personal information disclosed overseas? If so, to which countries?", placeholder: "e.g. No overseas disclosure / e.g. Cloud storage provider servers in the USA under AWS" },
+      { id: "storage", label: "How is personal information stored and protected?", placeholder: "e.g. encrypted cloud-based CRM (PropertyMe) with role-based access controls; locked physical filing cabinets; password-protected workstations" },
+      { id: "retention", label: "Retention period for personal information", placeholder: "e.g. 7 years after conclusion of the relevant transaction; rental applications not proceeding destroyed within 1 year" },
+      { id: "contact", label: "Privacy enquiries contact (email or postal address)", placeholder: "e.g. privacy@agency.com.au or PO Box 123, Suburb NSW 2000" },
     ],
-    generate: (a) => `PRIVACY POLICY\n${a.agency}\n\nEFFECTIVE DATE: ${new Date().toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" })}\n\n1. COMMITMENT TO PRIVACY\n${a.agency} is committed to protecting the privacy of our clients, vendors, tenants and other individuals in accordance with the Privacy Act 1988 (Cth) and the Australian Privacy Principles (APPs).\n\n2. INFORMATION WE COLLECT\nWe collect the following types of personal information: ${a.infoTypes}.\n\nWe collect this information directly from individuals where possible, and may also receive it from third parties such as referral agents, financial institutions, or publicly available sources.\n\n3. PURPOSE OF COLLECTION\nPersonal information is collected and used ${a.purpose}.\n\nWe will only use or disclose personal information for the primary purpose for which it was collected, or for a related secondary purpose the individual would reasonably expect.\n\n4. STORAGE & SECURITY\nPersonal information is stored ${a.storage}. We take reasonable steps to protect personal information from misuse, interference, loss, unauthorised access, modification or disclosure.\n\n5. RETENTION & DISPOSAL\nPersonal information is retained for ${a.retention}, after which it is securely destroyed or de-identified.\n\n6. ACCESS & CORRECTION\nIndividuals may request access to or correction of their personal information held by us. Requests should be directed to our Privacy Officer.\n\n7. CONTACT\nPrivacy enquiries can be directed to: ${a.contact}\nPrivacy Officer: ${a.principal}\n${a.agency}`,
+    generate: (a) => {
+      const date = new Date().toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" });
+      return `PRIVACY POLICY
+${a.agency} (ABN ${a.abn})
+
+EFFECTIVE DATE: ${date}
+PRIVACY OFFICER: ${a.principal}
+WEBSITE: ${a.website || "N/A"}
+NEXT REVIEW DATE: ${new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" })}
+
+────────────────────────────────────────
+
+1. OUR COMMITMENT
+
+${a.agency} is committed to protecting the privacy of every person whose personal information we collect, hold, use or disclose. We comply with the Privacy Act 1988 (Cth) and the thirteen (13) Australian Privacy Principles (APPs) contained in Schedule 1 of that Act. This Policy explains how we manage personal information in the course of providing real estate services.
+
+We may update this Policy from time to time. The current version is available on request and, where applicable, on our website (${a.website || "on request"}).
+
+────────────────────────────────────────
+
+2. WHAT PERSONAL INFORMATION WE COLLECT
+
+We collect and hold the following types of personal information:
+${a.infoTypes}
+
+Where you engage us as a vendor, purchaser, landlord or tenant, we typically collect information that enables us to perform our agency obligations under the Property and Stock Agents Act 2002 (NSW) and any agency agreement entered into with you.
+
+Sensitive Information: ${a.sensitiveInfo}
+
+We will not collect sensitive information without your explicit consent, or unless required or authorised by law.
+
+────────────────────────────────────────
+
+3. HOW WE COLLECT PERSONAL INFORMATION
+
+We collect personal information:
+  (a) Directly from you when you engage our services, complete enquiry forms, attend open homes, submit rental applications, or communicate with us in person, by phone, or electronically;
+  (b) From third parties such as referral agents, financiers, solicitors, tenant reference checking agencies, and publicly available sources (including property title searches and ASIC records) where reasonably necessary.
+
+We collect personal information only by lawful and fair means and, where practicable, directly from the individual concerned.
+
+────────────────────────────────────────
+
+4. WHY WE COLLECT AND USE PERSONAL INFORMATION
+
+We collect, hold, use and disclose personal information for the following primary purposes:
+${a.purpose}
+
+We may also use personal information for the following secondary purposes that you would reasonably expect:
+  • Complying with our obligations under the AML/CTF Act 2006 (Cth) and AUSTRAC reporting requirements;
+  • Providing you with updates on properties, market reports or agency services where you have not opted out;
+  • Managing complaints, disputes or enquiries;
+  • Complying with orders or requests from courts, tribunals, regulators (including NSW Fair Trading) or law enforcement agencies.
+
+We will not use or disclose personal information for any other purpose without your consent.
+
+────────────────────────────────────────
+
+5. DISCLOSURE OF PERSONAL INFORMATION
+
+We may disclose personal information to the following third parties:
+${a.thirdParties}
+
+Overseas Disclosure: ${a.overseas}
+
+Where personal information is disclosed overseas, we take reasonable steps to ensure the recipient handles it consistently with the APPs or an equivalent privacy framework. Where we cannot ensure adequate protection, we will seek your consent prior to disclosure.
+
+────────────────────────────────────────
+
+6. STORAGE AND SECURITY
+
+Personal information is stored as follows: ${a.storage}
+
+We take reasonable steps to protect personal information from misuse, interference, loss, unauthorised access, modification or disclosure. These steps include:
+  • Restricting access to personal information to authorised personnel only on a need-to-know basis;
+  • Using industry-standard encryption for digital storage and transmission;
+  • Requiring third-party service providers to maintain equivalent security standards under contractual obligations;
+  • Conducting periodic security reviews and access audits.
+
+────────────────────────────────────────
+
+7. DATA BREACHES — NOTIFIABLE DATA BREACHES SCHEME
+
+${a.agency} is subject to the Notifiable Data Breaches (NDB) scheme under Part IIIC of the Privacy Act 1988 (Cth). In the event of an eligible data breach (an unauthorised access, disclosure, or loss of personal information that is likely to result in serious harm), we will:
+  (a) Contain the breach and assess likely harm within 30 days;
+  (b) Notify the Office of the Australian Information Commissioner (OAIC) as soon as practicable;
+  (c) Notify affected individuals where required;
+  (d) Take immediate steps to prevent further data loss or harm.
+
+────────────────────────────────────────
+
+8. RETENTION AND DISPOSAL
+
+We retain personal information for the following periods:
+${a.retention}
+
+After the relevant retention period, personal information is securely destroyed or de-identified. Physical documents are cross-cut shredded; digital records are permanently deleted and verified by the relevant system administrator.
+
+────────────────────────────────────────
+
+9. ACCESS AND CORRECTION
+
+You have the right to request access to personal information we hold about you, and to request correction of any information that is inaccurate, out of date, incomplete or misleading.
+
+To make a request, please contact our Privacy Officer (see clause 11). We will respond to access and correction requests within 30 days. We may decline access in limited circumstances permitted by the Privacy Act, and will explain the reason in writing.
+
+We do not charge a fee for making an access request but may recover reasonable costs of producing a copy of records.
+
+────────────────────────────────────────
+
+10. COMPLAINTS
+
+If you believe ${a.agency} has handled your personal information in breach of the Privacy Act or this Policy, please contact our Privacy Officer in the first instance (see clause 11). We will acknowledge your complaint within 5 business days and aim to resolve it within 30 days.
+
+If you are not satisfied with our response, you may lodge a complaint with the Office of the Australian Information Commissioner (OAIC) at www.oaic.gov.au or by calling 1300 363 992.
+
+────────────────────────────────────────
+
+11. CONTACT
+
+Privacy Officer: ${a.principal}
+${a.agency} (ABN ${a.abn})
+Email / postal address: ${a.contact}
+Website: ${a.website || "N/A"}
+
+────────────────────────────────────────
+
+_________________________
+${a.principal} — Privacy Officer
+${a.agency}
+
+Date: ${date}`;
+    },
   },
   {
     name: "AML & CTF Policy", category: "Compliance",
     description: "Anti-Money Laundering and Counter-Terrorism Financing policy for real estate agents.",
     questions: [
       { id: "agency", label: "Agency / business name", placeholder: "e.g. Ray White Bondi Junction" },
-      { id: "officer", label: "AML Compliance Officer name", placeholder: "e.g. Sarah Mitchell" },
-      { id: "verification", label: "Customer identity verification method", placeholder: "e.g. certified copy of driver licence or passport plus secondary document", multiline: true },
-      { id: "riskRating", label: "Risk rating approach", placeholder: "e.g. low / medium / high rating applied based on AUSTRAC guidance and transaction type", multiline: true },
-      { id: "records", label: "Record retention period", placeholder: "e.g. 7 years from date of transaction" },
-      { id: "training", label: "Staff AML training frequency", placeholder: "e.g. annually and on commencement" },
+      { id: "abn", label: "Agency ABN", placeholder: "e.g. 12 345 678 901" },
+      { id: "officer", label: "AML/CTF Compliance Officer name", placeholder: "e.g. Sarah Mitchell" },
+      { id: "officerRole", label: "AML Compliance Officer's role / title", placeholder: "e.g. Principal Licensee & Director" },
+      { id: "serviceTypes", label: "Designated services provided (real estate)", placeholder: "e.g. acting as agent in the buying and selling of real property on behalf of buyers or sellers" },
+      { id: "stdVerification", label: "Standard CDD — identity documents accepted", placeholder: "e.g. Australian driver licence or passport (primary); Medicare card or utility bill (secondary); verified using AUSTRAC-compliant digital verification service", multiline: true },
+      { id: "enhancedCDD", label: "When is enhanced CDD applied?", placeholder: "e.g. politically exposed persons (PEPs), transactions above $100,000 in cash or cryptocurrency, non-face-to-face customers, complex or unusual transaction structures", multiline: true },
+      { id: "lowRisk", label: "Examples of low-risk customers/transactions", placeholder: "e.g. Australian residents with straightforward owner-occupier purchases under market value threshold" },
+      { id: "highRisk", label: "Examples of high-risk indicators", placeholder: "e.g. cash or cryptocurrency payment, offshore buyer with no Australian connection, third-party payments, rushed settlement with little explanation", multiline: true },
+      { id: "smrProcess", label: "Suspicious Matter Report (SMR) internal process", placeholder: "e.g. staff report concern to Compliance Officer immediately; officer assesses within 24 hours and lodges SMR via AUSTRAC Online within 3 business days if warranted", multiline: true },
+      { id: "training", label: "Staff AML/CTF training frequency and format", placeholder: "e.g. induction training for all new staff; annual refresher for all staff; training records maintained by Compliance Officer" },
+      { id: "records", label: "AML/CTF record retention period", placeholder: "e.g. 7 years from the date of the relevant designated service or transaction" },
     ],
-    generate: (a) => `AML & COUNTER-TERRORISM FINANCING POLICY\n${a.agency}\n\nEFFECTIVE DATE: ${new Date().toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" })}\n\n1. PURPOSE\nThis policy sets out the obligations of ${a.agency} under the Anti-Money Laundering and Counter-Terrorism Financing Act 2006 (Cth) (AML/CTF Act) and associated Rules, as they apply to real estate agency services.\n\n2. AML COMPLIANCE OFFICER\n${a.officer} is appointed as the AML Compliance Officer and is responsible for overseeing the implementation of this policy, maintaining the AML/CTF Programme, and reporting to AUSTRAC as required.\n\n3. CUSTOMER DUE DILIGENCE (CDD)\nBefore providing a designated service, ${a.agency} will verify the identity of all customers. Our standard verification procedure requires: ${a.verification}.\n\nEnhanced due diligence is applied where higher risk indicators are present.\n\n4. RISK ASSESSMENT\n${a.riskRating}\n\nRisk ratings are reviewed at each transaction and documented in the client file.\n\n5. RECORD KEEPING\nAll AML/CTF records, including identification documents and transaction records, are retained for ${a.records} and are available to AUSTRAC on request.\n\n6. SUSPICIOUS MATTER REPORTING\nAll staff must report any suspicious matter to the AML Compliance Officer immediately. The Compliance Officer is responsible for lodging Suspicious Matter Reports (SMRs) with AUSTRAC where required.\n\n7. STAFF TRAINING\nAll staff receive AML/CTF training ${a.training}. Training records are maintained by the Compliance Officer.\n\n_________________________\n${a.officer} — AML Compliance Officer\n${a.agency}`,
+    generate: (a) => {
+      const date = new Date().toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" });
+      return `AML & COUNTER-TERRORISM FINANCING (AML/CTF) POLICY AND PROGRAMME
+${a.agency} (ABN ${a.abn})
+
+EFFECTIVE DATE: ${date}
+AML/CTF COMPLIANCE OFFICER: ${a.officer} — ${a.officerRole}
+NEXT REVIEW DATE: ${new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" })}
+
+────────────────────────────────────────
+
+1. LEGISLATIVE FRAMEWORK
+
+This Policy and AML/CTF Programme is issued pursuant to:
+  • Anti-Money Laundering and Counter-Terrorism Financing Act 2006 (Cth) (AML/CTF Act)
+  • Anti-Money Laundering and Counter-Terrorism Financing Rules Instrument 2007 (No. 1) (AML/CTF Rules)
+  • Proceeds of Crime Act 2002 (Cth)
+  • Financial Action Task Force (FATF) Recommendations (2012, as updated)
+
+Real estate agents who provide designated services as defined in Table 1, Item 54 of the AML/CTF Act — specifically, acting as an intermediary in the purchase or sale of real property — are reporting entities with obligations to AUSTRAC.
+
+────────────────────────────────────────
+
+2. PURPOSE
+
+This Policy establishes the framework by which ${a.agency} identifies, assesses, manages and mitigates the risk that its services may be used to facilitate money laundering or terrorism financing. It also sets out our obligations to report to AUSTRAC and to apply customer due diligence (CDD) procedures.
+
+────────────────────────────────────────
+
+3. DESIGNATED SERVICES
+
+${a.agency} provides the following designated services under the AML/CTF Act:
+${a.serviceTypes}
+
+────────────────────────────────────────
+
+4. AML/CTF COMPLIANCE OFFICER
+
+${a.officer} (${a.officerRole}) is appointed as the AML/CTF Compliance Officer and is responsible for:
+  (a) Developing, implementing and maintaining this AML/CTF Programme;
+  (b) Overseeing the day-to-day application of CDD procedures;
+  (c) Receiving and assessing suspicious matter reports from staff;
+  (d) Lodging Suspicious Matter Reports (SMRs) and Threshold Transaction Reports (TTRs) with AUSTRAC where required;
+  (e) Maintaining the AML/CTF risk assessment and keeping it current;
+  (f) Delivering or arranging AML/CTF training for all relevant staff;
+  (g) Engaging with AUSTRAC on any enquiries, requests or audits;
+  (h) Reviewing and updating this Programme at least annually.
+
+────────────────────────────────────────
+
+5. ML/TF RISK ASSESSMENT
+
+${a.agency} has conducted a risk assessment of its services, customers, and geographic exposure. Risk ratings are assigned as Low, Medium or High based on:
+  • Customer type and background
+  • Transaction complexity, value and structure
+  • Payment methods used (particularly cash and cryptocurrency)
+  • Property type and location
+  • Whether the customer is a Politically Exposed Person (PEP) or associated with a PEP
+  • Geographic risk (source country of customer or funds)
+
+Low-risk indicators include: ${a.lowRisk}
+
+High-risk indicators include: ${a.highRisk}
+
+The risk assessment is reviewed at least annually and updated when business circumstances change materially.
+
+────────────────────────────────────────
+
+6. CUSTOMER DUE DILIGENCE (CDD)
+
+6.1  Standard CDD
+Before providing a designated service, ${a.agency} will verify the identity of:
+  • All natural persons who are the principal party to the transaction (vendor or purchaser);
+  • Any person acting as agent, attorney or representative for a principal party;
+  • The beneficial owners of any corporate or trust customer.
+
+Standard CDD requires: ${a.stdVerification}
+
+Identity verification must be completed before the agency agreement is executed or at the latest prior to exchange of contracts.
+
+6.2  Enhanced CDD
+Enhanced CDD is applied in the following circumstances:
+${a.enhancedCDD}
+
+Enhanced CDD involves obtaining additional documentation (e.g. source-of-funds statements, certified constitutional documents for trusts or companies, independent reference checks) and escalating to the Compliance Officer for sign-off before proceeding.
+
+6.3  Ongoing CDD
+For property management clients, CDD is updated when there are material changes to the client relationship or when a suspicious matter is identified.
+
+────────────────────────────────────────
+
+7. SUSPICIOUS MATTER REPORTING (SMR)
+
+All staff members are required to report any suspicious matter to the Compliance Officer immediately upon identification. A suspicious matter exists where a staff member suspects, on reasonable grounds, that:
+  (a) A customer is not who they claim to be;
+  (b) A transaction or pattern of transactions relates to money laundering or terrorism financing;
+  (c) Information gathered during CDD is false, misleading or cannot be verified;
+  (d) A customer is a sanctioned person under Australian sanctions law.
+
+Internal SMR Process: ${a.smrProcess}
+
+Staff must NOT tip off a customer that an SMR has been or may be lodged. Tipping off is a criminal offence under s123 of the AML/CTF Act.
+
+────────────────────────────────────────
+
+8. THRESHOLD TRANSACTION REPORTS (TTR)
+
+Where ${a.agency} facilitates or is involved in a cash transaction of AUD $10,000 or more (or foreign currency equivalent), or a series of transactions totalling $10,000 or more that appear to be structured to avoid reporting, a Threshold Transaction Report must be lodged with AUSTRAC within 10 business days.
+
+The Compliance Officer is responsible for identifying and lodging all TTRs via AUSTRAC Online (www.austrac.gov.au).
+
+────────────────────────────────────────
+
+9. SANCTIONS SCREENING
+
+Before entering a new client relationship, ${a.agency} screens the customer against:
+  • Australia's Consolidated List (DFAT)
+  • UN Security Council sanctions lists
+  • AUSTRAC's Financial Intelligence resources
+
+A client who appears on any sanctions list must not receive a designated service. The Compliance Officer must be notified immediately and will determine the appropriate course of action, which may include refusing to act or lodging an SMR.
+
+────────────────────────────────────────
+
+10. STAFF TRAINING
+
+${a.training}
+
+Training covers:
+  • The nature and purpose of the AML/CTF Act and this Programme;
+  • How to identify suspicious matters and red flag indicators;
+  • CDD procedures and documentation requirements;
+  • The internal SMR and TTR reporting process;
+  • Consequences of tipping off and non-compliance.
+
+Training records (name, date, content) are maintained by the Compliance Officer for at least 7 years.
+
+────────────────────────────────────────
+
+11. RECORD KEEPING
+
+The following records are retained for ${a.records}:
+  • CDD documents and verification records for each customer;
+  • Transaction records including agency agreements, contracts, trust account receipts and disbursements;
+  • SMRs and TTRs lodged with AUSTRAC;
+  • The risk assessment and this AML/CTF Programme (each version);
+  • Training records.
+
+Records are stored securely and available to AUSTRAC on request under s116 of the AML/CTF Act.
+
+────────────────────────────────────────
+
+12. INDEPENDENT REVIEW
+
+This AML/CTF Programme will be subject to independent review no less than every three (3) years, or sooner if there is a material change in business activities, a significant regulatory development, or an adverse finding by AUSTRAC. The Compliance Officer will commission and oversee the review.
+
+────────────────────────────────────────
+
+SIGN-OFF
+
+_________________________
+${a.officer}
+AML/CTF Compliance Officer — ${a.officerRole}
+${a.agency} (ABN ${a.abn})
+
+Date: ${date}`;
+    },
   },
   {
     name: "WHS Policy", category: "Staff",
     description: "Work Health and Safety policy establishing duties and procedures for your agency.",
     questions: [
       { id: "agency", label: "Agency / business name", placeholder: "e.g. Ray White Bondi Junction" },
-      { id: "principal", label: "Person responsible for WHS (PCBU)", placeholder: "e.g. Sarah Mitchell" },
-      { id: "firstAid", label: "First aid officer name", placeholder: "e.g. Anna Brown" },
-      { id: "hazardProcess", label: "Hazard identification and reporting process", placeholder: "e.g. staff complete a hazard report form and notify the principal within 24 hours", multiline: true },
-      { id: "emergency", label: "Emergency contact / procedure", placeholder: "e.g. call 000, then notify principal on 0400 000 000" },
-      { id: "review", label: "WHS policy review frequency", placeholder: "e.g. annually or following any workplace incident" },
+      { id: "abn", label: "Agency ABN", placeholder: "e.g. 12 345 678 901" },
+      { id: "principal", label: "Name of PCBU / person responsible for WHS", placeholder: "e.g. Sarah Mitchell" },
+      { id: "whsOfficer", label: "WHS Officer or Health & Safety Representative (if appointed)", placeholder: "e.g. James Chen (HSR) or 'None appointed — principal assumes HSR responsibilities'" },
+      { id: "firstAid", label: "First Aid Officer name and training currency", placeholder: "e.g. Anna Brown — HLTAID011 current until March 2027" },
+      { id: "firstAidKit", label: "Location of first aid kit(s)", placeholder: "e.g. Kitchen area Level 1 office; rear storage room" },
+      { id: "hazardProcess", label: "Hazard identification, reporting and control process", placeholder: "e.g. all staff complete a hazard report form (available in kitchen) and email it to whs@agency.com.au; principal reviews within 24 hours and applies hierarchy of controls", multiline: true },
+      { id: "remoteWork", label: "WHS obligations for staff working remotely or at property inspections", placeholder: "e.g. staff conducting open homes must advise principal of address and expected return time; check-in protocol if solo inspection", multiline: true },
+      { id: "incidentProcess", label: "Incident and near-miss reporting process", placeholder: "e.g. immediate first aid, call 000 if required, notify principal immediately, complete incident report within 24 hours, preserve scene if notifiable incident", multiline: true },
+      { id: "emergency", label: "Emergency response — fire, medical, evacuation", placeholder: "e.g. call 000, activate fire panel if required, evacuate to assembly point (front carpark), account for all persons, contact principal on 0400 000 000" },
+      { id: "mentalHealth", label: "Mental health and wellbeing support available to staff", placeholder: "e.g. EAP (Employee Assistance Programme) via [provider] on 1800 XXX XXX; open-door policy with principal; annual wellbeing check-in" },
+      { id: "review", label: "WHS policy review frequency", placeholder: "e.g. Annually each July, or immediately following any workplace incident, change in legislation, or new risk identified" },
     ],
-    generate: (a) => `WORK HEALTH AND SAFETY POLICY\n${a.agency}\n\nEFFECTIVE DATE: ${new Date().toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" })}\n\n1. COMMITMENT\n${a.agency} is committed to providing a safe and healthy workplace for all workers, contractors and visitors, in compliance with the Work Health and Safety Act 2011 (NSW).\n\n2. RESPONSIBILITIES\n${a.principal} (Person Conducting a Business or Undertaking — PCBU) has primary responsibility for WHS at ${a.agency}. This includes identifying hazards, assessing and controlling risks, and ensuring all workers have the information, training and supervision needed to work safely.\n\nAll workers are responsible for taking reasonable care of their own health and safety and that of others, and for cooperating with WHS procedures.\n\n3. FIRST AID\n${a.firstAid} is the designated First Aid Officer. A first aid kit is maintained on the premises and is inspected regularly.\n\n4. HAZARD IDENTIFICATION & REPORTING\n${a.hazardProcess}\n\nAll incidents, near-misses and hazards are recorded and investigated promptly. Where required, incidents are notified to SafeWork NSW.\n\n5. EMERGENCY PROCEDURES\n${a.emergency}\n\nEvacuation procedures are posted at all exits. Emergency drills are conducted periodically.\n\n6. REVIEW\nThis policy is reviewed ${a.review}, or following any significant workplace incident, change in legislation, or change in workplace conditions.\n\n_________________________\n${a.principal} — PCBU\n${a.agency}`,
+    generate: (a) => {
+      const date = new Date().toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" });
+      return `WORK HEALTH AND SAFETY (WHS) POLICY AND PROCEDURE
+${a.agency} (ABN ${a.abn})
+
+EFFECTIVE DATE: ${date}
+PCBU: ${a.principal}
+NEXT REVIEW DATE: ${new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" })}
+
+────────────────────────────────────────
+
+1. LEGISLATIVE FRAMEWORK
+
+This Policy is issued pursuant to:
+  • Work Health and Safety Act 2011 (NSW) (WHS Act)
+  • Work Health and Safety Regulation 2017 (NSW) (WHS Regulation)
+  • Workplace Injury Management and Workers Compensation Act 1998 (NSW)
+  • SafeWork NSW Codes of Practice
+
+Under s19 of the WHS Act, a Person Conducting a Business or Undertaking (PCBU) has a primary duty of care to ensure, so far as is reasonably practicable, the health and safety of workers and others affected by the carrying out of the work.
+
+────────────────────────────────────────
+
+2. COMMITMENT
+
+${a.agency} is committed to providing a safe, healthy and supportive workplace for all workers, contractors, clients and visitors. We regard the prevention of workplace injury and illness as a core business priority, not a discretionary matter. This Policy reflects our commitment to meeting and exceeding our legal obligations under the WHS Act.
+
+────────────────────────────────────────
+
+3. SCOPE
+
+This Policy applies to:
+  (a) All workers engaged by ${a.agency}, whether permanent, part-time, casual, or as independent contractors;
+  (b) All persons conducting work-related activities on behalf of the agency, including at property inspections, open homes, client meetings held off-site, and when working remotely;
+  (c) All visitors and clients attending the principal office or any property at which the agency is conducting business.
+
+────────────────────────────────────────
+
+4. DUTIES AND RESPONSIBILITIES
+
+4.1  PCBU — ${a.principal}
+As PCBU, ${a.principal} must, so far as is reasonably practicable:
+  (a) Provide and maintain a safe work environment, systems of work, and plant and structures;
+  (b) Ensure the safe use, handling, storage and transport of plant and substances;
+  (c) Provide adequate facilities for the welfare of workers;
+  (d) Provide information, training, instruction and supervision to ensure safe work practices;
+  (e) Monitor the health of workers and conditions at the workplace;
+  (f) Consult with workers on WHS matters (see clause 7).
+
+4.2  WHS Officer / Health and Safety Representative
+${a.whsOfficer} assists the PCBU in implementing this Policy, conducting hazard inspections, facilitating worker consultation, and maintaining WHS records.
+
+4.3  All Workers
+Each worker must, so far as reasonably able to do so:
+  (a) Take reasonable care of their own health and safety;
+  (b) Take reasonable care that their acts or omissions do not adversely affect the health and safety of others;
+  (c) Comply with any reasonable WHS instruction given by the agency;
+  (d) Cooperate with any reasonable WHS policy or procedure;
+  (e) Report hazards, near-misses and incidents promptly.
+
+────────────────────────────────────────
+
+5. HAZARD IDENTIFICATION, RISK ASSESSMENT AND CONTROL
+
+5.1  Hazard Identification
+${a.agency} conducts formal hazard inspections of the principal place of business no less than annually. In addition, all workers are required to identify and report hazards on an ongoing basis.
+
+Hazard reporting process: ${a.hazardProcess}
+
+5.2  Risk Assessment
+Reported hazards are assessed using a risk matrix (likelihood × consequence). The PCBU or WHS Officer prioritises remediation based on risk rating.
+
+5.3  Hierarchy of Controls
+Controls are applied in the following order of preference:
+  1. Elimination — remove the hazard entirely
+  2. Substitution — replace with something less hazardous
+  3. Isolation — separate people from the hazard
+  4. Engineering controls — physical barriers or redesign
+  5. Administrative controls — procedures, training, signage
+  6. Personal protective equipment (PPE) — used as a last resort only
+
+5.4  Remote Work and Property Inspections
+${a.remoteWork}
+
+────────────────────────────────────────
+
+6. FIRST AID
+
+First Aid Officer: ${a.firstAid}
+
+First aid kit location(s): ${a.firstAidKit}
+
+The first aid kit is inspected and restocked every six (6) months, or immediately following use. The First Aid Officer's training currency is monitored by the PCBU and renewed before expiry.
+
+────────────────────────────────────────
+
+7. CONSULTATION AND WORKER PARTICIPATION
+
+Under ss 46–49 of the WHS Act, the PCBU must consult with workers on WHS matters that are likely to directly affect them. Consultation occurs through:
+  (a) Team meetings, where WHS is a standing agenda item;
+  (b) Direct discussion with the WHS Officer or PCBU;
+  (c) Incident debriefs following any workplace incident or near-miss.
+
+Workers are encouraged to raise WHS concerns without fear of reprisal. Workers who believe a WHS concern has not been adequately addressed may contact SafeWork NSW on 13 10 50.
+
+────────────────────────────────────────
+
+8. INCIDENT AND NEAR-MISS REPORTING
+
+8.1  Immediate Response
+${a.incidentProcess}
+
+8.2  Notifiable Incidents
+Under s35 of the WHS Act, a notifiable incident (death, serious illness or injury, or a dangerous incident) must be reported to SafeWork NSW immediately on 13 10 50. The scene must be preserved until an inspector from SafeWork NSW has attended or the requirement is otherwise waived. No person may interfere with the scene of a notifiable incident without authority.
+
+8.3  Records
+All incidents and near-misses are recorded in the agency's incident register. Records are retained for at least five (5) years.
+
+────────────────────────────────────────
+
+9. EMERGENCY PROCEDURES
+
+${a.emergency}
+
+Emergency procedures are posted visibly at all exits and near all first aid kits. Staff are briefed on emergency procedures during induction and at least annually thereafter. Emergency drills are conducted annually.
+
+────────────────────────────────────────
+
+10. MENTAL HEALTH AND WELLBEING
+
+${a.agency} acknowledges that psychosocial hazards — including bullying, harassment, excessive work demands, remote isolation and client-related aggression — are real workplace health risks.
+
+${a.mentalHealth}
+
+Any worker who experiences or witnesses bullying, harassment, discrimination or violence in the workplace should report it to the PCBU immediately. Confidential support is also available via the EAP. Reports are treated seriously and confidentially.
+
+────────────────────────────────────────
+
+11. REVIEW
+
+This Policy is reviewed ${a.review}. The PCBU is responsible for ensuring the Policy remains current and reflecting any changes in the WHS Act, WHS Regulation, SafeWork NSW guidance, or the agency's risk profile.
+
+────────────────────────────────────────
+
+SIGN-OFF
+
+_________________________
+${a.principal}
+PCBU — ${a.agency} (ABN ${a.abn})
+
+Date: ${date}`;
+    },
   },
   {
     name: "Complaints Handling Procedure", category: "Admin",
-    description: "Sets out how your agency receives, manages and resolves client complaints.",
+    description: "Sets out how your agency receives, investigates and resolves complaints in line with NSW Fair Trading expectations.",
     questions: [
       { id: "agency", label: "Agency / business name", placeholder: "e.g. Ray White Bondi Junction" },
-      { id: "officer", label: "Complaints officer name", placeholder: "e.g. Sarah Mitchell" },
-      { id: "contactMethod", label: "How can complaints be lodged?", placeholder: "e.g. in writing by email to complaints@agency.com.au or in person" },
-      { id: "acknowledgement", label: "Acknowledgement timeframe", placeholder: "e.g. within 2 business days of receipt" },
-      { id: "resolution", label: "Target resolution timeframe", placeholder: "e.g. within 10 business days" },
-      { id: "escalation", label: "Escalation process if unresolved", placeholder: "e.g. referral to NSW Fair Trading or appointment of independent mediator", multiline: true },
+      { id: "abn", label: "Agency ABN", placeholder: "e.g. 12 345 678 901" },
+      { id: "officer", label: "Designated Complaints Officer name", placeholder: "e.g. Sarah Mitchell" },
+      { id: "officerRole", label: "Complaints Officer's role / title", placeholder: "e.g. Principal Licensee" },
+      { id: "contactEmail", label: "Complaints email address", placeholder: "e.g. complaints@agency.com.au" },
+      { id: "contactPhone", label: "Complaints contact phone number", placeholder: "e.g. (02) 9000 0000" },
+      { id: "contactMethods", label: "All channels through which complaints may be lodged", placeholder: "e.g. in writing by email or letter, verbally in person or by phone, or via the complaints form on our website" },
+      { id: "acknowledgement", label: "Complaint acknowledgement timeframe", placeholder: "e.g. within 2 business days of receipt" },
+      { id: "progressUpdate", label: "Progress update timeframe for ongoing complaints", placeholder: "e.g. every 5 business days" },
+      { id: "resolution", label: "Target resolution timeframe", placeholder: "e.g. within 10 business days of receipt; complex matters within 30 business days" },
+      { id: "escalation", label: "Internal escalation process (e.g. to franchisor or director)", placeholder: "e.g. if the Complaints Officer is the subject of the complaint, escalated to the agency director or franchisor principal" },
+      { id: "externalBodies", label: "External bodies available to complainants", placeholder: "e.g. NSW Fair Trading (1300 799 001), NSW Civil & Administrative Tribunal (NCAT), REI NSW, Office of the Australian Information Commissioner (for privacy complaints)" },
     ],
-    generate: (a) => `COMPLAINTS HANDLING PROCEDURE\n${a.agency}\n\nEFFECTIVE DATE: ${new Date().toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" })}\n\n1. PURPOSE\n${a.agency} is committed to resolving complaints fairly, promptly and transparently. This procedure applies to all complaints received from clients, vendors, tenants and members of the public.\n\n2. COMPLAINTS OFFICER\n${a.officer} is the designated Complaints Officer and is responsible for receiving, investigating and resolving complaints.\n\n3. HOW TO LODGE A COMPLAINT\nComplaints may be lodged ${a.contactMethod}. Anonymous complaints will be considered where sufficient detail is provided to permit investigation.\n\n4. ACKNOWLEDGEMENT\nAll complaints will be acknowledged ${a.acknowledgement}. The acknowledgement will confirm receipt of the complaint and provide an estimated timeframe for resolution.\n\n5. INVESTIGATION & RESOLUTION\nComplaints will be investigated thoroughly and impartially. The complainant will be kept informed of progress. We aim to resolve all complaints ${a.resolution}.\n\n6. ESCALATION\nIf a complaint cannot be resolved to the complainant's satisfaction: ${a.escalation}.\n\n7. RECORD KEEPING\nAll complaints and their outcomes are recorded and retained for a minimum of three (3) years. Records are reviewed periodically to identify systemic issues and improve service quality.\n\n_________________________\n${a.officer} — Complaints Officer\n${a.agency}`,
+    generate: (a) => {
+      const date = new Date().toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" });
+      return `COMPLAINTS HANDLING POLICY AND PROCEDURE
+${a.agency} (ABN ${a.abn})
+
+EFFECTIVE DATE: ${date}
+COMPLAINTS OFFICER: ${a.officer} — ${a.officerRole}
+COMPLAINTS CONTACT: ${a.contactEmail} | ${a.contactPhone}
+NEXT REVIEW DATE: ${new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" })}
+
+────────────────────────────────────────
+
+1. PURPOSE AND LEGISLATIVE CONTEXT
+
+${a.agency} is committed to providing high-quality real estate services and to resolving complaints fairly, promptly and transparently. We recognise that complaints provide valuable feedback and an opportunity to improve our service.
+
+This Procedure applies to all complaints received from vendors, purchasers, landlords, tenants, and members of the public in relation to services provided by ${a.agency} or its staff.
+
+Relevant legislative framework:
+  • Property and Stock Agents Act 2002 (NSW), Part 8 — Discipline
+  • Property and Stock Agents Regulation 2022 (NSW), Schedule 1 — Code of Conduct (cl 1 — general conduct obligations; cl 6 — dealing with complaints)
+  • Australian Consumer Law (Schedule 2, Competition and Consumer Act 2010 (Cth))
+  • Privacy Act 1988 (Cth)
+
+Under the Code of Conduct, agents are required to deal with complaints honestly, promptly and courteously, and to maintain a record of all complaints received.
+
+────────────────────────────────────────
+
+2. HOW TO LODGE A COMPLAINT
+
+Complaints may be lodged by:
+${a.contactMethods}
+
+All complaints are directed to:
+  Complaints Officer: ${a.officer}
+  Email: ${a.contactEmail}
+  Phone: ${a.contactPhone}
+
+Anonymous complaints are accepted. Where possible, we will investigate and take appropriate action even where the complainant's identity is not disclosed. However, the ability to provide feedback to an anonymous complainant will necessarily be limited.
+
+────────────────────────────────────────
+
+3. WHAT CONSTITUTES A COMPLAINT
+
+For the purposes of this Procedure, a complaint is any expression of dissatisfaction, whether verbal or written, made by a person in relation to:
+  (a) the conduct of a licensee or certificate holder employed or engaged by the agency;
+  (b) the standard of service provided;
+  (c) the agency's policies or procedures;
+  (d) a transaction, agency agreement, property management matter, or disclosure obligation;
+  (e) a suspected breach of the Act, the Regulation or the Code of Conduct.
+
+────────────────────────────────────────
+
+4. COMPLAINTS OFFICER — RESPONSIBILITIES
+
+${a.officer} (${a.officerRole}) is the designated Complaints Officer and is responsible for:
+  (a) Receiving and acknowledging all complaints;
+  (b) Conducting or overseeing a fair and impartial investigation;
+  (c) Keeping the complainant informed of progress;
+  (d) Determining and communicating outcomes;
+  (e) Implementing remedial action where appropriate;
+  (f) Maintaining the complaints register;
+  (g) Reporting systemic complaint trends to agency management.
+
+Escalation: ${a.escalation}
+
+────────────────────────────────────────
+
+5. COMPLAINT HANDLING PROCESS
+
+Step 1 — Receipt and Acknowledgement
+All complaints are logged in the complaints register upon receipt. The complainant is acknowledged ${a.acknowledgement}. The acknowledgement confirms receipt and provides the name of the Complaints Officer and an estimated timeframe for resolution.
+
+Step 2 — Investigation
+The Complaints Officer investigates the complaint by:
+  (a) Reviewing the relevant client file, correspondence, agency agreement, and any applicable transaction records;
+  (b) Speaking with the staff member(s) involved and obtaining their account;
+  (c) Consulting relevant legislation, the Code of Conduct, or agency policy as applicable;
+  (d) Obtaining any independent information or evidence needed to resolve the matter.
+
+The complainant is kept informed of progress at least every ${a.progressUpdate}.
+
+Step 3 — Resolution
+${a.agency} aims to resolve all complaints ${a.resolution}. More complex matters requiring factual investigation or legal input may take additional time; in such cases the complainant will be informed of the expected extended timeline within the standard resolution period.
+
+The outcome of the complaint is communicated to the complainant in writing, including:
+  (a) A summary of the investigation findings;
+  (b) The agency's determination;
+  (c) Any remedial action taken or proposed;
+  (d) The complainant's right to escalate the matter externally.
+
+Step 4 — Remedial Action
+Where a complaint is substantiated in whole or in part, the agency will promptly take appropriate corrective action, which may include:
+  • Apology and explanation;
+  • Fee adjustment or refund as warranted;
+  • Remediation of the specific issue complained of;
+  • Counselling, retraining or disciplinary action in relation to involved staff;
+  • Amendment of agency procedures to prevent recurrence.
+
+────────────────────────────────────────
+
+6. EXTERNAL ESCALATION
+
+If a complainant is not satisfied with the agency's handling of their complaint, they may contact any of the following external bodies:
+
+${a.externalBodies}
+
+NSW Fair Trading is the primary regulator for real estate agents in NSW. Fair Trading can investigate complaints about agents and may take disciplinary action under Part 8 of the Act.
+
+The NSW Civil and Administrative Tribunal (NCAT) hears certain residential tenancy disputes (under the Residential Tenancies Act 2010 (NSW)) and can hear matters involving alleged breaches of the Property and Stock Agents Act.
+
+────────────────────────────────────────
+
+7. RECORD KEEPING AND CONTINUOUS IMPROVEMENT
+
+All complaints, including their nature, date received, investigation steps, and outcome, are recorded in the agency's complaints register and retained for a minimum of three (3) years in accordance with legislative requirements.
+
+The Complaints Officer reviews the complaints register at least quarterly to identify any patterns or systemic issues and to implement improvements to agency service and procedures. An annual summary of complaints and outcomes is reported to agency management.
+
+────────────────────────────────────────
+
+SIGN-OFF
+
+_________________________
+${a.officer}
+Complaints Officer — ${a.officerRole}
+${a.agency} (ABN ${a.abn})
+
+Date: ${date}`;
+    },
   },
   {
     name: "Trust Accounting Procedures", category: "Trust",
-    description: "Procedures for receiving, holding and disbursing trust monies in compliance with legislation.",
+    description: "Procedures for receiving, holding and disbursing trust monies under the Property and Stock Agents Act 2002 (NSW).",
     questions: [
       { id: "agency", label: "Agency / business name", placeholder: "e.g. Ray White Bondi Junction" },
-      { id: "licensee", label: "Licensee in charge of trust accounts", placeholder: "e.g. Sarah Mitchell" },
-      { id: "signatories", label: "Authorised account signatories", placeholder: "e.g. Sarah Mitchell and James Chen" },
-      { id: "reconciliation", label: "Reconciliation frequency", placeholder: "e.g. monthly, on the last business day of each month" },
-      { id: "audit", label: "Annual audit arrangement", placeholder: "e.g. conducted by an approved auditor within 3 months of the end of each financial year" },
-      { id: "software", label: "Trust accounting software used", placeholder: "e.g. PropertyMe / Console Cloud / Managed" },
+      { id: "abn", label: "Agency ABN", placeholder: "e.g. 12 345 678 901" },
+      { id: "licensee", label: "Licensee in Charge (full name)", placeholder: "e.g. Sarah Mitchell" },
+      { id: "licenceNo", label: "LIC licence number", placeholder: "e.g. 1234567" },
+      { id: "signatories", label: "Authorised trust account signatories", placeholder: "e.g. Sarah Mitchell (primary); James Chen (secondary — requires dual authorisation for disbursements over $10,000)" },
+      { id: "bankName", label: "Name of bank / financial institution holding trust account(s)", placeholder: "e.g. Commonwealth Bank of Australia" },
+      { id: "accountTypes", label: "Types of trust accounts maintained", placeholder: "e.g. General Sales Trust Account; General Property Management Trust Account" },
+      { id: "receiptProcess", label: "Process for receipting trust money", placeholder: "e.g. sequential pre-printed receipts issued immediately via PropertyMe; funds deposited same day or next business day if received after 3pm", multiline: true },
+      { id: "disbursementProcess", label: "Process for authorising disbursements", placeholder: "e.g. written or email authority from client required; dual signatory for amounts over $10,000; LIC reviews and approves all disbursements before processing", multiline: true },
+      { id: "reconciliation", label: "Reconciliation frequency and process", placeholder: "e.g. trial balance reconciliation completed monthly on the last business day; three-way reconciliation (trust ledger, bank statement, client ledger) reviewed and signed by LIC within 5 days of month end" },
+      { id: "software", label: "Trust accounting software used", placeholder: "e.g. PropertyMe / Console Cloud / Managed App / Palace" },
+      { id: "shortage", label: "Process if a trust account shortage is identified", placeholder: "e.g. LIC notified immediately; agency funds used to remedy shortage immediately; NSW Fair Trading notified in writing within 3 days; external audit commissioned if required" },
+      { id: "audit", label: "Annual audit arrangement", placeholder: "e.g. audited annually by [Auditor Name], approved auditor under s90 of the Act, within 3 months of the end of each financial year; audit report submitted to NSW Fair Trading" },
     ],
-    generate: (a) => `TRUST ACCOUNTING PROCEDURES\n${a.agency}\n\nEFFECTIVE DATE: ${new Date().toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" })}\n\n1. PURPOSE\nThese procedures govern the receipt, holding, disbursement and accounting of trust monies by ${a.agency} in accordance with the Property and Stock Agents Act 2002 (NSW) and the Property and Stock Agents Regulation 2014 (NSW).\n\n2. RESPONSIBILITY\n${a.licensee} is the Licensee in Charge and holds primary responsibility for the management and integrity of all trust accounts held by ${a.agency}.\n\n3. AUTHORISED SIGNATORIES\nOnly the following persons are authorised to operate trust accounts: ${a.signatories}. No other person may withdraw trust funds without written authorisation from the Licensee in Charge.\n\n4. RECEIPTING & PAYMENT\nAll trust money received must be receipted immediately and deposited into the trust account on the same day of receipt (or the next business day if received after banking hours). Disbursements must be supported by a written authority from the client.\n\n5. RECONCILIATION\nTrust account reconciliations are conducted ${a.reconciliation}. Reconciliation records are signed by the Licensee in Charge and retained for a minimum of three (3) years.\n\n6. SOFTWARE\nTrust accounting is conducted using ${a.software}. All records produced by this system are retained as required by legislation.\n\n7. ANNUAL AUDIT\nAn annual audit of trust accounts is ${a.audit}. Any deficiencies identified are reported to NSW Fair Trading as required.\n\n_________________________\n${a.licensee} — Licensee in Charge\n${a.agency}`,
+    generate: (a) => {
+      const date = new Date().toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" });
+      return `TRUST ACCOUNTING POLICY AND PROCEDURES
+${a.agency} (ABN ${a.abn})
+
+EFFECTIVE DATE: ${date}
+LICENSEE IN CHARGE: ${a.licensee} (Licence No. ${a.licenceNo})
+NEXT REVIEW DATE: ${new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" })}
+
+────────────────────────────────────────
+
+1. LEGISLATIVE FRAMEWORK
+
+These Procedures are issued pursuant to:
+  • Property and Stock Agents Act 2002 (NSW), Part 5 — Trust Accounts (ss 84–107)
+  • Property and Stock Agents Regulation 2022 (NSW), Part 5 — Trust Money
+  • Conveyancing Act 1919 (NSW) (as applicable to deposit monies)
+
+Failure to comply with trust accounting obligations is a serious statutory breach and may result in disciplinary action by NSW Fair Trading, including the suspension or revocation of the agency's licence.
+
+────────────────────────────────────────
+
+2. PURPOSE AND SCOPE
+
+These Procedures govern all aspects of trust money management at ${a.agency}, including:
+  • Receipt and deposit of all trust money;
+  • Maintenance of trust accounting records;
+  • Disbursement of trust funds;
+  • Reconciliation of trust accounts;
+  • Annual audit compliance.
+
+These Procedures apply to all staff involved in any aspect of trust money handling.
+
+────────────────────────────────────────
+
+3. RESPONSIBILITY — LICENSEE IN CHARGE
+
+${a.licensee} (Licence No. ${a.licenceNo}) is the Licensee in Charge and has primary statutory responsibility under s87 of the Act for:
+  (a) Ensuring all trust money is held, recorded and disbursed in compliance with the Act and Regulation;
+  (b) Maintaining accurate trust accounting records;
+  (c) Ensuring the trust account is audited annually by an approved auditor;
+  (d) Notifying NSW Fair Trading of any trust account shortage as required by s107 of the Act;
+  (e) Supervising all staff who handle trust money.
+
+────────────────────────────────────────
+
+4. TRUST ACCOUNTS MAINTAINED
+
+Bank / Financial Institution: ${a.bankName}
+
+Trust Accounts:
+${a.accountTypes}
+
+All trust accounts are maintained with an authorised deposit-taking institution (ADI) as required by s85 of the Act. The agency's licence number is included in the account name. Trust money is not to be mixed with the agency's general operating funds under any circumstances.
+
+────────────────────────────────────────
+
+5. AUTHORISED SIGNATORIES
+
+Only the following persons are authorised to operate trust accounts:
+${a.signatories}
+
+No other person may access, withdraw from or operate the trust account without written authority from the Licensee in Charge. Authority must be documented in the agency's records before any disbursement is made.
+
+────────────────────────────────────────
+
+6. RECEIPT OF TRUST MONEY
+
+${a.receiptProcess}
+
+Trust money must be deposited into the trust account on the day of receipt, or on the next business day where receipt occurs after banking hours, in accordance with s86 of the Act. Under no circumstances is trust money to be deposited into the agency's general account.
+
+────────────────────────────────────────
+
+7. DISBURSEMENT OF TRUST MONEY
+
+${a.disbursementProcess}
+
+Trust money must only be disbursed:
+  (a) To the person entitled to receive it;
+  (b) In accordance with a written authority from the person for whom it is held;
+  (c) In accordance with a court order or the terms of an agency agreement;
+  (d) As otherwise required or permitted by the Act.
+
+All disbursements are recorded in ${a.software} at the time of payment with supporting documentation attached to the relevant ledger entry.
+
+────────────────────────────────────────
+
+8. TRUST ACCOUNTING RECORDS
+
+The following records are maintained for each trust transaction:
+  (a) Numbered trust account receipt;
+  (b) Deposit records;
+  (c) Trust ledger entries for each client;
+  (d) Disbursement records and supporting authorities;
+  (e) Monthly reconciliation statements;
+  (f) Auditor's reports.
+
+Trust accounting is conducted using ${a.software}. All records produced by this system are backed up daily and retained for a minimum of three (3) years in accordance with s88 of the Act.
+
+────────────────────────────────────────
+
+9. RECONCILIATION
+
+${a.reconciliation}
+
+The reconciliation confirms that the trust bank statement balance equals the trial balance of trust ledgers (the three-way reconciliation). Reconciliation statements are signed by the Licensee in Charge and retained as part of the agency's trust accounting records.
+
+Any discrepancy identified during reconciliation is investigated immediately by the LIC and resolved before any further disbursements are made.
+
+────────────────────────────────────────
+
+10. TRUST ACCOUNT SHORTAGES
+
+A trust account shortage exists where the amount held in the trust account is less than the total amount owed to all clients across all ledger balances.
+
+${a.shortage}
+
+Under s107 of the Act, the Licensee in Charge must notify NSW Fair Trading in writing if a trust account shortage cannot be remedied immediately. Failure to notify is a disciplinary offence.
+
+────────────────────────────────────────
+
+11. ANNUAL AUDIT
+
+${a.audit}
+
+Under s90 of the Act, the Licensee in Charge must cause the trust accounts to be audited by an approved auditor within 3 months after the end of each financial year (i.e. by 30 September). The auditor's report is submitted to NSW Fair Trading in the form required by the Director-General.
+
+────────────────────────────────────────
+
+12. PROHIBITED USES OF TRUST MONEY
+
+Trust money must never be used:
+  (a) To fund agency operating expenses, wages or any business cost;
+  (b) As security for any loan or financial obligation of the agency;
+  (c) For any purpose not authorised in writing by the client to whom the money belongs;
+  (d) In any way that creates a commingling of trust and general funds.
+
+Any staff member who knowingly misappropriates trust money may be subject to criminal prosecution and loss of their licence or certificate of registration.
+
+────────────────────────────────────────
+
+SIGN-OFF
+
+_________________________
+${a.licensee}
+Licensee in Charge — Licence No. ${a.licenceNo}
+${a.agency} (ABN ${a.abn})
+
+Date: ${date}`;
+    },
   },
   {
     name: "Social Media Policy", category: "Marketing",
-    description: "Guidelines for staff use of social media in a professional and compliant manner.",
+    description: "Governs staff use of social media in compliance with the ACL, Privacy Act and real estate advertising standards.",
     questions: [
       { id: "agency", label: "Agency / business name", placeholder: "e.g. Ray White Bondi Junction" },
-      { id: "platforms", label: "Approved social media platforms", placeholder: "e.g. Facebook, Instagram, LinkedIn" },
-      { id: "approval", label: "Approval process for posts", placeholder: "e.g. all property listings and promotional content must be approved by the principal before publishing", multiline: true },
-      { id: "prohibited", label: "Prohibited content (examples)", placeholder: "e.g. client personal information, misleading claims, discriminatory content, undisclosed testimonials", multiline: true },
-      { id: "breach", label: "Consequence of policy breach", placeholder: "e.g. formal warning, and potential termination for serious or repeated breaches" },
+      { id: "abn", label: "Agency ABN", placeholder: "e.g. 12 345 678 901" },
+      { id: "principal", label: "Principal licensee name", placeholder: "e.g. Sarah Mitchell" },
+      { id: "socialManager", label: "Person responsible for managing official social media accounts", placeholder: "e.g. Lisa Torres — Marketing Coordinator" },
+      { id: "platforms", label: "Approved official agency platforms", placeholder: "e.g. Facebook Business Page, Instagram, LinkedIn Company Page, Google Business Profile" },
+      { id: "approvalProcess", label: "Content approval process before publishing", placeholder: "e.g. all property listings approved by LIC before going live; all promotional or opinion content approved by principal or nominated marketing manager; staff must not post anything real-estate related without approval", multiline: true },
+      { id: "listingStandards", label: "Advertising and listing content standards", placeholder: "e.g. all prices, fees and property details must be accurate; estimated sale price ranges require a current CMA; rent amounts must match management agreement; no use of 'offers above' or price ranges in violation of the Regulation", multiline: true },
+      { id: "prohibited", label: "Prohibited content — specific to real estate", placeholder: "e.g. client names or personal details without consent; undisclosed testimonials or endorsements; discriminatory content in property advertising; representations about price, area or features that cannot be substantiated; agent comparisons without factual basis", multiline: true },
+      { id: "personalUse", label: "Personal social media — obligations for staff", placeholder: "e.g. staff must not post agency listings or property details on personal accounts without approval; must not post client information; must identify posts as personal opinion and not the agency's view", multiline: true },
+      { id: "breach", label: "Consequence of breach", placeholder: "e.g. verbal warning for minor first breach; formal written warning for second breach; termination or referral to NSW Fair Trading for serious breaches involving client information disclosure or misleading conduct" },
+      { id: "retention", label: "How long are social media posts / content records retained?", placeholder: "e.g. screenshots of all published posts retained for 3 years in agency marketing files" },
     ],
-    generate: (a) => `SOCIAL MEDIA POLICY\n${a.agency}\n\nEFFECTIVE DATE: ${new Date().toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" })}\n\n1. PURPOSE\nThis policy governs the use of social media by ${a.agency} and its staff in connection with the agency's business, in compliance with the Australian Consumer Law, the Privacy Act 1988 (Cth), and applicable advertising standards.\n\n2. APPROVED PLATFORMS\nThe agency maintains an official presence on the following platforms: ${a.platforms}. Staff must not create unofficial agency accounts or pages without prior approval.\n\n3. CONTENT APPROVAL\n${a.approval}\n\nStaff must ensure that all content is accurate, truthful and compliant with consumer protection laws and real estate advertising standards.\n\n4. PROHIBITED CONTENT\nThe following content must not be published on any platform: ${a.prohibited}.\n\nStaff must also comply with platform-specific terms of service and avoid any conduct that could damage the agency's reputation.\n\n5. PERSONAL USE\nStaff using personal social media accounts must make clear that views expressed are their own and do not represent ${a.agency}. Staff must not disclose confidential client or business information on personal accounts.\n\n6. BREACH\n${a.breach}. Breaches may also constitute a breach of the Property and Stock Agents Act 2002 (NSW) and may be reported to the relevant authority.\n\n_________________________\nPrincipal\n${a.agency}`,
+    generate: (a) => {
+      const date = new Date().toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" });
+      return `SOCIAL MEDIA POLICY
+${a.agency} (ABN ${a.abn})
+
+EFFECTIVE DATE: ${date}
+PRINCIPAL: ${a.principal}
+SOCIAL MEDIA MANAGER: ${a.socialManager}
+NEXT REVIEW DATE: ${new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" })}
+
+────────────────────────────────────────
+
+1. PURPOSE AND LEGISLATIVE CONTEXT
+
+This Policy governs the use of social media by ${a.agency} and all persons employed or engaged by the agency in connection with the agency's real estate business.
+
+Relevant legislative and regulatory framework:
+  • Competition and Consumer Act 2010 (Cth), Schedule 2 — Australian Consumer Law (ACL): misleading and deceptive conduct (s18), false representations (s29), unconscionable conduct (s21)
+  • Privacy Act 1988 (Cth) and Australian Privacy Principles (APPs)
+  • Property and Stock Agents Act 2002 (NSW), Part 4 — Conduct of Agency Business
+  • Property and Stock Agents Regulation 2022 (NSW), Schedule 1 — Code of Conduct
+  • Advertising Standards (AANA Code of Ethics)
+  • Anti-Discrimination Act 1977 (NSW) — in relation to any property advertising
+
+All real estate advertising — whether on portals, social media or any other channel — must comply with the above legislation. Misleading advertising in relation to property is grounds for disciplinary action by NSW Fair Trading and may attract penalties under the ACL.
+
+────────────────────────────────────────
+
+2. OFFICIAL AGENCY ACCOUNTS
+
+${a.agency} maintains official social media accounts on the following platforms:
+${a.platforms}
+
+${a.socialManager} is responsible for managing all official agency accounts, including:
+  (a) Creating and scheduling approved content;
+  (b) Monitoring and responding to comments and messages;
+  (c) Reporting any complaints, reputational concerns or compliance issues to the principal;
+  (d) Maintaining the login credentials and security settings of all official accounts.
+
+Staff must not create additional agency pages, accounts or groups on any platform without prior written approval from ${a.principal}. Unofficial accounts that purport to represent the agency may be required to be closed or transferred.
+
+────────────────────────────────────────
+
+3. CONTENT APPROVAL AND PUBLISHING PROCESS
+
+${a.approvalProcess}
+
+All content must be reviewed against the checklist below before publishing:
+  □ Is all factual information (price, address, property details) accurate and verifiable?
+  □ Does the post comply with NSW price advertising requirements under the Regulation?
+  □ Has client consent been obtained where a client's image, name or property is featured?
+  □ Does the post disclose any material interest or potential conflict?
+  □ Is any testimonial or review clearly attributed and based on a genuine experience?
+  □ Is any comparison with competitors fair, accurate and substantiated?
+
+────────────────────────────────────────
+
+4. ADVERTISING AND LISTING STANDARDS
+
+${a.listingStandards}
+
+Under the Property and Stock Agents Regulation 2022 (NSW) and the ACL:
+  (a) Estimated sale prices must be based on a documented current comparative market analysis (CMA) and must not be underquoted;
+  (b) Auction reserve prices and vendor bids must not be disclosed in contravention of the Act;
+  (c) Rental amounts must reflect the amount in the current management agreement;
+  (d) All advertising must state the name of the agent and the licence number of the agency;
+  (e) "Expressions of interest" and "contact agent" pricing are permitted in certain circumstances only — the LIC will advise on a case-by-case basis.
+
+────────────────────────────────────────
+
+5. PROHIBITED CONTENT
+
+The following content must not appear on any official or personal social media account in connection with the agency's business:
+${a.prohibited}
+
+In addition, the following categories of content are prohibited on all platforms regardless of context:
+  (a) Discriminatory content of any kind in relation to property advertising (including references to the race, ethnicity, religion, disability, age, gender or family status of preferred purchasers or tenants) — this is unlawful under the Anti-Discrimination Act 1977 (NSW);
+  (b) Photographs of clients, properties or internal documents without express written consent;
+  (c) Content that makes unsubstantiated comparative claims about competitor agents;
+  (d) Posts that reproduce property portal data, photos or descriptions in breach of the relevant platform's intellectual property terms;
+  (e) Any content that creates, or is likely to create, a false or misleading impression about the agency, its staff, or any property.
+
+────────────────────────────────────────
+
+6. PERSONAL SOCIAL MEDIA USE
+
+${a.personalUse}
+
+In particular, staff using personal accounts:
+  (a) Must clearly identify any real estate-related opinion as personal and not as a statement of the agency;
+  (b) Must not post client names, contact details, property addresses, sale prices or any confidential information;
+  (c) Must not make comments that could be perceived as disparaging clients, competing agents, or the agency itself;
+  (d) Should be aware that publicly visible comments made in a personal capacity that are derogatory, discriminatory or misleading may still expose the agency to reputational or regulatory risk, and may be grounds for disciplinary action.
+
+────────────────────────────────────────
+
+7. RECORDS RETENTION
+
+${a.retention}
+
+Records of published advertising content — including property listings, price representations and testimonials — are retained to demonstrate compliance with price advertising requirements and the ACL in the event of a complaint or investigation.
+
+────────────────────────────────────────
+
+8. BREACH OF POLICY
+
+${a.breach}
+
+A breach of this Policy may also constitute a breach of:
+  (a) The ACL (potential pecuniary penalties of up to $50 million for corporations under s224 of the ACL);
+  (b) The Property and Stock Agents Act 2002 (NSW) — grounds for disciplinary action by NSW Fair Trading;
+  (c) The agency's professional indemnity insurance policy terms.
+
+────────────────────────────────────────
+
+SIGN-OFF
+
+_________________________
+${a.principal}
+Principal Licensee
+${a.agency} (ABN ${a.abn})
+
+Date: ${date}`;
+    },
   },
   {
     name: "Record Keeping Policy", category: "Compliance",
-    description: "Establishes standards for the creation, storage and disposal of agency records.",
+    description: "Establishes statutory minimum standards for the creation, storage, retention and disposal of agency records.",
     questions: [
       { id: "agency", label: "Agency / business name", placeholder: "e.g. Ray White Bondi Junction" },
-      { id: "responsible", label: "Person responsible for records management", placeholder: "e.g. Sarah Mitchell" },
-      { id: "recordTypes", label: "Key record types covered", placeholder: "e.g. trust accounting records, agency agreements, sales contracts, AML/CTF records, staff files", multiline: true },
-      { id: "storage", label: "Storage systems used", placeholder: "e.g. cloud-based CRM, encrypted server, and locked physical filing" },
-      { id: "retention", label: "Standard retention period", placeholder: "e.g. minimum 7 years from date of transaction for financial records; 3 years for operational records" },
-      { id: "disposal", label: "Disposal method for sensitive records", placeholder: "e.g. secure shredding for physical documents; verified deletion for digital records" },
+      { id: "abn", label: "Agency ABN", placeholder: "e.g. 12 345 678 901" },
+      { id: "responsible", label: "Person responsible for records management", placeholder: "e.g. Sarah Mitchell — Principal Licensee" },
+      { id: "systems", label: "Systems and software used for record storage", placeholder: "e.g. PropertyMe (trust accounting and property management), REX CRM (sales and client records), SharePoint (internal documents), locked fire-rated filing cabinets for originals" },
+      { id: "access", label: "Who has access to different categories of records?", placeholder: "e.g. trust records — LIC only; client files — relevant agent plus LIC; AML/CTF records — LIC and Compliance Officer only; HR records — LIC only", multiline: true },
+      { id: "backup", label: "Data backup frequency and method", placeholder: "e.g. automated daily backup via cloud provider; weekly verified restore test conducted monthly; offsite backup maintained" },
+      { id: "physicalSecurity", label: "Physical security for paper records", placeholder: "e.g. locked filing cabinets in secure office; access restricted to authorised staff; visitor access to office is escorted at all times" },
+      { id: "disposal", label: "Approved disposal methods for records at end of retention period", placeholder: "e.g. physical documents — commercial cross-cut shredding by certified secure destruction provider; digital records — verified deletion with confirmation log; disposal recorded in the records register" },
+      { id: "review", label: "How often is this policy reviewed?", placeholder: "e.g. Annually in July, or following any legislative change or data breach" },
     ],
-    generate: (a) => `RECORD KEEPING POLICY\n${a.agency}\n\nEFFECTIVE DATE: ${new Date().toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" })}\n\n1. PURPOSE\nThis policy establishes minimum standards for the creation, maintenance, storage and disposal of records at ${a.agency}, in compliance with the Property and Stock Agents Act 2002 (NSW), Property and Stock Agents Regulation 2014 (NSW), Privacy Act 1988 (Cth), and other applicable legislation.\n\n2. RESPONSIBILITY\n${a.responsible} is responsible for overseeing record keeping practices and ensuring compliance with this policy.\n\n3. RECORDS COVERED\nThis policy applies to all business records including: ${a.recordTypes}.\n\n4. STORAGE\nAll records must be stored securely using: ${a.storage}. Access to records is restricted to authorised personnel only. Digital records must be protected by appropriate access controls and backed up regularly.\n\n5. RETENTION\n${a.retention}. Where specific legislation prescribes a longer retention period, that period applies.\n\n6. DISPOSAL\nRecords that have reached the end of their retention period must be disposed of securely: ${a.disposal}. A record of disposal must be maintained.\n\n7. ACCESS\nAuthorised staff may access records relevant to their role. Clients may request access to their own records in accordance with the Privacy Policy. Records must be made available to regulators on request.\n\n_________________________\n${a.responsible} — Records Manager\n${a.agency}`,
+    generate: (a) => {
+      const date = new Date().toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" });
+      return `RECORD KEEPING POLICY
+${a.agency} (ABN ${a.abn})
+
+EFFECTIVE DATE: ${date}
+RECORDS MANAGER: ${a.responsible}
+NEXT REVIEW DATE: ${new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" })}
+
+────────────────────────────────────────
+
+1. LEGISLATIVE FRAMEWORK
+
+This Policy establishes minimum standards for the creation, maintenance, storage, retention and disposal of records at ${a.agency}, in compliance with:
+  • Property and Stock Agents Act 2002 (NSW), s88 — trust account records
+  • Property and Stock Agents Regulation 2022 (NSW), Part 5, cl 38 — records of transactions
+  • Privacy Act 1988 (Cth) — APP 11 (security of personal information), APP 6 (use and disclosure)
+  • Anti-Money Laundering and Counter-Terrorism Financing Act 2006 (Cth), ss 105–116 — AML/CTF records
+  • Income Tax Assessment Act 1997 (Cth) — financial record keeping (5-year minimum)
+  • Limitation Act 1969 (NSW) — civil claims (general 6-year limitation period)
+
+Where legislation prescribes a specific minimum retention period, that period overrides any shorter period in this Policy.
+
+────────────────────────────────────────
+
+2. PURPOSE AND SCOPE
+
+This Policy applies to all records created, received or managed by ${a.agency} in the course of its business, whether in physical (paper) or digital (electronic) format. It applies to all staff and contractors who create, access or manage agency records.
+
+────────────────────────────────────────
+
+3. RESPONSIBILITY
+
+${a.responsible} is responsible for:
+  (a) Implementing and overseeing this Policy;
+  (b) Ensuring all staff understand and comply with their record keeping obligations;
+  (c) Maintaining the records register and disposal log;
+  (d) Reviewing the Policy annually and following any legislative change;
+  (e) Making records available to NSW Fair Trading, AUSTRAC, the ATO and other regulators on request.
+
+────────────────────────────────────────
+
+4. SYSTEMS AND STORAGE
+
+${a.systems}
+
+Digital records must be:
+  (a) Stored in an authorised system with appropriate access controls;
+  (b) Protected from unauthorised access, alteration or deletion;
+  (c) Backed up according to clause 5 below;
+  (d) Capable of being reproduced in legible, printable form on request.
+
+Physical records must be maintained as set out in clause 6 below.
+
+────────────────────────────────────────
+
+5. DATA BACKUP
+
+${a.backup}
+
+In the event of data loss or system failure, the agency's disaster recovery procedure is activated immediately. The responsible person will notify the system provider and initiate recovery from the most recent verified backup. Any data loss affecting client records will also be assessed under the Notifiable Data Breaches Scheme (Privacy Act 1988 (Cth)).
+
+────────────────────────────────────────
+
+6. PHYSICAL SECURITY
+
+${a.physicalSecurity}
+
+When staff leave the agency (including after-hours), all physical client files and trust accounting records must be secured in locked cabinets or drawers. Client files must not be left on desks, in common areas or in vehicles overnight.
+
+────────────────────────────────────────
+
+7. ACCESS CONTROLS
+
+${a.access}
+
+Access to records is reviewed whenever a staff member changes role or leaves the agency. Former staff are removed from all systems promptly upon cessation of employment or engagement. The responsible person maintains a current access register.
+
+────────────────────────────────────────
+
+8. STATUTORY RETENTION PERIODS
+
+The following minimum retention periods apply:
+
+TRUST ACCOUNTING RECORDS
+  • Trust account receipts, payments, ledgers, reconciliations, auditor reports: 3 years from date of transaction (Property and Stock Agents Act, s88) — agency practice: 7 years
+
+AGENCY AGREEMENTS AND TRANSACTION RECORDS
+  • Exclusive agency agreements, sales contracts, auction records, bidder registers: 3 years from date of document (Regulation, cl 38) — agency practice: 7 years
+  • Property management agreements and rent rolls: 3 years from termination of agreement — agency practice: 7 years
+
+AML/CTF RECORDS
+  • Customer identification documents, transaction records, SMRs, TTRs, risk assessments, training records: 7 years from date of transaction or document (AML/CTF Act, ss 105–116)
+
+PRIVACY / PERSONAL INFORMATION
+  • Rental applications not proceeding: 1 year from decision date (then destroy)
+  • Tenant files: 7 years from end of tenancy
+  • Vendor and purchaser files: 7 years from settlement or completion
+
+STAFF AND HR RECORDS
+  • Employment records, contracts, performance records, incident reports: 7 years from end of employment
+  • Workers compensation records: 7 years
+
+FINANCIAL AND TAX RECORDS
+  • General financial records, invoices, receipts, bank statements: 5 years from date of document (Income Tax Assessment Act)
+
+Where a record is subject to an active complaint, dispute, litigation or regulatory investigation, the relevant records must be retained for the duration of that matter plus 7 years, regardless of the standard period.
+
+────────────────────────────────────────
+
+9. DISPOSAL OF RECORDS
+
+Records that have reached the end of their retention period must be disposed of securely. Approved disposal methods:
+${a.disposal}
+
+A disposal must only be authorised by ${a.responsible}. Each disposal is recorded in the agency's records disposal log, including:
+  (a) Description and category of records disposed;
+  (b) Date range of records;
+  (c) Date of disposal;
+  (d) Method of disposal;
+  (e) Name of authorising officer;
+  (f) Name of disposal service provider (where applicable).
+
+Records that are the subject of a current or anticipated complaint, investigation, or legal proceedings must NOT be disposed of, regardless of retention period, until the matter is fully resolved.
+
+────────────────────────────────────────
+
+10. REGULATOR ACCESS
+
+All records held by ${a.agency} must be made available to authorised NSW Fair Trading inspectors, AUSTRAC, the ATO, the OAIC or other regulators on request, in accordance with the relevant legislative powers. Requests for record access from any regulator must be directed immediately to ${a.responsible}.
+
+────────────────────────────────────────
+
+11. REVIEW
+
+This Policy is reviewed ${a.review}. ${a.responsible} is responsible for ensuring the Policy reflects any changes in legislation, agency systems, or record types managed by the agency.
+
+────────────────────────────────────────
+
+SIGN-OFF
+
+_________________________
+${a.responsible}
+Records Manager
+${a.agency} (ABN ${a.abn})
+
+Date: ${date}`;
+    },
   },
 ];
 
-function PolicyTemplatesPage() {
+function PolicyTemplatesPage({ onPolicySaved, savedNames }: { onPolicySaved: (p: PolicyRow) => void; savedNames: string[] }) {
   const [view, setView] = useState<"list" | "questionnaire" | "review" | "saved">("list");
   const [selectedTemplate, setSelectedTemplate] = useState<PTConfig | null>(null);
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [savedPolicies, setSavedPolicies] = useState<string[]>([]);
+  const [saving, setSaving] = useState(false);
 
   const inputStyPT: React.CSSProperties = { fontSize: "13px", color: "var(--rc-ink)", background: "var(--rc-surface)", border: "1px solid var(--rc-border)", borderRadius: "8px", padding: "10px 12px", outline: "none", fontFamily: "var(--font-inter)", width: "100%", boxSizing: "border-box", resize: "vertical" };
 
@@ -2278,8 +3551,29 @@ function PolicyTemplatesPage() {
     else { setView("review"); }
   }
 
-  function savePolicy() {
-    if (selectedTemplate) setSavedPolicies(prev => [...prev, selectedTemplate.name]);
+  async function savePolicy() {
+    if (!selectedTemplate) return;
+    setSaving(true);
+    const { data: user } = await supabase.auth.getUser();
+    if (!user.user) { setSaving(false); return; }
+    const today = new Date();
+    const fmtDate = (d: Date) => d.toLocaleDateString("en-AU", { month: "short", year: "numeric" });
+    const nextYear = new Date(today); nextYear.setFullYear(nextYear.getFullYear() + 1);
+    const content = selectedTemplate.generate(answers);
+    const { data, error } = await supabase.from("policies").insert({
+      user_id: user.user.id,
+      name: selectedTemplate.name,
+      category: selectedTemplate.category,
+      status: "current",
+      last_reviewed: fmtDate(today),
+      next_review: fmtDate(nextYear),
+      content,
+      source: "template",
+    }).select().single();
+    setSaving(false);
+    if (!error && data) {
+      onPolicySaved({ id: data.id, name: data.name, category: data.category, status: data.status, last_reviewed: data.last_reviewed, next_review: data.next_review, content: data.content, source: data.source });
+    }
     setView("saved");
   }
 
@@ -2296,7 +3590,7 @@ function PolicyTemplatesPage() {
         <div style={{ flex: 1, overflowY: "auto", display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "12px", alignContent: "start" }}>
           {policyTemplateConfigs.map(t => {
             const cat = catColors[t.category] ?? catColors.Admin;
-            const isSaved = savedPolicies.includes(t.name);
+            const isSaved = savedNames.includes(t.name);
             return (
               <div key={t.name} style={{ border: "1px solid var(--rc-border)", borderRadius: "12px", padding: "20px 22px", background: "var(--rc-bg)", boxShadow: "var(--rc-shadow-sm)", display: "flex", flexDirection: "column", gap: "12px" }}>
                 <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "12px" }}>
@@ -2412,9 +3706,10 @@ function PolicyTemplatesPage() {
             </button>
             <button
               onClick={savePolicy}
-              style={{ fontSize: "13px", fontWeight: 600, color: "white", background: "var(--rc-primary)", border: "none", borderRadius: "8px", padding: "8px 18px", cursor: "pointer", fontFamily: "var(--font-inter)" }}
+              disabled={saving}
+              style={{ fontSize: "13px", fontWeight: 600, color: "white", background: saving ? "var(--rc-faint)" : "var(--rc-primary)", border: "none", borderRadius: "8px", padding: "8px 18px", cursor: saving ? "default" : "pointer", fontFamily: "var(--font-inter)" }}
             >
-              Save to library
+              {saving ? "Saving…" : "Save to library"}
             </button>
           </div>
         </div>
@@ -2455,9 +3750,36 @@ function PolicyTemplatesPage() {
   return null;
 }
 
-function ReviewSchedulePage() {
-  const upcoming = modulePolicies.filter(p => p.status === "review-due");
-  const current  = modulePolicies.filter(p => p.status === "current");
+function ReviewSchedulePage({ policies, onPolicyUpdated, onPolicyDeleted }: { policies: PolicyRow[]; onPolicyUpdated: (p: PolicyRow) => void; onPolicyDeleted: (id: string) => void }) {
+  const [viewPolicy, setViewPolicy] = useState<PolicyRow | null>(null);
+  const upcoming = policies.filter(p => p.status === "review-due");
+  const current  = policies.filter(p => p.status === "current");
+
+  async function markReviewed(p: PolicyRow) {
+    const today = new Date();
+    const fmtDate = (d: Date) => d.toLocaleDateString("en-AU", { month: "short", year: "numeric" });
+    const nextYear = new Date(today); nextYear.setFullYear(nextYear.getFullYear() + 1);
+    const { data, error } = await supabase.from("policies").update({
+      status: "current", last_reviewed: fmtDate(today), next_review: fmtDate(nextYear),
+    }).eq("id", p.id).select().single();
+    if (!error && data) {
+      const updated = { ...p, status: "current" as const, last_reviewed: data.last_reviewed, next_review: data.next_review };
+      onPolicyUpdated(updated);
+      if (viewPolicy?.id === p.id) setViewPolicy(updated);
+    }
+  }
+
+  async function deletePolicy(p: PolicyRow) {
+    const { error } = await supabase.from("policies").delete().eq("id", p.id);
+    if (!error) { onPolicyDeleted(p.id); setViewPolicy(null); }
+  }
+
+  if (viewPolicy) {
+    return <PolicyDetailView policy={viewPolicy} onBack={() => setViewPolicy(null)} onMarkReviewed={viewPolicy.status === "review-due" ? markReviewed : undefined} onDelete={deletePolicy} />;
+  }
+
+  const rowStyle = (bg: string): React.CSSProperties => ({ display: "grid", gridTemplateColumns: "1fr 130px 130px 150px", alignItems: "center", padding: "0 20px", background: bg, cursor: "pointer", transition: "filter 0.1s ease" });
+
   return (
     <div style={PAGE_WRAP}>
       <div style={PAGE_HEADER}>
@@ -2466,60 +3788,112 @@ function ReviewSchedulePage() {
           <p style={PAGE_SUB}>{upcoming.length} policies due for review · {current.length} up to date</p>
         </div>
       </div>
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, gap: "16px", overflowY: "auto" }}>
-        {upcoming.length > 0 && (
-          <div>
-            <p style={{ fontSize: "11.5px", fontWeight: 600, color: "oklch(0.46 0.12 55)", letterSpacing: "0.05em", textTransform: "uppercase", marginBottom: "10px", maxWidth: "none" }}>Due for review</p>
-            <div style={{ border: "1px solid var(--rc-border)", borderRadius: "12px", overflow: "hidden", boxShadow: "var(--rc-shadow-sm)" }}>
-              {upcoming.map((p, i) => (
-                <div key={p.name} style={{ display: "grid", gridTemplateColumns: "1fr 130px 130px 130px", alignItems: "center", padding: "14px 20px", borderBottom: i < upcoming.length - 1 ? "1px solid var(--rc-border)" : "none", background: "oklch(0.985 0.012 55)" }}>
-                  <span style={{ fontSize: "13px", fontWeight: 500, color: "var(--rc-ink)" }}>{p.name}</span>
-                  <span style={{ fontSize: "12.5px", color: "var(--rc-faint)" }}>Last: {p.lastReviewed}</span>
-                  <span style={{ fontSize: "12.5px", color: "oklch(0.46 0.12 55)", fontWeight: 500 }}>Due: {p.nextReview}</span>
-                  <div style={{ textAlign: "right" }}>
-                    <button style={{ fontSize: "12px", fontWeight: 500, color: "var(--rc-faint)", background: "transparent", border: "none", padding: 0, cursor: "pointer", fontFamily: "var(--font-inter)", transition: "color 0.1s ease" }}
-                      onMouseEnter={e => (e.currentTarget.style.color = "var(--rc-ink)")} onMouseLeave={e => (e.currentTarget.style.color = "var(--rc-faint)")}>
-                      Mark reviewed →
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-        <div>
-          <p style={{ fontSize: "11.5px", fontWeight: 600, color: "oklch(0.42 0.12 145)", letterSpacing: "0.05em", textTransform: "uppercase", marginBottom: "10px", maxWidth: "none" }}>Up to date</p>
-          <div style={{ border: "1px solid var(--rc-border)", borderRadius: "12px", overflow: "hidden", boxShadow: "var(--rc-shadow-sm)" }}>
-            {current.map((p, i) => (
-              <div key={p.name} style={{ display: "grid", gridTemplateColumns: "1fr 130px 130px 130px", alignItems: "center", padding: "14px 20px", borderBottom: i < current.length - 1 ? "1px solid var(--rc-border)" : "none", background: "var(--rc-bg)" }}>
-                <span style={{ fontSize: "13px", fontWeight: 500, color: "var(--rc-ink)" }}>{p.name}</span>
-                <span style={{ fontSize: "12.5px", color: "var(--rc-faint)" }}>Last: {p.lastReviewed}</span>
-                <span style={{ fontSize: "12.5px", color: "var(--rc-faint)" }}>Due: {p.nextReview}</span>
-                <div style={{ display: "flex", alignItems: "center", gap: "6px", justifyContent: "flex-end" }}>
-                  <GreenDot />
-                  <span style={{ fontSize: "12px", color: "oklch(0.42 0.12 145)" }}>Current</span>
-                </div>
-              </div>
-            ))}
-          </div>
+      {policies.length === 0 ? (
+        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <p style={{ fontSize: "14px", color: "var(--rc-faint)", maxWidth: "none", textAlign: "center" }}>No policies yet. Add some via Policy Templates or Upload Document.</p>
         </div>
-      </div>
+      ) : (
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, gap: "16px", overflowY: "auto" }}>
+          {upcoming.length > 0 && (
+            <div>
+              <p style={{ fontSize: "11.5px", fontWeight: 600, color: "oklch(0.46 0.12 55)", letterSpacing: "0.05em", textTransform: "uppercase", marginBottom: "10px", maxWidth: "none" }}>Due for review</p>
+              <div style={{ border: "1px solid var(--rc-border)", borderRadius: "12px", overflow: "hidden", boxShadow: "var(--rc-shadow-sm)" }}>
+                {upcoming.map((p, i) => (
+                  <div key={p.id} style={{ ...rowStyle("oklch(0.985 0.012 55)"), borderBottom: i < upcoming.length - 1 ? "1px solid var(--rc-border)" : "none" }}
+                    onMouseEnter={e => (e.currentTarget.style.filter = "brightness(0.97)")} onMouseLeave={e => (e.currentTarget.style.filter = "none")}>
+                    <button onClick={() => setViewPolicy(p)} style={{ fontSize: "13px", fontWeight: 500, color: "var(--rc-primary)", background: "transparent", border: "none", cursor: "pointer", fontFamily: "var(--font-inter)", textAlign: "left", padding: "14px 0" }}>
+                      {p.name}
+                    </button>
+                    <span style={{ fontSize: "12.5px", color: "var(--rc-faint)" }}>Last: {p.last_reviewed ?? "—"}</span>
+                    <span style={{ fontSize: "12.5px", color: "oklch(0.46 0.12 55)", fontWeight: 500 }}>Due: {p.next_review ?? "—"}</span>
+                    <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end", alignItems: "center" }}>
+                      <button onClick={e => { e.stopPropagation(); markReviewed(p); }} style={{ fontSize: "12px", fontWeight: 500, color: "var(--rc-faint)", background: "transparent", border: "none", padding: 0, cursor: "pointer", fontFamily: "var(--font-inter)", transition: "color 0.1s ease" }}
+                        onMouseEnter={e => (e.currentTarget.style.color = "var(--rc-ink)")} onMouseLeave={e => (e.currentTarget.style.color = "var(--rc-faint)")}>
+                        Mark reviewed →
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {current.length > 0 && (
+            <div>
+              <p style={{ fontSize: "11.5px", fontWeight: 600, color: "oklch(0.42 0.12 145)", letterSpacing: "0.05em", textTransform: "uppercase", marginBottom: "10px", maxWidth: "none" }}>Up to date</p>
+              <div style={{ border: "1px solid var(--rc-border)", borderRadius: "12px", overflow: "hidden", boxShadow: "var(--rc-shadow-sm)" }}>
+                {current.map((p, i) => (
+                  <div key={p.id} style={{ ...rowStyle("var(--rc-bg)"), borderBottom: i < current.length - 1 ? "1px solid var(--rc-border)" : "none" }}
+                    onMouseEnter={e => (e.currentTarget.style.filter = "brightness(0.97)")} onMouseLeave={e => (e.currentTarget.style.filter = "none")}>
+                    <button onClick={() => setViewPolicy(p)} style={{ fontSize: "13px", fontWeight: 500, color: "var(--rc-primary)", background: "transparent", border: "none", cursor: "pointer", fontFamily: "var(--font-inter)", textAlign: "left", padding: "14px 0" }}>
+                      {p.name}
+                    </button>
+                    <span style={{ fontSize: "12.5px", color: "var(--rc-faint)" }}>Last: {p.last_reviewed ?? "—"}</span>
+                    <span style={{ fontSize: "12.5px", color: "var(--rc-faint)" }}>Due: {p.next_review ?? "—"}</span>
+                    <div style={{ display: "flex", alignItems: "center", gap: "6px", justifyContent: "flex-end" }}>
+                      <GreenDot />
+                      <span style={{ fontSize: "12px", color: "oklch(0.42 0.12 145)" }}>Current</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
 
-function UploadDocumentPage() {
+function UploadDocumentPage({ onPolicySaved }: { onPolicySaved: (p: PolicyRow) => void }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
-  const [files, setFiles] = useState<UploadedFile[]>([]);
+  const [rawFiles, setRawFiles] = useState<File[]>([]);
   const [name, setName] = useState("");
   const [category, setCategory] = useState("Sales");
   const [effective, setEffective] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploaded, setUploaded] = useState(false);
+
+  const files: UploadedFile[] = rawFiles.map(f => ({ name: f.name, size: fmtBytes(f.size), addedAt: new Date().toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" }) }));
 
   function handleFiles(fl: FileList | null) {
     if (!fl) return;
-    setFiles(prev => [...prev, ...Array.from(fl).map(f => ({ name: f.name, size: fmtBytes(f.size), addedAt: new Date().toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" }) }))]);
+    setRawFiles(prev => [...prev, ...Array.from(fl)]);
+  }
+
+  async function handleUpload() {
+    if (!rawFiles.length || !name.trim()) return;
+    setUploading(true);
+    setUploadError(null);
+    const { data: user } = await supabase.auth.getUser();
+    if (!user.user) { setUploading(false); setUploadError("Not signed in."); return; }
+    const today = new Date();
+    const fmtDate = (d: Date) => d.toLocaleDateString("en-AU", { month: "short", year: "numeric" });
+    const nextYear = new Date(today); nextYear.setFullYear(nextYear.getFullYear() + 1);
+    // Upload first file to storage
+    const file = rawFiles[0];
+    const storagePath = `${user.user.id}/${Date.now()}_${file.name}`;
+    const { error: storageErr } = await supabase.storage.from("policy-docs").upload(storagePath, file, { upsert: false });
+    if (storageErr && storageErr.message !== "The resource already exists") {
+      setUploading(false); setUploadError(storageErr.message); return;
+    }
+    const { data, error } = await supabase.from("policies").insert({
+      user_id: user.user.id,
+      name: name.trim(),
+      category,
+      status: "current",
+      last_reviewed: effective ? new Date(effective).toLocaleDateString("en-AU", { month: "short", year: "numeric" }) : fmtDate(today),
+      next_review: fmtDate(nextYear),
+      content: null,
+      source: "upload",
+    }).select().single();
+    setUploading(false);
+    if (error) { setUploadError(error.message); return; }
+    if (data) onPolicySaved({ id: data.id, name: data.name, category: data.category, status: data.status, last_reviewed: data.last_reviewed, next_review: data.next_review, content: null, source: "upload" });
+    setUploaded(true);
+    setRawFiles([]); setName(""); setEffective("");
+    setTimeout(() => setUploaded(false), 3000);
   }
 
   const inputStyle: React.CSSProperties = { width: "100%", padding: "10px 14px", borderRadius: "8px", border: "1px solid var(--rc-border)", fontSize: "13.5px", color: "var(--rc-ink)", background: "var(--rc-bg)", fontFamily: "var(--font-inter)", outline: "none", boxSizing: "border-box" };
@@ -2565,7 +3939,7 @@ function UploadDocumentPage() {
                     <p style={{ fontSize: "13px", fontWeight: 500, color: "var(--rc-ink)", margin: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "none" }}>{f.name}</p>
                     <p style={{ fontSize: "11px", color: "var(--rc-faint)", margin: 0, maxWidth: "none" }}>{f.size}</p>
                   </div>
-                  <button onClick={() => setFiles(prev => prev.filter((_, j) => j !== i))} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--rc-faint)", padding: "2px" }}>
+                  <button onClick={() => setRawFiles(prev => prev.filter((_, j) => j !== i))} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--rc-faint)", padding: "2px" }}>
                     <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 3l8 8M11 3L3 11" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" /></svg>
                   </button>
                 </div>
@@ -2593,11 +3967,17 @@ function UploadDocumentPage() {
             <input type="date" value={effective} onChange={e => setEffective(e.target.value)} style={inputStyle}
               onFocus={e => (e.target.style.borderColor = "var(--rc-primary)")} onBlur={e => (e.target.style.borderColor = "var(--rc-border)")} />
           </div>
+          {uploadError && (
+            <p style={{ fontSize: "12px", color: "oklch(0.50 0.20 25)", margin: 0, maxWidth: "none", background: "oklch(0.97 0.02 25)", border: "1px solid oklch(0.88 0.06 25)", borderRadius: "8px", padding: "8px 12px" }}>
+              {uploadError}
+            </p>
+          )}
           <button
-            onClick={() => { if (files.length && name) { setUploaded(true); setTimeout(() => setUploaded(false), 2500); setFiles([]); setName(""); setEffective(""); } }}
-            style={{ padding: "11px 20px", borderRadius: "8px", background: uploaded ? "oklch(0.55 0.16 145)" : "var(--rc-primary)", color: "white", border: "none", fontSize: "14px", fontWeight: 600, cursor: "pointer", fontFamily: "var(--font-inter)", transition: "background 0.2s ease" }}
+            onClick={handleUpload}
+            disabled={uploading || !rawFiles.length || !name.trim()}
+            style={{ padding: "11px 20px", borderRadius: "8px", background: uploaded ? "oklch(0.55 0.16 145)" : (uploading || !rawFiles.length || !name.trim()) ? "var(--rc-border)" : "var(--rc-primary)", color: "white", border: "none", fontSize: "14px", fontWeight: 600, cursor: (uploading || !rawFiles.length || !name.trim()) ? "default" : "pointer", fontFamily: "var(--font-inter)", transition: "background 0.2s ease" }}
           >
-            {uploaded ? "Uploaded ✓" : "Upload to library"}
+            {uploaded ? "Uploaded ✓" : uploading ? "Uploading…" : "Upload to library"}
           </button>
         </div>
       </div>
@@ -3559,218 +4939,604 @@ function OnboardingPage() {
 }
 
 function AccountReconciliationPage() {
-  const [reconciled, setReconciled] = useState([false, false]);
+  const [accounts, setAccounts] = useState<TrustAccountRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showAdd, setShowAdd] = useState(false);
+  const [nameInput, setNameInput] = useState("");
+  const [bankInput, setBankInput] = useState("");
+  const [balanceInput, setBalanceInput] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      const { data: user } = await supabase.auth.getUser();
+      if (!user.user) { setLoading(false); return; }
+      const { data } = await supabase.from("trust_accounts").select("*").eq("user_id", user.user.id).order("created_at");
+      if (data) setAccounts(data.map(r => ({ id: r.id, name: r.name, bank: r.bank, balance: r.balance, last_reconciled: r.last_reconciled, status: r.status as TrustAccountRow["status"] })));
+      setLoading(false);
+    })();
+  }, []);
+
+  async function toggleStatus(acc: TrustAccountRow) {
+    const newStatus = acc.status === "reconciled" ? "pending" : "reconciled";
+    const today = new Date().toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" });
+    const { error } = await supabase.from("trust_accounts").update({ status: newStatus, last_reconciled: newStatus === "reconciled" ? today : acc.last_reconciled }).eq("id", acc.id);
+    if (!error) setAccounts(prev => prev.map(a => a.id === acc.id ? { ...a, status: newStatus, last_reconciled: newStatus === "reconciled" ? today : a.last_reconciled } : a));
+  }
+
+  async function addAccount() {
+    if (!nameInput.trim() || !bankInput.trim()) return;
+    setSaving(true);
+    const { data: user } = await supabase.auth.getUser();
+    if (!user.user) { setSaving(false); return; }
+    const { data, error } = await supabase.from("trust_accounts").insert({ user_id: user.user.id, name: nameInput.trim(), bank: bankInput.trim(), balance: balanceInput.trim() || "$0", status: "pending", last_reconciled: null }).select().single();
+    setSaving(false);
+    if (!error && data) {
+      setAccounts(prev => [...prev, { id: data.id, name: data.name, bank: data.bank, balance: data.balance, last_reconciled: data.last_reconciled, status: data.status }]);
+      setNameInput(""); setBankInput(""); setBalanceInput(""); setShowAdd(false);
+    }
+  }
+
+  async function deleteAccount(id: string) {
+    if (!window.confirm("Remove this trust account? This cannot be undone.")) return;
+    const { error } = await supabase.from("trust_accounts").delete().eq("id", id);
+    if (!error) setAccounts(prev => prev.filter(a => a.id !== id));
+  }
+
+  const inputSty: React.CSSProperties = { fontSize: "13px", color: "var(--rc-ink)", background: "var(--rc-bg)", border: "1px solid var(--rc-border)", borderRadius: "8px", padding: "9px 12px", outline: "none", fontFamily: "var(--font-inter)", width: "100%", boxSizing: "border-box" };
+
   return (
     <div style={PAGE_WRAP}>
       <div style={PAGE_HEADER}>
         <div>
           <h1 style={PAGE_H1}>Account Reconciliation</h1>
-          <p style={PAGE_SUB}>Reconcile trust accounts to confirm balances match records</p>
+          <p style={PAGE_SUB}>{accounts.length} trust account{accounts.length !== 1 ? "s" : ""} · Reconcile balances to confirm records match</p>
         </div>
+        <button onClick={() => setShowAdd(true)} style={{ padding: "8px 16px", borderRadius: "8px", background: "var(--rc-primary)", color: "white", border: "none", fontSize: "13px", fontWeight: 600, cursor: "pointer", fontFamily: "var(--font-inter)" }}>
+          + Add account
+        </button>
       </div>
-      <div style={{ flex: 1, display: "flex", gap: "16px", minHeight: 0 }}>
-        {trustAccounts.map((acc, idx) => (
-          <div key={acc.name} style={{ flex: 1, border: "1px solid var(--rc-border)", borderRadius: "12px", background: "var(--rc-bg)", boxShadow: "var(--rc-shadow-sm)", display: "flex", flexDirection: "column", overflow: "hidden" }}>
-            <div style={{ padding: "20px 24px", borderBottom: "1px solid var(--rc-border)", background: "var(--rc-surface)", flexShrink: 0 }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <p style={{ fontSize: "13.5px", fontWeight: 600, color: "var(--rc-ink)", margin: 0 }}>{acc.name}</p>
-                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                  {reconciled[idx] ? <GreenDot /> : <AmberDot />}
-                  <span style={{ fontSize: "12px", color: reconciled[idx] ? "oklch(0.42 0.12 145)" : "oklch(0.46 0.12 55)" }}>{reconciled[idx] ? "Reconciled" : "Pending"}</span>
-                </div>
+
+      {showAdd && (
+        <div style={{ position: "fixed", inset: 0, background: "oklch(0 0 0 / 0.35)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={() => setShowAdd(false)}>
+          <div style={{ background: "var(--rc-bg)", borderRadius: "16px", padding: "32px", width: "420px", boxShadow: "0 20px 60px oklch(0 0 0 / 0.18)", display: "flex", flexDirection: "column", gap: "18px" }} onClick={e => e.stopPropagation()}>
+            <h2 style={{ fontSize: "1rem", fontWeight: 700, color: "var(--rc-ink)", margin: 0 }}>Add trust account</h2>
+            {[
+              { label: "Account name", value: nameInput, set: setNameInput, placeholder: "e.g. Sales Trust Account" },
+              { label: "Bank & account", value: bankInput, set: setBankInput, placeholder: "e.g. Commonwealth Bank ****4521" },
+              { label: "Current balance", value: balanceInput, set: setBalanceInput, placeholder: "e.g. $284,500" },
+            ].map(f => (
+              <div key={f.label} style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                <label style={{ fontSize: "12px", fontWeight: 500, color: "var(--rc-muted)" }}>{f.label}</label>
+                <input value={f.value} onChange={e => f.set(e.target.value)} placeholder={f.placeholder} style={inputSty}
+                  onFocus={e => (e.target.style.borderColor = "var(--rc-primary)")} onBlur={e => (e.target.style.borderColor = "var(--rc-border)")} />
               </div>
-              <p style={{ fontSize: "12px", color: "var(--rc-faint)", maxWidth: "none", margin: "4px 0 0" }}>{acc.bank}</p>
-            </div>
-            <div style={{ padding: "20px 24px", flex: 1, display: "flex", flexDirection: "column", gap: "16px" }}>
-              {[
-                { label: "Statement balance", value: acc.balance },
-                { label: "System balance", value: idx === 0 ? "$284,500" : "$42,180" },
-                { label: "Unreconciled items", value: "0" },
-                { label: "Last reconciled", value: acc.lastReconciled },
-              ].map(row => (
-                <div key={row.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", borderBottom: "1px solid var(--rc-border-subtle)", paddingBottom: "12px" }}>
-                  <span style={{ fontSize: "12.5px", color: "var(--rc-faint)" }}>{row.label}</span>
-                  <span style={{ fontSize: "14px", fontWeight: 600, color: "var(--rc-ink)", letterSpacing: "-0.02em" }}>{row.value}</span>
-                </div>
-              ))}
-              <div style={{ padding: "12px 16px", borderRadius: "9px", background: "oklch(0.975 0.006 145)", border: "1px solid oklch(0.88 0.06 145)" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "7px" }}>
-                  <GreenDot />
-                  <span style={{ fontSize: "12.5px", fontWeight: 500, color: "oklch(0.38 0.12 145)" }}>Balances match — no discrepancies</span>
-                </div>
-              </div>
-              <button
-                onClick={() => setReconciled(prev => prev.map((v, j) => j === idx ? !v : v))}
-                style={{ marginTop: "auto", padding: "11px 20px", borderRadius: "8px", background: reconciled[idx] ? "var(--rc-surface)" : "var(--rc-primary)", color: reconciled[idx] ? "var(--rc-muted)" : "white", border: reconciled[idx] ? "1px solid var(--rc-border)" : "none", fontSize: "13.5px", fontWeight: 600, cursor: "pointer", fontFamily: "var(--font-inter)", transition: "all 0.2s ease" }}
-              >
-                {reconciled[idx] ? "Mark as pending" : "Confirm reconciliation"}
+            ))}
+            <div style={{ display: "flex", gap: "10px", marginTop: "4px" }}>
+              <button onClick={() => setShowAdd(false)} style={{ flex: 1, padding: "10px", borderRadius: "8px", background: "var(--rc-surface)", border: "1px solid var(--rc-border)", fontSize: "13px", fontWeight: 500, color: "var(--rc-muted)", cursor: "pointer", fontFamily: "var(--font-inter)" }}>Cancel</button>
+              <button onClick={addAccount} disabled={saving || !nameInput.trim() || !bankInput.trim()} style={{ flex: 1, padding: "10px", borderRadius: "8px", background: "var(--rc-primary)", border: "none", fontSize: "13px", fontWeight: 600, color: "white", cursor: "pointer", fontFamily: "var(--font-inter)", opacity: saving || !nameInput.trim() || !bankInput.trim() ? 0.6 : 1 }}>
+                {saving ? "Saving…" : "Add account"}
               </button>
             </div>
           </div>
-        ))}
-      </div>
+        </div>
+      )}
+
+      {loading ? (
+        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <p style={{ fontSize: "14px", color: "var(--rc-faint)" }}>Loading…</p>
+        </div>
+      ) : accounts.length === 0 ? (
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "10px" }}>
+          <p style={{ fontSize: "14px", color: "var(--rc-faint)", maxWidth: "none", textAlign: "center" }}>No trust accounts yet. Add your first account to start tracking reconciliations.</p>
+        </div>
+      ) : (
+        <div style={{ flex: 1, display: "flex", gap: "16px", minHeight: 0, flexWrap: "wrap", overflowY: "auto" }}>
+          {accounts.map(acc => (
+            <div key={acc.id} style={{ flex: "1 1 280px", border: "1px solid var(--rc-border)", borderRadius: "12px", background: "var(--rc-bg)", boxShadow: "var(--rc-shadow-sm)", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+              <div style={{ padding: "20px 24px", borderBottom: "1px solid var(--rc-border)", background: "var(--rc-surface)", flexShrink: 0 }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <p style={{ fontSize: "13.5px", fontWeight: 600, color: "var(--rc-ink)", margin: 0 }}>{acc.name}</p>
+                  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                    {acc.status === "reconciled" ? <GreenDot /> : <AmberDot />}
+                    <span style={{ fontSize: "12px", color: acc.status === "reconciled" ? "oklch(0.42 0.12 145)" : "oklch(0.46 0.12 55)" }}>{acc.status === "reconciled" ? "Reconciled" : "Pending"}</span>
+                  </div>
+                </div>
+                <p style={{ fontSize: "12px", color: "var(--rc-faint)", maxWidth: "none", margin: "4px 0 0" }}>{acc.bank}</p>
+              </div>
+              <div style={{ padding: "20px 24px", flex: 1, display: "flex", flexDirection: "column", gap: "14px" }}>
+                {[
+                  { label: "Balance", value: acc.balance },
+                  { label: "Last reconciled", value: acc.last_reconciled ?? "Not yet reconciled" },
+                ].map(row => (
+                  <div key={row.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", borderBottom: "1px solid var(--rc-border)", paddingBottom: "12px" }}>
+                    <span style={{ fontSize: "12.5px", color: "var(--rc-faint)" }}>{row.label}</span>
+                    <span style={{ fontSize: "14px", fontWeight: 600, color: "var(--rc-ink)", letterSpacing: "-0.02em" }}>{row.value}</span>
+                  </div>
+                ))}
+                <div style={{ display: "flex", gap: "10px", marginTop: "auto" }}>
+                  <button onClick={() => toggleStatus(acc)} style={{ flex: 1, padding: "10px", borderRadius: "8px", background: acc.status === "reconciled" ? "var(--rc-surface)" : "var(--rc-primary)", color: acc.status === "reconciled" ? "var(--rc-muted)" : "white", border: acc.status === "reconciled" ? "1px solid var(--rc-border)" : "none", fontSize: "13px", fontWeight: 600, cursor: "pointer", fontFamily: "var(--font-inter)", transition: "all 0.15s ease" }}>
+                    {acc.status === "reconciled" ? "Mark pending" : "Confirm reconciled"}
+                  </button>
+                  <button onClick={() => deleteAccount(acc.id)} style={{ padding: "10px 12px", borderRadius: "8px", background: "transparent", border: "1px solid oklch(0.82 0.06 25)", color: "oklch(0.50 0.18 25)", fontSize: "13px", cursor: "pointer", fontFamily: "var(--font-inter)", transition: "background 0.15s ease" }}
+                    onMouseEnter={e => (e.currentTarget.style.background = "oklch(0.96 0.02 25)")} onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
+                    Delete
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
 
 function AuditReportsPage() {
-  const typeColors: Record<string, { color: string; bg: string }> = {
-    Annual:     { color: "oklch(0.38 0.12 260)", bg: "oklch(0.94 0.03 260)" },
-    Trust:      { color: "oklch(0.42 0.12 145)", bg: "oklch(0.95 0.025 145)" },
-    AML:        { color: "oklch(0.46 0.18 25)",  bg: "oklch(0.96 0.03 25)"  },
-    Staff:      { color: "oklch(0.40 0.12 310)", bg: "oklch(0.95 0.025 310)" },
-  };
-  const cols = "minmax(0,1fr) 90px 130px 60px 80px";
   return (
     <div style={PAGE_WRAP}>
       <div style={PAGE_HEADER}>
         <div>
           <h1 style={PAGE_H1}>Audit Reports</h1>
-          <p style={PAGE_SUB}>{auditReports.length} reports generated</p>
+          <p style={PAGE_SUB}>Upload and store your annual trust account audit reports</p>
         </div>
-        <button style={{ padding: "8px 16px", borderRadius: "8px", background: "var(--rc-primary)", color: "white", border: "none", fontSize: "13px", fontWeight: 600, cursor: "pointer", fontFamily: "var(--font-inter)" }}>
-          Generate report
-        </button>
       </div>
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, border: "1px solid var(--rc-border)", borderRadius: "12px", overflow: "hidden", boxShadow: "var(--rc-shadow-sm)" }}>
-        <div style={{ display: "grid", gridTemplateColumns: cols, flexShrink: 0, background: "var(--rc-surface)", borderBottom: "1px solid var(--rc-border)" }}>
-          {["Report name", "Type", "Generated", "Pages", ""].map(h => (
-            <span key={h} style={{ fontSize: "11.5px", color: "var(--rc-faint)", padding: "10px 20px" }}>{h}</span>
-          ))}
-        </div>
-        <div style={{ flex: 1, overflowY: "auto" }}>
-          {auditReports.map((r, i) => {
-            const tc = typeColors[r.type] ?? typeColors.Annual;
-            return (
-              <div key={r.name} style={{ display: "grid", gridTemplateColumns: cols, alignItems: "center", borderBottom: i < auditReports.length - 1 ? "1px solid var(--rc-border)" : "none", background: "var(--rc-bg)" }}>
-                <span style={{ fontSize: "13px", fontWeight: 500, color: "var(--rc-ink)", padding: "14px 20px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.name}</span>
-                <div style={{ padding: "0 20px" }}>
-                  <span style={{ fontSize: "11px", fontWeight: 600, color: tc.color, background: tc.bg, padding: "3px 9px", borderRadius: "100px" }}>{r.type}</span>
-                </div>
-                <span style={{ fontSize: "12.5px", color: "var(--rc-faint)", padding: "0 20px" }}>{r.generated}</span>
-                <span style={{ fontSize: "12.5px", color: "var(--rc-faint)", padding: "0 20px" }}>{r.pages}p</span>
-                <div style={{ padding: "0 20px" }}>
-                  <button style={{ fontSize: "12px", fontWeight: 500, color: "var(--rc-faint)", background: "transparent", border: "none", padding: 0, cursor: "pointer", fontFamily: "var(--font-inter)", transition: "color 0.1s ease" }}
-                    onMouseEnter={e => (e.currentTarget.style.color = "var(--rc-ink)")} onMouseLeave={e => (e.currentTarget.style.color = "var(--rc-faint)")}>
-                    Download →
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "10px" }}>
+        <p style={{ fontSize: "14px", color: "var(--rc-faint)", maxWidth: "none", textAlign: "center" }}>No audit reports yet. Upload your audit reports using the Upload Document section in Policies &amp; Procedures, or contact your auditor to obtain a copy.</p>
       </div>
     </div>
   );
 }
 
 function TransactionLogPage() {
+  const [transactions, setTransactions] = useState<TrustTransactionRow[]>([]);
+  const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("All");
-  const accounts = ["All", "Sales Trust", "Rental Trust"];
-  const filtered = filter === "All" ? allTransactions : allTransactions.filter(t => t.account === filter);
-  const cols = "minmax(0,1fr) 120px 100px 90px 90px";
+  const [showAdd, setShowAdd] = useState(false);
+  const [desc, setDesc] = useState("");
+  const [account, setAccount] = useState("");
+  const [amount, setAmount] = useState("");
+  const [txType, setTxType] = useState<"credit" | "debit">("credit");
+  const [txDate, setTxDate] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      const { data: user } = await supabase.auth.getUser();
+      if (!user.user) { setLoading(false); return; }
+      const { data } = await supabase.from("trust_transactions").select("*").eq("user_id", user.user.id).order("created_at", { ascending: false });
+      if (data) setTransactions(data.map(r => ({ id: r.id, description: r.description, account: r.account, amount: r.amount, type: r.type as TrustTransactionRow["type"], date: r.date })));
+      setLoading(false);
+    })();
+  }, []);
+
+  const accountNames = ["All", ...Array.from(new Set(transactions.map(t => t.account)))];
+  const filtered = filter === "All" ? transactions : transactions.filter(t => t.account === filter);
+  const cols = "minmax(0,1fr) 130px 110px 90px 100px";
+
+  async function addTransaction() {
+    if (!desc.trim() || !account.trim() || !amount.trim()) return;
+    setSaving(true);
+    const { data: user } = await supabase.auth.getUser();
+    if (!user.user) { setSaving(false); return; }
+    const dateLabel = txDate ? new Date(txDate).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" }) : new Date().toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" });
+    const displayAmount = (txType === "credit" ? "+" : "-") + (amount.trim().startsWith("$") ? amount.trim() : "$" + amount.trim());
+    const { data, error } = await supabase.from("trust_transactions").insert({ user_id: user.user.id, description: desc.trim(), account: account.trim(), amount: displayAmount, type: txType, date: dateLabel }).select().single();
+    setSaving(false);
+    if (!error && data) {
+      setTransactions(prev => [{ id: data.id, description: data.description, account: data.account, amount: data.amount, type: data.type, date: data.date }, ...prev]);
+      setDesc(""); setAccount(""); setAmount(""); setTxType("credit"); setTxDate(""); setShowAdd(false);
+    }
+  }
+
+  async function deleteTransaction(id: string) {
+    const { error } = await supabase.from("trust_transactions").delete().eq("id", id);
+    if (!error) setTransactions(prev => prev.filter(t => t.id !== id));
+  }
+
+  const inputSty: React.CSSProperties = { fontSize: "13px", color: "var(--rc-ink)", background: "var(--rc-bg)", border: "1px solid var(--rc-border)", borderRadius: "8px", padding: "9px 12px", outline: "none", fontFamily: "var(--font-inter)", width: "100%", boxSizing: "border-box" };
+
   return (
     <div style={PAGE_WRAP}>
       <div style={PAGE_HEADER}>
         <div>
           <h1 style={PAGE_H1}>Transaction Log</h1>
-          <p style={PAGE_SUB}>{allTransactions.length} transactions · Jul 2026</p>
+          <p style={PAGE_SUB}>{transactions.length} transaction{transactions.length !== 1 ? "s" : ""}</p>
         </div>
-        <div style={{ display: "flex", gap: "4px", background: "var(--rc-surface)", border: "1px solid var(--rc-border)", borderRadius: "8px", padding: "3px" }}>
-          {accounts.map(a => (
-            <button key={a} onClick={() => setFilter(a)}
-              style={{ padding: "5px 12px", borderRadius: "5px", border: "none", background: filter === a ? "var(--rc-bg)" : "transparent", color: filter === a ? "var(--rc-ink)" : "var(--rc-faint)", fontSize: "12.5px", fontWeight: filter === a ? 600 : 400, cursor: "pointer", fontFamily: "var(--font-inter)", boxShadow: filter === a ? "var(--rc-shadow-sm)" : "none", transition: "all 0.15s ease" }}
-            >{a}</button>
-          ))}
-        </div>
-      </div>
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, border: "1px solid var(--rc-border)", borderRadius: "12px", overflow: "hidden", boxShadow: "var(--rc-shadow-sm)" }}>
-        <div style={{ display: "grid", gridTemplateColumns: cols, flexShrink: 0, background: "var(--rc-surface)", borderBottom: "1px solid var(--rc-border)" }}>
-          {["Description", "Account", "Date", "Type", "Amount"].map(h => (
-            <span key={h} style={{ fontSize: "11.5px", color: "var(--rc-faint)", padding: "10px 20px" }}>{h}</span>
-          ))}
-        </div>
-        <div style={{ flex: 1, overflowY: "auto" }}>
-          {filtered.map((tx, i) => (
-            <div key={i} style={{ display: "grid", gridTemplateColumns: cols, alignItems: "center", borderBottom: i < filtered.length - 1 ? "1px solid var(--rc-border)" : "none", background: "var(--rc-bg)" }}>
-              <span style={{ fontSize: "13px", fontWeight: 500, color: "var(--rc-ink)", padding: "13px 20px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{tx.description}</span>
-              <span style={{ fontSize: "12px", color: "var(--rc-faint)", padding: "0 20px" }}>{tx.account}</span>
-              <span style={{ fontSize: "12px", color: "var(--rc-faint)", padding: "0 20px" }}>{tx.date}</span>
-              <div style={{ padding: "0 20px", display: "flex", alignItems: "center", gap: "6px" }}>
-                {tx.type === "credit" ? <GreenDot /> : <RedDot />}
-                <span style={{ fontSize: "12px", color: tx.type === "credit" ? "oklch(0.42 0.12 145)" : "oklch(0.46 0.18 25)" }}>{tx.type === "credit" ? "Credit" : "Debit"}</span>
-              </div>
-              <span style={{ fontSize: "13px", fontWeight: 600, color: tx.type === "credit" ? "oklch(0.38 0.12 145)" : "oklch(0.46 0.18 25)", padding: "0 20px", textAlign: "right" }}>{tx.amount}</span>
+        <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+          {accountNames.length > 1 && (
+            <div style={{ display: "flex", gap: "4px", background: "var(--rc-surface)", border: "1px solid var(--rc-border)", borderRadius: "8px", padding: "3px" }}>
+              {accountNames.map(a => (
+                <button key={a} onClick={() => setFilter(a)} style={{ padding: "5px 12px", borderRadius: "5px", border: "none", background: filter === a ? "var(--rc-bg)" : "transparent", color: filter === a ? "var(--rc-ink)" : "var(--rc-faint)", fontSize: "12.5px", fontWeight: filter === a ? 600 : 400, cursor: "pointer", fontFamily: "var(--font-inter)", boxShadow: filter === a ? "var(--rc-shadow-sm)" : "none", transition: "all 0.15s ease" }}>{a}</button>
+              ))}
             </div>
-          ))}
+          )}
+          <button onClick={() => setShowAdd(true)} style={{ padding: "8px 16px", borderRadius: "8px", background: "var(--rc-primary)", color: "white", border: "none", fontSize: "13px", fontWeight: 600, cursor: "pointer", fontFamily: "var(--font-inter)" }}>+ Add entry</button>
         </div>
       </div>
+
+      {showAdd && (
+        <div style={{ position: "fixed", inset: 0, background: "oklch(0 0 0 / 0.35)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={() => setShowAdd(false)}>
+          <div style={{ background: "var(--rc-bg)", borderRadius: "16px", padding: "32px", width: "440px", boxShadow: "0 20px 60px oklch(0 0 0 / 0.18)", display: "flex", flexDirection: "column", gap: "16px" }} onClick={e => e.stopPropagation()}>
+            <h2 style={{ fontSize: "1rem", fontWeight: 700, color: "var(--rc-ink)", margin: 0 }}>Log transaction</h2>
+            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+              <label style={{ fontSize: "12px", fontWeight: 500, color: "var(--rc-muted)" }}>Type</label>
+              <div style={{ display: "flex", gap: "8px" }}>
+                {(["credit", "debit"] as const).map(t => (
+                  <button key={t} onClick={() => setTxType(t)} style={{ flex: 1, padding: "9px", borderRadius: "8px", border: `1px solid ${txType === t ? "var(--rc-primary)" : "var(--rc-border)"}`, background: txType === t ? "oklch(0.95 0.03 260)" : "var(--rc-bg)", color: txType === t ? "var(--rc-primary)" : "var(--rc-muted)", fontSize: "13px", fontWeight: 600, cursor: "pointer", fontFamily: "var(--font-inter)", transition: "all 0.1s ease", textTransform: "capitalize" }}>{t}</button>
+                ))}
+              </div>
+            </div>
+            {[
+              { label: "Description", value: desc, set: setDesc, placeholder: "e.g. Deposit — 42 Harbour View Rd" },
+              { label: "Trust account", value: account, set: setAccount, placeholder: "e.g. Sales Trust Account" },
+              { label: "Amount (numbers only)", value: amount, set: setAmount, placeholder: "e.g. 22000" },
+            ].map(f => (
+              <div key={f.label} style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                <label style={{ fontSize: "12px", fontWeight: 500, color: "var(--rc-muted)" }}>{f.label}</label>
+                <input value={f.value} onChange={e => f.set(e.target.value)} placeholder={f.placeholder} style={inputSty}
+                  onFocus={e => (e.target.style.borderColor = "var(--rc-primary)")} onBlur={e => (e.target.style.borderColor = "var(--rc-border)")} />
+              </div>
+            ))}
+            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+              <label style={{ fontSize: "12px", fontWeight: 500, color: "var(--rc-muted)" }}>Date (leave blank for today)</label>
+              <input type="date" value={txDate} onChange={e => setTxDate(e.target.value)} style={inputSty}
+                onFocus={e => (e.target.style.borderColor = "var(--rc-primary)")} onBlur={e => (e.target.style.borderColor = "var(--rc-border)")} />
+            </div>
+            <div style={{ display: "flex", gap: "10px", marginTop: "4px" }}>
+              <button onClick={() => setShowAdd(false)} style={{ flex: 1, padding: "10px", borderRadius: "8px", background: "var(--rc-surface)", border: "1px solid var(--rc-border)", fontSize: "13px", fontWeight: 500, color: "var(--rc-muted)", cursor: "pointer", fontFamily: "var(--font-inter)" }}>Cancel</button>
+              <button onClick={addTransaction} disabled={saving || !desc.trim() || !account.trim() || !amount.trim()} style={{ flex: 1, padding: "10px", borderRadius: "8px", background: "var(--rc-primary)", border: "none", fontSize: "13px", fontWeight: 600, color: "white", cursor: "pointer", fontFamily: "var(--font-inter)", opacity: saving || !desc.trim() || !account.trim() || !amount.trim() ? 0.6 : 1 }}>
+                {saving ? "Saving…" : "Log entry"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {loading ? (
+        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}><p style={{ fontSize: "14px", color: "var(--rc-faint)" }}>Loading…</p></div>
+      ) : transactions.length === 0 ? (
+        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}><p style={{ fontSize: "14px", color: "var(--rc-faint)", maxWidth: "none", textAlign: "center" }}>No transactions yet. Use '+ Add entry' to log your first trust account transaction.</p></div>
+      ) : (
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, border: "1px solid var(--rc-border)", borderRadius: "12px", overflow: "hidden", boxShadow: "var(--rc-shadow-sm)" }}>
+          <div style={{ display: "grid", gridTemplateColumns: cols, flexShrink: 0, background: "var(--rc-surface)", borderBottom: "1px solid var(--rc-border)" }}>
+            {["Description", "Account", "Date", "Type", "Amount"].map(h => (
+              <span key={h} style={{ fontSize: "11.5px", color: "var(--rc-faint)", padding: "10px 20px" }}>{h}</span>
+            ))}
+          </div>
+          <div style={{ flex: 1, overflowY: "auto" }}>
+            {filtered.map((tx, i) => (
+              <div key={tx.id} style={{ display: "grid", gridTemplateColumns: cols, alignItems: "center", borderBottom: i < filtered.length - 1 ? "1px solid var(--rc-border)" : "none", background: "var(--rc-bg)", cursor: "default", transition: "background 0.1s ease" }}
+                onMouseEnter={e => (e.currentTarget.style.background = "var(--rc-surface)")} onMouseLeave={e => (e.currentTarget.style.background = "var(--rc-bg)")}>
+                <span style={{ fontSize: "13px", fontWeight: 500, color: "var(--rc-ink)", padding: "13px 20px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{tx.description}</span>
+                <span style={{ fontSize: "12px", color: "var(--rc-faint)", padding: "0 20px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{tx.account}</span>
+                <span style={{ fontSize: "12px", color: "var(--rc-faint)", padding: "0 20px" }}>{tx.date}</span>
+                <div style={{ padding: "0 20px", display: "flex", alignItems: "center", gap: "6px" }}>
+                  {tx.type === "credit" ? <GreenDot /> : <RedDot />}
+                  <span style={{ fontSize: "12px", color: tx.type === "credit" ? "oklch(0.42 0.12 145)" : "oklch(0.46 0.18 25)" }}>{tx.type === "credit" ? "Credit" : "Debit"}</span>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 20px" }}>
+                  <span style={{ fontSize: "13px", fontWeight: 600, color: tx.type === "credit" ? "oklch(0.38 0.12 145)" : "oklch(0.46 0.18 25)" }}>{tx.amount}</span>
+                  <button onClick={() => deleteTransaction(tx.id)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--rc-faint)", fontSize: "11px", fontFamily: "var(--font-inter)", transition: "color 0.1s ease", padding: "2px 4px" }}
+                    onMouseEnter={e => (e.currentTarget.style.color = "oklch(0.50 0.18 25)")} onMouseLeave={e => (e.currentTarget.style.color = "var(--rc-faint)")}>✕</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
 function AMLCompliancePage() {
-  const verified = amlChecks.filter(c => c.verified).length;
-  const cols = "minmax(0,1fr) 150px 80px 80px 140px 130px";
+  const [checks, setChecks] = useState<AMLCheckRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showAdd, setShowAdd] = useState(false);
+  const [addrInput, setAddrInput] = useState("");
+  const [partyInput, setPartyInput] = useState("");
+  const [partyTypeInput, setPartyTypeInput] = useState("Vendor");
+  const [methodInput, setMethodInput] = useState("Document verification");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      const { data: user } = await supabase.auth.getUser();
+      if (!user.user) { setLoading(false); return; }
+      const { data } = await supabase.from("aml_checks").select("*").eq("user_id", user.user.id).order("created_at", { ascending: false });
+      if (data) setChecks(data.map(r => ({ id: r.id, address: r.address, party: r.party, party_type: r.party_type, verified: r.verified, verified_date: r.verified_date, method: r.method })));
+      setLoading(false);
+    })();
+  }, []);
+
+  async function addCheck() {
+    if (!addrInput.trim() || !partyInput.trim()) return;
+    setSaving(true);
+    const { data: user } = await supabase.auth.getUser();
+    if (!user.user) { setSaving(false); return; }
+    const { data, error } = await supabase.from("aml_checks").insert({ user_id: user.user.id, address: addrInput.trim(), party: partyInput.trim(), party_type: partyTypeInput, verified: false, verified_date: null, method: methodInput.trim() || null }).select().single();
+    setSaving(false);
+    if (!error && data) {
+      setChecks(prev => [{ id: data.id, address: data.address, party: data.party, party_type: data.party_type, verified: data.verified, verified_date: data.verified_date, method: data.method }, ...prev]);
+      setAddrInput(""); setPartyInput(""); setPartyTypeInput("Vendor"); setMethodInput("Document verification"); setShowAdd(false);
+    }
+  }
+
+  async function toggleVerified(c: AMLCheckRow) {
+    const now = new Date().toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" });
+    const newVerified = !c.verified;
+    const { error } = await supabase.from("aml_checks").update({ verified: newVerified, verified_date: newVerified ? now : null }).eq("id", c.id);
+    if (!error) setChecks(prev => prev.map(x => x.id === c.id ? { ...x, verified: newVerified, verified_date: newVerified ? now : null } : x));
+  }
+
+  async function deleteCheck(id: string) {
+    const { error } = await supabase.from("aml_checks").delete().eq("id", id);
+    if (!error) setChecks(prev => prev.filter(x => x.id !== id));
+  }
+
+  const verified = checks.filter(c => c.verified).length;
+  const cols = "minmax(0,1fr) 150px 80px 80px 140px 80px";
+  const inputSty: React.CSSProperties = { fontSize: "13px", color: "var(--rc-ink)", background: "var(--rc-bg)", border: "1px solid var(--rc-border)", borderRadius: "8px", padding: "9px 12px", outline: "none", fontFamily: "var(--font-inter)", width: "100%", boxSizing: "border-box" };
+
   return (
     <div style={PAGE_WRAP}>
       <div style={PAGE_HEADER}>
         <div>
           <h1 style={PAGE_H1}>AML Compliance</h1>
-          <p style={PAGE_SUB}>{verified}/{amlChecks.length} identity checks complete · Anti-Money Laundering &amp; CTF</p>
+          <p style={PAGE_SUB}>{verified}/{checks.length} identity checks complete · Anti-Money Laundering &amp; CTF</p>
         </div>
+        <button onClick={() => setShowAdd(true)} style={{ padding: "8px 16px", borderRadius: "8px", background: "var(--rc-primary)", color: "white", border: "none", fontSize: "13px", fontWeight: 600, cursor: "pointer", fontFamily: "var(--font-inter)" }}>+ Add check</button>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", flexShrink: 0, border: "1px solid var(--rc-border)", borderRadius: "12px", overflow: "hidden", boxShadow: "var(--rc-shadow-sm)" }}>
-        {[
-          { label: "Total checks", value: String(amlChecks.length), sub: "Properties + tenants" },
-          { label: "Verified", value: String(verified), sub: "ID confirmed" },
-          { label: "Pending", value: String(amlChecks.length - verified), sub: "Action required" },
-          { label: "Method", value: "Doc verify", sub: "Standard process" },
-        ].map(({ label, value, sub }, i) => (
-          <div key={label} style={{ padding: "18px 20px", borderRight: i < 3 ? "1px solid var(--rc-border)" : "none", display: "flex", flexDirection: "column", gap: "5px" }}>
-            <p style={{ fontSize: "11.5px", color: "var(--rc-faint)", maxWidth: "none" }}>{label}</p>
-            <p style={{ fontSize: "1.25rem", fontWeight: 600, color: "var(--rc-ink)", letterSpacing: "-0.03em", lineHeight: 1 }}>{value}</p>
-            <p style={{ fontSize: "11px", color: "var(--rc-faint)", maxWidth: "none" }}>{sub}</p>
-          </div>
-        ))}
-      </div>
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, border: "1px solid var(--rc-border)", borderRadius: "12px", overflow: "hidden", boxShadow: "var(--rc-shadow-sm)" }}>
-        <div style={{ display: "grid", gridTemplateColumns: cols, flexShrink: 0, background: "var(--rc-surface)", borderBottom: "1px solid var(--rc-border)" }}>
-          {["Property / Address", "Party name", "Type", "Verified", "Date", "Method"].map(h => (
-            <span key={h} style={{ fontSize: "11.5px", color: "var(--rc-faint)", padding: "10px 20px" }}>{h}</span>
-          ))}
-        </div>
-        <div style={{ flex: 1, overflowY: "auto" }}>
-          {amlChecks.map((c, i) => (
-            <div key={i} style={{ display: "grid", gridTemplateColumns: cols, alignItems: "center", borderBottom: i < amlChecks.length - 1 ? "1px solid var(--rc-border)" : "none", background: c.verified ? "var(--rc-bg)" : "oklch(0.985 0.012 55)" }}>
-              <span style={{ fontSize: "13px", fontWeight: 500, color: "var(--rc-ink)", padding: "13px 20px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{c.address}</span>
-              <span style={{ fontSize: "12.5px", color: "var(--rc-muted)", padding: "0 20px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{c.party}</span>
-              <span style={{ fontSize: "12px", color: "var(--rc-faint)", padding: "0 20px" }}>{c.type}</span>
-              <div style={{ padding: "0 20px", display: "flex", alignItems: "center", gap: "6px" }}>
-                {c.verified ? <GreenDot /> : <AmberDot />}
-                <span style={{ fontSize: "12px", color: c.verified ? "oklch(0.42 0.12 145)" : "oklch(0.46 0.12 55)" }}>{c.verified ? "Yes" : "No"}</span>
+
+      {showAdd && (
+        <div style={{ position: "fixed", inset: 0, background: "oklch(0 0 0 / 0.35)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={() => setShowAdd(false)}>
+          <div style={{ background: "var(--rc-bg)", borderRadius: "16px", padding: "32px", width: "440px", boxShadow: "0 20px 60px oklch(0 0 0 / 0.18)", display: "flex", flexDirection: "column", gap: "16px" }} onClick={e => e.stopPropagation()}>
+            <h2 style={{ fontSize: "1rem", fontWeight: 700, color: "var(--rc-ink)", margin: 0 }}>Add AML check</h2>
+            {[
+              { label: "Property address", value: addrInput, set: setAddrInput, placeholder: "e.g. 42 Harbour View Rd, Balmain NSW 2041" },
+              { label: "Party name", value: partyInput, set: setPartyInput, placeholder: "e.g. John & Mary Thompson" },
+              { label: "Verification method", value: methodInput, set: setMethodInput, placeholder: "e.g. Document verification" },
+            ].map(f => (
+              <div key={f.label} style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                <label style={{ fontSize: "12px", fontWeight: 500, color: "var(--rc-muted)" }}>{f.label}</label>
+                <input value={f.value} onChange={e => f.set(e.target.value)} placeholder={f.placeholder} style={inputSty}
+                  onFocus={e => (e.target.style.borderColor = "var(--rc-primary)")} onBlur={e => (e.target.style.borderColor = "var(--rc-border)")} />
               </div>
-              <span style={{ fontSize: "12px", color: "var(--rc-faint)", padding: "0 20px" }}>{c.date}</span>
-              <span style={{ fontSize: "12px", color: c.verified ? "var(--rc-faint)" : "oklch(0.46 0.12 55)", fontWeight: c.verified ? 400 : 500, padding: "0 20px" }}>{c.method}</span>
+            ))}
+            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+              <label style={{ fontSize: "12px", fontWeight: 500, color: "var(--rc-muted)" }}>Party type</label>
+              <select value={partyTypeInput} onChange={e => setPartyTypeInput(e.target.value)} style={{ ...inputSty, appearance: "none" }}>
+                {["Vendor", "Purchaser", "Tenant", "Landlord", "Other"].map(t => <option key={t} value={t}>{t}</option>)}
+              </select>
+            </div>
+            <div style={{ display: "flex", gap: "10px", marginTop: "4px" }}>
+              <button onClick={() => setShowAdd(false)} style={{ flex: 1, padding: "10px", borderRadius: "8px", background: "var(--rc-surface)", border: "1px solid var(--rc-border)", fontSize: "13px", fontWeight: 500, color: "var(--rc-muted)", cursor: "pointer", fontFamily: "var(--font-inter)" }}>Cancel</button>
+              <button onClick={addCheck} disabled={saving || !addrInput.trim() || !partyInput.trim()} style={{ flex: 1, padding: "10px", borderRadius: "8px", background: "var(--rc-primary)", border: "none", fontSize: "13px", fontWeight: 600, color: "white", cursor: "pointer", fontFamily: "var(--font-inter)", opacity: saving || !addrInput.trim() || !partyInput.trim() ? 0.6 : 1 }}>
+                {saving ? "Saving…" : "Add check"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {checks.length > 0 && (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", flexShrink: 0, border: "1px solid var(--rc-border)", borderRadius: "12px", overflow: "hidden", boxShadow: "var(--rc-shadow-sm)" }}>
+          {[
+            { label: "Total checks", value: String(checks.length), sub: "Properties + parties" },
+            { label: "Verified", value: String(verified), sub: "ID confirmed" },
+            { label: "Pending", value: String(checks.length - verified), sub: "Action required" },
+          ].map(({ label, value, sub }, i) => (
+            <div key={label} style={{ padding: "18px 20px", borderRight: i < 2 ? "1px solid var(--rc-border)" : "none", display: "flex", flexDirection: "column", gap: "5px" }}>
+              <p style={{ fontSize: "11.5px", color: "var(--rc-faint)", maxWidth: "none" }}>{label}</p>
+              <p style={{ fontSize: "1.25rem", fontWeight: 600, color: "var(--rc-ink)", letterSpacing: "-0.03em", lineHeight: 1 }}>{value}</p>
+              <p style={{ fontSize: "11px", color: "var(--rc-faint)", maxWidth: "none" }}>{sub}</p>
             </div>
           ))}
         </div>
-      </div>
+      )}
+
+      {loading ? (
+        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}><p style={{ fontSize: "14px", color: "var(--rc-faint)" }}>Loading…</p></div>
+      ) : checks.length === 0 ? (
+        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}><p style={{ fontSize: "14px", color: "var(--rc-faint)", maxWidth: "none", textAlign: "center" }}>No AML checks yet. Add your first check to start tracking identity verification.</p></div>
+      ) : (
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, border: "1px solid var(--rc-border)", borderRadius: "12px", overflow: "hidden", boxShadow: "var(--rc-shadow-sm)" }}>
+          <div style={{ display: "grid", gridTemplateColumns: cols, flexShrink: 0, background: "var(--rc-surface)", borderBottom: "1px solid var(--rc-border)" }}>
+            {["Property / Address", "Party name", "Type", "Verified", "Date", ""].map(h => (
+              <span key={h} style={{ fontSize: "11.5px", color: "var(--rc-faint)", padding: "10px 20px" }}>{h}</span>
+            ))}
+          </div>
+          <div style={{ flex: 1, overflowY: "auto" }}>
+            {checks.map((c, i) => (
+              <div key={c.id} style={{ display: "grid", gridTemplateColumns: cols, alignItems: "center", borderBottom: i < checks.length - 1 ? "1px solid var(--rc-border)" : "none", background: c.verified ? "var(--rc-bg)" : "oklch(0.985 0.012 55)" }}>
+                <span style={{ fontSize: "13px", fontWeight: 500, color: "var(--rc-ink)", padding: "13px 20px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{c.address}</span>
+                <span style={{ fontSize: "12.5px", color: "var(--rc-muted)", padding: "0 20px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{c.party}</span>
+                <span style={{ fontSize: "12px", color: "var(--rc-faint)", padding: "0 20px" }}>{c.party_type}</span>
+                <div style={{ padding: "0 12px" }}>
+                  <button onClick={() => toggleVerified(c)} style={{ display: "flex", alignItems: "center", gap: "6px", background: "transparent", border: "none", cursor: "pointer", padding: "4px 0", fontFamily: "var(--font-inter)" }}>
+                    {c.verified ? <GreenDot /> : <AmberDot />}
+                    <span style={{ fontSize: "12px", color: c.verified ? "oklch(0.42 0.12 145)" : "oklch(0.46 0.12 55)" }}>{c.verified ? "Verified" : "Pending"}</span>
+                  </button>
+                </div>
+                <span style={{ fontSize: "12px", color: "var(--rc-faint)", padding: "0 20px" }}>{c.verified_date ?? "—"}</span>
+                <div style={{ padding: "0 20px" }}>
+                  <button onClick={() => deleteCheck(c.id)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--rc-faint)", fontSize: "11px", fontFamily: "var(--font-inter)", transition: "color 0.1s ease" }}
+                    onMouseEnter={e => (e.currentTarget.style.color = "oklch(0.50 0.18 25)")} onMouseLeave={e => (e.currentTarget.style.color = "var(--rc-faint)")}>✕</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-function StaticSubPage({ label, agencyName, staffRows }: { label: string; agencyName: string; staffRows: StaffRow[] }) {
+function MonthlyTrustReportsPage() {
+  const [reports, setReports] = useState<TrustReportRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showAdd, setShowAdd] = useState(false);
+  const [monthInput, setMonthInput] = useState("");
+  const [accountInput, setAccountInput] = useState("");
+  const [notesInput, setNotesInput] = useState("");
+  const [fileInput, setFileInput] = useState<File | null>(null);
+  const [saving, setSaving] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    (async () => {
+      const { data: user } = await supabase.auth.getUser();
+      if (!user.user) { setLoading(false); return; }
+      const { data } = await supabase.from("trust_reports").select("*").eq("user_id", user.user.id).order("created_at", { ascending: false });
+      if (data) setReports(data.map(r => ({ id: r.id, month: r.month, account: r.account, notes: r.notes, file_url: r.file_url, file_name: r.file_name, uploaded_at: r.uploaded_at })));
+      setLoading(false);
+    })();
+  }, []);
+
+  function resetModal() { setMonthInput(""); setAccountInput(""); setNotesInput(""); setFileInput(null); if (fileRef.current) fileRef.current.value = ""; setShowAdd(false); }
+
+  async function addReport() {
+    if (!monthInput || !accountInput.trim()) return;
+    setSaving(true);
+    const { data: user } = await supabase.auth.getUser();
+    if (!user.user) { setSaving(false); return; }
+    let fileUrl: string | null = null;
+    let fileName: string | null = null;
+    if (fileInput) {
+      const path = `trust-reports/${user.user.id}/${Date.now()}-${fileInput.name}`;
+      const { error: upErr } = await supabase.storage.from("policy-docs").upload(path, fileInput);
+      if (!upErr) {
+        const { data: urlData } = supabase.storage.from("policy-docs").getPublicUrl(path);
+        fileUrl = urlData.publicUrl;
+        fileName = fileInput.name;
+      }
+    }
+    const uploadedAt = new Date().toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" });
+    const { data, error } = await supabase.from("trust_reports").insert({ user_id: user.user.id, month: monthInput, account: accountInput.trim(), notes: notesInput.trim() || null, file_url: fileUrl, file_name: fileName, uploaded_at: uploadedAt }).select().single();
+    setSaving(false);
+    if (!error && data) {
+      setReports(prev => [{ id: data.id, month: data.month, account: data.account, notes: data.notes, file_url: data.file_url, file_name: data.file_name, uploaded_at: data.uploaded_at }, ...prev]);
+      resetModal();
+    }
+  }
+
+  async function deleteReport(id: string) {
+    if (!window.confirm("Delete this report record?")) return;
+    const { error } = await supabase.from("trust_reports").delete().eq("id", id);
+    if (!error) setReports(prev => prev.filter(r => r.id !== id));
+  }
+
+  const inputSty: React.CSSProperties = { fontSize: "13px", color: "var(--rc-ink)", background: "var(--rc-bg)", border: "1px solid var(--rc-border)", borderRadius: "8px", padding: "9px 12px", outline: "none", fontFamily: "var(--font-inter)", width: "100%", boxSizing: "border-box" };
+  const cols = "140px minmax(0,1fr) minmax(0,1fr) 110px 120px 36px";
+
+  return (
+    <div style={PAGE_WRAP}>
+      <div style={PAGE_HEADER}>
+        <div>
+          <h1 style={PAGE_H1}>Monthly Reports</h1>
+          <p style={PAGE_SUB}>{reports.length} report{reports.length !== 1 ? "s" : ""} logged</p>
+        </div>
+        <button onClick={() => setShowAdd(true)} style={{ padding: "8px 16px", borderRadius: "8px", background: "var(--rc-primary)", color: "white", border: "none", fontSize: "13px", fontWeight: 600, cursor: "pointer", fontFamily: "var(--font-inter)" }}>+ Add report</button>
+      </div>
+
+      {showAdd && (
+        <div style={{ position: "fixed", inset: 0, background: "oklch(0 0 0 / 0.35)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={resetModal}>
+          <div style={{ background: "var(--rc-bg)", borderRadius: "16px", padding: "32px", width: "460px", boxShadow: "0 20px 60px oklch(0 0 0 / 0.18)", display: "flex", flexDirection: "column", gap: "16px" }} onClick={e => e.stopPropagation()}>
+            <h2 style={{ fontSize: "1rem", fontWeight: 700, color: "var(--rc-ink)", margin: 0 }}>Log monthly report</h2>
+            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+              <label style={{ fontSize: "12px", fontWeight: 500, color: "var(--rc-muted)" }}>Month</label>
+              <input type="month" value={monthInput} onChange={e => setMonthInput(e.target.value)} style={inputSty}
+                onFocus={e => (e.target.style.borderColor = "var(--rc-primary)")} onBlur={e => (e.target.style.borderColor = "var(--rc-border)")} />
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+              <label style={{ fontSize: "12px", fontWeight: 500, color: "var(--rc-muted)" }}>Trust account</label>
+              <input value={accountInput} onChange={e => setAccountInput(e.target.value)} placeholder="e.g. Sales Trust Account" style={inputSty}
+                onFocus={e => (e.target.style.borderColor = "var(--rc-primary)")} onBlur={e => (e.target.style.borderColor = "var(--rc-border)")} />
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+              <label style={{ fontSize: "12px", fontWeight: 500, color: "var(--rc-muted)" }}>Notes (optional)</label>
+              <textarea value={notesInput} onChange={e => setNotesInput(e.target.value)} placeholder="e.g. Reconciliation completed, variance nil" rows={2}
+                style={{ ...inputSty, resize: "vertical", lineHeight: 1.5 }}
+                onFocus={e => (e.target.style.borderColor = "var(--rc-primary)")} onBlur={e => (e.target.style.borderColor = "var(--rc-border)")} />
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+              <label style={{ fontSize: "12px", fontWeight: 500, color: "var(--rc-muted)" }}>Attach report PDF (optional)</label>
+              <input ref={fileRef} type="file" accept=".pdf,.xlsx,.xls,.csv" onChange={e => setFileInput(e.target.files?.[0] ?? null)}
+                style={{ fontSize: "12.5px", color: "var(--rc-muted)", fontFamily: "var(--font-inter)", cursor: "pointer" }} />
+              {fileInput && <p style={{ fontSize: "11.5px", color: "var(--rc-faint)", maxWidth: "none" }}>{fileInput.name}</p>}
+            </div>
+            <div style={{ display: "flex", gap: "10px", marginTop: "4px" }}>
+              <button onClick={resetModal} style={{ flex: 1, padding: "10px", borderRadius: "8px", background: "var(--rc-surface)", border: "1px solid var(--rc-border)", fontSize: "13px", fontWeight: 500, color: "var(--rc-muted)", cursor: "pointer", fontFamily: "var(--font-inter)" }}>Cancel</button>
+              <button onClick={addReport} disabled={saving || !monthInput || !accountInput.trim()} style={{ flex: 1, padding: "10px", borderRadius: "8px", background: "var(--rc-primary)", border: "none", fontSize: "13px", fontWeight: 600, color: "white", cursor: "pointer", fontFamily: "var(--font-inter)", opacity: saving || !monthInput || !accountInput.trim() ? 0.6 : 1 }}>
+                {saving ? "Saving…" : "Save report"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {loading ? (
+        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}><p style={{ fontSize: "14px", color: "var(--rc-faint)" }}>Loading…</p></div>
+      ) : reports.length === 0 ? (
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "10px" }}>
+          <p style={{ fontSize: "14px", color: "var(--rc-faint)", maxWidth: "none", textAlign: "center" }}>No monthly reports yet. Add your first report to start tracking trust account reconciliations.</p>
+        </div>
+      ) : (
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, border: "1px solid var(--rc-border)", borderRadius: "12px", overflow: "hidden", boxShadow: "var(--rc-shadow-sm)" }}>
+          <div style={{ display: "grid", gridTemplateColumns: cols, flexShrink: 0, background: "var(--rc-surface)", borderBottom: "1px solid var(--rc-border)" }}>
+            {["Month", "Account", "Notes", "Uploaded", "File", ""].map(h => (
+              <span key={h} style={{ fontSize: "11.5px", color: "var(--rc-faint)", padding: "10px 20px" }}>{h}</span>
+            ))}
+          </div>
+          <div style={{ flex: 1, overflowY: "auto" }}>
+            {reports.map((r, i) => {
+              const monthLabel = (() => { try { const [y, m] = r.month.split("-"); return new Date(Number(y), Number(m) - 1).toLocaleDateString("en-AU", { month: "long", year: "numeric" }); } catch { return r.month; } })();
+              return (
+                <div key={r.id} style={{ display: "grid", gridTemplateColumns: cols, alignItems: "center", borderBottom: i < reports.length - 1 ? "1px solid var(--rc-border)" : "none", background: "var(--rc-bg)", transition: "background 0.1s ease" }}
+                  onMouseEnter={e => (e.currentTarget.style.background = "var(--rc-surface)")} onMouseLeave={e => (e.currentTarget.style.background = "var(--rc-bg)")}>
+                  <span style={{ fontSize: "13px", fontWeight: 600, color: "var(--rc-ink)", padding: "14px 20px" }}>{monthLabel}</span>
+                  <span style={{ fontSize: "12.5px", color: "var(--rc-muted)", padding: "0 20px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.account}</span>
+                  <span style={{ fontSize: "12px", color: "var(--rc-faint)", padding: "0 20px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.notes ?? "—"}</span>
+                  <span style={{ fontSize: "12px", color: "var(--rc-faint)", padding: "0 20px" }}>{r.uploaded_at}</span>
+                  <div style={{ padding: "0 20px" }}>
+                    {r.file_url ? (
+                      <a href={r.file_url} target="_blank" rel="noopener noreferrer" style={{ fontSize: "12px", fontWeight: 500, color: "var(--rc-primary)", textDecoration: "none", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", display: "block", maxWidth: "100px" }}>
+                        {r.file_name ?? "Download"}
+                      </a>
+                    ) : (
+                      <span style={{ fontSize: "12px", color: "var(--rc-faint)" }}>No file</span>
+                    )}
+                  </div>
+                  <div style={{ padding: "0 12px", display: "flex", justifyContent: "center" }}>
+                    <button onClick={() => deleteReport(r.id)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--rc-faint)", fontSize: "11px", fontFamily: "var(--font-inter)", transition: "color 0.1s ease", padding: "4px" }}
+                      onMouseEnter={e => (e.currentTarget.style.color = "oklch(0.50 0.18 25)")} onMouseLeave={e => (e.currentTarget.style.color = "var(--rc-faint)")}>✕</button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function StaticSubPage({ label, agencyName, staffRows, policies, onPolicySaved, onPolicyUpdated, onPolicyDeleted }: {
+  label: string; agencyName: string; staffRows: StaffRow[];
+  policies: PolicyRow[]; onPolicySaved: (p: PolicyRow) => void; onPolicyUpdated: (p: PolicyRow) => void; onPolicyDeleted: (id: string) => void;
+}) {
+  const savedNames = policies.filter(p => p.source === "template").map(p => p.name);
   switch (label) {
-    case "All Policies":            return <AllPoliciesPage />;
-    case "Policy Templates":        return <PolicyTemplatesPage />;
-    case "Review Schedule":         return <ReviewSchedulePage />;
-    case "Upload Document":         return <UploadDocumentPage />;
+    case "All Policies":            return <AllPoliciesPage policies={policies} onPolicyUpdated={onPolicyUpdated} onPolicyDeleted={onPolicyDeleted} />;
+    case "Policy Templates":        return <PolicyTemplatesPage onPolicySaved={onPolicySaved} savedNames={savedNames} />;
+    case "Review Schedule":         return <ReviewSchedulePage policies={policies} onPolicyUpdated={onPolicyUpdated} onPolicyDeleted={onPolicyDeleted} />;
+    case "Upload Document":         return <UploadDocumentPage onPolicySaved={onPolicySaved} />;
     case "Team Overview":           return <TeamOverviewPage agencyName={agencyName} staffRows={staffRows} />;
     case "Licence Tracking":        return <LicenceTrackingPage staffRows={staffRows} />;
     case "CPD Records":             return <CPDRecordsPage staffRows={staffRows} />;
     case "Onboarding":              return <OnboardingPage />;
     case "Account Reconciliation":  return <AccountReconciliationPage />;
+    case "Monthly Reports":         return <MonthlyTrustReportsPage />;
     case "Audit Reports":           return <AuditReportsPage />;
     case "Transaction Log":         return <TransactionLogPage />;
     case "AML Compliance":          return <AMLCompliancePage />;
@@ -3790,6 +5556,7 @@ export default function DashboardPage() {
   const [salesProps, setSalesProps] = useState<SalesPropItem[]>([]);
   const [mgmtProps, setMgmtProps] = useState<SalesPropItem[]>([]);
   const [staffRows, setStaffRows] = useState<StaffRow[]>([]);
+  const [policies, setPolicies] = useState<PolicyRow[]>([]);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [agencyName, setAgencyName] = useState<string>("Your Agency");
 
@@ -3801,9 +5568,10 @@ export default function DashboardPage() {
       const name = data.session.user.user_metadata?.agency_name;
       if (name) setAgencyName(name);
 
-      const [{ data: staffData }, { data: propsData }] = await Promise.all([
+      const [{ data: staffData }, { data: propsData }, { data: policiesData }] = await Promise.all([
         supabase.from("staff_members").select("*").eq("user_id", uid).order("created_at"),
         supabase.from("properties").select("*").eq("user_id", uid).order("created_at"),
+        supabase.from("policies").select("*").eq("user_id", uid).order("created_at"),
       ]);
       if (staffData) {
         setStaffRows(staffData.map(r => ({
@@ -3826,6 +5594,9 @@ export default function DashboardPage() {
         setSalesProps(propsData.filter(p => p.type === "sales").map(p => ({ id: p.id, address: p.address, vendorName: p.vendor_name ?? undefined, addedAt: p.added_at ?? undefined })));
         setMgmtProps(propsData.filter(p => p.type === "management").map(p => ({ id: p.id, address: p.address })));
       }
+      if (policiesData) {
+        setPolicies(policiesData.map(p => ({ id: p.id, name: p.name, category: p.category, status: p.status as PolicyRow["status"], last_reviewed: p.last_reviewed, next_review: p.next_review, content: p.content, source: p.source as PolicyRow["source"] })));
+      }
     });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!session) { window.location.href = "/signin"; return; }
@@ -3835,17 +5606,54 @@ export default function DashboardPage() {
     return () => subscription.unsubscribe();
   }, []);
 
-  async function handleAddSalesProperty(prop: Required<SalesPropItem>) {
+  async function handleAddSalesProperty(prop: Required<SalesPropItem>): Promise<string | null> {
     const { data: user } = await supabase.auth.getUser();
-    if (!user.user) return;
-    const { data: row } = await supabase.from("properties").insert({
+    if (!user.user) return "Not signed in";
+    const { data: row, error } = await supabase.from("properties").insert({
       user_id: user.user.id,
       address: prop.address,
       type: "sales",
       vendor_name: prop.vendorName || null,
       added_at: prop.addedAt || null,
     }).select().single();
+    if (error) { console.error("Sales property insert failed:", error); return error.message; }
     if (row) setSalesProps(prev => [...prev, { id: row.id, address: row.address, vendorName: row.vendor_name ?? undefined, addedAt: row.added_at ?? undefined }]);
+    return null;
+  }
+
+  async function handleRemoveProperty(id: string, section: "sales" | "management") {
+    const { error } = await supabase.from("properties").delete().eq("id", id);
+    if (error) { console.error("Remove property failed:", error); return; }
+    if (section === "sales") setSalesProps(prev => prev.filter(p => p.id !== id));
+    else setMgmtProps(prev => prev.filter(p => p.id !== id));
+    setSelected(null);
+  }
+
+  async function handleAddMgmtProperty(prop: Required<SalesPropItem>): Promise<string | null> {
+    const { data: user } = await supabase.auth.getUser();
+    if (!user.user) return "Not signed in";
+    const { data: row, error } = await supabase.from("properties").insert({
+      user_id: user.user.id,
+      address: prop.address,
+      type: "management",
+      vendor_name: prop.vendorName || null,
+      added_at: prop.addedAt || null,
+    }).select().single();
+    if (error) { console.error("Management property insert failed:", error); return error.message; }
+    if (row) setMgmtProps(prev => [...prev, { id: row.id, address: row.address, vendorName: row.vendor_name ?? undefined, addedAt: row.added_at ?? undefined }]);
+    return null;
+  }
+
+  function handlePolicySaved(p: PolicyRow) {
+    setPolicies(prev => [...prev, p]);
+  }
+
+  function handlePolicyUpdated(p: PolicyRow) {
+    setPolicies(prev => prev.map(x => x.id === p.id ? p : x));
+  }
+
+  function handlePolicyDeleted(id: string) {
+    setPolicies(prev => prev.filter(x => x.id !== id));
   }
 
   type SidebarModule =
@@ -3857,7 +5665,7 @@ export default function DashboardPage() {
     { id: "sales", label: "Residential Sales", icon: <SalesIcon />, type: "properties", properties: salesProps },
     { id: "management", label: "Residential Management", icon: <MgmtIcon />, type: "properties", properties: mgmtProps },
     { id: "staff", label: "Staff", icon: <StaffIcon />, type: "static", children: ["Team Overview", "Licence Tracking", "CPD Records", "Onboarding"] },
-    { id: "trust", label: "Trust Accounting", icon: <TrustIcon />, type: "static", children: ["Account Reconciliation", "Audit Reports", "Transaction Log", "AML Compliance"] },
+    { id: "trust", label: "Trust Accounting", icon: <TrustIcon />, type: "static", children: ["Account Reconciliation", "Monthly Reports", "Transaction Log", "AML Compliance", "Audit Reports"] },
   ];
 
   const module = modules.find((m) => m.id === activeModule) ?? null;
@@ -3871,11 +5679,8 @@ export default function DashboardPage() {
       <aside style={{ width: "252px", flexShrink: 0, background: "var(--rc-nav)", display: "flex", flexDirection: "column", position: "fixed", top: 0, left: 0, bottom: 0, overflowY: "auto", zIndex: 10 }}>
         {/* Logo */}
         <div style={{ padding: "20px 16px 16px", flexShrink: 0 }}>
-          <Link href="/" style={{ display: "flex", alignItems: "center", gap: "10px", textDecoration: "none" }}>
-            <div style={{ width: "32px", height: "32px", background: "var(--rc-primary)", borderRadius: "9px", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: "0 0 0 1px oklch(0.55 0.15 260 / 0.35) inset" }}>
-              <svg width="17" height="17" viewBox="0 0 16 16" fill="none"><path d="M3 4h10M3 8h6M3 12h8" stroke="white" strokeWidth="2" strokeLinecap="round" /></svg>
-            </div>
-            <span style={{ fontWeight: 700, fontSize: "15px", letterSpacing: "-0.03em", color: "oklch(0.97 0.006 260)" }}>RealComply</span>
+          <Link href="/" style={{ display: "flex", alignItems: "center", textDecoration: "none" }}>
+            <img src="/RealComply (2000 x 1000 px).png" alt="RealComply" style={{ height: "32px", width: "auto", objectFit: "contain", filter: "brightness(0) invert(1)" }} />
           </Link>
         </div>
 
@@ -3967,16 +5772,16 @@ export default function DashboardPage() {
       <div style={{ flex: 1, marginLeft: "252px", display: "flex", minHeight: "100svh" }}>
         {selected?.type === "property" ? (
           selected.section === "sales" ? (
-            <SalesPropertyChecklist key={selected.id} propertyId={selected.id} address={selected.address} />
+            <SalesPropertyChecklist key={selected.id} propertyId={selected.id} address={selected.address} onRemove={() => handleRemoveProperty(selected.id, "sales")} />
           ) : (
-            <PropertyChecklist key={selected.id} propertyId={selected.id} address={selected.address} type={selected.section} />
+            <PropertyChecklist key={selected.id} propertyId={selected.id} address={selected.address} type={selected.section} onRemove={() => handleRemoveProperty(selected.id, "management")} />
           )
         ) : selected?.type === "static" ? (
-          <StaticSubPage label={selected.label} agencyName={agencyName} staffRows={staffRows} />
+          <StaticSubPage label={selected.label} agencyName={agencyName} staffRows={staffRows} policies={policies} onPolicySaved={handlePolicySaved} onPolicyUpdated={handlePolicyUpdated} onPolicyDeleted={handlePolicyDeleted} />
         ) : activeModule ? (
-          <ModuleOverview moduleId={activeModule} onSelectProperty={setSelected} salesProps={salesProps} mgmtProps={mgmtProps} onAddSalesProperty={handleAddSalesProperty} staffRows={staffRows} />
+          <ModuleOverview moduleId={activeModule} onSelectProperty={setSelected} salesProps={salesProps} mgmtProps={mgmtProps} onAddSalesProperty={handleAddSalesProperty} onAddMgmtProperty={handleAddMgmtProperty} staffRows={staffRows} policies={policies} />
         ) : (
-          <DashboardHome onNavigate={openModule} agencyName={agencyName} staffRows={staffRows} salesProps={salesProps} mgmtProps={mgmtProps} />
+          <DashboardHome onNavigate={openModule} agencyName={agencyName} staffRows={staffRows} salesProps={salesProps} mgmtProps={mgmtProps} policies={policies} />
         )}
       </div>
     </div>

@@ -7,37 +7,37 @@ const features = [
   {
     id: "cpd",
     heading: "CPD & Licence Tracking",
-    body: "Never miss a renewal. Every agent's CPD hours, licence expiry, and learning obligations are tracked in one view. Automated reminders go to individuals and their managers — well before the deadline.",
+    body: "Every agent's CPD hours, licence expiry, and learning obligations in one view. Automated reminders go to individuals and managers well before deadlines — so no one's licence lapses under your watch.",
     detail: "Covers NSW, VIC, QLD, WA, SA, ACT, TAS and NT CPD frameworks. Syncs with your team roster automatically.",
-    accent: "var(--rc-accent)",
+    color: "oklch(0.36 0.14 260)",
   },
   {
     id: "trust",
-    heading: "Trust Accounting Compliance",
-    body: "Monthly reconciliations, audit trails, and exception alerts built around your state's trust accounting legislation. Designed for property managers who need to demonstrate compliance at any moment.",
+    heading: "Trust Account Compliance",
+    body: "Monthly reconciliations, transaction logs, and exception alerts built around your state's trust accounting legislation. Demonstrate compliance at any moment — not just at audit time.",
     detail: "Aligned to the Property and Stock Agents Act 2002 (NSW) and equivalent state frameworks.",
-    accent: "oklch(0.68 0.145 145)",
+    color: "oklch(0.42 0.14 145)",
   },
   {
     id: "audit",
     heading: "Audit Readiness",
-    body: "Generate a complete audit pack in minutes — not days. Every checklist, record, and policy version is date-stamped, attributed, and retrievable. When NSW Fair Trading calls, you're ready.",
+    body: "Generate a complete audit pack in minutes. Every checklist, record, and policy version is date-stamped, attributed, and retrievable. When NSW Fair Trading calls, you're ready before they finish the sentence.",
     detail: "Structured around the PSBA audit framework. One-click export to the required format.",
-    accent: "oklch(0.70 0.160 260)",
+    color: "oklch(0.38 0.13 220)",
   },
   {
     id: "aml",
-    heading: "AML Compliance Per Property",
-    body: "AUSTRAC's anti-money laundering obligations apply to every real estate transaction. RealComply creates an AML risk assessment for each property, tracks customer due diligence, and keeps your register current.",
-    detail: "Customer identification, beneficial ownership, and transaction monitoring — all traceable.",
-    accent: "oklch(0.72 0.155 50)",
+    heading: "AML Compliance",
+    body: "AUSTRAC's anti-money laundering obligations apply to every real estate transaction. RealComply creates an AML risk assessment per property, tracks customer due diligence, and keeps your register current.",
+    detail: "Customer identification, beneficial ownership, and transaction monitoring — all traceable and audit-ready.",
+    color: "oklch(0.46 0.15 50)",
   },
   {
     id: "policies",
     heading: "Policies & Procedures",
-    body: "Your office manual, version-controlled and legally current. Distribute policy updates to your team, collect acknowledgements, and prove they've been read — all without the email trail.",
-    detail: "Includes 40+ pre-built templates written for Australian real estate operations.",
-    accent: "oklch(0.62 0.130 315)",
+    body: "Your office manual, version-controlled and legally current. NSW Fair Trading and REI-aligned templates, distributed to your team with acknowledgement tracking built in.",
+    detail: "40+ pre-built templates written for Australian real estate. Updated when legislation changes.",
+    color: "oklch(0.42 0.13 315)",
   },
 ];
 
@@ -48,38 +48,19 @@ export default function Features() {
   const contentRef = useReveal(0.05);
 
   return (
-    <section id="features" style={{ padding: "120px 24px", background: "var(--rc-bg)" }}>
+    <section id="features" style={{ padding: "120px 24px", background: "var(--rc-bg)", borderTop: "1px solid var(--rc-border)" }}>
       <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
-        {/* Header */}
-        <div
-          ref={headerRef as React.RefObject<HTMLDivElement>}
-          className="reveal"
-          style={{ maxWidth: "600px", marginBottom: "72px" }}
-        >
-          <h2
-            style={{
-              fontSize: "clamp(2rem, 4vw, 3rem)",
-              fontWeight: 800,
-              color: "var(--rc-ink)",
-              marginBottom: "20px",
-            }}
-          >
-            Every compliance obligation,
-            <br />
-            one platform.
+        <div ref={headerRef as React.RefObject<HTMLDivElement>} className="reveal" style={{ marginBottom: "72px" }}>
+          <h2 style={{ fontSize: "clamp(2rem, 4vw, 3rem)", fontWeight: 800, color: "var(--rc-ink)", letterSpacing: "-0.04em", lineHeight: 1.05, marginBottom: "20px" }}>
+            Every obligation.<br />One platform.
           </h2>
-          <p style={{ fontSize: "17px", color: "var(--rc-muted)", lineHeight: 1.7 }}>
-            Australian real estate compliance is multi-layered and state-specific. RealComply was built around it — not adapted from a generic compliance tool.
+          <p style={{ fontSize: "17px", color: "var(--rc-muted)", lineHeight: 1.7, maxWidth: "520px" }}>
+            Australian real estate compliance is multi-layered and state-specific. RealComply was built around it — not adapted from a generic tool.
           </p>
         </div>
 
-        {/* Feature explorer */}
-        <div
-          ref={contentRef as React.RefObject<HTMLDivElement>}
-          className="reveal"
-          style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "48px", alignItems: "start" }}
-        >
-          {/* Left: list */}
+        <div ref={contentRef as React.RefObject<HTMLDivElement>} className="reveal features-grid" style={{ display: "grid", gridTemplateColumns: "280px 1fr", gap: "40px", alignItems: "start" }}>
+          {/* Tabs */}
           <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
             {features.map((f) => (
               <button
@@ -87,83 +68,50 @@ export default function Features() {
                 onClick={() => setActive(f.id)}
                 style={{
                   textAlign: "left",
-                  padding: "20px 24px",
-                  borderRadius: "12px",
+                  padding: "16px 20px",
+                  borderRadius: "10px",
                   border: "none",
                   background: active === f.id ? "var(--rc-surface)" : "transparent",
                   cursor: "pointer",
-                  transition: "background 0.2s ease",
-                  borderLeft: `3px solid ${active === f.id ? f.accent : "transparent"}`,
+                  transition: "background 0.15s ease",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "12px",
                 }}
               >
-                <span
-                  style={{
-                    fontSize: "16px",
-                    fontWeight: 700,
-                    color: active === f.id ? "var(--rc-ink)" : "var(--rc-muted)",
-                    fontFamily: "var(--font-bricolage)",
-                    transition: "color 0.2s ease",
-                  }}
-                >
+                <div style={{ width: "3px", height: "20px", borderRadius: "2px", background: active === f.id ? f.color : "transparent", flexShrink: 0, transition: "background 0.15s ease" }} />
+                <span style={{ fontSize: "15px", fontWeight: active === f.id ? 700 : 500, color: active === f.id ? "var(--rc-ink)" : "var(--rc-muted)", transition: "color 0.15s ease", fontFamily: "var(--font-inter)" }}>
                   {f.heading}
                 </span>
               </button>
             ))}
           </div>
 
-          {/* Right: detail panel */}
-          <div
-            key={active}
-            style={{
-              background: "var(--rc-surface)",
-              borderRadius: "16px",
-              padding: "40px",
-              border: "1px solid var(--rc-border)",
-              animation: "panelFade 0.35s cubic-bezier(0.16, 1, 0.3, 1)",
-            }}
-          >
-            <div
-              style={{
-                width: "40px",
-                height: "4px",
-                background: current.accent,
-                borderRadius: "2px",
-                marginBottom: "24px",
-              }}
-            />
-            <h3 style={{ fontSize: "1.6rem", fontWeight: 800, color: "var(--rc-ink)", marginBottom: "16px" }}>
+          {/* Panel */}
+          <div key={active} style={{ background: "var(--rc-surface)", borderRadius: "16px", padding: "48px", border: "1px solid var(--rc-border)", animation: "panelFade 0.3s cubic-bezier(0.16, 1, 0.3, 1)" }}>
+            <div style={{ width: "32px", height: "3px", background: current.color, borderRadius: "2px", marginBottom: "28px" }} />
+            <h3 style={{ fontSize: "1.5rem", fontWeight: 800, color: "var(--rc-ink)", marginBottom: "16px", letterSpacing: "-0.03em" }}>
               {current.heading}
             </h3>
-            <p style={{ fontSize: "16px", color: "var(--rc-muted)", lineHeight: 1.75, marginBottom: "20px", maxWidth: "none" }}>
+            <p style={{ fontSize: "16px", color: "var(--rc-muted)", lineHeight: 1.8, marginBottom: "28px", maxWidth: "none" }}>
               {current.body}
             </p>
-            <p
-              style={{
-                fontSize: "13px",
-                color: "var(--rc-faint)",
-                lineHeight: 1.6,
-                padding: "14px 16px",
-                background: "var(--rc-surface-2)",
-                borderRadius: "8px",
-                borderLeft: `3px solid ${current.accent}`,
-                maxWidth: "none",
-              }}
-            >
-              {current.detail}
-            </p>
+            <div style={{ padding: "16px 20px", background: "var(--rc-bg)", borderRadius: "8px", border: "1px solid var(--rc-border)" }}>
+              <p style={{ fontSize: "13.5px", color: "var(--rc-faint)", lineHeight: 1.65, maxWidth: "none", margin: 0 }}>
+                {current.detail}
+              </p>
+            </div>
           </div>
         </div>
       </div>
 
       <style>{`
         @keyframes panelFade {
-          from { opacity: 0; transform: translateY(8px); }
+          from { opacity: 0; transform: translateY(6px); }
           to { opacity: 1; transform: translateY(0); }
         }
         @media (max-width: 768px) {
-          #features > div > div:last-child {
-            grid-template-columns: 1fr !important;
-          }
+          .features-grid { grid-template-columns: 1fr !important; }
         }
       `}</style>
     </section>

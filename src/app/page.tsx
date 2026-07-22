@@ -3,7 +3,6 @@ import Hero from "@/components/hero";
 import TrustBar from "@/components/trust-bar";
 import Features from "@/components/features";
 import HowItWorks from "@/components/how-it-works";
-import Testimonials from "@/components/testimonials";
 import Pricing from "@/components/pricing";
 import CtaSection from "@/components/cta-section";
 import Footer from "@/components/footer";
@@ -17,7 +16,6 @@ export default function Home() {
         <TrustBar />
         <Features />
         <HowItWorks />
-        <Testimonials />
         <Pricing />
         <CtaSection />
       </main>

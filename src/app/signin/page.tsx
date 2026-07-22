@@ -28,14 +28,9 @@ export default function SignInPage() {
   return (
     <div style={{ minHeight: "100svh", background: "var(--rc-bg)", display: "flex", flexDirection: "column" }}>
       <header style={{ padding: "0 24px", borderBottom: "1px solid var(--rc-border)" }}>
-        <div style={{ maxWidth: "1200px", margin: "0 auto", height: "64px", display: "flex", alignItems: "center" }}>
-          <Link href="/" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <div style={{ width: "28px", height: "28px", background: "var(--rc-primary)", borderRadius: "6px", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <path d="M3 4h10M3 8h6M3 12h8" stroke="white" strokeWidth="2" strokeLinecap="round" />
-              </svg>
-            </div>
-            <span style={{ fontWeight: 700, fontSize: "17px", letterSpacing: "-0.03em", color: "var(--rc-ink)" }}>RealComply</span>
+        <div style={{ maxWidth: "1200px", margin: "0 auto", height: "80px", display: "flex", alignItems: "center" }}>
+          <Link href="/" style={{ display: "flex", alignItems: "center" }}>
+            <img src="/RealComply (2000 x 1000 px).png" alt="RealComply" style={{ height: "46px", width: "auto", objectFit: "contain", mixBlendMode: "multiply" }} />
           </Link>
         </div>
       </header>

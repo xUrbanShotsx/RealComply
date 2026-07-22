@@ -5,340 +5,217 @@ export default function Hero() {
     <section
       style={{
         background: "var(--rc-bg)",
-        minHeight: "100svh",
-        display: "flex",
-        flexDirection: "column",
+        borderBottom: "1px solid var(--rc-border)",
+        paddingTop: "160px",
+        paddingBottom: "120px",
+        paddingLeft: "24px",
+        paddingRight: "24px",
         position: "relative",
         overflow: "hidden",
       }}
     >
-      {/* Subtle tinted gradient */}
+      {/* Subtle background texture */}
       <div
         aria-hidden
         style={{
           position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          height: "70%",
-          background: "linear-gradient(to bottom, var(--rc-surface) 0%, transparent 100%)",
+          inset: 0,
+          backgroundImage:
+            "radial-gradient(circle at 70% 40%, oklch(0.36 0.14 260 / 0.05) 0%, transparent 60%)",
           pointerEvents: "none",
         }}
       />
 
-      {/* Content */}
-      <div
-        style={{
-          maxWidth: "1200px",
-          margin: "0 auto",
-          padding: "0 24px",
-          paddingTop: "160px",
-          paddingBottom: "80px",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          textAlign: "center",
-          flex: 1,
-          position: "relative",
-          zIndex: 1,
-        }}
-      >
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "32px" }}>
-          {/* Badge */}
-          <div className="hero-fade-up" style={{ animationDelay: "0.05s" }}>
-            <span
+      <div style={{ maxWidth: "1200px", margin: "0 auto", position: "relative", zIndex: 1 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "80px", alignItems: "center" }} className="hero-grid">
+
+          {/* Left */}
+          <div>
+            <div className="hero-fade" style={{ animationDelay: "0s" }}>
+              <span
+                style={{
+                  display: "inline-block",
+                  fontSize: "12px",
+                  fontWeight: 700,
+                  letterSpacing: "0.1em",
+                  textTransform: "uppercase",
+                  color: "var(--rc-primary)",
+                  marginBottom: "24px",
+                }}
+              >
+                Built for Australian real estate
+              </span>
+            </div>
+
+            <h1
+              className="hero-fade"
               style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "8px",
-                padding: "6px 14px",
-                borderRadius: "100px",
-                border: "1px solid var(--rc-border)",
-                background: "var(--rc-bg)",
-                fontSize: "13px",
-                fontWeight: 500,
-                color: "var(--rc-primary)",
-                letterSpacing: "0.01em",
+                animationDelay: "0.1s",
+                fontSize: "clamp(2.8rem, 5vw, 4.5rem)",
+                fontWeight: 800,
+                color: "var(--rc-ink)",
+                lineHeight: 1.0,
+                letterSpacing: "-0.04em",
+                marginBottom: "28px",
               }}
             >
-              <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "var(--rc-accent)", display: "inline-block" }} />
-              Built for Australian real estate
-            </span>
+              Compliance
+              <br />
+              you can prove.
+            </h1>
+
+            <p
+              className="hero-fade"
+              style={{
+                animationDelay: "0.2s",
+                fontSize: "1.125rem",
+                color: "var(--rc-muted)",
+                lineHeight: 1.7,
+                maxWidth: "460px",
+                marginBottom: "40px",
+              }}
+            >
+              RealComply gives real estate offices a single, audit-ready record of every compliance obligation — CPD, trust accounting, AML, policies, and more.
+            </p>
+
+            <div
+              className="hero-fade"
+              style={{ animationDelay: "0.3s", display: "flex", gap: "12px", flexWrap: "wrap" }}
+            >
+              <a href="/signup" className="btn-primary">Get started free</a>
+              <a href="#features" className="btn-outline">See what's included</a>
+            </div>
+
+            <p
+              className="hero-fade"
+              style={{
+                animationDelay: "0.4s",
+                marginTop: "24px",
+                fontSize: "13px",
+                color: "var(--rc-faint)",
+              }}
+            >
+              No credit card required · Set up in under 15 minutes
+            </p>
           </div>
 
-          {/* Heading */}
-          <h1
-            className="hero-fade-up"
-            style={{
-              animationDelay: "0.17s",
-              fontSize: "clamp(2.8rem, 7vw, 5.5rem)",
-              fontWeight: 800,
-              color: "var(--rc-ink)",
-              lineHeight: 1.0,
-              maxWidth: "820px",
-              letterSpacing: "-0.04em",
-            }}
-          >
-            Compliance,{" "}
-            <span style={{ color: "var(--rc-accent-dark)" }}>sorted.</span>
-          </h1>
-
-          {/* Sub */}
-          <p
-            className="hero-fade-up"
-            style={{
-              animationDelay: "0.29s",
-              fontSize: "clamp(1.05rem, 2vw, 1.2rem)",
-              color: "var(--rc-muted)",
-              maxWidth: "560px",
-              lineHeight: 1.65,
-              margin: "0 auto",
-            }}
-          >
-            One platform for every compliance obligation your real estate business carries — CPD tracking, trust accounting, AML, audit readiness, and more.
-          </p>
-
-          {/* CTAs */}
-          <div
-            className="hero-fade-up"
-            style={{ animationDelay: "0.41s", display: "flex", gap: "12px", flexWrap: "wrap", justifyContent: "center" }}
-          >
-            <a href="/signup" className="btn-hero-primary">Sign up</a>
-            <a href="#demo" className="btn-hero-outline">Book a demo</a>
-          </div>
-
-          {/* Social proof micro */}
-          <p
-            className="hero-fade-up"
-            style={{ animationDelay: "0.53s", fontSize: "13px", color: "var(--rc-faint)", letterSpacing: "0.01em" }}
-          >
-            Trusted by 200+ Australian real estate offices · No credit card required
-          </p>
-        </div>
-
-        {/* Dashboard mockup */}
-        <div
-          className="hero-fade-up"
-          style={{ animationDelay: "0.55s", marginTop: "64px", width: "100%", maxWidth: "960px", position: "relative" }}
-        >
-          <div
-            aria-hidden
-            style={{
-              position: "absolute",
-              bottom: "-40px",
-              left: "50%",
-              transform: "translateX(-50%)",
-              width: "70%",
-              height: "80px",
-              background: "radial-gradient(ellipse, oklch(0.36 0.140 260 / 0.12) 0%, transparent 70%)",
-              filter: "blur(20px)",
-            }}
-          />
-
-          <div
-            style={{
-              border: "1px solid var(--rc-border)",
-              borderRadius: "16px",
-              overflow: "hidden",
-              background: "oklch(0.11 0.028 260)",
-              boxShadow: "0 24px 60px oklch(0.14 0.025 260 / 0.15), 0 0 0 1px var(--rc-border)",
-              position: "relative",
-            }}
-          >
-            {/* Window chrome */}
+          {/* Right — compliance pillars */}
+          <div className="hero-fade hero-right" style={{ animationDelay: "0.2s" }}>
             <div
               style={{
-                padding: "12px 16px",
-                borderBottom: "1px solid oklch(0.22 0.030 260)",
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-                background: "oklch(0.13 0.030 260)",
+                border: "1px solid var(--rc-border)",
+                borderRadius: "16px",
+                overflow: "hidden",
+                background: "var(--rc-surface)",
               }}
             >
-              <div style={{ width: "10px", height: "10px", borderRadius: "50%", background: "oklch(0.65 0.20 30)" }} />
-              <div style={{ width: "10px", height: "10px", borderRadius: "50%", background: "oklch(0.75 0.18 90)" }} />
-              <div style={{ width: "10px", height: "10px", borderRadius: "50%", background: "oklch(0.60 0.18 145)" }} />
-              <div
-                style={{
-                  flex: 1,
-                  maxWidth: "280px",
-                  margin: "0 auto",
-                  height: "22px",
-                  background: "oklch(0.20 0.025 260)",
-                  borderRadius: "6px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <span style={{ fontSize: "11px", color: "oklch(0.50 0.015 260)" }}>app.realcomply.com.au</span>
-              </div>
-            </div>
-
-            {/* App layout */}
-            <div style={{ display: "flex", height: "400px" }}>
-              {/* Sidebar */}
-              <div
-                style={{
-                  width: "200px",
-                  flexShrink: 0,
-                  borderRight: "1px solid oklch(0.22 0.030 260)",
-                  padding: "20px 12px",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "2px",
-                }}
-              >
-                <div style={{ marginBottom: "16px", paddingLeft: "8px" }}>
-                  <span style={{ fontSize: "11px", fontWeight: 700, color: "oklch(0.35 0.020 260)", letterSpacing: "0.08em", textTransform: "uppercase" }}>RealComply</span>
-                </div>
-                {[
-                  { label: "Dashboard", active: true, icon: "▦" },
-                  { label: "CPD Tracking", active: false, icon: "◎" },
-                  { label: "Audit Ready", active: false, icon: "✓" },
-                  { label: "Trust Accounts", active: false, icon: "◈" },
-                  { label: "AML Compliance", active: false, icon: "◉" },
-                  { label: "Policies & Docs", active: false, icon: "≡" },
-                ].map(({ label, active, icon }) => (
-                  <div
-                    key={label}
+              {[
+                { label: "CPD & Licence Tracking", status: "All licences current", ok: true },
+                { label: "Trust Account Reconciliation", status: "3 accounts reconciled", ok: true },
+                { label: "AML Customer Due Diligence", status: "14 checks this quarter", ok: true },
+                { label: "Policies & Procedures", status: "2 due for review", ok: false },
+                { label: "Audit Pack", status: "Ready to export", ok: true },
+              ].map(({ label, status, ok }, i, arr) => (
+                <div
+                  key={label}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    padding: "18px 24px",
+                    borderBottom: i < arr.length - 1 ? "1px solid var(--rc-border)" : "none",
+                    gap: "16px",
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+                    <div
+                      style={{
+                        width: "8px",
+                        height: "8px",
+                        borderRadius: "50%",
+                        flexShrink: 0,
+                        background: ok
+                          ? "oklch(0.62 0.17 145)"
+                          : "oklch(0.72 0.16 55)",
+                      }}
+                    />
+                    <span style={{ fontSize: "14px", fontWeight: 600, color: "var(--rc-ink)" }}>{label}</span>
+                  </div>
+                  <span
                     style={{
-                      padding: "8px 10px",
-                      borderRadius: "7px",
-                      background: active ? "oklch(0.25 0.060 260)" : "transparent",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "8px",
+                      fontSize: "12px",
+                      color: ok ? "oklch(0.48 0.13 145)" : "oklch(0.50 0.13 55)",
+                      background: ok ? "oklch(0.96 0.025 145)" : "oklch(0.97 0.025 55)",
+                      padding: "4px 10px",
+                      borderRadius: "100px",
+                      fontWeight: 500,
+                      whiteSpace: "nowrap",
+                      flexShrink: 0,
                     }}
                   >
-                    <span style={{ fontSize: "12px", color: active ? "var(--rc-accent)" : "oklch(0.38 0.020 260)" }}>{icon}</span>
-                    <span style={{ fontSize: "12px", fontWeight: active ? 600 : 400, color: active ? "white" : "oklch(0.42 0.020 260)" }}>{label}</span>
-                  </div>
-                ))}
-              </div>
-
-              {/* Main */}
-              <div style={{ flex: 1, padding: "20px 24px", overflow: "hidden" }}>
-                <div style={{ marginBottom: "20px" }}>
-                  <h3 style={{ fontSize: "16px", fontWeight: 700, color: "white", marginBottom: "4px", letterSpacing: "-0.02em" }}>
-                    Compliance Overview
-                  </h3>
-                  <span style={{ fontSize: "12px", color: "oklch(0.44 0.018 260)" }}>Ray White Bondi Junction · Updated just now</span>
+                    {status}
+                  </span>
                 </div>
-
-                {/* Stats row */}
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px", marginBottom: "20px" }}>
-                  {[
-                    { label: "Overall Score", value: "94%", color: "var(--rc-accent)", bg: "oklch(0.20 0.040 195 / 0.4)" },
-                    { label: "CPD Hours", value: "38 / 40", color: "oklch(0.80 0.16 90)", bg: "oklch(0.20 0.040 90 / 0.3)" },
-                    { label: "Open Items", value: "2", color: "oklch(0.75 0.18 50)", bg: "oklch(0.20 0.040 50 / 0.3)" },
-                  ].map(({ label, value, color, bg }) => (
-                    <div
-                      key={label}
-                      style={{
-                        background: bg,
-                        border: "1px solid oklch(0.28 0.030 260)",
-                        borderRadius: "10px",
-                        padding: "14px",
-                      }}
-                    >
-                      <div style={{ fontSize: "20px", fontWeight: 800, color, letterSpacing: "-0.03em", lineHeight: 1 }}>{value}</div>
-                      <div style={{ fontSize: "11px", color: "oklch(0.45 0.018 260)", marginTop: "4px" }}>{label}</div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Items list */}
-                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                  {[
-                    { label: "Q3 Trust Account Reconciliation", status: "Complete", statusColor: "var(--rc-accent)" },
-                    { label: "Jane Smith — CPD renewal due 30 Sep", status: "Action needed", statusColor: "oklch(0.75 0.18 50)" },
-                    { label: "AML Customer Risk Assessment — 12 Chapel St", status: "In review", statusColor: "oklch(0.78 0.16 90)" },
-                    { label: "PM Policies v4.2 — Annual review", status: "Complete", statusColor: "var(--rc-accent)" },
-                  ].map(({ label, status, statusColor }) => (
-                    <div
-                      key={label}
-                      style={{
-                        background: "oklch(0.15 0.025 260 / 0.6)",
-                        border: "1px solid oklch(0.22 0.030 260)",
-                        borderRadius: "8px",
-                        padding: "10px 14px",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        gap: "12px",
-                      }}
-                    >
-                      <span style={{ fontSize: "12px", color: "oklch(0.78 0.015 260)" }}>{label}</span>
-                      <span style={{ fontSize: "11px", fontWeight: 600, color: statusColor, flexShrink: 0 }}>{status}</span>
-                    </div>
-                  ))}
-                </div>
+              ))}
+              <div
+                style={{
+                  padding: "16px 24px",
+                  background: "var(--rc-bg)",
+                  borderTop: "1px solid var(--rc-border)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                }}
+              >
+                <span style={{ fontSize: "12px", color: "var(--rc-faint)" }}>Overall compliance score</span>
+                <span style={{ fontSize: "13px", fontWeight: 700, color: "var(--rc-primary)" }}>94 / 100</span>
               </div>
             </div>
+            <p style={{ fontSize: "12px", color: "var(--rc-faint)", textAlign: "center", marginTop: "12px" }}>
+              Your compliance, at a glance.
+            </p>
           </div>
         </div>
       </div>
 
-      {/* Bottom gradient fade */}
-      <div
-        aria-hidden
-        style={{
-          position: "absolute",
-          bottom: 0,
-          left: 0,
-          right: 0,
-          height: "120px",
-          background: "linear-gradient(to bottom, transparent, var(--rc-bg))",
-          pointerEvents: "none",
-        }}
-      />
-
       <style>{`
-        .hero-fade-up {
+        .hero-fade {
           opacity: 0;
-          transform: translateY(28px);
-          animation: heroFadeUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+          transform: translateY(20px);
+          animation: heroFade 0.65s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
-        @keyframes heroFadeUp {
+        @keyframes heroFade {
           to { opacity: 1; transform: translateY(0); }
         }
-        .btn-hero-primary {
+        .btn-primary {
+          display: inline-block;
           padding: 14px 28px;
           background: var(--rc-primary);
           color: white;
-          border-radius: 10px;
+          border-radius: 8px;
           font-weight: 700;
           font-size: 15px;
+          transition: opacity 0.15s ease, transform 0.15s ease;
+        }
+        .btn-primary:hover { opacity: 0.88; transform: translateY(-1px); }
+        .btn-outline {
           display: inline-block;
-          transition: transform 0.15s ease, box-shadow 0.15s ease;
-        }
-        .btn-hero-primary:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 8px 30px oklch(0.36 0.140 260 / 0.30);
-        }
-        .btn-hero-outline {
           padding: 14px 28px;
           background: transparent;
           color: var(--rc-ink);
-          border-radius: 10px;
+          border-radius: 8px;
           font-weight: 600;
           font-size: 15px;
           border: 1px solid var(--rc-border);
-          display: inline-block;
-          transition: border-color 0.2s ease, background 0.2s ease;
+          transition: border-color 0.15s ease, background 0.15s ease;
         }
-        .btn-hero-outline:hover {
-          border-color: var(--rc-primary);
-          background: var(--rc-surface);
+        .btn-outline:hover { border-color: var(--rc-primary); background: var(--rc-surface); }
+        @media (max-width: 900px) {
+          .hero-grid { grid-template-columns: 1fr !important; gap: 48px !important; }
+          .hero-right { display: none !important; }
         }
         @media (prefers-reduced-motion: reduce) {
-          .hero-fade-up {
-            opacity: 1;
-            transform: none;
-            animation: none;
-          }
+          .hero-fade { opacity: 1; transform: none; animation: none; }
         }
       `}</style>
     </section>

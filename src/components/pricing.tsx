@@ -1,15 +1,14 @@
 "use client";
 
-import { useState } from "react";
 import { useReveal } from "@/hooks/use-reveal";
 
 const plans = [
   {
     name: "Essentials",
-    price: { monthly: 149, annual: 119 },
+    price: { monthly: 129 },
     description: "For single-office agencies getting compliance under control.",
     features: [
-      "Up to 10 team members",
+      "Up to 20 team members",
       "CPD & licence tracking",
       "Trust account checklists",
       "Policies & procedures library",
@@ -20,11 +19,11 @@ const plans = [
     highlight: false,
   },
   {
-    name: "Professional",
-    price: { monthly: 299, annual: 239 },
+    name: "Standard",
+    price: { monthly: 249 },
     description: "For growing offices with complex compliance requirements.",
     features: [
-      "Up to 30 team members",
+      "Up to 60 team members",
       "Everything in Essentials",
       "AML compliance per property",
       "Full audit readiness suite",
@@ -36,25 +35,25 @@ const plans = [
     highlight: true,
   },
   {
-    name: "Enterprise",
-    price: { monthly: null, annual: null },
-    description: "For multi-office groups and franchise networks.",
+    name: "Professional",
+    price: { monthly: 549 },
+    description: "For large offices and multi-branch operations.",
     features: [
-      "Unlimited team members",
-      "Everything in Professional",
+      "Up to 120 team members",
+      "Everything in Standard",
       "Multi-office dashboard",
       "Custom policy templates",
       "Compliance reporting suite",
       "Dedicated account manager",
       "SLA-backed support",
     ],
-    cta: "Talk to us",
+    cta: "Sign up",
     highlight: false,
   },
 ];
 
 export default function Pricing() {
-  const [annual, setAnnual] = useState(true);
+  const annual = false;
   const headerRef = useReveal(0.1);
   const cardsRef = useReveal(0.05);
 
@@ -81,57 +80,6 @@ export default function Pricing() {
             No per-user fees. No per-property charges. One flat rate per office, per month.
           </p>
 
-          {/* Toggle */}
-          <div
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "12px",
-              background: "var(--rc-bg)",
-              border: "1px solid var(--rc-border)",
-              borderRadius: "100px",
-              padding: "6px 6px 6px 16px",
-            }}
-          >
-            <span style={{ fontSize: "14px", fontWeight: 500, color: annual ? "var(--rc-muted)" : "var(--rc-ink)" }}>Monthly</span>
-            <button
-              onClick={() => setAnnual(!annual)}
-              style={{
-                width: "48px",
-                height: "26px",
-                borderRadius: "100px",
-                background: annual ? "var(--rc-primary)" : "var(--rc-border)",
-                border: "none",
-                cursor: "pointer",
-                position: "relative",
-                transition: "background 0.2s ease",
-              }}
-              aria-pressed={annual}
-              aria-label="Toggle annual billing"
-            >
-              <div
-                style={{
-                  width: "20px",
-                  height: "20px",
-                  borderRadius: "50%",
-                  background: "white",
-                  position: "absolute",
-                  top: "3px",
-                  left: annual ? "25px" : "3px",
-                  transition: "left 0.2s ease",
-                  boxShadow: "0 1px 4px oklch(0 0 0 / 0.2)",
-                }}
-              />
-            </button>
-            <span style={{ fontSize: "14px", fontWeight: 500, color: annual ? "var(--rc-ink)" : "var(--rc-muted)", display: "flex", alignItems: "center", gap: "6px" }}>
-              Annual
-              {annual && (
-                <span style={{ fontSize: "11px", fontWeight: 700, padding: "2px 8px", background: "oklch(0.68 0.145 195 / 0.15)", color: "var(--rc-accent-dark)", borderRadius: "100px" }}>
-                  Save 20%
-                </span>
-              )}
-            </span>
-          </div>
         </div>
 
         <div
@@ -181,7 +129,7 @@ export default function Pricing() {
                 {price.monthly ? (
                   <div style={{ display: "flex", alignItems: "baseline", gap: "4px" }}>
                     <span style={{ fontSize: "2.8rem", fontWeight: 800, color: highlight ? "white" : "var(--rc-ink)", letterSpacing: "-0.04em", lineHeight: 1 }}>
-                      ${annual ? price.annual : price.monthly}
+                      ${price.monthly}
                     </span>
                     <span style={{ fontSize: "14px", color: highlight ? "oklch(0.75 0.060 260)" : "var(--rc-muted)" }}>/mo</span>
                   </div>

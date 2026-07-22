@@ -21,8 +21,7 @@ export default function Nav() {
         right: 0,
         zIndex: 50,
         transition: "background 0.3s ease, border-color 0.3s ease, backdrop-filter 0.3s ease",
-        background: scrolled ? "oklch(1.000 0.000 0 / 0.92)" : "transparent",
-        backdropFilter: scrolled ? "blur(12px)" : "none",
+        background: "#ffffff",
         borderBottom: scrolled ? "1px solid var(--rc-border)" : "1px solid transparent",
       }}
     >
@@ -31,40 +30,15 @@ export default function Nav() {
           maxWidth: "1200px",
           margin: "0 auto",
           padding: "0 24px",
-          height: "64px",
+          height: "80px",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
         }}
       >
         {/* Logo */}
-        <a href="/" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <div
-            style={{
-              width: "28px",
-              height: "28px",
-              background: "var(--rc-primary)",
-              borderRadius: "6px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              flexShrink: 0,
-            }}
-          >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <path d="M3 4h10M3 8h6M3 12h8" stroke="white" strokeWidth="2" strokeLinecap="round" />
-            </svg>
-          </div>
-          <span
-            style={{
-              fontWeight: 700,
-              fontSize: "17px",
-              letterSpacing: "-0.03em",
-              color: "var(--rc-ink)",
-            }}
-          >
-            RealComply
-          </span>
+        <a href="/" style={{ display: "flex", alignItems: "center" }}>
+          <img src="/RealComply (2000 x 1000 px).png" alt="RealComply" style={{ height: "46px", width: "auto", objectFit: "contain", mixBlendMode: "multiply" }} />
         </a>
 
         {/* Desktop links */}
