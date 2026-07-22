@@ -197,7 +197,7 @@ export default function Pricing() {
               </p>
 
               <a
-                href={cta === "Talk to us" ? "#contact" : "#signup"}
+                href={cta === "Talk to us" ? "#contact" : "/signup"}
                 className={highlight ? "btn-plan-highlight" : "btn-plan-default"}
                 style={{ display: "block", padding: "12px 24px", borderRadius: "10px", textAlign: "center", fontWeight: 700, fontSize: "15px", marginBottom: "32px" }}
               >

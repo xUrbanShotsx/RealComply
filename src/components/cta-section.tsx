@@ -40,7 +40,7 @@ export default function CtaSection() {
         </p>
 
         <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", justifyContent: "center", marginBottom: "20px" }}>
-          <a href="#signup" className="btn-cta-primary">Sign up</a>
+          <a href="/signup" className="btn-cta-primary">Sign up</a>
           <a href="#demo" className="btn-cta-outline">Book a demo</a>
         </div>
 

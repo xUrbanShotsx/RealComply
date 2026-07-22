@@ -104,7 +104,7 @@ export default function Nav() {
             Sign in
           </a>
           <a
-            href="#signup"
+            href="/signup"
             style={{
               padding: "9px 18px",
               borderRadius: "8px",
@@ -169,7 +169,7 @@ export default function Nav() {
             <div style={{ borderTop: "1px solid var(--rc-border)", paddingTop: "16px", display: "flex", flexDirection: "column", gap: "12px" }}>
               <a href="/signin" style={{ fontSize: "15px", color: "var(--rc-muted)" }}>Sign in</a>
               <a
-                href="#signup"
+                href="/signup"
                 style={{
                   padding: "12px 20px",
                   background: "var(--rc-primary)",

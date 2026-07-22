@@ -103,7 +103,7 @@ export default function Hero() {
             className="hero-fade-up"
             style={{ animationDelay: "0.41s", display: "flex", gap: "12px", flexWrap: "wrap", justifyContent: "center" }}
           >
-            <a href="#signup" className="btn-hero-primary">Sign up</a>
+            <a href="/signup" className="btn-hero-primary">Sign up</a>
             <a href="#demo" className="btn-hero-outline">Book a demo</a>
           </div>
 
