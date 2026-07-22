@@ -6460,7 +6460,7 @@ export default function DashboardPage() {
         {!activeModule && (
           <nav style={{ flex: 1, padding: "2px 10px 10px" }}>
             <button onClick={goBack}
-              style={{ width: "100%", display: "flex", alignItems: "center", gap: "9px", padding: "9px 12px", borderRadius: "8px", border: "none", background: "var(--rc-nav-active-bg)", color: "oklch(0.97 0.006 260)", fontSize: "13.5px", fontWeight: 600, cursor: "pointer", textAlign: "left", marginBottom: "1px", fontFamily: "var(--font-inter)" }}
+              style={{ width: "100%", display: "flex", alignItems: "center", gap: "9px", padding: "9px 12px", paddingRight: "22px", borderRadius: "8px 0 0 8px", border: "none", background: "var(--rc-bg)", color: "var(--rc-ink)", fontSize: "13.5px", fontWeight: 600, cursor: "pointer", textAlign: "left", marginBottom: "1px", marginRight: "-10px", fontFamily: "var(--font-inter)" }}
             >
               <svg width="15" height="15" viewBox="0 0 18 18" fill="none" style={{ flexShrink: 0 }}><path d="M3 8.5L9 3l6 5.5V15a1 1 0 01-1 1H11v-4H7v4H4a1 1 0 01-1-1V8.5z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" /></svg>
               <span style={{ flex: 1 }}>Home</span>
@@ -6489,12 +6489,14 @@ export default function DashboardPage() {
               <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M9 3L5 7l4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
               All modules
             </button>
-            <div style={{ padding: "16px 16px 6px", flexShrink: 0 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "oklch(0.97 0.006 260)" }}>
-                <span style={{ flexShrink: 0, opacity: 0.8 }}>{iconMap[activeModule]}</span>
-                <span style={{ fontSize: "13px", fontWeight: 600, letterSpacing: "-0.015em" }}>{module.label}</span>
-              </div>
-            </div>
+            <button onClick={() => setSelected(null)}
+              style={{ width: "100%", display: "flex", alignItems: "center", gap: "9px", padding: "14px 16px", border: "none", background: !selected ? "var(--rc-bg)" : "transparent", color: !selected ? "var(--rc-ink)" : "oklch(0.97 0.006 260)", borderRadius: !selected ? "8px 0 0 8px" : "0", fontSize: "13px", fontWeight: 700, letterSpacing: "-0.015em", cursor: "pointer", textAlign: "left", flexShrink: 0, fontFamily: "var(--font-inter)", transition: "background 0.12s ease, color 0.12s ease" }}
+              onMouseEnter={(e) => { if (selected) { e.currentTarget.style.background = "var(--rc-nav-hover)"; e.currentTarget.style.color = "oklch(0.96 0.006 260)"; } }}
+              onMouseLeave={(e) => { if (selected) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "oklch(0.97 0.006 260)"; } }}
+            >
+              <span style={{ flexShrink: 0, opacity: !selected ? 1 : 0.8 }}>{iconMap[activeModule]}</span>
+              <span>{module.label}</span>
+            </button>
             <nav style={{ flex: 1, padding: "4px 10px 12px" }}>
               {module.type === "properties" && module.properties.map((prop) => {
                 const isActive = selected?.type === "property" && selected.id === prop.id;
