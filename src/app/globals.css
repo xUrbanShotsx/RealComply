@@ -3,7 +3,7 @@
 :root {
   /* Navigation (dark charcoal sidebar) */
   --rc-nav: oklch(0.115 0.005 250);
-  --rc-nav-text: oklch(0.55 0.010 250);
+  --rc-nav-text: oklch(0.82 0.008 250);
   --rc-nav-hover: oklch(0.178 0.006 250);
   --rc-nav-active-bg: oklch(0.215 0.012 250);
   --rc-nav-border: oklch(0.195 0.007 250);

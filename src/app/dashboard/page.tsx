@@ -6500,8 +6500,8 @@ export default function DashboardPage() {
                 const isActive = selected?.type === "property" && selected.id === prop.id;
                 return (
                   <button key={prop.id} onClick={() => setSelected({ type: "property", section: module.id as "sales" | "management", id: prop.id, address: prop.address })}
-                    style={{ width: "100%", display: "flex", alignItems: "flex-start", gap: "8px", padding: "9px 12px", border: "none", background: isActive ? "var(--rc-nav-active-bg)" : "transparent", color: isActive ? "oklch(0.97 0.006 260)" : "var(--rc-nav-text)", fontSize: "13px", fontWeight: isActive ? 600 : 400, cursor: "pointer", textAlign: "left", borderRadius: "8px", marginBottom: "2px", transition: "background 0.1s ease, color 0.1s ease", fontFamily: "var(--font-inter)", lineHeight: 1.4 }}
-                    onMouseEnter={(e) => { if (!isActive) { (e.currentTarget as HTMLButtonElement).style.background = "var(--rc-nav-hover)"; (e.currentTarget as HTMLButtonElement).style.color = "oklch(0.90 0.007 260)"; } }}
+                    style={{ width: "100%", display: "flex", alignItems: "flex-start", gap: "8px", padding: "9px 12px", paddingRight: isActive ? "22px" : "12px", border: "none", background: isActive ? "var(--rc-bg)" : "transparent", color: isActive ? "var(--rc-ink)" : "var(--rc-nav-text)", fontSize: "13px", fontWeight: isActive ? 600 : 400, cursor: "pointer", textAlign: "left", borderRadius: isActive ? "8px 0 0 8px" : "8px", marginBottom: "2px", marginRight: isActive ? "-10px" : "0", transition: "background 0.1s ease, color 0.1s ease", fontFamily: "var(--font-inter)", lineHeight: 1.4 }}
+                    onMouseEnter={(e) => { if (!isActive) { (e.currentTarget as HTMLButtonElement).style.background = "var(--rc-nav-hover)"; (e.currentTarget as HTMLButtonElement).style.color = "oklch(0.96 0.006 260)"; } }}
                     onMouseLeave={(e) => { if (!isActive) { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; (e.currentTarget as HTMLButtonElement).style.color = "var(--rc-nav-text)"; } }}
                   >
                     <span style={{ flexShrink: 0, marginTop: "3px", opacity: 0.35, fontSize: "8px" }}>●</span>
@@ -6513,8 +6513,8 @@ export default function DashboardPage() {
                 const isActive = selected?.type === "static" && selected.label === child;
                 return (
                   <button key={child} onClick={() => setSelected({ type: "static", label: child })}
-                    style={{ width: "100%", display: "block", padding: "9px 12px", border: "none", background: isActive ? "var(--rc-nav-active-bg)" : "transparent", color: isActive ? "oklch(0.97 0.006 260)" : "var(--rc-nav-text)", fontSize: "13.5px", fontWeight: isActive ? 600 : 400, cursor: "pointer", textAlign: "left", borderRadius: "8px", marginBottom: "2px", transition: "background 0.1s ease, color 0.1s ease", fontFamily: "var(--font-inter)" }}
-                    onMouseEnter={(e) => { if (!isActive) { (e.currentTarget as HTMLButtonElement).style.background = "var(--rc-nav-hover)"; (e.currentTarget as HTMLButtonElement).style.color = "oklch(0.90 0.007 260)"; } }}
+                    style={{ width: "100%", display: "block", padding: "9px 12px", paddingRight: isActive ? "22px" : "12px", border: "none", background: isActive ? "var(--rc-bg)" : "transparent", color: isActive ? "var(--rc-ink)" : "var(--rc-nav-text)", fontSize: "13.5px", fontWeight: isActive ? 600 : 400, cursor: "pointer", textAlign: "left", borderRadius: isActive ? "8px 0 0 8px" : "8px", marginBottom: "2px", marginRight: isActive ? "-10px" : "0", transition: "background 0.1s ease, color 0.1s ease", fontFamily: "var(--font-inter)" }}
+                    onMouseEnter={(e) => { if (!isActive) { (e.currentTarget as HTMLButtonElement).style.background = "var(--rc-nav-hover)"; (e.currentTarget as HTMLButtonElement).style.color = "oklch(0.96 0.006 260)"; } }}
                     onMouseLeave={(e) => { if (!isActive) { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; (e.currentTarget as HTMLButtonElement).style.color = "var(--rc-nav-text)"; } }}
                   >
                     {child}
