@@ -114,38 +114,24 @@ function fmtBytes(bytes: number) {
 
 // --- Item detail panel ---
 function ItemDetail({
+  propertyId,
   itemKey,
   label,
   data,
   onChange,
   onClose,
 }: {
+  propertyId: string;
   itemKey: string;
   label: string;
   data: ItemData;
   onChange: (key: string, data: ItemData) => void;
   onClose: () => void;
 }) {
-  const fileRef = useRef<HTMLInputElement>(null);
-  const [dragOver, setDragOver] = useState(false);
   const [notesSaved, setNotesSaved] = useState(false);
 
   function update(patch: Partial<ItemData>) {
     onChange(itemKey, { ...data, ...patch });
-  }
-
-  function handleFiles(fileList: FileList | null) {
-    if (!fileList) return;
-    const newFiles: UploadedFile[] = Array.from(fileList).map((f) => ({
-      name: f.name,
-      size: fmtBytes(f.size),
-      addedAt: new Date().toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" }),
-    }));
-    update({ files: [...data.files, ...newFiles] });
-  }
-
-  function removeFile(idx: number) {
-    update({ files: data.files.filter((_, i) => i !== idx) });
   }
 
   function saveNotes() {
@@ -266,74 +252,7 @@ function ItemDetail({
         </div>
 
         {/* Documents */}
-        <div>
-          <p style={{ fontSize: "12px", fontWeight: 600, color: "var(--rc-faint)", letterSpacing: "0.05em", textTransform: "uppercase", marginBottom: "10px", maxWidth: "none" }}>Documents</p>
-
-          {/* Upload zone */}
-          <div
-            onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
-            onDragLeave={() => setDragOver(false)}
-            onDrop={(e) => { e.preventDefault(); setDragOver(false); handleFiles(e.dataTransfer.files); }}
-            onClick={() => fileRef.current?.click()}
-            style={{
-              border: `1.5px dashed ${dragOver ? "var(--rc-primary)" : "var(--rc-border)"}`,
-              borderRadius: "10px",
-              padding: "20px 16px",
-              textAlign: "center",
-              cursor: "pointer",
-              background: dragOver ? "var(--rc-primary-light)" : "var(--rc-surface)",
-              transition: "all 0.15s ease",
-              marginBottom: "12px",
-            }}
-          >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" style={{ margin: "0 auto 8px", display: "block", color: dragOver ? "var(--rc-primary)" : "var(--rc-faint)" }}>
-              <path d="M12 16V8M8 12l4-4 4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-              <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-            </svg>
-            <p style={{ fontSize: "13px", color: dragOver ? "var(--rc-primary)" : "var(--rc-muted)", fontWeight: 500, maxWidth: "none", margin: 0 }}>
-              Drop files here or <span style={{ color: "var(--rc-primary)", fontWeight: 600 }}>browse</span>
-            </p>
-            <p style={{ fontSize: "11px", color: "var(--rc-faint)", marginTop: "4px", maxWidth: "none" }}>PDF, Word, images up to 20MB</p>
-          </div>
-          <input ref={fileRef} type="file" multiple style={{ display: "none" }} onChange={(e) => handleFiles(e.target.files)} />
-
-          {/* File list */}
-          {data.files.length > 0 && (
-            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-              {data.files.map((f, i) => (
-                <div
-                  key={i}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "10px",
-                    padding: "10px 12px",
-                    background: "var(--rc-surface)",
-                    border: "1px solid var(--rc-border)",
-                    borderRadius: "8px",
-                  }}
-                >
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0, color: "var(--rc-primary)" }}>
-                    <path d="M4 2h6l4 4v8a1 1 0 01-1 1H4a1 1 0 01-1-1V3a1 1 0 011-1z" stroke="currentColor" strokeWidth="1.4" />
-                    <path d="M10 2v4h4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-                  </svg>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ fontSize: "13px", fontWeight: 500, color: "var(--rc-ink)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "none", margin: 0 }}>{f.name}</p>
-                    <p style={{ fontSize: "11px", color: "var(--rc-faint)", maxWidth: "none", margin: 0 }}>{f.size} · {f.addedAt}</p>
-                  </div>
-                  <button
-                    onClick={() => removeFile(i)}
-                    style={{ background: "none", border: "none", cursor: "pointer", color: "var(--rc-faint)", padding: "2px", flexShrink: 0 }}
-                  >
-                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                      <path d="M3 3l8 8M11 3L3 11" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-                    </svg>
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+        <PropertyFileSlot propertyId={propertyId} slot={`item_${itemKey.split("_").pop()}`} label="Documents" />
       </div>
     </div>
   );
@@ -510,6 +429,7 @@ function PropertyChecklist({
       {openItem !== null && (
         <ItemDetail
           key={`${propertyId}_${openItem}`}
+          propertyId={propertyId}
           itemKey={`${propertyId}_${openItem}`}
           label={items[openItem]}
           data={itemData[`${propertyId}_${openItem}`]}
@@ -633,12 +553,122 @@ function SalesFileUpload({
   );
 }
 
+// Self-contained single-file slot: shows drop zone → file card → Save/delete, persists to Supabase
+function PropertyFileSlot({ propertyId, slot, label }: { propertyId: string; slot: string; label: string }) {
+  const orgOwnerId = useContext(OrgContext);
+  const [savedFile, setSavedFile] = useState<{ id: string; url: string; name: string } | null>(null);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [drag, setDrag] = useState(false);
+  const ref = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    supabase.from("property_files").select("id, file_url, file_name")
+      .eq("property_id", propertyId).eq("slot", slot).maybeSingle()
+      .then(({ data }) => { if (data) setSavedFile({ id: data.id, url: data.file_url, name: data.file_name }); });
+  }, [propertyId, slot]);
+
+  function handleFiles(fl: FileList | null) {
+    if (!fl?.[0]) return;
+    setPendingFile(fl[0]);
+    setUploadError(null);
+  }
+
+  async function handleSave() {
+    if (!pendingFile || !orgOwnerId) return;
+    setUploading(true);
+    setUploadError(null);
+    const path = `property-files/${orgOwnerId}/${propertyId}/${slot}_${Date.now()}_${pendingFile.name}`;
+    const { error: upErr } = await supabase.storage.from("policy-docs").upload(path, pendingFile);
+    if (upErr && upErr.message !== "The resource already exists") {
+      setUploadError(upErr.message); setUploading(false); return;
+    }
+    const { data: urlData } = supabase.storage.from("policy-docs").getPublicUrl(path);
+    const { data: row } = await supabase.from("property_files")
+      .upsert({ property_id: propertyId, slot, file_url: urlData.publicUrl, file_name: pendingFile.name, user_id: orgOwnerId }, { onConflict: "property_id,slot" })
+      .select("id").single();
+    if (row) setSavedFile({ id: row.id, url: urlData.publicUrl, name: pendingFile.name });
+    setPendingFile(null);
+    if (ref.current) ref.current.value = "";
+    setUploading(false);
+  }
+
+  async function handleRemove() {
+    if (savedFile) { await supabase.from("property_files").delete().eq("id", savedFile.id); setSavedFile(null); }
+    setPendingFile(null);
+    if (ref.current) ref.current.value = "";
+  }
+
+  const hasFile = savedFile !== null || pendingFile !== null;
+  const isSaved = savedFile !== null;
+  const displayName = savedFile?.name ?? pendingFile?.name ?? "";
+  const slbl: React.CSSProperties = { fontSize: "12px", fontWeight: 600, color: "var(--rc-faint)", letterSpacing: "0.05em", textTransform: "uppercase", marginBottom: "8px", maxWidth: "none" };
+
+  return (
+    <div>
+      {label && <p style={slbl}>{label}</p>}
+      {!hasFile && (
+        <div
+          onDragOver={(e) => { e.preventDefault(); setDrag(true); }}
+          onDragLeave={() => setDrag(false)}
+          onDrop={(e) => { e.preventDefault(); setDrag(false); handleFiles(e.dataTransfer.files); }}
+          onClick={() => ref.current?.click()}
+          style={{ border: `1.5px dashed ${drag ? "var(--rc-primary)" : "var(--rc-border)"}`, borderRadius: "10px", padding: "20px 16px", textAlign: "center", cursor: "pointer", background: drag ? "var(--rc-primary-light)" : "var(--rc-surface)", transition: "all 0.15s ease" }}
+        >
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" style={{ margin: "0 auto 8px", display: "block", color: drag ? "var(--rc-primary)" : "var(--rc-faint)" }}>
+            <path d="M12 16V8M8 12l4-4 4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+          </svg>
+          <p style={{ fontSize: "13px", color: drag ? "var(--rc-primary)" : "var(--rc-muted)", fontWeight: 500, maxWidth: "none", margin: 0 }}>
+            Drop file or <span style={{ color: "var(--rc-primary)", fontWeight: 600 }}>browse</span>
+          </p>
+          <p style={{ fontSize: "11px", color: "var(--rc-faint)", marginTop: "4px", maxWidth: "none" }}>PDF up to 20MB</p>
+        </div>
+      )}
+      <input ref={ref} type="file" accept=".pdf,application/pdf" style={{ display: "none" }} onChange={(e) => handleFiles(e.target.files)} />
+      {hasFile && (
+        <div style={{ display: "flex", alignItems: "center", gap: "10px", padding: "10px 14px", background: "var(--rc-surface)", border: "1px solid var(--rc-border)", borderRadius: "8px" }}>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0, color: "oklch(0.52 0.20 25)" }}>
+            <path d="M4 2h6l4 4v8a1 1 0 01-1 1H4a1 1 0 01-1-1V3a1 1 0 011-1z" stroke="currentColor" strokeWidth="1.4" />
+            <path d="M10 2v4h4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+            <path d="M6 10h4M6 12.5h2" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+          </svg>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            {isSaved ? (
+              <a href={savedFile!.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: "13px", fontWeight: 500, color: "var(--rc-primary)", textDecoration: "underline", display: "block", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                {displayName}
+              </a>
+            ) : (
+              <p style={{ fontSize: "13px", fontWeight: 500, color: "var(--rc-ink)", margin: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{displayName}</p>
+            )}
+            <p style={{ fontSize: "11px", color: isSaved ? "oklch(0.45 0.14 145)" : "oklch(0.55 0.14 55)", margin: 0, maxWidth: "none" }}>
+              {isSaved ? "Saved" : "Not saved yet"}
+            </p>
+          </div>
+          <button onClick={handleRemove} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--rc-faint)", padding: "2px", flexShrink: 0 }}>
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 3l8 8M11 3L3 11" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" /></svg>
+          </button>
+        </div>
+      )}
+      {uploadError && <p style={{ fontSize: "12px", color: "oklch(0.55 0.18 25)", marginTop: "6px", maxWidth: "none" }}>{uploadError}</p>}
+      {pendingFile && !isSaved && (
+        <button onClick={handleSave} disabled={uploading} style={{ marginTop: "10px", width: "100%", padding: "10px", background: "var(--rc-primary)", color: "white", border: "none", borderRadius: "8px", fontWeight: 600, fontSize: "13px", cursor: uploading ? "not-allowed" : "pointer", opacity: uploading ? 0.7 : 1, fontFamily: "var(--font-inter)" }}>
+          {uploading ? "Saving…" : "Save"}
+        </button>
+      )}
+    </div>
+  );
+}
+
 function SalesItemPanel({
+  propertyId,
   itemKey,
   state,
   setState,
   onClose,
 }: {
+  propertyId: string;
   itemKey: keyof SalesPropertyState;
   state: SalesPropertyState;
   setState: React.Dispatch<React.SetStateAction<SalesPropertyState>>;
@@ -771,12 +801,7 @@ function SalesItemPanel({
               style={{ ...inputSty, resize: "vertical", lineHeight: 1.5 }}
             />
           </div>
-          <SalesFileUpload
-            label="CMA document"
-            files={state.cma.files}
-            onAdd={(fs) => setState((prev) => ({ ...prev, cma: { ...prev.cma, files: [...prev.cma.files, ...fs] } }))}
-            onRemove={(i) => setState((prev) => ({ ...prev, cma: { ...prev.cma, files: prev.cma.files.filter((_, j) => j !== i) } }))}
-          />
+          <PropertyFileSlot propertyId={propertyId} slot="cma" label="CMA document" />
         </div>
       </div>
     );
@@ -867,24 +892,9 @@ function SalesItemPanel({
         <PanelHeader />
         <div style={{ padding: "20px 24px", display: "flex", flexDirection: "column", gap: "20px", flex: 1 }}>
           <StatusPicker />
-          <SalesFileUpload
-            label="Council rates"
-            files={state.rates.council}
-            onAdd={(fs) => setState((prev) => ({ ...prev, rates: { ...prev.rates, council: [...prev.rates.council, ...fs] } }))}
-            onRemove={(i) => setState((prev) => ({ ...prev, rates: { ...prev.rates, council: prev.rates.council.filter((_, j) => j !== i) } }))}
-          />
-          <SalesFileUpload
-            label="Water rates"
-            files={state.rates.water}
-            onAdd={(fs) => setState((prev) => ({ ...prev, rates: { ...prev.rates, water: [...prev.rates.water, ...fs] } }))}
-            onRemove={(i) => setState((prev) => ({ ...prev, rates: { ...prev.rates, water: prev.rates.water.filter((_, j) => j !== i) } }))}
-          />
-          <SalesFileUpload
-            label="Strata rates"
-            files={state.rates.strata}
-            onAdd={(fs) => setState((prev) => ({ ...prev, rates: { ...prev.rates, strata: [...prev.rates.strata, ...fs] } }))}
-            onRemove={(i) => setState((prev) => ({ ...prev, rates: { ...prev.rates, strata: prev.rates.strata.filter((_, j) => j !== i) } }))}
-          />
+          <PropertyFileSlot propertyId={propertyId} slot="rates_council" label="Council rates" />
+          <PropertyFileSlot propertyId={propertyId} slot="rates_water" label="Water rates" />
+          <PropertyFileSlot propertyId={propertyId} slot="rates_strata" label="Strata rates" />
         </div>
       </div>
     );
@@ -962,27 +972,14 @@ function SalesItemPanel({
     );
   }
 
-  const uploadFiles = itemKey === "agencyAgreement" ? state.agencyAgreement.files : state.contract.files;
-
-  function setUploadFiles(fs: UploadedFile[]) {
-    if (itemKey === "agencyAgreement") {
-      setState((prev) => ({ ...prev, agencyAgreement: { ...prev.agencyAgreement, files: fs } }));
-    } else {
-      setState((prev) => ({ ...prev, contract: { ...prev.contract, files: fs } }));
-    }
-  }
+  const slot = itemKey === "agencyAgreement" ? "agency_agreement" : "contract";
 
   return (
     <div style={panelWrap}>
       <PanelHeader />
       <div style={{ padding: "20px 24px", display: "flex", flexDirection: "column", gap: "20px", flex: 1 }}>
         <StatusPicker />
-        <SalesFileUpload
-          label="Upload document"
-          files={uploadFiles}
-          onAdd={(fs) => setUploadFiles([...uploadFiles, ...fs])}
-          onRemove={(i) => setUploadFiles(uploadFiles.filter((_, j) => j !== i))}
-        />
+        <PropertyFileSlot propertyId={propertyId} slot={slot} label="Upload document" />
       </div>
     </div>
   );
@@ -1185,6 +1182,7 @@ function SalesPropertyChecklist({
       {selectedItem !== null && (
         <SalesItemPanel
           key={selectedItem}
+          propertyId={propertyId}
           itemKey={selectedItem}
           state={state}
           setState={setState}
