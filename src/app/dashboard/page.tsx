@@ -5526,6 +5526,45 @@ function MonthlyTrustReportsPage() {
 
 // --- Settings pages ---
 
+const SETTINGS_INPUT: React.CSSProperties = {
+  width: "100%", padding: "11px 14px", borderRadius: "8px",
+  border: "1px solid var(--rc-border)", background: "var(--rc-surface)",
+  fontSize: "14px", color: "var(--rc-ink)", outline: "none",
+  fontFamily: "var(--font-inter)", transition: "border-color 0.15s ease",
+};
+
+const SETTINGS_BTN: React.CSSProperties = {
+  padding: "10px 22px", background: "var(--rc-primary)", color: "white",
+  border: "none", borderRadius: "8px", fontWeight: 600, fontSize: "14px",
+  cursor: "pointer", fontFamily: "var(--font-inter)",
+};
+
+const CARD: React.CSSProperties = {
+  border: "1px solid var(--rc-border)", borderRadius: "12px", overflow: "hidden",
+};
+
+function SettingsRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", padding: "16px 24px", borderBottom: "1px solid var(--rc-border)" }}>
+      <span style={{ width: "180px", fontSize: "13px", fontWeight: 500, color: "var(--rc-muted)", flexShrink: 0 }}>{label}</span>
+      <span style={{ fontSize: "14px", color: "var(--rc-ink)", fontWeight: 500 }}>{value}</span>
+    </div>
+  );
+}
+
+function RoleBadge({ role }: { role: "super_user" | "standard" }) {
+  const isSuper = role === "super_user";
+  return (
+    <span style={{
+      padding: "3px 10px", borderRadius: "100px", fontSize: "11.5px", fontWeight: 700,
+      background: isSuper ? "oklch(0.92 0.06 260)" : "var(--rc-surface-2)",
+      color: isSuper ? "oklch(0.38 0.14 260)" : "var(--rc-muted)",
+    }}>
+      {isSuper ? "Super User" : "Standard"}
+    </span>
+  );
+}
+
 function AccountSettingsPage({ agencyName, userEmail }: { agencyName: string; userEmail: string | null }) {
   const [newPassword, setNewPassword] = useState("");
   const [pwLoading, setPwLoading] = useState(false);
@@ -5540,40 +5579,49 @@ function AccountSettingsPage({ agencyName, userEmail }: { agencyName: string; us
     setNewPassword("");
   }
 
-  const inputStyle: React.CSSProperties = {
-    width: "100%", padding: "11px 14px", borderRadius: "8px",
-    border: "1px solid var(--rc-border)", background: "var(--rc-bg)",
-    fontSize: "15px", color: "var(--rc-ink)", outline: "none",
-    fontFamily: "var(--font-inter)",
-  };
-
   return (
-    <div style={{ maxWidth: "560px" }}>
-      <h2 style={{ fontSize: "1.25rem", fontWeight: 700, color: "var(--rc-ink)", marginBottom: "24px" }}>Account</h2>
-
-      <div style={{ border: "1px solid var(--rc-border)", borderRadius: "12px", overflow: "hidden", marginBottom: "24px" }}>
-        <div style={{ padding: "20px 24px", borderBottom: "1px solid var(--rc-border)", background: "var(--rc-surface-2)" }}>
-          <div style={{ fontSize: "12px", fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--rc-muted)", marginBottom: "2px" }}>Agency</div>
-          <div style={{ fontSize: "16px", fontWeight: 600, color: "var(--rc-ink)" }}>{agencyName}</div>
-        </div>
-        <div style={{ padding: "20px 24px" }}>
-          <div style={{ fontSize: "12px", fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--rc-muted)", marginBottom: "2px" }}>Email</div>
-          <div style={{ fontSize: "15px", color: "var(--rc-ink)" }}>{userEmail ?? "—"}</div>
+    <div style={PAGE_WRAP}>
+      <div style={PAGE_HEADER}>
+        <div>
+          <h1 style={PAGE_H1}>Account</h1>
+          <p style={PAGE_SUB}>Manage your agency details and login credentials.</p>
         </div>
       </div>
 
-      <div style={{ border: "1px solid var(--rc-border)", borderRadius: "12px", padding: "24px" }}>
-        <h3 style={{ fontSize: "14px", fontWeight: 700, color: "var(--rc-ink)", marginBottom: "16px" }}>Change password</h3>
-        <form onSubmit={handleChangePassword} style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-          <input type="password" required minLength={6} value={newPassword} onChange={(e) => setNewPassword(e.target.value)}
-            placeholder="New password (min. 6 characters)" style={inputStyle} />
-          {pwMsg && (
-            <p style={{ fontSize: "13px", color: pwMsg.includes("successfully") ? "var(--rc-primary)" : "oklch(0.55 0.18 25)", maxWidth: "none", margin: 0 }}>{pwMsg}</p>
-          )}
-          <button type="submit" disabled={pwLoading} style={{ alignSelf: "flex-start", padding: "10px 20px", background: "var(--rc-primary)", color: "white", border: "none", borderRadius: "8px", fontWeight: 600, fontSize: "14px", cursor: pwLoading ? "not-allowed" : "pointer", opacity: pwLoading ? 0.7 : 1, fontFamily: "var(--font-inter)" }}>
-            {pwLoading ? "Updating…" : "Update password"}
-          </button>
-        </form>
+      <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: "24px", maxWidth: "640px" }}>
+        {/* Account info */}
+        <div>
+          <p style={{ fontSize: "12px", fontWeight: 700, color: "var(--rc-faint)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "10px", maxWidth: "none" }}>Organisation</p>
+          <div style={CARD}>
+            <SettingsRow label="Agency name" value={agencyName} />
+            <SettingsRow label="Account email" value={userEmail ?? "—"} />
+            <div style={{ padding: "16px 24px", display: "flex", alignItems: "center" }}>
+              <span style={{ width: "180px", fontSize: "13px", fontWeight: 500, color: "var(--rc-muted)", flexShrink: 0 }}>Role</span>
+              <RoleBadge role="super_user" />
+            </div>
+          </div>
+        </div>
+
+        {/* Change password */}
+        <div>
+          <p style={{ fontSize: "12px", fontWeight: 700, color: "var(--rc-faint)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "10px", maxWidth: "none" }}>Security</p>
+          <div style={{ ...CARD, padding: "24px", display: "flex", flexDirection: "column", gap: "16px", overflow: "visible" }}>
+            <div>
+              <p style={{ fontSize: "14px", fontWeight: 600, color: "var(--rc-ink)", marginBottom: "4px", maxWidth: "none" }}>Change password</p>
+              <p style={{ fontSize: "13px", color: "var(--rc-muted)", maxWidth: "none" }}>Choose a strong password of at least 6 characters.</p>
+            </div>
+            <form onSubmit={handleChangePassword} style={{ display: "flex", gap: "12px", alignItems: "flex-start", flexWrap: "wrap" }}>
+              <input type="password" required minLength={6} value={newPassword} onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="New password" style={{ ...SETTINGS_INPUT, flex: 1, minWidth: "220px" }}
+                onFocus={(e) => (e.target.style.borderColor = "var(--rc-primary)")}
+                onBlur={(e) => (e.target.style.borderColor = "var(--rc-border)")} />
+              <button type="submit" disabled={pwLoading} style={{ ...SETTINGS_BTN, opacity: pwLoading ? 0.7 : 1, cursor: pwLoading ? "not-allowed" : "pointer", whiteSpace: "nowrap" }}>
+                {pwLoading ? "Updating…" : "Update password"}
+              </button>
+            </form>
+            {pwMsg && <p style={{ fontSize: "13px", color: pwMsg.includes("successfully") ? "var(--rc-primary)" : "oklch(0.55 0.18 25)", maxWidth: "none", margin: 0 }}>{pwMsg}</p>}
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -5591,61 +5639,100 @@ function BillingSettingsPage({ userId }: { userId: string | null }) {
   useEffect(() => {
     if (!userId) return;
     supabase.from("subscriptions").select("plan, status, stripe_customer_id").eq("user_id", userId).single().then(({ data }) => {
-      setSub(data);
-      setLoading(false);
+      setSub(data); setLoading(false);
     });
   }, [userId]);
 
   async function openPortal() {
     if (!userId) return;
     setPortalLoading(true);
-    const res = await fetch("/api/create-portal-session", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId }),
-    });
+    const res = await fetch("/api/create-portal-session", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId }) });
     const data = await res.json();
     if (data.url) window.location.href = data.url;
     else setPortalLoading(false);
   }
 
-  if (loading) return <p style={{ color: "var(--rc-muted)" }}>Loading billing…</p>;
+  if (loading) return (
+    <div style={PAGE_WRAP}>
+      <div style={PAGE_HEADER}><h1 style={PAGE_H1}>Billing</h1></div>
+      <p style={{ color: "var(--rc-muted)", fontSize: "14px" }}>Loading billing details…</p>
+    </div>
+  );
 
   return (
-    <div style={{ maxWidth: "560px" }}>
-      <h2 style={{ fontSize: "1.25rem", fontWeight: 700, color: "var(--rc-ink)", marginBottom: "24px" }}>Billing</h2>
-
-      {sub ? (
-        <>
-          <div style={{ border: "1px solid var(--rc-border)", borderRadius: "12px", overflow: "hidden", marginBottom: "24px" }}>
-            <div style={{ padding: "24px", borderBottom: "1px solid var(--rc-border)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <div>
-                <div style={{ fontSize: "12px", fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--rc-muted)", marginBottom: "4px" }}>Current plan</div>
-                <div style={{ fontSize: "1.4rem", fontWeight: 800, color: "var(--rc-ink)", letterSpacing: "-0.03em" }}>{PLAN_LABELS[sub.plan] ?? sub.plan}</div>
-                <div style={{ fontSize: "14px", color: "var(--rc-muted)", marginTop: "2px" }}>${PLAN_PRICES[sub.plan] ?? "—"}/month · up to {PLAN_SEATS[sub.plan] ?? "—"} team members</div>
-              </div>
-              <div style={{ padding: "4px 12px", borderRadius: "100px", background: sub.status === "active" ? "var(--rc-primary-light)" : "oklch(0.97 0.02 25)", fontSize: "12px", fontWeight: 700, color: sub.status === "active" ? "var(--rc-primary)" : "oklch(0.55 0.18 25)" }}>
-                {sub.status === "active" ? "Active" : sub.status}
-              </div>
-            </div>
-            <div style={{ padding: "20px 24px", display: "flex", flexDirection: "column", gap: "10px" }}>
-              <p style={{ fontSize: "14px", color: "var(--rc-muted)", maxWidth: "none", margin: 0 }}>
-                Manage your subscription, update your card, download invoices, or cancel through the Stripe billing portal.
-              </p>
-              <button onClick={openPortal} disabled={portalLoading} style={{ alignSelf: "flex-start", padding: "10px 20px", background: "var(--rc-primary)", color: "white", border: "none", borderRadius: "8px", fontWeight: 600, fontSize: "14px", cursor: portalLoading ? "not-allowed" : "pointer", opacity: portalLoading ? 0.7 : 1, fontFamily: "var(--font-inter)" }}>
-                {portalLoading ? "Opening…" : "Manage billing →"}
-              </button>
-            </div>
-          </div>
-        </>
-      ) : (
-        <div style={{ border: "1px solid var(--rc-border)", borderRadius: "12px", padding: "24px" }}>
-          <p style={{ color: "var(--rc-muted)", maxWidth: "none" }}>No active subscription found. <a href="/signup" style={{ color: "var(--rc-primary)", fontWeight: 500 }}>Choose a plan →</a></p>
+    <div style={PAGE_WRAP}>
+      <div style={PAGE_HEADER}>
+        <div>
+          <h1 style={PAGE_H1}>Billing</h1>
+          <p style={PAGE_SUB}>Manage your subscription, invoices, and payment method.</p>
         </div>
-      )}
+      </div>
+
+      <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: "24px", maxWidth: "640px" }}>
+        {sub ? (
+          <>
+            {/* Plan summary */}
+            <div>
+              <p style={{ fontSize: "12px", fontWeight: 700, color: "var(--rc-faint)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "10px", maxWidth: "none" }}>Current plan</p>
+              <div style={CARD}>
+                <div style={{ padding: "24px", display: "flex", justifyContent: "space-between", alignItems: "flex-start", borderBottom: "1px solid var(--rc-border)" }}>
+                  <div>
+                    <div style={{ fontSize: "1.5rem", fontWeight: 800, color: "var(--rc-ink)", letterSpacing: "-0.04em", marginBottom: "4px" }}>{PLAN_LABELS[sub.plan] ?? sub.plan}</div>
+                    <div style={{ fontSize: "13px", color: "var(--rc-muted)" }}>
+                      ${PLAN_PRICES[sub.plan] ?? "—"}/month · up to {PLAN_SEATS[sub.plan] ?? "—"} team members
+                    </div>
+                  </div>
+                  <span style={{
+                    padding: "4px 12px", borderRadius: "100px", fontSize: "12px", fontWeight: 700,
+                    background: sub.status === "active" ? "var(--rc-primary-light)" : "oklch(0.97 0.02 25)",
+                    color: sub.status === "active" ? "var(--rc-primary)" : "oklch(0.55 0.18 25)",
+                  }}>
+                    {sub.status === "active" ? "Active" : sub.status}
+                  </span>
+                </div>
+                <div style={{ padding: "20px 24px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <p style={{ fontSize: "13px", color: "var(--rc-muted)", maxWidth: "none", margin: 0 }}>
+                    Update your card, download past invoices, or cancel your subscription through the secure Stripe portal.
+                  </p>
+                  <button onClick={openPortal} disabled={portalLoading} style={{ ...SETTINGS_BTN, marginLeft: "24px", flexShrink: 0, opacity: portalLoading ? 0.7 : 1, cursor: portalLoading ? "not-allowed" : "pointer" }}>
+                    {portalLoading ? "Opening…" : "Manage billing →"}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* What's included */}
+            <div>
+              <p style={{ fontSize: "12px", fontWeight: 700, color: "var(--rc-faint)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "10px", maxWidth: "none" }}>Included in your plan</p>
+              <div style={CARD}>
+                {[
+                  ["Team seats", `Up to ${PLAN_SEATS[sub.plan] ?? "—"} members`],
+                  ["CPD & Licence tracking", "Included"],
+                  ["Trust accounting", "Included"],
+                  ["AML compliance", "Included"],
+                  ["Policies & procedures", "Included"],
+                  ["Audit readiness", "Included"],
+                ].map(([label, value], i, arr) => (
+                  <div key={label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 24px", borderBottom: i < arr.length - 1 ? "1px solid var(--rc-border)" : "none" }}>
+                    <span style={{ fontSize: "13px", color: "var(--rc-muted)" }}>{label}</span>
+                    <span style={{ fontSize: "13px", fontWeight: 600, color: "var(--rc-ink)" }}>{value}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
+        ) : (
+          <div style={{ ...CARD, padding: "32px 24px", textAlign: "center" }}>
+            <p style={{ fontSize: "15px", color: "var(--rc-muted)", marginBottom: "16px", maxWidth: "none" }}>No active subscription found.</p>
+            <a href="/signup" style={{ ...SETTINGS_BTN, display: "inline-block", textDecoration: "none" }}>Choose a plan →</a>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
+
+type InviteRow = { id: string; email: string | null; created_at: string; accepted_at: string | null; member_role: "super_user" | "standard" };
 
 function TeamInvitesPage({ userId, agencyName, staffRows }: { userId: string | null; agencyName: string; staffRows: StaffRow[] }) {
   const [inviteEmail, setInviteEmail] = useState("");
@@ -5653,15 +5740,18 @@ function TeamInvitesPage({ userId, agencyName, staffRows }: { userId: string | n
   const [inviteLink, setInviteLink] = useState("");
   const [inviteError, setInviteError] = useState("");
   const [copied, setCopied] = useState(false);
-  const [seatsUsed, setSeatsUsed] = useState<number | null>(null);
   const [seatsTotal, setSeatsTotal] = useState<number | null>(null);
-  const [invites, setInvites] = useState<{ id: string; email: string | null; created_at: string; accepted_at: string | null }[]>([]);
+  const [invites, setInvites] = useState<InviteRow[]>([]);
+  const [roleLoading, setRoleLoading] = useState<string | null>(null);
+
+  function refreshInvites() {
+    if (!userId) return;
+    supabase.from("invites").select("id, email, created_at, accepted_at, member_role").eq("invited_by", userId).order("created_at", { ascending: false }).then(({ data }) => { if (data) setInvites(data as InviteRow[]); });
+  }
 
   useEffect(() => {
     if (!userId) return;
-    supabase.from("invites").select("id, email, created_at, accepted_at").eq("invited_by", userId).order("created_at", { ascending: false }).then(({ data }) => {
-      if (data) setInvites(data);
-    });
+    refreshInvites();
     supabase.from("subscriptions").select("plan").eq("user_id", userId).single().then(({ data }) => {
       const limits: Record<string, number> = { essentials: 20, standard: 60, professional: 120 };
       if (data?.plan) setSeatsTotal(limits[data.plan] ?? 20);
@@ -5672,20 +5762,22 @@ function TeamInvitesPage({ userId, agencyName, staffRows }: { userId: string | n
     e.preventDefault();
     if (!userId) return;
     setInviteLoading(true); setInviteError(""); setInviteLink("");
-    const res = await fetch("/api/invite", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId, email: inviteEmail, agencyName }),
-    });
+    const res = await fetch("/api/invite", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId, email: inviteEmail, agencyName }) });
     const data = await res.json();
     if (!res.ok) { setInviteError(data.error); setInviteLoading(false); return; }
     setInviteLink(data.inviteUrl);
-    setSeatsUsed(data.seatsUsed);
     setSeatsTotal(data.seatsTotal);
     setInviteEmail("");
     setInviteLoading(false);
-    // Refresh invites list
-    supabase.from("invites").select("id, email, created_at, accepted_at").eq("invited_by", userId).order("created_at", { ascending: false }).then(({ data: rows }) => { if (rows) setInvites(rows); });
+    refreshInvites();
+  }
+
+  async function toggleRole(inv: InviteRow) {
+    const newRole = inv.member_role === "super_user" ? "standard" : "super_user";
+    setRoleLoading(inv.id);
+    await supabase.from("invites").update({ member_role: newRole }).eq("id", inv.id);
+    setRoleLoading(null);
+    refreshInvites();
   }
 
   function copyLink() {
@@ -5694,87 +5786,139 @@ function TeamInvitesPage({ userId, agencyName, staffRows }: { userId: string | n
     setTimeout(() => setCopied(false), 2000);
   }
 
-  const inputStyle: React.CSSProperties = {
-    flex: 1, padding: "11px 14px", borderRadius: "8px",
-    border: "1px solid var(--rc-border)", background: "var(--rc-bg)",
-    fontSize: "15px", color: "var(--rc-ink)", outline: "none",
-    fontFamily: "var(--font-inter)",
-  };
+  const acceptedInvites = invites.filter(i => i.accepted_at);
+  const pendingInvites = invites.filter(i => !i.accepted_at);
+  const totalMembers = 1 + acceptedInvites.length; // owner + accepted invites
 
   return (
-    <div style={{ maxWidth: "620px" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "24px" }}>
-        <h2 style={{ fontSize: "1.25rem", fontWeight: 700, color: "var(--rc-ink)" }}>Team &amp; Invites</h2>
+    <div style={PAGE_WRAP}>
+      <div style={PAGE_HEADER}>
+        <div>
+          <h1 style={PAGE_H1}>Team &amp; Invites</h1>
+          <p style={PAGE_SUB}>
+            {totalMembers} member{totalMembers !== 1 ? "s" : ""}
+            {seatsTotal !== null ? ` · ${seatsTotal - totalMembers} seats remaining` : ""}
+          </p>
+        </div>
+        <button onClick={() => document.getElementById("invite-form-input")?.focus()}
+          style={{ ...SETTINGS_BTN, display: "flex", alignItems: "center", gap: "6px" }}>
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="white" strokeWidth="1.8" strokeLinecap="round" /></svg>
+          Invite member
+        </button>
+      </div>
+
+      <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: "24px" }}>
+
+        {/* Seat usage bar */}
         {seatsTotal !== null && (
-          <span style={{ fontSize: "13px", color: "var(--rc-muted)" }}>
-            <span style={{ fontWeight: 600, color: "var(--rc-ink)" }}>{staffRows.length}</span> of <span style={{ fontWeight: 600, color: "var(--rc-ink)" }}>{seatsTotal}</span> seats used
-          </span>
+          <div style={{ ...CARD, padding: "20px 24px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px" }}>
+              <span style={{ fontSize: "13px", fontWeight: 600, color: "var(--rc-ink)" }}>Seat usage</span>
+              <span style={{ fontSize: "13px", color: "var(--rc-muted)" }}>{totalMembers} / {seatsTotal} used</span>
+            </div>
+            <div style={{ height: "6px", background: "var(--rc-surface-2)", borderRadius: "100px", overflow: "hidden" }}>
+              <div style={{ height: "100%", width: `${Math.min((totalMembers / seatsTotal) * 100, 100)}%`, background: totalMembers >= seatsTotal ? "oklch(0.55 0.18 25)" : "var(--rc-primary)", borderRadius: "100px", transition: "width 0.3s ease" }} />
+            </div>
+          </div>
         )}
-      </div>
 
-      {/* Invite form */}
-      <div style={{ border: "1px solid var(--rc-border)", borderRadius: "12px", padding: "24px", marginBottom: "24px" }}>
-        <h3 style={{ fontSize: "14px", fontWeight: 700, color: "var(--rc-ink)", marginBottom: "4px" }}>Invite a team member</h3>
-        <p style={{ fontSize: "13px", color: "var(--rc-muted)", marginBottom: "16px", maxWidth: "none" }}>Generate an invite link and share it with your staff. They sign up for free to join your organisation.</p>
-        <form onSubmit={handleInvite} style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
-          <input type="email" value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)}
-            placeholder="Staff email (optional)" style={inputStyle} />
-          <button type="submit" disabled={inviteLoading} style={{ padding: "11px 20px", background: "var(--rc-primary)", color: "white", border: "none", borderRadius: "8px", fontWeight: 600, fontSize: "14px", cursor: inviteLoading ? "not-allowed" : "pointer", opacity: inviteLoading ? 0.7 : 1, fontFamily: "var(--font-inter)", whiteSpace: "nowrap" }}>
-            {inviteLoading ? "Generating…" : "Generate invite link"}
-          </button>
-        </form>
+        {/* Invite form */}
+        <div>
+          <p style={{ fontSize: "12px", fontWeight: 700, color: "var(--rc-faint)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "10px", maxWidth: "none" }}>Send invite</p>
+          <div style={{ ...CARD, padding: "24px" }}>
+            <p style={{ fontSize: "13px", color: "var(--rc-muted)", marginBottom: "16px", maxWidth: "none" }}>
+              Staff sign up for free using your invite link. They&apos;ll join as Standard users by default — you can promote them to Super User below.
+            </p>
+            <form onSubmit={handleInvite} style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+              <input id="invite-form-input" type="email" value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)}
+                placeholder="Staff email (optional — prefills their signup form)"
+                style={{ ...SETTINGS_INPUT, flex: 1, minWidth: "220px" }}
+                onFocus={(e) => (e.target.style.borderColor = "var(--rc-primary)")}
+                onBlur={(e) => (e.target.style.borderColor = "var(--rc-border)")} />
+              <button type="submit" disabled={inviteLoading} style={{ ...SETTINGS_BTN, opacity: inviteLoading ? 0.7 : 1, cursor: inviteLoading ? "not-allowed" : "pointer", whiteSpace: "nowrap" }}>
+                {inviteLoading ? "Generating…" : "Generate invite link"}
+              </button>
+            </form>
+            {inviteError && <p style={{ marginTop: "10px", fontSize: "13px", color: "oklch(0.55 0.18 25)", maxWidth: "none" }}>{inviteError}</p>}
+            {inviteLink && (
+              <div style={{ marginTop: "14px", padding: "14px 16px", background: "var(--rc-primary-light)", borderRadius: "8px", display: "flex", alignItems: "center", gap: "12px" }}>
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}><path d="M6.5 9.5a4 4 0 005.657-5.657L10.5 2.2A4 4 0 004.843 7.857" stroke="var(--rc-primary)" strokeWidth="1.5" strokeLinecap="round" /><path d="M9.5 6.5a4 4 0 00-5.657 5.657L5.5 13.8A4 4 0 0011.157 8.143" stroke="var(--rc-primary)" strokeWidth="1.5" strokeLinecap="round" /></svg>
+                <span style={{ flex: 1, fontSize: "13px", color: "var(--rc-ink)", wordBreak: "break-all", maxWidth: "none" }}>{inviteLink}</span>
+                <button onClick={copyLink} style={{ flexShrink: 0, padding: "7px 16px", background: copied ? "var(--rc-primary)" : "white", color: copied ? "white" : "var(--rc-primary)", border: "1px solid var(--rc-primary)", borderRadius: "6px", fontWeight: 600, fontSize: "12px", cursor: "pointer", fontFamily: "var(--font-inter)", transition: "all 0.15s ease", whiteSpace: "nowrap" }}>
+                  {copied ? "Copied!" : "Copy link"}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
 
-        {inviteError && <p style={{ marginTop: "10px", fontSize: "13px", color: "oklch(0.55 0.18 25)", maxWidth: "none" }}>{inviteError}</p>}
+        {/* Active members */}
+        <div>
+          <p style={{ fontSize: "12px", fontWeight: 700, color: "var(--rc-faint)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "10px", maxWidth: "none" }}>Members</p>
+          <div style={CARD}>
+            {/* Owner row */}
+            <div style={{ display: "flex", alignItems: "center", padding: "16px 20px", borderBottom: acceptedInvites.length > 0 ? "1px solid var(--rc-border)" : "none" }}>
+              <div style={{ width: "36px", height: "36px", borderRadius: "50%", background: "oklch(0.92 0.06 260)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "13px", fontWeight: 700, color: "oklch(0.38 0.14 260)", flexShrink: 0, marginRight: "14px" }}>
+                {agencyName.slice(0, 1).toUpperCase()}
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: "14px", fontWeight: 600, color: "var(--rc-ink)" }}>{agencyName}</div>
+                <div style={{ fontSize: "12px", color: "var(--rc-muted)" }}>Organisation owner</div>
+              </div>
+              <RoleBadge role="super_user" />
+            </div>
 
-        {inviteLink && (
-          <div style={{ marginTop: "16px", padding: "14px 16px", background: "var(--rc-primary-light)", borderRadius: "8px", display: "flex", alignItems: "center", gap: "10px" }}>
-            <span style={{ flex: 1, fontSize: "13px", color: "var(--rc-ink)", wordBreak: "break-all", maxWidth: "none" }}>{inviteLink}</span>
-            <button onClick={copyLink} style={{ flexShrink: 0, padding: "7px 14px", background: copied ? "var(--rc-primary)" : "white", color: copied ? "white" : "var(--rc-primary)", border: "1px solid var(--rc-primary)", borderRadius: "6px", fontWeight: 600, fontSize: "12px", cursor: "pointer", fontFamily: "var(--font-inter)", transition: "all 0.15s ease" }}>
-              {copied ? "Copied!" : "Copy"}
-            </button>
+            {acceptedInvites.length === 0 && (
+              <div style={{ padding: "24px", textAlign: "center", fontSize: "13px", color: "var(--rc-faint)" }}>
+                No team members yet — send an invite above.
+              </div>
+            )}
+
+            {acceptedInvites.map((inv, i) => (
+              <div key={inv.id} style={{ display: "flex", alignItems: "center", padding: "14px 20px", borderBottom: i < acceptedInvites.length - 1 ? "1px solid var(--rc-border)" : "none" }}>
+                <div style={{ width: "36px", height: "36px", borderRadius: "50%", background: "var(--rc-surface-2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "13px", fontWeight: 700, color: "var(--rc-muted)", flexShrink: 0, marginRight: "14px" }}>
+                  {(inv.email ?? "?").slice(0, 1).toUpperCase()}
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: "14px", fontWeight: 500, color: "var(--rc-ink)" }}>{inv.email ?? "Team member"}</div>
+                  <div style={{ fontSize: "12px", color: "var(--rc-muted)" }}>Joined {new Date(inv.accepted_at!).toLocaleDateString("en-AU")}</div>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                  <RoleBadge role={inv.member_role ?? "standard"} />
+                  <button
+                    onClick={() => toggleRole(inv)}
+                    disabled={roleLoading === inv.id}
+                    style={{ padding: "5px 12px", borderRadius: "6px", border: "1px solid var(--rc-border)", background: "var(--rc-surface)", color: "var(--rc-muted)", fontSize: "12px", fontWeight: 500, cursor: "pointer", fontFamily: "var(--font-inter)", whiteSpace: "nowrap", opacity: roleLoading === inv.id ? 0.6 : 1 }}
+                  >
+                    {roleLoading === inv.id ? "…" : inv.member_role === "super_user" ? "Make Standard" : "Make Super User"}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Pending invites */}
+        {pendingInvites.length > 0 && (
+          <div>
+            <p style={{ fontSize: "12px", fontWeight: 700, color: "var(--rc-faint)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "10px", maxWidth: "none" }}>Pending invites</p>
+            <div style={CARD}>
+              {pendingInvites.map((inv, i) => (
+                <div key={inv.id} style={{ display: "flex", alignItems: "center", padding: "14px 20px", borderBottom: i < pendingInvites.length - 1 ? "1px solid var(--rc-border)" : "none" }}>
+                  <div style={{ width: "36px", height: "36px", borderRadius: "50%", background: "var(--rc-surface-2)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginRight: "14px" }}>
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 4l6 5 6-5M2 4h12v9a1 1 0 01-1 1H3a1 1 0 01-1-1V4z" stroke="var(--rc-faint)" strokeWidth="1.4" strokeLinejoin="round" /></svg>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: "14px", fontWeight: 500, color: "var(--rc-ink)" }}>{inv.email ?? "Link shared"}</div>
+                    <div style={{ fontSize: "12px", color: "var(--rc-muted)" }}>Sent {new Date(inv.created_at).toLocaleDateString("en-AU")}</div>
+                  </div>
+                  <span style={{ padding: "3px 10px", borderRadius: "100px", fontSize: "11.5px", fontWeight: 600, background: "oklch(0.97 0.04 60)", color: "oklch(0.50 0.13 55)" }}>Pending</span>
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </div>
-
-      {/* Current team */}
-      <div style={{ border: "1px solid var(--rc-border)", borderRadius: "12px", overflow: "hidden", marginBottom: "24px" }}>
-        <div style={{ padding: "16px 20px", borderBottom: "1px solid var(--rc-border)", fontSize: "13px", fontWeight: 700, color: "var(--rc-ink)" }}>
-          Current team ({staffRows.length})
-        </div>
-        {staffRows.length === 0 ? (
-          <div style={{ padding: "20px", fontSize: "13px", color: "var(--rc-muted)", textAlign: "center" }}>No staff added yet.</div>
-        ) : (
-          staffRows.map((s, i) => (
-            <div key={s.id} style={{ padding: "14px 20px", display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: i < staffRows.length - 1 ? "1px solid var(--rc-border)" : "none" }}>
-              <div>
-                <div style={{ fontSize: "14px", fontWeight: 600, color: "var(--rc-ink)" }}>{s.name}</div>
-                <div style={{ fontSize: "12px", color: "var(--rc-muted)" }}>{s.role}{s.email ? ` · ${s.email}` : ""}</div>
-              </div>
-              <div style={{ padding: "3px 10px", borderRadius: "100px", background: "var(--rc-surface-2)", fontSize: "12px", color: "var(--rc-muted)", fontWeight: 500 }}>Staff</div>
-            </div>
-          ))
-        )}
-      </div>
-
-      {/* Pending invites */}
-      {invites.length > 0 && (
-        <div style={{ border: "1px solid var(--rc-border)", borderRadius: "12px", overflow: "hidden" }}>
-          <div style={{ padding: "16px 20px", borderBottom: "1px solid var(--rc-border)", fontSize: "13px", fontWeight: 700, color: "var(--rc-ink)" }}>
-            Invites
-          </div>
-          {invites.map((inv, i) => (
-            <div key={inv.id} style={{ padding: "14px 20px", display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: i < invites.length - 1 ? "1px solid var(--rc-border)" : "none" }}>
-              <div>
-                <div style={{ fontSize: "14px", fontWeight: 500, color: "var(--rc-ink)" }}>{inv.email ?? "Link only"}</div>
-                <div style={{ fontSize: "12px", color: "var(--rc-muted)" }}>Sent {new Date(inv.created_at).toLocaleDateString("en-AU")}</div>
-              </div>
-              <div style={{ padding: "3px 10px", borderRadius: "100px", background: inv.accepted_at ? "var(--rc-primary-light)" : "var(--rc-surface-2)", fontSize: "12px", color: inv.accepted_at ? "var(--rc-primary)" : "var(--rc-muted)", fontWeight: 500 }}>
-                {inv.accepted_at ? "Accepted" : "Pending"}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
     </div>
   );
 }
@@ -5821,6 +5965,7 @@ export default function DashboardPage() {
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [agencyName, setAgencyName] = useState<string>("Your Agency");
+  const [userRole, setUserRole] = useState<"owner" | "standard">("standard");
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data }) => {
@@ -5830,6 +5975,16 @@ export default function DashboardPage() {
       setUserId(data.session.user.id);
       const name = data.session.user.user_metadata?.agency_name;
       if (name) setAgencyName(name);
+
+      // Determine role: owner has a subscriptions record; invited staff are standard by default
+      const { data: sub } = await supabase.from("subscriptions").select("id").eq("user_id", uid).maybeSingle();
+      if (sub) {
+        setUserRole("owner");
+      } else {
+        // Check if their invite had member_role promoted to super_user
+        const { data: inv } = await supabase.from("invites").select("member_role").eq("email", data.session.user.email ?? "").not("accepted_at", "is", null).maybeSingle();
+        setUserRole(inv?.member_role === "super_user" ? "owner" : "standard");
+      }
 
       const [{ data: staffData }, { data: propsData }, { data: policiesData }] = await Promise.all([
         supabase.from("staff_members").select("*").eq("user_id", uid).order("created_at"),
@@ -5923,7 +6078,7 @@ export default function DashboardPage() {
     | { id: string; label: string; icon: React.ReactNode; type: "properties"; properties: { id: string; address: string }[] }
     | { id: string; label: string; icon: React.ReactNode; type: "static"; children: string[] };
 
-  const modules: SidebarModule[] = [
+  const allModules: SidebarModule[] = [
     { id: "policies", label: "Policies & Procedures", icon: <PolIcon />, type: "static", children: ["All Policies", "Policy Templates", "Review Schedule", "Upload Document"] },
     { id: "sales", label: "Residential Sales", icon: <SalesIcon />, type: "properties", properties: salesProps },
     { id: "management", label: "Residential Management", icon: <MgmtIcon />, type: "properties", properties: mgmtProps },
@@ -5931,6 +6086,9 @@ export default function DashboardPage() {
     { id: "trust", label: "Trust Accounting", icon: <TrustIcon />, type: "static", children: ["Account Reconciliation", "Monthly Reports", "Transaction Log", "AML Compliance", "Audit Reports"] },
     { id: "settings", label: "Settings", icon: <SettingsIcon />, type: "static", children: ["Account", "Billing", "Team & Invites"] },
   ];
+
+  // Standard users cannot access Trust Accounting or Settings
+  const modules = userRole === "owner" ? allModules : allModules.filter(m => m.id !== "trust" && m.id !== "settings");
 
   const module = modules.find((m) => m.id === activeModule) ?? null;
 
