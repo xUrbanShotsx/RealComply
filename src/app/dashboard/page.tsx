@@ -595,6 +595,7 @@ function PropertyFileSlot({ propertyId, slot, label }: { propertyId: string; slo
   }
 
   async function handleRemove() {
+    if (!window.confirm("Remove this file?")) return;
     if (savedFile) { await supabase.from("property_files").delete().eq("id", savedFile.id); setSavedFile(null); }
     setPendingFile(null);
     if (ref.current) ref.current.value = "";
