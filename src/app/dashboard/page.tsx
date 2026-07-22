@@ -554,7 +554,7 @@ function SalesFileUpload({
 }
 
 // Self-contained single-file slot: shows drop zone → file card → Save/delete, persists to Supabase
-function PropertyFileSlot({ propertyId, slot, label }: { propertyId: string; slot: string; label: string }) {
+function PropertyFileSlot({ propertyId, slot, label, onFileChange }: { propertyId: string; slot: string; label: string; onFileChange?: (hasFile: boolean) => void }) {
   const orgOwnerId = useContext(OrgContext);
   const [savedFile, setSavedFile] = useState<{ id: string; url: string; name: string } | null>(null);
   const [pendingFile, setPendingFile] = useState<File | null>(null);
@@ -588,7 +588,7 @@ function PropertyFileSlot({ propertyId, slot, label }: { propertyId: string; slo
     const { data: row } = await supabase.from("property_files")
       .upsert({ property_id: propertyId, slot, file_url: urlData.publicUrl, file_name: pendingFile.name, user_id: orgOwnerId }, { onConflict: "property_id,slot" })
       .select("id").single();
-    if (row) setSavedFile({ id: row.id, url: urlData.publicUrl, name: pendingFile.name });
+    if (row) { setSavedFile({ id: row.id, url: urlData.publicUrl, name: pendingFile.name }); onFileChange?.(true); }
     setPendingFile(null);
     if (ref.current) ref.current.value = "";
     setUploading(false);
@@ -599,6 +599,7 @@ function PropertyFileSlot({ propertyId, slot, label }: { propertyId: string; slo
     if (savedFile) { await supabase.from("property_files").delete().eq("id", savedFile.id); setSavedFile(null); }
     setPendingFile(null);
     if (ref.current) ref.current.value = "";
+    onFileChange?.(false);
   }
 
   const hasFile = savedFile !== null || pendingFile !== null;
@@ -668,12 +669,14 @@ function SalesItemPanel({
   state,
   setState,
   onClose,
+  onFileChange,
 }: {
   propertyId: string;
   itemKey: keyof SalesPropertyState;
   state: SalesPropertyState;
   setState: React.Dispatch<React.SetStateAction<SalesPropertyState>>;
   onClose: () => void;
+  onFileChange?: (slot: string, hasFile: boolean) => void;
 }) {
   const titles: Record<keyof SalesPropertyState, string> = {
     cma: "CMA Report",
@@ -802,7 +805,7 @@ function SalesItemPanel({
               style={{ ...inputSty, resize: "vertical", lineHeight: 1.5 }}
             />
           </div>
-          <PropertyFileSlot propertyId={propertyId} slot="cma" label="CMA document" />
+          <PropertyFileSlot propertyId={propertyId} slot="cma" label="CMA document" onFileChange={(h) => onFileChange?.("cma", h)} />
         </div>
       </div>
     );
@@ -893,9 +896,9 @@ function SalesItemPanel({
         <PanelHeader />
         <div style={{ padding: "20px 24px", display: "flex", flexDirection: "column", gap: "20px", flex: 1 }}>
           <StatusPicker />
-          <PropertyFileSlot propertyId={propertyId} slot="rates_council" label="Council rates" />
-          <PropertyFileSlot propertyId={propertyId} slot="rates_water" label="Water rates" />
-          <PropertyFileSlot propertyId={propertyId} slot="rates_strata" label="Strata rates" />
+          <PropertyFileSlot propertyId={propertyId} slot="rates_council" label="Council rates" onFileChange={(h) => onFileChange?.("rates_council", h)} />
+          <PropertyFileSlot propertyId={propertyId} slot="rates_water" label="Water rates" onFileChange={(h) => onFileChange?.("rates_water", h)} />
+          <PropertyFileSlot propertyId={propertyId} slot="rates_strata" label="Strata rates" onFileChange={(h) => onFileChange?.("rates_strata", h)} />
         </div>
       </div>
     );
@@ -980,7 +983,7 @@ function SalesItemPanel({
       <PanelHeader />
       <div style={{ padding: "20px 24px", display: "flex", flexDirection: "column", gap: "20px", flex: 1 }}>
         <StatusPicker />
-        <PropertyFileSlot propertyId={propertyId} slot={slot} label="Upload document" />
+        <PropertyFileSlot propertyId={propertyId} slot={slot} label="Upload document" onFileChange={(h) => onFileChange?.(slot, h)} />
       </div>
     </div>
   );
@@ -996,6 +999,21 @@ function SalesPropertyChecklist({
   onRemove: () => void;
 }) {
   const [selectedItem, setSelectedItem] = useState<keyof SalesPropertyState | null>(null);
+  const [savedSlots, setSavedSlots] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    supabase.from("property_files").select("slot").eq("property_id", propertyId)
+      .then(({ data }) => { if (data) setSavedSlots(new Set(data.map((r: { slot: string }) => r.slot))); });
+  }, [propertyId]);
+
+  function handleFileChange(slot: string, hasFile: boolean) {
+    setSavedSlots((prev) => {
+      const next = new Set(prev);
+      hasFile ? next.add(slot) : next.delete(slot);
+      return next;
+    });
+  }
+
   const [state, setState] = useState<SalesPropertyState>({
     cma: { value: "", notes: "", files: [], status: "not_started" },
     identification: { name: "", idType: "Driver's Licence", idNumber: "", status: "not_started" },
@@ -1023,7 +1041,7 @@ function SalesPropertyChecklist({
       key: "rates",
       label: "Rates",
       subtitle: () => {
-        const n = [state.rates.council, state.rates.water, state.rates.strata].filter((f) => f.length > 0).length;
+        const n = ["rates_council", "rates_water", "rates_strata"].filter((s) => savedSlots.has(s)).length;
         return `${n} of 3 uploaded`;
       },
     },
@@ -1038,18 +1056,12 @@ function SalesPropertyChecklist({
     {
       key: "agencyAgreement",
       label: "Selling Agency Agreement",
-      subtitle: () =>
-        state.agencyAgreement.files.length > 0
-          ? `${state.agencyAgreement.files.length} document${state.agencyAgreement.files.length > 1 ? "s" : ""} uploaded`
-          : "No document uploaded",
+      subtitle: () => savedSlots.has("agency_agreement") ? "Document uploaded" : "No document uploaded",
     },
     {
       key: "contract",
       label: "Contract of Sale",
-      subtitle: () =>
-        state.contract.files.length > 0
-          ? `${state.contract.files.length} document${state.contract.files.length > 1 ? "s" : ""} uploaded`
-          : "No document uploaded",
+      subtitle: () => savedSlots.has("contract") ? "Document uploaded" : "No document uploaded",
     },
   ];
 
@@ -1188,6 +1200,7 @@ function SalesPropertyChecklist({
           state={state}
           setState={setState}
           onClose={() => setSelectedItem(null)}
+          onFileChange={handleFileChange}
         />
       )}
     </div>
