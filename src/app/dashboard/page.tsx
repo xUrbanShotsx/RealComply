@@ -1,7 +1,9 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
+import { supabase } from "@/lib/supabase";
+import type { Document } from "@/lib/supabase";
 
 // --- Data ---
 
@@ -2872,12 +2874,64 @@ function StaffFilePage({ memberIdx, onBack }: { memberIdx: number; onBack: () =>
   const s = staffMembers[memberIdx];
   const licNum = licenceNumbers[memberIdx];
   const cpd = cpdData[memberIdx];
-  const docs = staffDocsByName[s.name] ?? [];
   const initials = s.name.split(" ").map(n => n[0]).join("").slice(0, 2);
   const licOk = s.licence === "current" || s.licence === "exempt";
   const cpdOk = s.cpd === "complete" || s.cpd === "na";
   const cpdPct = cpd.required === 0 ? null : Math.min(100, Math.round((cpd.completed / cpd.required) * 100));
   const [selectedDocIdx, setSelectedDocIdx] = useState<number | null>(null);
+  const [docs, setDocs] = useState<Document[]>([]);
+  const [docsLoading, setDocsLoading] = useState(true);
+  const [viewerUrl, setViewerUrl] = useState<string | null>(null);
+  const [viewerLoading, setViewerLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const fetchDocs = useCallback(async () => {
+    setDocsLoading(true);
+    const { data } = await supabase
+      .from("documents")
+      .select("*")
+      .eq("staff_name", s.name)
+      .order("created_at", { ascending: false });
+    setDocs(data ?? []);
+    setDocsLoading(false);
+  }, [s.name]);
+
+  useEffect(() => { fetchDocs(); }, [fetchDocs]);
+
+  const handleSelectDoc = async (idx: number) => {
+    if (selectedDocIdx === idx) { setSelectedDocIdx(null); setViewerUrl(null); return; }
+    setSelectedDocIdx(idx);
+    setViewerUrl(null);
+    setViewerLoading(true);
+    const { data } = await supabase.storage.from("documents").createSignedUrl(docs[idx].storage_path, 3600);
+    setViewerUrl(data?.signedUrl ?? null);
+    setViewerLoading(false);
+  };
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.type !== "application/pdf") { setUploadError("Only PDF files are supported."); return; }
+    setUploading(true);
+    setUploadError(null);
+    const path = `${s.name.replace(/ /g, "_")}/${Date.now()}_${file.name}`;
+    const { error: storageErr } = await supabase.storage.from("documents").upload(path, file);
+    if (storageErr) { setUploadError(storageErr.message); setUploading(false); return; }
+    const today = new Date().toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" });
+    const { error: dbErr } = await supabase.from("documents").insert({
+      staff_name: s.name,
+      title: file.name.replace(/\.pdf$/i, ""),
+      category: "Document",
+      date: today,
+      storage_path: path,
+    });
+    if (dbErr) { setUploadError(dbErr.message); setUploading(false); return; }
+    setUploading(false);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+    fetchDocs();
+  };
 
   const infoRow = (label: string, value: string) => (
     <div key={label} style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
@@ -2954,18 +3008,39 @@ function StaffFilePage({ memberIdx, onBack }: { memberIdx: number; onBack: () =>
           <div style={{ width: selectedDocIdx !== null ? "240px" : "100%", flexShrink: 0, border: "1px solid var(--rc-border)", borderRadius: "12px", overflow: "hidden", display: "flex", flexDirection: "column", boxShadow: "var(--rc-shadow-sm)", transition: "width 0.2s ease" }}>
             <div style={{ padding: "14px 20px", background: "var(--rc-surface)", borderBottom: "1px solid var(--rc-border)", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <span style={{ fontSize: "12px", fontWeight: 600, color: "var(--rc-ink)" }}>Documents</span>
-              <span style={{ fontSize: "11.5px", color: "var(--rc-faint)" }}>{docs.length} file{docs.length !== 1 ? "s" : ""}</span>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <span style={{ fontSize: "11.5px", color: "var(--rc-faint)" }}>{docs.length} file{docs.length !== 1 ? "s" : ""}</span>
+                <input ref={fileInputRef} type="file" accept="application/pdf" style={{ display: "none" }} onChange={handleUpload} />
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                  style={{ fontSize: "11px", fontWeight: 600, color: "var(--rc-primary)", background: "var(--rc-primary-light)", border: "none", borderRadius: "6px", padding: "4px 10px", cursor: uploading ? "not-allowed" : "pointer", fontFamily: "var(--font-inter)", opacity: uploading ? 0.6 : 1 }}
+                >
+                  {uploading ? "Uploading…" : "+ Upload PDF"}
+                </button>
+              </div>
             </div>
+            {uploadError && (
+              <div style={{ padding: "8px 16px", background: "oklch(0.94 0.06 25)", borderBottom: "1px solid var(--rc-border)" }}>
+                <p style={{ fontSize: "11.5px", color: "oklch(0.42 0.18 25)", margin: 0, maxWidth: "none" }}>{uploadError}</p>
+              </div>
+            )}
             <div style={{ flex: 1, overflowY: "auto" }}>
-              {docs.length === 0 ? (
-                <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "40px" }}>
-                  <p style={{ fontSize: "13px", color: "var(--rc-faint)", textAlign: "center", maxWidth: "none" }}>No documents on file</p>
+              {docsLoading ? (
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "40px" }}>
+                  <p style={{ fontSize: "13px", color: "var(--rc-faint)", textAlign: "center", maxWidth: "none" }}>Loading…</p>
+                </div>
+              ) : docs.length === 0 ? (
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px", gap: "10px" }}>
+                  <svg width="32" height="32" viewBox="0 0 32 32" fill="none"><rect x="6" y="2" width="20" height="28" rx="3" stroke="var(--rc-border)" strokeWidth="1.5"/><path d="M10 10h12M10 16h12M10 22h8" stroke="var(--rc-border)" strokeWidth="1.5" strokeLinecap="round"/></svg>
+                  <p style={{ fontSize: "13px", color: "var(--rc-faint)", textAlign: "center", maxWidth: "none", margin: 0 }}>No documents on file</p>
+                  <p style={{ fontSize: "11.5px", color: "var(--rc-faint)", textAlign: "center", maxWidth: "none", margin: 0 }}>Upload a PDF to get started</p>
                 </div>
               ) : docs.map((doc, i) => {
                 const cat = docCategoryColor[doc.category] ?? { bg: "var(--rc-surface-2)", color: "var(--rc-muted)" };
                 const isSelected = selectedDocIdx === i;
                 return (
-                  <div key={i} onClick={() => setSelectedDocIdx(isSelected ? null : i)}
+                  <div key={doc.id} onClick={() => handleSelectDoc(i)}
                     style={{ display: "flex", alignItems: "center", gap: "12px", padding: "13px 16px", borderBottom: i < docs.length - 1 ? "1px solid var(--rc-border)" : "none", background: isSelected ? "var(--rc-primary-light)" : "var(--rc-bg)", cursor: "pointer", transition: "background 0.15s ease" }}
                     onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = "var(--rc-surface-2)"; }}
                     onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = "var(--rc-bg)"; }}
@@ -2977,7 +3052,7 @@ function StaffFilePage({ memberIdx, onBack }: { memberIdx: number; onBack: () =>
                       <p style={{ fontSize: "12.5px", fontWeight: isSelected ? 600 : 500, color: isSelected ? "var(--rc-primary)" : "var(--rc-ink)", margin: "0 0 1px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "none" }}>{doc.title}</p>
                       <p style={{ fontSize: "10.5px", color: "var(--rc-faint)", margin: 0, maxWidth: "none" }}>{doc.date}</p>
                     </div>
-                    {!selectedDocIdx && <span style={{ fontSize: "10px", fontWeight: 600, color: cat.color, background: cat.bg, padding: "2px 7px", borderRadius: "100px", flexShrink: 0 }}>{doc.category}</span>}
+                    {selectedDocIdx === null && <span style={{ fontSize: "10px", fontWeight: 600, color: cat.color, background: cat.bg, padding: "2px 7px", borderRadius: "100px", flexShrink: 0 }}>{doc.category}</span>}
                     <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style={{ flexShrink: 0, opacity: isSelected ? 1 : 0.4 }}><path d="M4 2l4 4-4 4" stroke={isSelected ? "var(--rc-primary)" : "var(--rc-faint)"} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
                   </div>
                 );
@@ -2985,16 +3060,25 @@ function StaffFilePage({ memberIdx, onBack }: { memberIdx: number; onBack: () =>
             </div>
           </div>
 
-          {/* Document viewer */}
+          {/* PDF viewer */}
           {selectedDocIdx !== null && (
             <div style={{ flex: 1, border: "1px solid var(--rc-border)", borderRadius: "12px", overflow: "hidden", display: "flex", flexDirection: "column", boxShadow: "var(--rc-shadow-sm)", minWidth: 0 }}>
               <div style={{ padding: "13px 20px", background: "var(--rc-surface)", borderBottom: "1px solid var(--rc-border)", flexShrink: 0, display: "flex", alignItems: "center", gap: "10px" }}>
                 {(() => { const cat = docCategoryColor[docs[selectedDocIdx].category] ?? { bg: "var(--rc-surface-2)", color: "var(--rc-muted)" }; return <span style={{ fontSize: "10px", fontWeight: 700, color: cat.color, background: cat.bg, padding: "3px 9px", borderRadius: "100px" }}>{docs[selectedDocIdx].category}</span>; })()}
                 <span style={{ fontSize: "12.5px", fontWeight: 600, color: "var(--rc-ink)", flex: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{docs[selectedDocIdx].title}</span>
-                <button onClick={() => setSelectedDocIdx(null)} style={{ fontSize: "12px", color: "var(--rc-faint)", background: "transparent", border: "none", cursor: "pointer", fontFamily: "var(--font-inter)", padding: "4px", display: "flex", alignItems: "center" }}>✕</button>
+                {viewerUrl && (
+                  <a href={viewerUrl} target="_blank" rel="noreferrer" style={{ fontSize: "11px", fontWeight: 600, color: "var(--rc-primary)", textDecoration: "none", padding: "3px 8px", background: "var(--rc-primary-light)", borderRadius: "6px" }}>Open ↗</a>
+                )}
+                <button onClick={() => { setSelectedDocIdx(null); setViewerUrl(null); }} style={{ fontSize: "12px", color: "var(--rc-faint)", background: "transparent", border: "none", cursor: "pointer", fontFamily: "var(--font-inter)", padding: "4px", display: "flex", alignItems: "center" }}>✕</button>
               </div>
-              <div style={{ flex: 1, overflowY: "auto", padding: "28px 32px", background: "var(--rc-bg)" }}>
-                {renderDocContent(docs[selectedDocIdx], s, memberIdx)}
+              <div style={{ flex: 1, background: "var(--rc-surface-2)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                {viewerLoading ? (
+                  <p style={{ fontSize: "13px", color: "var(--rc-faint)", maxWidth: "none" }}>Loading document…</p>
+                ) : viewerUrl ? (
+                  <iframe src={viewerUrl} style={{ width: "100%", height: "100%", border: "none" }} title={docs[selectedDocIdx].title} />
+                ) : (
+                  <p style={{ fontSize: "13px", color: "var(--rc-faint)", maxWidth: "none" }}>Could not load document.</p>
+                )}
               </div>
             </div>
           )}
