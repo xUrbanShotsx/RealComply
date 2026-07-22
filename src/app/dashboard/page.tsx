@@ -1155,62 +1155,82 @@ function SalesPropertyChecklist({
 // --- Dashboard home ---
 
 const moduleOverview = [
-  {
-    id: "policies",
-    label: "Policies & Procedures",
-    icon: <PolIcon />,
-    score: 78,
-    detail: "3 policies due for review",
-    status: "warning" as const,
-  },
-  {
-    id: "sales",
-    label: "Residential Sales",
-    icon: <SalesIcon />,
-    score: 60,
-    detail: "2 of 5 properties fully compliant",
-    status: "warning" as const,
-  },
-  {
-    id: "management",
-    label: "Residential Management",
-    icon: <MgmtIcon />,
-    score: 72,
-    detail: "3 of 5 properties fully compliant",
-    status: "warning" as const,
-  },
-  {
-    id: "staff",
-    label: "Staff",
-    icon: <StaffIcon />,
-    score: 90,
-    detail: "9 of 10 licences current",
-    status: "good" as const,
-  },
-  {
-    id: "trust",
-    label: "Trust Accounting",
-    icon: <TrustIcon />,
-    score: 95,
-    detail: "Reconciliation up to date",
-    status: "good" as const,
-  },
+  { id: "policies",   label: "Policies & Procedures",     icon: <PolIcon /> },
+  { id: "sales",      label: "Residential Sales",          icon: <SalesIcon /> },
+  { id: "management", label: "Residential Management",     icon: <MgmtIcon /> },
+  { id: "staff",      label: "Staff",                      icon: <StaffIcon /> },
+  { id: "trust",      label: "Trust Accounting",           icon: <TrustIcon /> },
 ];
 
-const scoreHistory = [
-  { month: "Aug '25", score: 58 },
-  { month: "Sep '25", score: 62 },
-  { month: "Oct '25", score: 61 },
-  { month: "Nov '25", score: 65 },
-  { month: "Dec '25", score: 68 },
-  { month: "Jan '26", score: 70 },
-  { month: "Feb '26", score: 72 },
-  { month: "Mar '26", score: 75 },
-  { month: "Apr '26", score: 71 },
-  { month: "May '26", score: 74 },
-  { month: "Jun '26", score: 77 },
-  { month: "Jul '26", score: 79 },
-];
+function computeModuleData(
+  moduleId: string,
+  staffRows: StaffRow[] = [],
+  salesProps: SalesPropItem[] = [],
+  mgmtProps: SalesPropItem[] = []
+): { score: number; detail: string } {
+  if (moduleId === "staff") {
+    const total = staffRows.length;
+    if (total === 0) return { score: 0, detail: "No staff added yet" };
+    const licOk = staffRows.filter(s => s.licence === "current" || s.licence === "exempt").length;
+    const cpdOk = staffRows.filter(s => s.cpd === "complete" || s.cpd === "na").length;
+    const score = Math.round((licOk + cpdOk) / (total * 2) * 100);
+    const renewalDue = total - licOk;
+    return {
+      score,
+      detail: renewalDue === 0
+        ? `${total} staff · All licences current`
+        : `${renewalDue} licence renewal${renewalDue !== 1 ? "s" : ""} due`,
+    };
+  }
+  if (moduleId === "sales") {
+    const total = salesProps.length;
+    if (total === 0) return { score: 0, detail: "No sales properties added" };
+    const checklist = salesChecklist;
+    const totalScore = salesProps.reduce((sum, p) => {
+      const done = defaultChecked[p.id]?.length ?? 0;
+      return sum + done / checklist.length;
+    }, 0);
+    const score = Math.round((totalScore / total) * 100);
+    const compliant = salesProps.filter(p => (defaultChecked[p.id]?.length ?? 0) === checklist.length).length;
+    return {
+      score,
+      detail: `${compliant} of ${total} ${total === 1 ? "property" : "properties"} fully compliant`,
+    };
+  }
+  if (moduleId === "management") {
+    const total = mgmtProps.length;
+    if (total === 0) return { score: 0, detail: "No management properties added" };
+    const checklist = managementChecklist;
+    const totalScore = mgmtProps.reduce((sum, p) => {
+      const done = defaultChecked[p.id]?.length ?? 0;
+      return sum + done / checklist.length;
+    }, 0);
+    const score = Math.round((totalScore / total) * 100);
+    const compliant = mgmtProps.filter(p => (defaultChecked[p.id]?.length ?? 0) === checklist.length).length;
+    return {
+      score,
+      detail: `${compliant} of ${total} ${total === 1 ? "property" : "properties"} fully compliant`,
+    };
+  }
+  if (moduleId === "policies") {
+    const current = modulePolicies.filter(p => p.status === "current").length;
+    const total = modulePolicies.length;
+    const due = total - current;
+    return {
+      score: Math.round(current / total * 100),
+      detail: due === 0 ? "All policies current" : `${due} ${due === 1 ? "policy" : "policies"} due for review`,
+    };
+  }
+  if (moduleId === "trust") {
+    const reconciled = trustAccounts.filter(a => a.status === "reconciled").length;
+    const total = trustAccounts.length;
+    return {
+      score: Math.round(reconciled / total * 100),
+      detail: reconciled === total ? "All accounts reconciled" : `${total - reconciled} account${total - reconciled !== 1 ? "s" : ""} need attention`,
+    };
+  }
+  return { score: 0, detail: "" };
+}
 
 function smoothLinePath(pts: number[][]): string {
   const n = pts.length;
@@ -1230,14 +1250,14 @@ function smoothLinePath(pts: number[][]): string {
   return d;
 }
 
-function ComplianceChart() {
+function ComplianceChart({ currentScore }: { currentScore: number }) {
   const [hovered, setHovered] = useState<number | null>(null);
 
   const W = 840; const H = 240;
   const PL = 42; const PR = 56; const PT = 18; const PB = 30;
   const cW = W - PL - PR; const cH = H - PT - PB;
 
-  const visibleHistory = scoreHistory.slice(-3);
+  const visibleHistory = [{ month: "Today", score: currentScore }];
   const scores = visibleHistory.map(d => d.score);
   const dataMin = Math.min(...scores);
   const dataMax = Math.max(...scores);
@@ -1246,7 +1266,7 @@ function ComplianceChart() {
   const yMin = Math.floor((dataMin - pad) / 5) * 5;
   const yMax = Math.ceil((dataMax + pad) / 5) * 5;
 
-  const xPos = (i: number) => PL + (i / (visibleHistory.length - 1)) * cW;
+  const xPos = (i: number) => visibleHistory.length === 1 ? PL + cW / 2 : PL + (i / (visibleHistory.length - 1)) * cW;
   const yPos = (v: number) => PT + cH * (1 - (v - yMin) / (yMax - yMin));
   const pts = visibleHistory.map((d, i) => [xPos(i), yPos(d.score)]);
   const linePath = smoothLinePath(pts);
@@ -1367,17 +1387,52 @@ function ComplianceChart() {
 
 
 
-function DashboardHome({ onNavigate, agencyName }: { onNavigate: (id: string) => void; agencyName: string }) {
-  const overallScore = Math.round(moduleOverview.reduce((sum, m) => sum + m.score, 0) / moduleOverview.length);
+function DashboardHome({ onNavigate, agencyName, staffRows, salesProps, mgmtProps }: {
+  onNavigate: (id: string) => void;
+  agencyName: string;
+  staffRows: StaffRow[];
+  salesProps: SalesPropItem[];
+  mgmtProps: SalesPropItem[];
+}) {
+  const moduleScores = moduleOverview.map(m => computeModuleData(m.id, staffRows, salesProps, mgmtProps).score);
+  const overallScore = Math.round(moduleScores.reduce((a, b) => a + b, 0) / moduleScores.length);
   const scoreLabel = overallScore >= 85 ? "Good standing" : overallScore >= 65 ? "Needs attention" : "Action required";
   const badgeColor = overallScore >= 85 ? "oklch(0.46 0.13 145)" : overallScore >= 65 ? "oklch(0.50 0.12 55)" : "oklch(0.46 0.18 25)";
   const badgeBg = overallScore >= 85 ? "oklch(0.94 0.04 145)" : overallScore >= 65 ? "oklch(0.96 0.04 55)" : "oklch(0.95 0.05 25)";
 
+  const totalProps = salesProps.length + mgmtProps.length;
+  const totalStaff = staffRows.length;
+  const licensedStaff = staffRows.filter(s => s.licence === "current" || s.licence === "exempt").length;
+  const renewalDue = totalStaff - licensedStaff;
+  const policiesCurrent = modulePolicies.filter(p => p.status === "current").length;
+  const policiesDue = modulePolicies.length - policiesCurrent;
+  const allReconciled = trustAccounts.every(a => a.status === "reconciled");
+
   const stats: { label: string; value: string; detail: string; warn: boolean }[] = [
-    { label: "Properties", value: "10 total", detail: "5 sales · 5 managed", warn: false },
-    { label: "Staff licensed", value: "9 of 10", detail: "1 renewal due", warn: true },
-    { label: "Policies current", value: "12 of 15", detail: "3 due for review", warn: true },
-    { label: "Trust accounts", value: "Reconciled", detail: "As of today", warn: false },
+    {
+      label: "Properties",
+      value: totalProps === 0 ? "None yet" : `${totalProps} total`,
+      detail: totalProps === 0 ? "Add via Sales or Management" : `${salesProps.length} sales · ${mgmtProps.length} managed`,
+      warn: false,
+    },
+    {
+      label: "Staff licensed",
+      value: totalStaff === 0 ? "No staff" : `${licensedStaff} of ${totalStaff}`,
+      detail: totalStaff === 0 ? "Add staff via Onboarding" : renewalDue === 0 ? "All licences current" : `${renewalDue} renewal${renewalDue !== 1 ? "s" : ""} due`,
+      warn: renewalDue > 0,
+    },
+    {
+      label: "Policies current",
+      value: `${policiesCurrent} of ${modulePolicies.length}`,
+      detail: policiesDue === 0 ? "All policies current" : `${policiesDue} due for review`,
+      warn: policiesDue > 0,
+    },
+    {
+      label: "Trust accounts",
+      value: allReconciled ? "Reconciled" : "Needs attention",
+      detail: allReconciled ? "As of today" : `${trustAccounts.filter(a => a.status !== "reconciled").length} account${trustAccounts.filter(a => a.status !== "reconciled").length !== 1 ? "s" : ""} unreconciled`,
+      warn: !allReconciled,
+    },
   ];
 
   return (
@@ -1425,8 +1480,9 @@ function DashboardHome({ onNavigate, agencyName }: { onNavigate: (id: string) =>
       {/* Module list */}
       <div style={{ flexShrink: 0, background: "var(--rc-surface)", border: "1px solid var(--rc-border)", borderRadius: "14px", overflow: "hidden", boxShadow: "var(--rc-shadow-sm)" }}>
         {moduleOverview.map((m, i) => {
-          const trackColor = m.score >= 85 ? "var(--rc-primary)" : m.score >= 65 ? "oklch(0.58 0.13 55)" : "oklch(0.52 0.18 25)";
-          const pctColor = m.score >= 85 ? "oklch(0.38 0.12 260)" : m.score >= 65 ? "oklch(0.44 0.12 55)" : "oklch(0.44 0.17 25)";
+          const { score } = computeModuleData(m.id, staffRows, salesProps, mgmtProps);
+          const trackColor = score >= 85 ? "var(--rc-primary)" : score >= 65 ? "oklch(0.58 0.13 55)" : "oklch(0.52 0.18 25)";
+          const pctColor = score >= 85 ? "oklch(0.38 0.12 260)" : score >= 65 ? "oklch(0.44 0.12 55)" : "oklch(0.44 0.17 25)";
           return (
             <button
               key={m.id}
@@ -1440,9 +1496,9 @@ function DashboardHome({ onNavigate, agencyName }: { onNavigate: (id: string) =>
               </div>
               <span style={{ fontSize: "13.5px", fontWeight: 500, color: "var(--rc-ink)", letterSpacing: "-0.01em" }}>{m.label}</span>
               <div style={{ height: "3px", background: "var(--rc-border)", borderRadius: "100px", overflow: "hidden" }}>
-                <div style={{ width: `${m.score}%`, height: "100%", background: trackColor, borderRadius: "100px" }} />
+                <div style={{ width: `${score}%`, height: "100%", background: trackColor, borderRadius: "100px" }} />
               </div>
-              <span style={{ fontSize: "13px", fontWeight: 700, color: pctColor, textAlign: "right", letterSpacing: "-0.02em" }}>{m.score}%</span>
+              <span style={{ fontSize: "13px", fontWeight: 700, color: pctColor, textAlign: "right", letterSpacing: "-0.02em" }}>{score}%</span>
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style={{ opacity: 0.22, flexShrink: 0 }}><path d="M4 2l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
             </button>
           );
@@ -1457,7 +1513,7 @@ function DashboardHome({ onNavigate, agencyName }: { onNavigate: (id: string) =>
             <span style={{ fontSize: "12px", color: "var(--rc-faint)", fontWeight: 500 }}>Last 3 months</span>
           </div>
           <div style={{ flex: 1, minHeight: 0, padding: "8px 16px 14px" }}>
-            <ComplianceChart />
+            <ComplianceChart currentScore={overallScore} />
           </div>
         </div>
       </div>
@@ -1531,9 +1587,10 @@ function ModuleOverview({ moduleId, onSelectProperty, salesProps, mgmtProps, onA
   }
 
   const mod = moduleOverview.find(m => m.id === moduleId)!;
-  const scoreColor = mod.score >= 85 ? "oklch(0.42 0.14 145)" : mod.score >= 65 ? "oklch(0.50 0.14 55)" : "oklch(0.50 0.20 25)";
-  const barColor = mod.score >= 85 ? "oklch(0.60 0.16 145)" : mod.score >= 65 ? "oklch(0.65 0.16 55)" : "oklch(0.58 0.20 25)";
-  const scoreLabel = mod.score >= 85 ? "Good standing" : mod.score >= 65 ? "Needs attention" : "Action required";
+  const { score: modScore, detail: modDetail } = computeModuleData(moduleId, staffRows, salesProps, mgmtProps);
+  const scoreColor = modScore >= 85 ? "oklch(0.42 0.14 145)" : modScore >= 65 ? "oklch(0.50 0.14 55)" : "oklch(0.50 0.20 25)";
+  const barColor = modScore >= 85 ? "oklch(0.60 0.16 145)" : modScore >= 65 ? "oklch(0.65 0.16 55)" : "oklch(0.58 0.20 25)";
+  const scoreLabel = modScore >= 85 ? "Good standing" : modScore >= 65 ? "Needs attention" : "Action required";
 
   // Per-module stats and list content
   let stats: { label: string; value: string; sub: string }[] = [];
@@ -1727,7 +1784,7 @@ function ModuleOverview({ moduleId, onSelectProperty, salesProps, mgmtProps, onA
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0, paddingBottom: "20px", borderBottom: "1px solid var(--rc-border)" }}>
         <div>
           <h1 style={{ fontSize: "1.05rem", fontWeight: 600, color: "var(--rc-ink)", letterSpacing: "-0.02em" }}>{mod.label}</h1>
-          <p style={{ fontSize: "12.5px", color: "var(--rc-faint)", maxWidth: "none", marginTop: "1px" }}>{mod.detail}</p>
+          <p style={{ fontSize: "12.5px", color: "var(--rc-faint)", maxWidth: "none", marginTop: "1px" }}>{modDetail}</p>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
           {moduleId === "sales" && (
@@ -1739,9 +1796,9 @@ function ModuleOverview({ moduleId, onSelectProperty, salesProps, mgmtProps, onA
             </button>
           )}
           <div style={{ width: "80px", height: "2px", background: "var(--rc-border)", borderRadius: "100px", overflow: "hidden" }}>
-            <div style={{ width: `${mod.score}%`, height: "100%", background: barColor, borderRadius: "100px" }} />
+            <div style={{ width: `${modScore}%`, height: "100%", background: barColor, borderRadius: "100px" }} />
           </div>
-          <span style={{ fontSize: "13px", fontWeight: 600, color: scoreColor }}>{mod.score}%</span>
+          <span style={{ fontSize: "13px", fontWeight: 600, color: scoreColor }}>{modScore}%</span>
           <span style={{ color: "var(--rc-border)", fontSize: "16px", lineHeight: 1 }}>|</span>
           <span style={{ fontSize: "12.5px", color: "var(--rc-faint)" }}>{scoreLabel}</span>
         </div>
@@ -3919,7 +3976,7 @@ export default function DashboardPage() {
         ) : activeModule ? (
           <ModuleOverview moduleId={activeModule} onSelectProperty={setSelected} salesProps={salesProps} mgmtProps={mgmtProps} onAddSalesProperty={handleAddSalesProperty} staffRows={staffRows} />
         ) : (
-          <DashboardHome onNavigate={openModule} agencyName={agencyName} />
+          <DashboardHome onNavigate={openModule} agencyName={agencyName} staffRows={staffRows} salesProps={salesProps} mgmtProps={mgmtProps} />
         )}
       </div>
     </div>
