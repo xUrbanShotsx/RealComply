@@ -6453,7 +6453,7 @@ export default function DashboardPage() {
         {/* Logo */}
         <div style={{ padding: "20px 16px 16px", flexShrink: 0 }}>
           <Link href="/" style={{ display: "flex", alignItems: "center", textDecoration: "none" }}>
-            <img src="/RealComply (2000 x 1000 px).png" alt="RealComply" style={{ height: "32px", width: "auto", objectFit: "contain", filter: "brightness(0)" }} />
+            <span style={{ fontFamily: "var(--font-arimo)", fontWeight: 700, fontSize: "17px", letterSpacing: "0.08em", color: "var(--rc-nav-text)", textTransform: "uppercase" }}>Real Comply</span>
           </Link>
         </div>
 
