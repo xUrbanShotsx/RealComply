@@ -73,6 +73,7 @@ function SalesIcon() { return <svg width="18" height="18" viewBox="0 0 18 18" fi
 function MgmtIcon() { return <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="2" y="9" width="4" height="7" rx="1" stroke="currentColor" strokeWidth="1.6" /><rect x="7" y="5" width="4" height="11" rx="1" stroke="currentColor" strokeWidth="1.6" /><rect x="12" y="2" width="4" height="14" rx="1" stroke="currentColor" strokeWidth="1.6" /></svg>; }
 function StaffIcon() { return <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="6" r="3" stroke="currentColor" strokeWidth="1.6" /><path d="M3 15c0-3.314 2.686-6 6-6s6 2.686 6 6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /></svg>; }
 function TrustIcon() { return <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="2" y="4" width="14" height="11" rx="2" stroke="currentColor" strokeWidth="1.6" /><path d="M2 8h14" stroke="currentColor" strokeWidth="1.6" /><path d="M6 12h2M10 12h2" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /></svg>; }
+function SettingsIcon() { return <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="2.5" stroke="currentColor" strokeWidth="1.6" /><path d="M9 2v1.5M9 14.5V16M2 9h1.5M14.5 9H16M3.93 3.93l1.06 1.06M13.01 13.01l1.06 1.06M14.07 3.93l-1.06 1.06M4.99 13.01l-1.06 1.06" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /></svg>; }
 
 const iconMap: Record<string, React.ReactNode> = {
   policies: <PolIcon />, sales: <SalesIcon />, management: <MgmtIcon />, staff: <StaffIcon />, trust: <TrustIcon />,
@@ -5523,8 +5524,263 @@ function MonthlyTrustReportsPage() {
   );
 }
 
-function StaticSubPage({ label, agencyName, staffRows, policies, onPolicySaved, onPolicyUpdated, onPolicyDeleted }: {
-  label: string; agencyName: string; staffRows: StaffRow[];
+// --- Settings pages ---
+
+function AccountSettingsPage({ agencyName, userEmail }: { agencyName: string; userEmail: string | null }) {
+  const [newPassword, setNewPassword] = useState("");
+  const [pwLoading, setPwLoading] = useState(false);
+  const [pwMsg, setPwMsg] = useState("");
+
+  async function handleChangePassword(e: React.FormEvent) {
+    e.preventDefault();
+    setPwLoading(true); setPwMsg("");
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    setPwMsg(error ? error.message : "Password updated successfully.");
+    setPwLoading(false);
+    setNewPassword("");
+  }
+
+  const inputStyle: React.CSSProperties = {
+    width: "100%", padding: "11px 14px", borderRadius: "8px",
+    border: "1px solid var(--rc-border)", background: "var(--rc-bg)",
+    fontSize: "15px", color: "var(--rc-ink)", outline: "none",
+    fontFamily: "var(--font-inter)",
+  };
+
+  return (
+    <div style={{ maxWidth: "560px" }}>
+      <h2 style={{ fontSize: "1.25rem", fontWeight: 700, color: "var(--rc-ink)", marginBottom: "24px" }}>Account</h2>
+
+      <div style={{ border: "1px solid var(--rc-border)", borderRadius: "12px", overflow: "hidden", marginBottom: "24px" }}>
+        <div style={{ padding: "20px 24px", borderBottom: "1px solid var(--rc-border)", background: "var(--rc-surface-2)" }}>
+          <div style={{ fontSize: "12px", fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--rc-muted)", marginBottom: "2px" }}>Agency</div>
+          <div style={{ fontSize: "16px", fontWeight: 600, color: "var(--rc-ink)" }}>{agencyName}</div>
+        </div>
+        <div style={{ padding: "20px 24px" }}>
+          <div style={{ fontSize: "12px", fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--rc-muted)", marginBottom: "2px" }}>Email</div>
+          <div style={{ fontSize: "15px", color: "var(--rc-ink)" }}>{userEmail ?? "—"}</div>
+        </div>
+      </div>
+
+      <div style={{ border: "1px solid var(--rc-border)", borderRadius: "12px", padding: "24px" }}>
+        <h3 style={{ fontSize: "14px", fontWeight: 700, color: "var(--rc-ink)", marginBottom: "16px" }}>Change password</h3>
+        <form onSubmit={handleChangePassword} style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+          <input type="password" required minLength={6} value={newPassword} onChange={(e) => setNewPassword(e.target.value)}
+            placeholder="New password (min. 6 characters)" style={inputStyle} />
+          {pwMsg && (
+            <p style={{ fontSize: "13px", color: pwMsg.includes("successfully") ? "var(--rc-primary)" : "oklch(0.55 0.18 25)", maxWidth: "none", margin: 0 }}>{pwMsg}</p>
+          )}
+          <button type="submit" disabled={pwLoading} style={{ alignSelf: "flex-start", padding: "10px 20px", background: "var(--rc-primary)", color: "white", border: "none", borderRadius: "8px", fontWeight: 600, fontSize: "14px", cursor: pwLoading ? "not-allowed" : "pointer", opacity: pwLoading ? 0.7 : 1, fontFamily: "var(--font-inter)" }}>
+            {pwLoading ? "Updating…" : "Update password"}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function BillingSettingsPage({ userId }: { userId: string | null }) {
+  const [sub, setSub] = useState<{ plan: string; status: string; stripe_customer_id: string } | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [portalLoading, setPortalLoading] = useState(false);
+
+  const PLAN_LABELS: Record<string, string> = { essentials: "Essentials", standard: "Standard", professional: "Professional" };
+  const PLAN_PRICES: Record<string, number> = { essentials: 129, standard: 249, professional: 549 };
+  const PLAN_SEATS: Record<string, number> = { essentials: 20, standard: 60, professional: 120 };
+
+  useEffect(() => {
+    if (!userId) return;
+    supabase.from("subscriptions").select("plan, status, stripe_customer_id").eq("user_id", userId).single().then(({ data }) => {
+      setSub(data);
+      setLoading(false);
+    });
+  }, [userId]);
+
+  async function openPortal() {
+    if (!userId) return;
+    setPortalLoading(true);
+    const res = await fetch("/api/create-portal-session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId }),
+    });
+    const data = await res.json();
+    if (data.url) window.location.href = data.url;
+    else setPortalLoading(false);
+  }
+
+  if (loading) return <p style={{ color: "var(--rc-muted)" }}>Loading billing…</p>;
+
+  return (
+    <div style={{ maxWidth: "560px" }}>
+      <h2 style={{ fontSize: "1.25rem", fontWeight: 700, color: "var(--rc-ink)", marginBottom: "24px" }}>Billing</h2>
+
+      {sub ? (
+        <>
+          <div style={{ border: "1px solid var(--rc-border)", borderRadius: "12px", overflow: "hidden", marginBottom: "24px" }}>
+            <div style={{ padding: "24px", borderBottom: "1px solid var(--rc-border)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div>
+                <div style={{ fontSize: "12px", fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--rc-muted)", marginBottom: "4px" }}>Current plan</div>
+                <div style={{ fontSize: "1.4rem", fontWeight: 800, color: "var(--rc-ink)", letterSpacing: "-0.03em" }}>{PLAN_LABELS[sub.plan] ?? sub.plan}</div>
+                <div style={{ fontSize: "14px", color: "var(--rc-muted)", marginTop: "2px" }}>${PLAN_PRICES[sub.plan] ?? "—"}/month · up to {PLAN_SEATS[sub.plan] ?? "—"} team members</div>
+              </div>
+              <div style={{ padding: "4px 12px", borderRadius: "100px", background: sub.status === "active" ? "var(--rc-primary-light)" : "oklch(0.97 0.02 25)", fontSize: "12px", fontWeight: 700, color: sub.status === "active" ? "var(--rc-primary)" : "oklch(0.55 0.18 25)" }}>
+                {sub.status === "active" ? "Active" : sub.status}
+              </div>
+            </div>
+            <div style={{ padding: "20px 24px", display: "flex", flexDirection: "column", gap: "10px" }}>
+              <p style={{ fontSize: "14px", color: "var(--rc-muted)", maxWidth: "none", margin: 0 }}>
+                Manage your subscription, update your card, download invoices, or cancel through the Stripe billing portal.
+              </p>
+              <button onClick={openPortal} disabled={portalLoading} style={{ alignSelf: "flex-start", padding: "10px 20px", background: "var(--rc-primary)", color: "white", border: "none", borderRadius: "8px", fontWeight: 600, fontSize: "14px", cursor: portalLoading ? "not-allowed" : "pointer", opacity: portalLoading ? 0.7 : 1, fontFamily: "var(--font-inter)" }}>
+                {portalLoading ? "Opening…" : "Manage billing →"}
+              </button>
+            </div>
+          </div>
+        </>
+      ) : (
+        <div style={{ border: "1px solid var(--rc-border)", borderRadius: "12px", padding: "24px" }}>
+          <p style={{ color: "var(--rc-muted)", maxWidth: "none" }}>No active subscription found. <a href="/signup" style={{ color: "var(--rc-primary)", fontWeight: 500 }}>Choose a plan →</a></p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function TeamInvitesPage({ userId, agencyName, staffRows }: { userId: string | null; agencyName: string; staffRows: StaffRow[] }) {
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteLoading, setInviteLoading] = useState(false);
+  const [inviteLink, setInviteLink] = useState("");
+  const [inviteError, setInviteError] = useState("");
+  const [copied, setCopied] = useState(false);
+  const [seatsUsed, setSeatsUsed] = useState<number | null>(null);
+  const [seatsTotal, setSeatsTotal] = useState<number | null>(null);
+  const [invites, setInvites] = useState<{ id: string; email: string | null; created_at: string; accepted_at: string | null }[]>([]);
+
+  useEffect(() => {
+    if (!userId) return;
+    supabase.from("invites").select("id, email, created_at, accepted_at").eq("invited_by", userId).order("created_at", { ascending: false }).then(({ data }) => {
+      if (data) setInvites(data);
+    });
+    supabase.from("subscriptions").select("plan").eq("user_id", userId).single().then(({ data }) => {
+      const limits: Record<string, number> = { essentials: 20, standard: 60, professional: 120 };
+      if (data?.plan) setSeatsTotal(limits[data.plan] ?? 20);
+    });
+  }, [userId]);
+
+  async function handleInvite(e: React.FormEvent) {
+    e.preventDefault();
+    if (!userId) return;
+    setInviteLoading(true); setInviteError(""); setInviteLink("");
+    const res = await fetch("/api/invite", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId, email: inviteEmail, agencyName }),
+    });
+    const data = await res.json();
+    if (!res.ok) { setInviteError(data.error); setInviteLoading(false); return; }
+    setInviteLink(data.inviteUrl);
+    setSeatsUsed(data.seatsUsed);
+    setSeatsTotal(data.seatsTotal);
+    setInviteEmail("");
+    setInviteLoading(false);
+    // Refresh invites list
+    supabase.from("invites").select("id, email, created_at, accepted_at").eq("invited_by", userId).order("created_at", { ascending: false }).then(({ data: rows }) => { if (rows) setInvites(rows); });
+  }
+
+  function copyLink() {
+    navigator.clipboard.writeText(inviteLink);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
+  const inputStyle: React.CSSProperties = {
+    flex: 1, padding: "11px 14px", borderRadius: "8px",
+    border: "1px solid var(--rc-border)", background: "var(--rc-bg)",
+    fontSize: "15px", color: "var(--rc-ink)", outline: "none",
+    fontFamily: "var(--font-inter)",
+  };
+
+  return (
+    <div style={{ maxWidth: "620px" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "24px" }}>
+        <h2 style={{ fontSize: "1.25rem", fontWeight: 700, color: "var(--rc-ink)" }}>Team &amp; Invites</h2>
+        {seatsTotal !== null && (
+          <span style={{ fontSize: "13px", color: "var(--rc-muted)" }}>
+            <span style={{ fontWeight: 600, color: "var(--rc-ink)" }}>{staffRows.length}</span> of <span style={{ fontWeight: 600, color: "var(--rc-ink)" }}>{seatsTotal}</span> seats used
+          </span>
+        )}
+      </div>
+
+      {/* Invite form */}
+      <div style={{ border: "1px solid var(--rc-border)", borderRadius: "12px", padding: "24px", marginBottom: "24px" }}>
+        <h3 style={{ fontSize: "14px", fontWeight: 700, color: "var(--rc-ink)", marginBottom: "4px" }}>Invite a team member</h3>
+        <p style={{ fontSize: "13px", color: "var(--rc-muted)", marginBottom: "16px", maxWidth: "none" }}>Generate an invite link and share it with your staff. They sign up for free to join your organisation.</p>
+        <form onSubmit={handleInvite} style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+          <input type="email" value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)}
+            placeholder="Staff email (optional)" style={inputStyle} />
+          <button type="submit" disabled={inviteLoading} style={{ padding: "11px 20px", background: "var(--rc-primary)", color: "white", border: "none", borderRadius: "8px", fontWeight: 600, fontSize: "14px", cursor: inviteLoading ? "not-allowed" : "pointer", opacity: inviteLoading ? 0.7 : 1, fontFamily: "var(--font-inter)", whiteSpace: "nowrap" }}>
+            {inviteLoading ? "Generating…" : "Generate invite link"}
+          </button>
+        </form>
+
+        {inviteError && <p style={{ marginTop: "10px", fontSize: "13px", color: "oklch(0.55 0.18 25)", maxWidth: "none" }}>{inviteError}</p>}
+
+        {inviteLink && (
+          <div style={{ marginTop: "16px", padding: "14px 16px", background: "var(--rc-primary-light)", borderRadius: "8px", display: "flex", alignItems: "center", gap: "10px" }}>
+            <span style={{ flex: 1, fontSize: "13px", color: "var(--rc-ink)", wordBreak: "break-all", maxWidth: "none" }}>{inviteLink}</span>
+            <button onClick={copyLink} style={{ flexShrink: 0, padding: "7px 14px", background: copied ? "var(--rc-primary)" : "white", color: copied ? "white" : "var(--rc-primary)", border: "1px solid var(--rc-primary)", borderRadius: "6px", fontWeight: 600, fontSize: "12px", cursor: "pointer", fontFamily: "var(--font-inter)", transition: "all 0.15s ease" }}>
+              {copied ? "Copied!" : "Copy"}
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Current team */}
+      <div style={{ border: "1px solid var(--rc-border)", borderRadius: "12px", overflow: "hidden", marginBottom: "24px" }}>
+        <div style={{ padding: "16px 20px", borderBottom: "1px solid var(--rc-border)", fontSize: "13px", fontWeight: 700, color: "var(--rc-ink)" }}>
+          Current team ({staffRows.length})
+        </div>
+        {staffRows.length === 0 ? (
+          <div style={{ padding: "20px", fontSize: "13px", color: "var(--rc-muted)", textAlign: "center" }}>No staff added yet.</div>
+        ) : (
+          staffRows.map((s, i) => (
+            <div key={s.id} style={{ padding: "14px 20px", display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: i < staffRows.length - 1 ? "1px solid var(--rc-border)" : "none" }}>
+              <div>
+                <div style={{ fontSize: "14px", fontWeight: 600, color: "var(--rc-ink)" }}>{s.name}</div>
+                <div style={{ fontSize: "12px", color: "var(--rc-muted)" }}>{s.role}{s.email ? ` · ${s.email}` : ""}</div>
+              </div>
+              <div style={{ padding: "3px 10px", borderRadius: "100px", background: "var(--rc-surface-2)", fontSize: "12px", color: "var(--rc-muted)", fontWeight: 500 }}>Staff</div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Pending invites */}
+      {invites.length > 0 && (
+        <div style={{ border: "1px solid var(--rc-border)", borderRadius: "12px", overflow: "hidden" }}>
+          <div style={{ padding: "16px 20px", borderBottom: "1px solid var(--rc-border)", fontSize: "13px", fontWeight: 700, color: "var(--rc-ink)" }}>
+            Invites
+          </div>
+          {invites.map((inv, i) => (
+            <div key={inv.id} style={{ padding: "14px 20px", display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: i < invites.length - 1 ? "1px solid var(--rc-border)" : "none" }}>
+              <div>
+                <div style={{ fontSize: "14px", fontWeight: 500, color: "var(--rc-ink)" }}>{inv.email ?? "Link only"}</div>
+                <div style={{ fontSize: "12px", color: "var(--rc-muted)" }}>Sent {new Date(inv.created_at).toLocaleDateString("en-AU")}</div>
+              </div>
+              <div style={{ padding: "3px 10px", borderRadius: "100px", background: inv.accepted_at ? "var(--rc-primary-light)" : "var(--rc-surface-2)", fontSize: "12px", color: inv.accepted_at ? "var(--rc-primary)" : "var(--rc-muted)", fontWeight: 500 }}>
+                {inv.accepted_at ? "Accepted" : "Pending"}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function StaticSubPage({ label, agencyName, userEmail, userId, staffRows, policies, onPolicySaved, onPolicyUpdated, onPolicyDeleted }: {
+  label: string; agencyName: string; userEmail: string | null; userId: string | null; staffRows: StaffRow[];
   policies: PolicyRow[]; onPolicySaved: (p: PolicyRow) => void; onPolicyUpdated: (p: PolicyRow) => void; onPolicyDeleted: (id: string) => void;
 }) {
   const savedNames = policies.filter(p => p.source === "template").map(p => p.name);
@@ -5542,6 +5798,9 @@ function StaticSubPage({ label, agencyName, staffRows, policies, onPolicySaved, 
     case "Audit Reports":           return <AuditReportsPage />;
     case "Transaction Log":         return <TransactionLogPage />;
     case "AML Compliance":          return <AMLCompliancePage />;
+    case "Account":                 return <AccountSettingsPage agencyName={agencyName} userEmail={userEmail} />;
+    case "Billing":                 return <BillingSettingsPage userId={userId} />;
+    case "Team & Invites":          return <TeamInvitesPage userId={userId} agencyName={agencyName} staffRows={staffRows} />;
     default:                        return null;
   }
 }
@@ -5560,6 +5819,7 @@ export default function DashboardPage() {
   const [staffRows, setStaffRows] = useState<StaffRow[]>([]);
   const [policies, setPolicies] = useState<PolicyRow[]>([]);
   const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
   const [agencyName, setAgencyName] = useState<string>("Your Agency");
 
   useEffect(() => {
@@ -5567,6 +5827,7 @@ export default function DashboardPage() {
       if (!data.session) { window.location.href = "/signin"; return; }
       const uid = data.session.user.id;
       setUserEmail(data.session.user.email ?? null);
+      setUserId(data.session.user.id);
       const name = data.session.user.user_metadata?.agency_name;
       if (name) setAgencyName(name);
 
@@ -5668,6 +5929,7 @@ export default function DashboardPage() {
     { id: "management", label: "Residential Management", icon: <MgmtIcon />, type: "properties", properties: mgmtProps },
     { id: "staff", label: "Staff", icon: <StaffIcon />, type: "static", children: ["Team Overview", "Licence Tracking", "CPD Records", "Onboarding"] },
     { id: "trust", label: "Trust Accounting", icon: <TrustIcon />, type: "static", children: ["Account Reconciliation", "Monthly Reports", "Transaction Log", "AML Compliance", "Audit Reports"] },
+    { id: "settings", label: "Settings", icon: <SettingsIcon />, type: "static", children: ["Account", "Billing", "Team & Invites"] },
   ];
 
   const module = modules.find((m) => m.id === activeModule) ?? null;
@@ -5779,7 +6041,7 @@ export default function DashboardPage() {
             <PropertyChecklist key={selected.id} propertyId={selected.id} address={selected.address} type={selected.section} onRemove={() => handleRemoveProperty(selected.id, "management")} />
           )
         ) : selected?.type === "static" ? (
-          <StaticSubPage label={selected.label} agencyName={agencyName} staffRows={staffRows} policies={policies} onPolicySaved={handlePolicySaved} onPolicyUpdated={handlePolicyUpdated} onPolicyDeleted={handlePolicyDeleted} />
+          <StaticSubPage label={selected.label} agencyName={agencyName} userEmail={userEmail} userId={userId} staffRows={staffRows} policies={policies} onPolicySaved={handlePolicySaved} onPolicyUpdated={handlePolicyUpdated} onPolicyDeleted={handlePolicyDeleted} />
         ) : activeModule ? (
           <ModuleOverview moduleId={activeModule} onSelectProperty={setSelected} salesProps={salesProps} mgmtProps={mgmtProps} onAddSalesProperty={handleAddSalesProperty} onAddMgmtProperty={handleAddMgmtProperty} staffRows={staffRows} policies={policies} />
         ) : (
