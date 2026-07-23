@@ -6,15 +6,30 @@ export default function Footer() {
   const cols = [
     {
       heading: "Product",
-      links: ["Features", "Pricing", "Security", "Changelog"],
+      links: [
+        { label: "Features", href: "#features" },
+        { label: "Pricing", href: "#pricing" },
+        { label: "Security", href: "#" },
+        { label: "Changelog", href: "#" },
+      ],
     },
     {
       heading: "Company",
-      links: ["About", "Blog", "Careers", "Contact"],
+      links: [
+        { label: "About", href: "#" },
+        { label: "Blog", href: "#" },
+        { label: "Careers", href: "#" },
+        { label: "Contact", href: "#" },
+      ],
     },
     {
       heading: "Legal",
-      links: ["Privacy Policy", "Terms of Service", "Data Processing", "Cookie Policy"],
+      links: [
+        { label: "Privacy Policy", href: "/privacy" },
+        { label: "Terms of Service", href: "/terms" },
+        { label: "Data Processing", href: "/data-processing" },
+        { label: "Cookie Policy", href: "/cookies" },
+      ],
     },
   ];
 
@@ -43,15 +58,15 @@ export default function Footer() {
                 {heading}
               </h4>
               <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: "12px" }}>
-                {links.map((item) => (
-                  <li key={item}>
+                {links.map(({ label, href }) => (
+                  <li key={label}>
                     <a
-                      href="#"
+                      href={href}
                       style={{ fontSize: "14px", color: "var(--rc-muted)", transition: "color 0.15s ease" }}
                       onMouseEnter={(e) => ((e.target as HTMLAnchorElement).style.color = "var(--rc-ink)")}
                       onMouseLeave={(e) => ((e.target as HTMLAnchorElement).style.color = "var(--rc-muted)")}
                     >
-                      {item}
+                      {label}
                     </a>
                   </li>
                 ))}
