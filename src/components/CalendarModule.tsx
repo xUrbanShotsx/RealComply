@@ -145,11 +145,11 @@ export default function CalendarModule({
           ))}
         </div>
         {/* Grid */}
-        <div style={{ flex: 1, overflow: "auto" }}>
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
           {weeks.map((week, wi) => (
-            <div key={wi} style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", borderBottom: wi < weeks.length - 1 ? "1px solid #e3e8ee" : "none", minHeight: "110px" }}>
+            <div key={wi} style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", borderBottom: wi < weeks.length - 1 ? "1px solid #e3e8ee" : "none", flex: 1, minHeight: 0 }}>
               {week.map((day, di) => {
-                if (!day) return <div key={di} style={{ background: "#fafbfc", borderRight: di < 6 ? "1px solid #e3e8ee" : "none" }} />;
+                if (!day) return <div key={di} style={{ background: "#fafbfc", borderRight: di < 6 ? "1px solid #e3e8ee" : "none", minHeight: 0 }} />;
                 const cellDate = new Date(year, month, day);
                 const isToday = sameDay(cellDate, today);
                 const dayEvs = eventsForDay(cellDate);
@@ -157,7 +157,7 @@ export default function CalendarModule({
                   <div
                     key={di}
                     onClick={() => { setAnchor(cellDate); setView("day"); }}
-                    style={{ padding: "6px 6px 4px", borderRight: di < 6 ? "1px solid #e3e8ee" : "none", cursor: "pointer", background: "white", transition: "background 0.1s" }}
+                    style={{ padding: "6px 6px 4px", borderRight: di < 6 ? "1px solid #e3e8ee" : "none", cursor: "pointer", background: "white", transition: "background 0.1s", overflow: "hidden" }}
                     onMouseEnter={e => (e.currentTarget.style.background = "#f8f9ff")}
                     onMouseLeave={e => (e.currentTarget.style.background = "white")}
                   >
@@ -409,7 +409,7 @@ export default function CalendarModule({
   };
 
   return (
-    <div style={{ flex: 1, display: "flex", flexDirection: "column", background: "white", height: "100%", minHeight: 0 }}>
+    <div style={{ flex: 1, display: "flex", flexDirection: "column", background: "white", height: "100svh", minHeight: 0, overflow: "hidden" }}>
       {/* Toolbar */}
       <div style={{ display: "flex", alignItems: "center", gap: "10px", padding: "14px 20px", borderBottom: "1px solid #e3e8ee", flexShrink: 0, flexWrap: "wrap" }}>
         <div style={{ display: "flex", gap: "4px" }}>
