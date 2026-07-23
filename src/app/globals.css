@@ -21,34 +21,37 @@
 }
 
 :root {
-  /* Navigation (light blue sidebar) */
-  --rc-nav: #ffffff;
-  --rc-nav-text: oklch(0.38 0.008 220);
-  --rc-nav-hover: oklch(0.95 0.010 220);
-  --rc-nav-active-bg: #8c52ff;
-  --rc-nav-border: oklch(0.90 0.008 220);
+  /* Navigation — dark navy sidebar (Stripe brand-dark) */
+  --rc-nav: #1c1e54;
+  --rc-nav-text: rgba(255,255,255,0.78);
+  --rc-nav-hover: rgba(255,255,255,0.07);
+  --rc-nav-active-bg: #533afd;
+  --rc-nav-border: rgba(255,255,255,0.09);
+  --rc-nav-icon: rgba(255,255,255,0.42);
+  --rc-nav-label: rgba(255,255,255,0.30);
 
   /* Page surfaces */
-  --rc-page: oklch(0.965 0.010 295);
+  --rc-page: #f6f9fc;
   --rc-bg: #ffffff;
   --rc-surface: #ffffff;
-  --rc-surface-2: oklch(0.97 0.006 220);
-  --rc-ink: oklch(0.18 0.008 220);
-  --rc-muted: oklch(0.42 0.008 220);
-  --rc-faint: oklch(0.58 0.007 220);
-  --rc-border: oklch(0.85 0.008 220);
-  --rc-border-subtle: oklch(0.90 0.006 220);
+  --rc-surface-2: #f6f9fc;
+  --rc-ink: #0d253d;
+  --rc-muted: #273951;
+  --rc-faint: #64748d;
+  --rc-border: #e3e8ee;
+  --rc-border-subtle: #eef1f5;
 
-  /* Brand — green */
-  --rc-primary: #8c52ff;
-  --rc-primary-mid: oklch(0.40 0.20 295);
-  --rc-primary-light: #8c52ff;
+  /* Brand — Stripe indigo */
+  --rc-primary: #533afd;
+  --rc-primary-mid: #4434d4;
+  --rc-primary-light: #533afd;
+  --rc-primary-subtle: rgba(83,58,253,0.10);
   --rc-accent: oklch(0.62 0.15 55);
   --rc-accent-dark: oklch(0.50 0.16 55);
 
   /* Elevation */
-  --rc-shadow-sm: 0 1px 3px oklch(0.10 0.005 240 / 0.08), 0 1px 2px oklch(0.10 0.005 240 / 0.05);
-  --rc-shadow: 0 2px 8px oklch(0.10 0.005 240 / 0.10), 0 1px 3px oklch(0.10 0.005 240 / 0.06);
+  --rc-shadow-sm: 0 1px 3px rgba(0,55,112,0.08), 0 1px 2px rgba(0,55,112,0.04);
+  --rc-shadow: 0 8px 24px rgba(0,55,112,0.08), 0 2px 6px rgba(0,55,112,0.04);
 }
 
 @theme inline {
@@ -91,6 +94,19 @@ p {
   max-width: 68ch;
   text-wrap: pretty;
 }
+
+/* Dashboard inputs */
+input:focus, textarea:focus, select:focus {
+  border-color: var(--rc-primary) !important;
+  box-shadow: 0 0 0 3px rgba(83,58,253,0.10);
+}
+
+/* Stripe-style table */
+.s-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.s-table th { padding: 10px 16px; font-size: 10.5px; font-weight: 700; color: var(--rc-faint); text-transform: uppercase; letter-spacing: 0.07em; text-align: left; border-bottom: 1px solid var(--rc-border); white-space: nowrap; }
+.s-table td { padding: 12px 16px; border-bottom: 1px solid var(--rc-border-subtle); color: var(--rc-ink); }
+.s-table tbody tr:last-child td { border-bottom: none; }
+.s-table tbody tr:hover td { background: var(--rc-surface-2); }
 
 /* Scroll reveal */
 .reveal {

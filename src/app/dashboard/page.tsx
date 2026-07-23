@@ -101,10 +101,10 @@ interface ItemData { status: ItemStatus; notes: string; files: UploadedFile[]; }
 type ItemDataMap = Record<string, ItemData>;
 
 const STATUS_CONFIG: Record<ItemStatus, { label: string; color: string; bg: string; border: string }> = {
-  not_started: { label: "Not started", color: "var(--rc-faint)", bg: "transparent", border: "var(--rc-border)" },
-  in_progress: { label: "In progress", color: "oklch(0.55 0.15 55)", bg: "oklch(0.97 0.025 55)", border: "oklch(0.82 0.09 55)" },
-  complete: { label: "Complete", color: "oklch(0.45 0.14 145)", bg: "oklch(0.95 0.05 185)", border: "oklch(0.80 0.08 185)" },
-  na: { label: "N/A", color: "var(--rc-muted)", bg: "var(--rc-surface)", border: "var(--rc-border)" },
+  not_started: { label: "Not started", color: "#64748d", bg: "#f6f9fc", border: "#e3e8ee" },
+  in_progress:  { label: "In progress", color: "#b45309", bg: "#fef9ee", border: "#fde68a" },
+  complete:     { label: "Complete",    color: "#166534", bg: "#f0fdf4", border: "#bbf7d0" },
+  na:           { label: "N/A",         color: "#64748d", bg: "#f6f9fc", border: "#e3e8ee" },
 };
 
 function fmtBytes(bytes: number) {
@@ -1796,70 +1796,74 @@ function DashboardHome({ onNavigate, agencyName, staffRows, salesProps, mgmtProp
   ];
 
   return (
-    <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "100vh", overflow: "hidden", padding: "32px 44px 28px", gap: "18px" }}>
+    <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "100vh", overflow: "hidden", padding: "36px 48px 28px", gap: "20px" }}>
 
       {/* Header */}
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexShrink: 0, paddingBottom: "22px", borderBottom: "1px solid var(--rc-border)" }}>
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexShrink: 0, paddingBottom: "24px", borderBottom: "1px solid var(--rc-border)" }}>
         <div>
-          <h1 style={{ fontSize: "1.35rem", fontWeight: 700, color: "var(--rc-ink)", letterSpacing: "-0.035em", lineHeight: 1.15 }}>Business Overview</h1>
-          <p style={{ fontSize: "13px", color: "var(--rc-faint)", maxWidth: "none", marginTop: "5px" }}>
+          <h1 style={{ fontSize: "1.3rem", fontWeight: 600, color: "var(--rc-ink)", letterSpacing: "-0.04em", lineHeight: 1.2 }}>Business Overview</h1>
+          <p style={{ fontSize: "13.5px", color: "var(--rc-faint)", maxWidth: "none", marginTop: "4px" }}>
             {agencyName} · {new Date().toLocaleDateString("en-AU", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
           </p>
         </div>
-        <span style={{ fontSize: "12px", fontWeight: 600, color: badgeColor, background: badgeBg, padding: "5px 13px", borderRadius: "100px", marginTop: "3px", flexShrink: 0, letterSpacing: "0.01em" }}>
+        <span style={{ fontSize: "11.5px", fontWeight: 600, color: badgeColor, background: badgeBg, padding: "5px 14px", borderRadius: "100px", marginTop: "4px", flexShrink: 0, letterSpacing: "0.01em" }}>
           {scoreLabel}
         </span>
       </div>
 
       {/* Score + Stats */}
-      <div style={{ display: "grid", gridTemplateColumns: "196px 1fr", gap: "14px", flexShrink: 0 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "188px 1fr", gap: "14px", flexShrink: 0 }}>
         {/* Score ring panel */}
-        <div style={{ background: "var(--rc-surface)", border: "1px solid var(--rc-border)", borderRadius: "14px", padding: "24px 16px 20px", display: "flex", flexDirection: "column", alignItems: "center", gap: "10px", boxShadow: "var(--rc-shadow-sm)" }}>
+        <div style={{ background: "var(--rc-surface)", border: "1px solid var(--rc-border)", borderRadius: "12px", padding: "22px 14px 18px", display: "flex", flexDirection: "column", alignItems: "center", gap: "10px", boxShadow: "var(--rc-shadow-sm)" }}>
           <div style={{ position: "relative", display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
-            <ScoreRing score={overallScore} size={108} />
+            <ScoreRing score={overallScore} size={100} />
             <div style={{ position: "absolute", textAlign: "center", pointerEvents: "none" }}>
-              <p style={{ fontSize: "1.9rem", fontWeight: 800, color: "var(--rc-ink)", letterSpacing: "-0.06em", lineHeight: 1, margin: 0 }}>{overallScore}</p>
-              <p style={{ fontSize: "10px", color: "var(--rc-faint)", margin: "1px 0 0", fontWeight: 500 }}>/ 100</p>
+              <p style={{ fontSize: "1.75rem", fontWeight: 700, color: "var(--rc-ink)", letterSpacing: "-0.05em", lineHeight: 1, margin: 0 }}>{overallScore}</p>
+              <p style={{ fontSize: "10px", color: "var(--rc-faint)", margin: "2px 0 0", fontWeight: 500 }}>/ 100</p>
             </div>
           </div>
-          <p style={{ fontSize: "12px", color: "var(--rc-muted)", textAlign: "center", maxWidth: "none", lineHeight: 1.5, margin: 0 }}>Compliance score<br />this month</p>
+          <p style={{ fontSize: "12px", color: "var(--rc-faint)", textAlign: "center", maxWidth: "none", lineHeight: 1.5, margin: 0 }}>Compliance score</p>
         </div>
 
         {/* Stats list panel */}
-        <div style={{ background: "var(--rc-surface)", border: "1px solid var(--rc-border)", borderRadius: "14px", overflow: "hidden", boxShadow: "var(--rc-shadow-sm)" }}>
+        <div style={{ background: "var(--rc-surface)", border: "1px solid var(--rc-border)", borderRadius: "12px", overflow: "hidden", boxShadow: "var(--rc-shadow-sm)" }}>
           {stats.map(({ label, value, detail, warn }, i) => (
-            <div key={label} style={{ display: "grid", gridTemplateColumns: "130px 110px 1fr", alignItems: "center", padding: "13px 22px", borderBottom: i < stats.length - 1 ? "1px solid var(--rc-border)" : "none", gap: "0" }}>
+            <div key={label} style={{ display: "grid", gridTemplateColumns: "140px 120px 1fr", alignItems: "center", padding: "13px 22px", borderBottom: i < stats.length - 1 ? "1px solid var(--rc-border)" : "none" }}>
               <p style={{ fontSize: "12.5px", color: "var(--rc-faint)", maxWidth: "none", fontWeight: 500 }}>{label}</p>
-              <p style={{ fontSize: "14px", fontWeight: 700, color: "var(--rc-ink)", letterSpacing: "-0.025em", maxWidth: "none" }}>{value}</p>
+              <p style={{ fontSize: "14px", fontWeight: 600, color: "var(--rc-ink)", letterSpacing: "-0.03em", maxWidth: "none" }}>{value}</p>
               <p style={{ fontSize: "12px", color: warn ? "oklch(0.44 0.13 55)" : "var(--rc-faint)", maxWidth: "none", fontWeight: warn ? 500 : 400 }}>{detail}</p>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Module list */}
-      <div style={{ flexShrink: 0, background: "var(--rc-surface)", border: "1px solid var(--rc-border)", borderRadius: "14px", overflow: "hidden", boxShadow: "var(--rc-shadow-sm)" }}>
-        {moduleOverview.map((m, i) => {
-          const { score } = computeModuleData(m.id, staffRows, salesProps, mgmtProps, policies);
+      {/* Module grid */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: "10px", overflowY: "auto", paddingBottom: "4px" }}>
+        {moduleOverview.map((m) => {
+          const { score, detail } = computeModuleData(m.id, staffRows, salesProps, mgmtProps, policies);
           const trackColor = score >= 85 ? "var(--rc-primary)" : score >= 65 ? "oklch(0.58 0.13 55)" : "oklch(0.52 0.18 25)";
-          const pctColor = score >= 85 ? "var(--rc-primary-mid)" : score >= 65 ? "oklch(0.44 0.12 55)" : "oklch(0.44 0.17 25)";
+          const pctColor = score >= 85 ? "var(--rc-primary)" : score >= 65 ? "oklch(0.44 0.12 55)" : "oklch(0.44 0.17 25)";
           return (
             <button
               key={m.id}
               onClick={() => onNavigate(m.id)}
-              style={{ width: "100%", display: "grid", gridTemplateColumns: "36px 1fr 160px 50px 16px", alignItems: "center", gap: "16px", padding: "14px 20px", border: "none", borderBottom: i < moduleOverview.length - 1 ? "1px solid var(--rc-border)" : "none", background: "transparent", cursor: "pointer", textAlign: "left", fontFamily: "var(--font-inter)", transition: "background 0.12s ease" }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = "var(--rc-surface-2)"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+              style={{ display: "flex", flexDirection: "column", gap: "14px", padding: "18px 18px 16px", border: "1px solid var(--rc-border)", borderRadius: "12px", background: "var(--rc-surface)", cursor: "pointer", textAlign: "left", fontFamily: "var(--font-inter)", boxShadow: "var(--rc-shadow-sm)", transition: "box-shadow 0.15s ease, border-color 0.15s ease" }}
+              onMouseEnter={(e) => { e.currentTarget.style.boxShadow = "var(--rc-shadow)"; e.currentTarget.style.borderColor = "var(--s-primary-subdued)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.boxShadow = "var(--rc-shadow-sm)"; e.currentTarget.style.borderColor = "var(--rc-border)"; }}
             >
-              <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "var(--rc-primary-light)", display: "flex", alignItems: "center", justifyContent: "center", color: "white", flexShrink: 0 }}>
-                {m.icon}
+              <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
+                <div style={{ width: "34px", height: "34px", borderRadius: "8px", background: "var(--rc-primary-subtle)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--rc-primary)", flexShrink: 0 }}>
+                  {m.icon}
+                </div>
+                <span style={{ fontSize: "13px", fontWeight: 600, color: pctColor, letterSpacing: "-0.02em" }}>{score}%</span>
               </div>
-              <span style={{ fontSize: "13.5px", fontWeight: 500, color: "var(--rc-ink)", letterSpacing: "-0.01em" }}>{m.label}</span>
+              <div>
+                <p style={{ fontSize: "13px", fontWeight: 600, color: "var(--rc-ink)", letterSpacing: "-0.02em", margin: 0, maxWidth: "none" }}>{m.label}</p>
+                <p style={{ fontSize: "12px", color: "var(--rc-faint)", margin: "4px 0 0", maxWidth: "none", lineHeight: 1.4 }}>{detail}</p>
+              </div>
               <div style={{ height: "3px", background: "var(--rc-border)", borderRadius: "100px", overflow: "hidden" }}>
-                <div style={{ width: `${score}%`, height: "100%", background: trackColor, borderRadius: "100px" }} />
+                <div style={{ width: `${score}%`, height: "100%", background: trackColor, borderRadius: "100px", transition: "width 0.6s cubic-bezier(0.16,1,0.3,1)" }} />
               </div>
-              <span style={{ fontSize: "13px", fontWeight: 700, color: pctColor, textAlign: "right", letterSpacing: "-0.02em" }}>{score}%</span>
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style={{ opacity: 0.22, flexShrink: 0 }}><path d="M4 2l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
             </button>
           );
         })}
@@ -2129,7 +2133,7 @@ function ModuleOverview({ moduleId, onSelectProperty, salesProps, mgmtProps, onA
             {(moduleId === "sales" || moduleId === "management") && (
               <button
                 onClick={() => setShowAdd(true)}
-                style={{ fontSize: "13px", fontWeight: 600, color: "white", background: "var(--rc-primary)", border: "none", borderRadius: "8px", padding: "9px 18px", cursor: "pointer", fontFamily: "var(--font-inter)", display: "flex", alignItems: "center", gap: "6px" }}
+                style={{ fontSize: "13px", fontWeight: 600, color: "white", background: "var(--rc-primary)", border: "none", borderRadius: "6px", padding: "8px 18px", cursor: "pointer", fontFamily: "var(--font-inter)", letterSpacing: "-0.01em", display: "flex", alignItems: "center", gap: "6px" }}
               >
                 <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M7 2v10M2 7h10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
                 Add property
@@ -2369,10 +2373,14 @@ const onboardingItems: OBItemConfig[] = [
 
 // --- Sub-page components ---
 
-const PAGE_WRAP: React.CSSProperties = { flex: 1, display: "flex", flexDirection: "column", height: "100vh", overflow: "hidden", padding: "32px 44px", gap: "22px" };
-const PAGE_HEADER: React.CSSProperties = { display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0, paddingBottom: "22px", borderBottom: "1px solid var(--rc-border)" };
-const PAGE_H1: React.CSSProperties = { fontSize: "1.15rem", fontWeight: 700, color: "var(--rc-ink)", letterSpacing: "-0.03em" };
-const PAGE_SUB: React.CSSProperties = { fontSize: "13px", color: "var(--rc-faint)", maxWidth: "none", marginTop: "3px" };
+const PAGE_WRAP: React.CSSProperties = { flex: 1, display: "flex", flexDirection: "column", height: "100vh", overflow: "hidden", padding: "36px 48px", gap: "24px" };
+const PAGE_HEADER: React.CSSProperties = { display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0, paddingBottom: "24px", borderBottom: "1px solid var(--rc-border)" };
+const PAGE_H1: React.CSSProperties = { fontSize: "1.3rem", fontWeight: 600, color: "var(--rc-ink)", letterSpacing: "-0.04em", lineHeight: 1.2 };
+const PAGE_SUB: React.CSSProperties = { fontSize: "13.5px", color: "var(--rc-faint)", maxWidth: "none", marginTop: "4px", lineHeight: 1.5 };
+const BTN_PRIMARY: React.CSSProperties = { fontSize: "13px", fontWeight: 600, color: "white", background: "var(--rc-primary)", border: "none", borderRadius: "6px", padding: "9px 18px", cursor: "pointer", fontFamily: "var(--font-inter)", letterSpacing: "-0.01em" };
+const BTN_GHOST: React.CSSProperties = { fontSize: "13px", fontWeight: 500, color: "var(--rc-faint)", background: "transparent", border: "none", cursor: "pointer", fontFamily: "var(--font-inter)", padding: 0 };
+const INP: React.CSSProperties = { fontSize: "13px", color: "var(--rc-ink)", background: "var(--rc-surface)", border: "1px solid var(--rc-border)", borderRadius: "6px", padding: "8px 12px", outline: "none", fontFamily: "var(--font-inter)", width: "100%", boxSizing: "border-box" };
+const LBL: React.CSSProperties = { fontSize: "12px", fontWeight: 600, color: "var(--rc-muted)", marginBottom: "5px", display: "block", letterSpacing: "0.01em" };
 
 function ScoreRing({ score, size = 100 }: { score: number; size?: number }) {
   const r = (size - 18) / 2;
@@ -6064,20 +6072,20 @@ function MonthlyTrustReportsPage() {
 // --- Settings pages ---
 
 const SETTINGS_INPUT: React.CSSProperties = {
-  width: "100%", padding: "11px 14px", borderRadius: "8px",
+  width: "100%", padding: "8px 12px", borderRadius: "6px",
   border: "1px solid var(--rc-border)", background: "var(--rc-surface)",
-  fontSize: "14px", color: "var(--rc-ink)", outline: "none",
+  fontSize: "13px", color: "var(--rc-ink)", outline: "none",
   fontFamily: "var(--font-inter)", transition: "border-color 0.15s ease",
 };
 
 const SETTINGS_BTN: React.CSSProperties = {
-  padding: "10px 22px", background: "var(--rc-primary)", color: "white",
-  border: "none", borderRadius: "8px", fontWeight: 600, fontSize: "14px",
+  padding: "9px 18px", background: "var(--rc-primary)", color: "white",
+  border: "none", borderRadius: "6px", fontWeight: 600, fontSize: "13px",
   cursor: "pointer", fontFamily: "var(--font-inter)",
 };
 
 const CARD: React.CSSProperties = {
-  border: "1px solid var(--rc-border)", borderRadius: "12px", overflow: "hidden", background: "#ffffff",
+  border: "1px solid var(--rc-border)", borderRadius: "8px", overflow: "hidden", background: "#ffffff",
 };
 
 function SettingsRow({ label, value }: { label: string; value: string }) {
@@ -6102,72 +6110,218 @@ function RoleBadge({ role }: { role: "super_user" | "standard" }) {
   );
 }
 
-function AccountSettingsPage({ agencyName, agencyAbn: agencyAbnProp, userEmail }: { agencyName: string; agencyAbn: string; userEmail: string | null }) {
+function AccountSettingsPage({ agencyName, agencyAbn: agencyAbnProp, userEmail, userRole }: { agencyName: string; agencyAbn: string; userEmail: string | null; userRole: "owner" | "standard" }) {
   const orgOwnerId = useContext(OrgContext);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Profile
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [displayName, setDisplayName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [jobTitle, setJobTitle] = useState("");
+  const [avatarHover, setAvatarHover] = useState(false);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [profileMsg, setProfileMsg] = useState("");
+
+  // Org
   const [agencyAbn, setAgencyAbn] = useState(agencyAbnProp);
+
+  // Password
   const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [pwLoading, setPwLoading] = useState(false);
   const [pwMsg, setPwMsg] = useState("");
 
   useEffect(() => {
-    if (!orgOwnerId) return;
-    supabase.from("organisations").select("abn").eq("owner_user_id", orgOwnerId).maybeSingle()
-      .then(({ data }) => { if (data?.abn) setAgencyAbn(data.abn); });
+    supabase.auth.getUser().then(({ data }) => {
+      const meta = data.user?.user_metadata ?? {};
+      setDisplayName(meta.display_name ?? "");
+      setPhone(meta.phone ?? "");
+      setJobTitle(meta.job_title ?? "");
+      if (meta.avatar_url) setAvatarUrl(meta.avatar_url);
+    });
+    if (orgOwnerId) {
+      supabase.from("organisations").select("abn").eq("owner_user_id", orgOwnerId).maybeSingle()
+        .then(({ data }) => { if (data?.abn) setAgencyAbn(data.abn); });
+    }
   }, [orgOwnerId]);
+
+  function resizeToDataUrl(file: File, size: number): Promise<string> {
+    return new Promise((resolve) => {
+      const img = new Image();
+      const objUrl = URL.createObjectURL(file);
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = size; canvas.height = size;
+        const ctx = canvas.getContext("2d")!;
+        const min = Math.min(img.width, img.height);
+        const sx = (img.width - min) / 2;
+        const sy = (img.height - min) / 2;
+        ctx.drawImage(img, sx, sy, min, min, 0, 0, size, size);
+        URL.revokeObjectURL(objUrl);
+        resolve(canvas.toDataURL("image/jpeg", 0.82));
+      };
+      img.src = objUrl;
+    });
+  }
+
+  async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setAvatarUploading(true);
+    const dataUrl = await resizeToDataUrl(file, 160);
+    await supabase.auth.updateUser({ data: { avatar_url: dataUrl } });
+    setAvatarUrl(dataUrl);
+    setAvatarUploading(false);
+  }
+
+  async function saveProfile(e: React.FormEvent) {
+    e.preventDefault();
+    setProfileSaving(true); setProfileMsg("");
+    const { error } = await supabase.auth.updateUser({ data: { display_name: displayName, phone, job_title: jobTitle } });
+    setProfileMsg(error ? error.message : "Profile saved.");
+    setProfileSaving(false);
+  }
 
   async function handleChangePassword(e: React.FormEvent) {
     e.preventDefault();
+    if (newPassword !== confirmPassword) { setPwMsg("Passwords do not match."); return; }
     setPwLoading(true); setPwMsg("");
     const { error } = await supabase.auth.updateUser({ password: newPassword });
     setPwMsg(error ? error.message : "Password updated successfully.");
     setPwLoading(false);
-    setNewPassword("");
+    setNewPassword(""); setConfirmPassword("");
   }
+
+  const initials = (displayName || userEmail || "?").split(/[\s@]/)[0].slice(0, 2).toUpperCase();
+  const sectionLabel: React.CSSProperties = { fontSize: "11.5px", fontWeight: 700, color: "var(--rc-faint)", textTransform: "uppercase" as const, letterSpacing: "0.06em", marginBottom: "12px", maxWidth: "none" };
 
   return (
     <div style={PAGE_WRAP}>
       <div style={PAGE_HEADER}>
         <div>
           <h1 style={PAGE_H1}>Account</h1>
-          <p style={PAGE_SUB}>Manage your agency details and login credentials.</p>
+          <p style={PAGE_SUB}>Manage your profile, agency details, and login credentials.</p>
         </div>
       </div>
 
-      <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: "24px", maxWidth: "640px" }}>
-        {/* Account info */}
+      <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: "28px", maxWidth: "640px" }}>
+
+        {/* Profile */}
         <div>
-          <p style={{ fontSize: "12px", fontWeight: 700, color: "var(--rc-faint)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "10px", maxWidth: "none" }}>Organisation</p>
+          <p style={sectionLabel}>Profile</p>
+          <div style={{ ...CARD, padding: "24px" }}>
+            {/* Avatar row */}
+            <div style={{ display: "flex", alignItems: "center", gap: "20px", marginBottom: "24px", paddingBottom: "24px", borderBottom: "1px solid var(--rc-border)" }}>
+              <div
+                onClick={() => fileInputRef.current?.click()}
+                onMouseEnter={() => setAvatarHover(true)}
+                onMouseLeave={() => setAvatarHover(false)}
+                style={{ position: "relative", width: "72px", height: "72px", borderRadius: "50%", cursor: "pointer", flexShrink: 0 }}
+              >
+                {avatarUrl ? (
+                  <img src={avatarUrl} alt="Profile" style={{ width: "72px", height: "72px", borderRadius: "50%", objectFit: "cover", border: "2px solid var(--rc-border)" }} />
+                ) : (
+                  <div style={{ width: "72px", height: "72px", borderRadius: "50%", background: "var(--rc-primary-subtle)", border: "2px solid var(--rc-border)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <span style={{ fontSize: "22px", fontWeight: 700, color: "var(--rc-primary)", letterSpacing: "-0.02em" }}>{initials}</span>
+                  </div>
+                )}
+                <div style={{ position: "absolute", inset: 0, borderRadius: "50%", background: "rgba(0,0,0,0.44)", display: "flex", alignItems: "center", justifyContent: "center", opacity: (avatarUploading || avatarHover) ? 1 : 0, transition: "opacity 0.15s" }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                    <circle cx="12" cy="13" r="4"/>
+                  </svg>
+                </div>
+              </div>
+              <input ref={fileInputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleAvatarChange} />
+              <div>
+                <p style={{ fontSize: "14px", fontWeight: 600, color: "var(--rc-ink)", marginBottom: "3px", maxWidth: "none" }}>{displayName || userEmail || "Your profile"}</p>
+                <p style={{ fontSize: "12.5px", color: "var(--rc-faint)", maxWidth: "none", marginBottom: "8px" }}>Click photo to change</p>
+                <RoleBadge role={userRole === "owner" ? "super_user" : "standard"} />
+              </div>
+            </div>
+
+            {/* Editable fields */}
+            <form onSubmit={saveProfile} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
+                <div>
+                  <label style={LBL}>Display name</label>
+                  <input type="text" value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder="Your name" style={SETTINGS_INPUT}
+                    onFocus={(e) => (e.target.style.borderColor = "var(--rc-primary)")} onBlur={(e) => (e.target.style.borderColor = "var(--rc-border)")} />
+                </div>
+                <div>
+                  <label style={LBL}>Position / title</label>
+                  <input type="text" value={jobTitle} onChange={(e) => setJobTitle(e.target.value)} placeholder="e.g. Principal, PM" style={SETTINGS_INPUT}
+                    onFocus={(e) => (e.target.style.borderColor = "var(--rc-primary)")} onBlur={(e) => (e.target.style.borderColor = "var(--rc-border)")} />
+                </div>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
+                <div>
+                  <label style={LBL}>Email</label>
+                  <input type="email" value={userEmail ?? ""} disabled style={{ ...SETTINGS_INPUT, background: "var(--rc-surface-2)", color: "var(--rc-faint)", cursor: "not-allowed" }} />
+                </div>
+                <div>
+                  <label style={LBL}>Phone</label>
+                  <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="04xx xxx xxx" style={SETTINGS_INPUT}
+                    onFocus={(e) => (e.target.style.borderColor = "var(--rc-primary)")} onBlur={(e) => (e.target.style.borderColor = "var(--rc-border)")} />
+                </div>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                <button type="submit" disabled={profileSaving} style={{ ...SETTINGS_BTN, opacity: profileSaving ? 0.7 : 1, cursor: profileSaving ? "not-allowed" : "pointer" }}>
+                  {profileSaving ? "Saving…" : "Save profile"}
+                </button>
+                {profileMsg && <p style={{ fontSize: "12.5px", color: profileMsg.includes("saved") ? "var(--rc-primary)" : "oklch(0.55 0.18 25)", maxWidth: "none", margin: 0 }}>{profileMsg}</p>}
+              </div>
+            </form>
+          </div>
+        </div>
+
+        {/* Organisation */}
+        <div>
+          <p style={sectionLabel}>Organisation</p>
           <div style={CARD}>
             <SettingsRow label="Agency name" value={agencyName} />
             <SettingsRow label="ABN" value={agencyAbn ? agencyAbn.replace(/^(\d{2})(\d{3})(\d{3})(\d{3})$/, "$1 $2 $3 $4") : "—"} />
             <SettingsRow label="Account email" value={userEmail ?? "—"} />
-            <div style={{ padding: "16px 24px", display: "flex", alignItems: "center" }}>
-              <span style={{ width: "180px", fontSize: "13px", fontWeight: 500, color: "var(--rc-muted)", flexShrink: 0 }}>Role</span>
-              <RoleBadge role="super_user" />
-            </div>
           </div>
         </div>
 
-        {/* Change password */}
+        {/* Security */}
         <div>
-          <p style={{ fontSize: "12px", fontWeight: 700, color: "var(--rc-faint)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "10px", maxWidth: "none" }}>Security</p>
+          <p style={sectionLabel}>Security</p>
           <div style={{ ...CARD, padding: "24px", display: "flex", flexDirection: "column", gap: "16px", overflow: "visible" }}>
             <div>
               <p style={{ fontSize: "14px", fontWeight: 600, color: "var(--rc-ink)", marginBottom: "4px", maxWidth: "none" }}>Change password</p>
               <p style={{ fontSize: "13px", color: "var(--rc-muted)", maxWidth: "none" }}>Choose a strong password of at least 6 characters.</p>
             </div>
-            <form onSubmit={handleChangePassword} style={{ display: "flex", gap: "12px", alignItems: "flex-start", flexWrap: "wrap" }}>
-              <input type="password" required minLength={6} value={newPassword} onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="New password" style={{ ...SETTINGS_INPUT, flex: 1, minWidth: "220px" }}
-                onFocus={(e) => (e.target.style.borderColor = "var(--rc-primary)")}
-                onBlur={(e) => (e.target.style.borderColor = "var(--rc-border)")} />
-              <button type="submit" disabled={pwLoading} style={{ ...SETTINGS_BTN, opacity: pwLoading ? 0.7 : 1, cursor: pwLoading ? "not-allowed" : "pointer", whiteSpace: "nowrap" }}>
-                {pwLoading ? "Updating…" : "Update password"}
-              </button>
+            <form onSubmit={handleChangePassword} style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
+                <div>
+                  <label style={LBL}>New password</label>
+                  <input type="password" required minLength={6} value={newPassword} onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="New password" style={SETTINGS_INPUT}
+                    onFocus={(e) => (e.target.style.borderColor = "var(--rc-primary)")}
+                    onBlur={(e) => (e.target.style.borderColor = "var(--rc-border)")} />
+                </div>
+                <div>
+                  <label style={LBL}>Confirm password</label>
+                  <input type="password" required minLength={6} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Confirm password" style={SETTINGS_INPUT}
+                    onFocus={(e) => (e.target.style.borderColor = "var(--rc-primary)")}
+                    onBlur={(e) => (e.target.style.borderColor = "var(--rc-border)")} />
+                </div>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                <button type="submit" disabled={pwLoading} style={{ ...SETTINGS_BTN, opacity: pwLoading ? 0.7 : 1, cursor: pwLoading ? "not-allowed" : "pointer" }}>
+                  {pwLoading ? "Updating…" : "Update password"}
+                </button>
+                {pwMsg && <p style={{ fontSize: "12.5px", color: pwMsg.includes("successfully") ? "var(--rc-primary)" : "oklch(0.55 0.18 25)", maxWidth: "none", margin: 0 }}>{pwMsg}</p>}
+              </div>
             </form>
-            {pwMsg && <p style={{ fontSize: "13px", color: pwMsg.includes("successfully") ? "var(--rc-primary)" : "oklch(0.55 0.18 25)", maxWidth: "none", margin: 0 }}>{pwMsg}</p>}
           </div>
         </div>
+
       </div>
     </div>
   );
@@ -6507,8 +6661,8 @@ function GiftRegisterPage() {
     setRows(p => p.filter(r => r.id !== id));
   }
 
-  const inp: React.CSSProperties = { fontSize: "13px", color: "var(--rc-ink)", background: "var(--rc-surface)", border: "1px solid var(--rc-border)", borderRadius: "8px", padding: "9px 12px", outline: "none", fontFamily: "var(--font-inter)", width: "100%", boxSizing: "border-box" };
-  const lbl: React.CSSProperties = { fontSize: "12px", fontWeight: 600, color: "var(--rc-muted)", marginBottom: "5px", display: "block" };
+  const inp: React.CSSProperties = { fontSize: "13px", color: "var(--rc-ink)", background: "#fff", border: "1px solid var(--rc-border)", borderRadius: "6px", padding: "8px 12px", outline: "none", fontFamily: "var(--font-inter)", width: "100%", boxSizing: "border-box", transition: "border-color 0.15s" };
+  const lbl: React.CSSProperties = { fontSize: "11.5px", fontWeight: 600, color: "var(--rc-faint)", marginBottom: "5px", display: "block", letterSpacing: "0.03em", textTransform: "uppercase" };
   const actionColors: Record<string, string> = { "Kept & Disclosed": "oklch(0.42 0.12 145)", "Donated": "oklch(0.48 0.15 250)", "Returned": "oklch(0.50 0.18 55)", "Referred to Principal": "oklch(0.50 0.22 264)" };
 
   return (
@@ -6518,13 +6672,13 @@ function GiftRegisterPage() {
           <h1 style={PAGE_H1}>Gift Register</h1>
           <p style={PAGE_SUB}>Record all gifts and benefits received by staff — required for transparency and conflicts-of-interest compliance</p>
         </div>
-        <button onClick={() => { setShowAdd(p => !p); setError(""); }} style={{ fontSize: "13px", fontWeight: 600, color: "white", background: "var(--rc-primary)", border: "none", borderRadius: "8px", padding: "9px 18px", cursor: "pointer", fontFamily: "var(--font-inter)" }}>
+        <button onClick={() => { setShowAdd(p => !p); setError(""); }} style={{ fontSize: "13px", fontWeight: 600, color: "white", background: "var(--rc-primary)", border: "none", borderRadius: "6px", padding: "8px 18px", cursor: "pointer", fontFamily: "var(--font-inter)", letterSpacing: "-0.01em" }}>
           {showAdd ? "Cancel" : "+ Log Gift"}
         </button>
       </div>
 
       {showAdd && (
-        <div style={{ background: "var(--rc-surface)", border: "1px solid var(--rc-border)", borderRadius: "12px", padding: "24px 28px", display: "flex", flexDirection: "column", gap: "16px", flexShrink: 0 }}>
+        <div style={{ background: "var(--rc-surface)", border: "1px solid var(--rc-border)", borderRadius: "10px", padding: "22px 24px", display: "flex", flexDirection: "column", gap: "16px", flexShrink: 0 }}>
           <p style={{ fontSize: "13.5px", fontWeight: 700, color: "var(--rc-ink)", margin: 0 }}>New Gift Entry</p>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "14px" }}>
             <div><label style={lbl}>Date Received *</label><input type="date" value={form.date_received} onChange={e => setF("date_received", e.target.value)} style={{ ...inp, colorScheme: "light" }} /></div>
@@ -6544,7 +6698,7 @@ function GiftRegisterPage() {
           <div><label style={lbl}>Notes</label><textarea rows={2} placeholder="Any additional context" value={form.notes} onChange={e => setF("notes", e.target.value)} style={{ ...inp, resize: "vertical" }} /></div>
           {error && <p style={{ fontSize: "13px", color: "oklch(0.55 0.18 25)", margin: 0, maxWidth: "none" }}>{error}</p>}
           <div style={{ display: "flex", justifyContent: "flex-end" }}>
-            <button onClick={save} disabled={saving} style={{ fontSize: "13px", fontWeight: 600, color: "white", background: "var(--rc-primary)", border: "none", borderRadius: "8px", padding: "9px 22px", cursor: saving ? "not-allowed" : "pointer", opacity: saving ? 0.7 : 1, fontFamily: "var(--font-inter)" }}>
+            <button onClick={save} disabled={saving} style={{ fontSize: "13px", fontWeight: 600, color: "white", background: "var(--rc-primary)", border: "none", borderRadius: "6px", padding: "8px 20px", cursor: saving ? "not-allowed" : "pointer", opacity: saving ? 0.7 : 1, fontFamily: "var(--font-inter)", letterSpacing: "-0.01em" }}>
               {saving ? "Saving…" : "Save Entry"}
             </button>
           </div>
@@ -6561,7 +6715,7 @@ function GiftRegisterPage() {
             <thead>
               <tr style={{ borderBottom: "1px solid var(--rc-border)" }}>
                 {["Date", "Received From", "Received By", "Description", "Value", "Action", ""].map(h => (
-                  <th key={h} style={{ textAlign: "left", padding: "10px 14px", fontSize: "11px", fontWeight: 700, color: "var(--rc-faint)", textTransform: "uppercase", letterSpacing: "0.05em", whiteSpace: "nowrap" }}>{h}</th>
+                  <th key={h} style={{ textAlign: "left", padding: "10px 14px", fontSize: "10.5px", fontWeight: 700, color: "var(--rc-faint)", textTransform: "uppercase", letterSpacing: "0.07em", whiteSpace: "nowrap" }}>{h}</th>
                 ))}
               </tr>
             </thead>
@@ -6627,8 +6781,8 @@ function IncidentRegisterPage() {
     setRows(p => p.filter(r => r.id !== id));
   }
 
-  const inp: React.CSSProperties = { fontSize: "13px", color: "var(--rc-ink)", background: "var(--rc-surface)", border: "1px solid var(--rc-border)", borderRadius: "8px", padding: "9px 12px", outline: "none", fontFamily: "var(--font-inter)", width: "100%", boxSizing: "border-box" };
-  const lbl: React.CSSProperties = { fontSize: "12px", fontWeight: 600, color: "var(--rc-muted)", marginBottom: "5px", display: "block" };
+  const inp: React.CSSProperties = { fontSize: "13px", color: "var(--rc-ink)", background: "#fff", border: "1px solid var(--rc-border)", borderRadius: "6px", padding: "8px 12px", outline: "none", fontFamily: "var(--font-inter)", width: "100%", boxSizing: "border-box", transition: "border-color 0.15s" };
+  const lbl: React.CSSProperties = { fontSize: "11.5px", fontWeight: 600, color: "var(--rc-faint)", marginBottom: "5px", display: "block", letterSpacing: "0.03em", textTransform: "uppercase" };
   const typeColors: Record<string, string> = { "WHS Incident": "oklch(0.55 0.18 25)", "Near Miss": "oklch(0.50 0.18 55)", "Client Complaint": "oklch(0.48 0.15 250)", "Data Breach": "oklch(0.42 0.22 330)", "Property Damage": "oklch(0.44 0.12 200)", "Other": "var(--rc-faint)" };
 
   return (
@@ -6638,13 +6792,13 @@ function IncidentRegisterPage() {
           <h1 style={PAGE_H1}>Incident Register</h1>
           <p style={PAGE_SUB}>Record workplace incidents, near misses, client complaints and data breaches as required by WHS and privacy obligations</p>
         </div>
-        <button onClick={() => { setShowAdd(p => !p); setError(""); }} style={{ fontSize: "13px", fontWeight: 600, color: "white", background: "var(--rc-primary)", border: "none", borderRadius: "8px", padding: "9px 18px", cursor: "pointer", fontFamily: "var(--font-inter)" }}>
+        <button onClick={() => { setShowAdd(p => !p); setError(""); }} style={{ fontSize: "13px", fontWeight: 600, color: "white", background: "var(--rc-primary)", border: "none", borderRadius: "6px", padding: "8px 18px", cursor: "pointer", fontFamily: "var(--font-inter)", letterSpacing: "-0.01em" }}>
           {showAdd ? "Cancel" : "+ Log Incident"}
         </button>
       </div>
 
       {showAdd && (
-        <div style={{ background: "var(--rc-surface)", border: "1px solid var(--rc-border)", borderRadius: "12px", padding: "24px 28px", display: "flex", flexDirection: "column", gap: "16px", flexShrink: 0 }}>
+        <div style={{ background: "var(--rc-surface)", border: "1px solid var(--rc-border)", borderRadius: "10px", padding: "22px 24px", display: "flex", flexDirection: "column", gap: "16px", flexShrink: 0 }}>
           <p style={{ fontSize: "13.5px", fontWeight: 700, color: "var(--rc-ink)", margin: 0 }}>New Incident Entry</p>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "14px" }}>
             <div><label style={lbl}>Incident Date *</label><input type="date" value={form.incident_date} onChange={e => setF("incident_date", e.target.value)} style={{ ...inp, colorScheme: "light" }} /></div>
@@ -6678,7 +6832,7 @@ function IncidentRegisterPage() {
           </div>
           {error && <p style={{ fontSize: "13px", color: "oklch(0.55 0.18 25)", margin: 0, maxWidth: "none" }}>{error}</p>}
           <div style={{ display: "flex", justifyContent: "flex-end" }}>
-            <button onClick={save} disabled={saving} style={{ fontSize: "13px", fontWeight: 600, color: "white", background: "var(--rc-primary)", border: "none", borderRadius: "8px", padding: "9px 22px", cursor: saving ? "not-allowed" : "pointer", opacity: saving ? 0.7 : 1, fontFamily: "var(--font-inter)" }}>
+            <button onClick={save} disabled={saving} style={{ fontSize: "13px", fontWeight: 600, color: "white", background: "var(--rc-primary)", border: "none", borderRadius: "6px", padding: "8px 20px", cursor: saving ? "not-allowed" : "pointer", opacity: saving ? 0.7 : 1, fontFamily: "var(--font-inter)", letterSpacing: "-0.01em" }}>
               {saving ? "Saving…" : "Save Entry"}
             </button>
           </div>
@@ -6695,7 +6849,7 @@ function IncidentRegisterPage() {
             <thead>
               <tr style={{ borderBottom: "1px solid var(--rc-border)" }}>
                 {["Date", "Type", "Description", "Location", "Reported To", "Notifiable", ""].map(h => (
-                  <th key={h} style={{ textAlign: "left", padding: "10px 14px", fontSize: "11px", fontWeight: 700, color: "var(--rc-faint)", textTransform: "uppercase", letterSpacing: "0.05em", whiteSpace: "nowrap" }}>{h}</th>
+                  <th key={h} style={{ textAlign: "left", padding: "10px 14px", fontSize: "10.5px", fontWeight: 700, color: "var(--rc-faint)", textTransform: "uppercase", letterSpacing: "0.07em", whiteSpace: "nowrap" }}>{h}</th>
                 ))}
               </tr>
             </thead>
@@ -6778,8 +6932,8 @@ function RiskRegisterPage() {
     setRows(p => p.map(r => r.id === id ? { ...r, status } : r));
   }
 
-  const inp: React.CSSProperties = { fontSize: "13px", color: "var(--rc-ink)", background: "var(--rc-surface)", border: "1px solid var(--rc-border)", borderRadius: "8px", padding: "9px 12px", outline: "none", fontFamily: "var(--font-inter)", width: "100%", boxSizing: "border-box" };
-  const lbl: React.CSSProperties = { fontSize: "12px", fontWeight: 600, color: "var(--rc-muted)", marginBottom: "5px", display: "block" };
+  const inp: React.CSSProperties = { fontSize: "13px", color: "var(--rc-ink)", background: "#fff", border: "1px solid var(--rc-border)", borderRadius: "6px", padding: "8px 12px", outline: "none", fontFamily: "var(--font-inter)", width: "100%", boxSizing: "border-box", transition: "border-color 0.15s" };
+  const lbl: React.CSSProperties = { fontSize: "11.5px", fontWeight: 600, color: "var(--rc-faint)", marginBottom: "5px", display: "block", letterSpacing: "0.03em", textTransform: "uppercase" };
   const ratingColor = (r: string) => r === "Critical" ? "oklch(0.50 0.22 25)" : r === "High" ? "oklch(0.52 0.18 45)" : r === "Medium" ? "oklch(0.50 0.18 75)" : "oklch(0.42 0.12 145)";
   const statusColor = (s: string) => s === "Open" ? "oklch(0.55 0.18 25)" : s === "Under Review" ? "oklch(0.50 0.18 55)" : s === "Mitigated" ? "oklch(0.48 0.15 250)" : "oklch(0.42 0.12 145)";
 
@@ -6790,13 +6944,13 @@ function RiskRegisterPage() {
           <h1 style={PAGE_H1}>Risk Register</h1>
           <p style={PAGE_SUB}>Identify, assess and track business risks — rated by likelihood and consequence</p>
         </div>
-        <button onClick={() => { setShowAdd(p => !p); setError(""); }} style={{ fontSize: "13px", fontWeight: 600, color: "white", background: "var(--rc-primary)", border: "none", borderRadius: "8px", padding: "9px 18px", cursor: "pointer", fontFamily: "var(--font-inter)" }}>
+        <button onClick={() => { setShowAdd(p => !p); setError(""); }} style={{ fontSize: "13px", fontWeight: 600, color: "white", background: "var(--rc-primary)", border: "none", borderRadius: "6px", padding: "8px 18px", cursor: "pointer", fontFamily: "var(--font-inter)", letterSpacing: "-0.01em" }}>
           {showAdd ? "Cancel" : "+ Add Risk"}
         </button>
       </div>
 
       {showAdd && (
-        <div style={{ background: "var(--rc-surface)", border: "1px solid var(--rc-border)", borderRadius: "12px", padding: "24px 28px", display: "flex", flexDirection: "column", gap: "16px", flexShrink: 0 }}>
+        <div style={{ background: "var(--rc-surface)", border: "1px solid var(--rc-border)", borderRadius: "10px", padding: "22px 24px", display: "flex", flexDirection: "column", gap: "16px", flexShrink: 0 }}>
           <p style={{ fontSize: "13.5px", fontWeight: 700, color: "var(--rc-ink)", margin: 0 }}>New Risk Entry</p>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: "14px" }}>
             <div>
@@ -6836,7 +6990,7 @@ function RiskRegisterPage() {
           </div>
           {error && <p style={{ fontSize: "13px", color: "oklch(0.55 0.18 25)", margin: 0, maxWidth: "none" }}>{error}</p>}
           <div style={{ display: "flex", justifyContent: "flex-end" }}>
-            <button onClick={save} disabled={saving} style={{ fontSize: "13px", fontWeight: 600, color: "white", background: "var(--rc-primary)", border: "none", borderRadius: "8px", padding: "9px 22px", cursor: saving ? "not-allowed" : "pointer", opacity: saving ? 0.7 : 1, fontFamily: "var(--font-inter)" }}>
+            <button onClick={save} disabled={saving} style={{ fontSize: "13px", fontWeight: 600, color: "white", background: "var(--rc-primary)", border: "none", borderRadius: "6px", padding: "8px 20px", cursor: saving ? "not-allowed" : "pointer", opacity: saving ? 0.7 : 1, fontFamily: "var(--font-inter)" }}>
               {saving ? "Saving…" : "Save Risk"}
             </button>
           </div>
@@ -6853,7 +7007,7 @@ function RiskRegisterPage() {
             <thead>
               <tr style={{ borderBottom: "1px solid var(--rc-border)" }}>
                 {["Ref", "Category", "Description", "Rating", "Owner", "Review", "Status", ""].map(h => (
-                  <th key={h} style={{ textAlign: "left", padding: "10px 14px", fontSize: "11px", fontWeight: 700, color: "var(--rc-faint)", textTransform: "uppercase", letterSpacing: "0.05em", whiteSpace: "nowrap" }}>{h}</th>
+                  <th key={h} style={{ textAlign: "left", padding: "10px 14px", fontSize: "10.5px", fontWeight: 700, color: "var(--rc-faint)", textTransform: "uppercase", letterSpacing: "0.07em", whiteSpace: "nowrap" }}>{h}</th>
                 ))}
               </tr>
             </thead>
@@ -6933,8 +7087,8 @@ function ComplaintsRegisterPage({ userRole }: { userRole: "owner" | "standard" }
     setRows(p => p.filter(r => r.id !== id));
   }
 
-  const inp: React.CSSProperties = { fontSize: "13px", color: "var(--rc-ink)", background: "var(--rc-surface)", border: "1px solid var(--rc-border)", borderRadius: "8px", padding: "9px 12px", outline: "none", fontFamily: "var(--font-inter)", width: "100%", boxSizing: "border-box" };
-  const lbl: React.CSSProperties = { fontSize: "12px", fontWeight: 600, color: "var(--rc-muted)", marginBottom: "5px", display: "block" };
+  const inp: React.CSSProperties = { fontSize: "13px", color: "var(--rc-ink)", background: "#fff", border: "1px solid var(--rc-border)", borderRadius: "6px", padding: "8px 12px", outline: "none", fontFamily: "var(--font-inter)", width: "100%", boxSizing: "border-box", transition: "border-color 0.15s" };
+  const lbl: React.CSSProperties = { fontSize: "11.5px", fontWeight: 600, color: "var(--rc-faint)", marginBottom: "5px", display: "block", letterSpacing: "0.03em", textTransform: "uppercase" };
   const statusColor = (s: string) => s === "Open" ? "oklch(0.55 0.18 25)" : s === "In Progress" ? "oklch(0.50 0.18 55)" : s === "Resolved" ? "oklch(0.42 0.12 145)" : "oklch(0.48 0.15 250)";
   const categories = ["Service Quality", "Misrepresentation", "Agent Conduct", "Trust Accounting", "Advertising", "Disclosure", "Fees & Charges", "Other"];
 
@@ -6945,7 +7099,7 @@ function ComplaintsRegisterPage({ userRole }: { userRole: "owner" | "standard" }
           <h1 style={PAGE_H1}>Complaints Register</h1>
           <p style={PAGE_SUB}>Log and track client and staff complaints — required for NSW Fair Trading compliance. Complaints can be lodged anonymously.</p>
         </div>
-        <button onClick={() => { setShowAdd(p => !p); setError(""); setSaved(false); }} style={{ fontSize: "13px", fontWeight: 600, color: "white", background: "var(--rc-primary)", border: "none", borderRadius: "8px", padding: "9px 18px", cursor: "pointer", fontFamily: "var(--font-inter)" }}>
+        <button onClick={() => { setShowAdd(p => !p); setError(""); setSaved(false); }} style={{ fontSize: "13px", fontWeight: 600, color: "white", background: "var(--rc-primary)", border: "none", borderRadius: "6px", padding: "8px 18px", cursor: "pointer", fontFamily: "var(--font-inter)", letterSpacing: "-0.01em" }}>
           {showAdd ? "Cancel" : "+ Lodge Complaint"}
         </button>
       </div>
@@ -6957,7 +7111,7 @@ function ComplaintsRegisterPage({ userRole }: { userRole: "owner" | "standard" }
       )}
 
       {showAdd && (
-        <div style={{ background: "var(--rc-surface)", border: "1px solid var(--rc-border)", borderRadius: "12px", padding: "24px 28px", display: "flex", flexDirection: "column", gap: "16px", flexShrink: 0 }}>
+        <div style={{ background: "var(--rc-surface)", border: "1px solid var(--rc-border)", borderRadius: "10px", padding: "22px 24px", display: "flex", flexDirection: "column", gap: "16px", flexShrink: 0 }}>
           <p style={{ fontSize: "13.5px", fontWeight: 700, color: "var(--rc-ink)", margin: 0 }}>New Complaint</p>
 
           {/* Anonymous toggle */}
@@ -7004,7 +7158,7 @@ function ComplaintsRegisterPage({ userRole }: { userRole: "owner" | "standard" }
 
           {error && <p style={{ fontSize: "13px", color: "oklch(0.55 0.18 25)", margin: 0, maxWidth: "none" }}>{error}</p>}
           <div style={{ display: "flex", justifyContent: "flex-end" }}>
-            <button onClick={save} disabled={saving} style={{ fontSize: "13px", fontWeight: 600, color: "white", background: "var(--rc-primary)", border: "none", borderRadius: "8px", padding: "9px 22px", cursor: saving ? "not-allowed" : "pointer", opacity: saving ? 0.7 : 1, fontFamily: "var(--font-inter)" }}>
+            <button onClick={save} disabled={saving} style={{ fontSize: "13px", fontWeight: 600, color: "white", background: "var(--rc-primary)", border: "none", borderRadius: "6px", padding: "8px 20px", cursor: saving ? "not-allowed" : "pointer", opacity: saving ? 0.7 : 1, fontFamily: "var(--font-inter)" }}>
               {saving ? "Lodging…" : "Lodge Complaint"}
             </button>
           </div>
@@ -7027,7 +7181,7 @@ function ComplaintsRegisterPage({ userRole }: { userRole: "owner" | "standard" }
               <thead>
                 <tr style={{ borderBottom: "1px solid var(--rc-border)" }}>
                   {["Date", "Complainant", "Category", "Description", "Staff", "Status", "Resolved", ""].map(h => (
-                    <th key={h} style={{ textAlign: "left", padding: "10px 14px", fontSize: "11px", fontWeight: 700, color: "var(--rc-faint)", textTransform: "uppercase", letterSpacing: "0.05em", whiteSpace: "nowrap" }}>{h}</th>
+                    <th key={h} style={{ textAlign: "left", padding: "10px 14px", fontSize: "10.5px", fontWeight: 700, color: "var(--rc-faint)", textTransform: "uppercase", letterSpacing: "0.07em", whiteSpace: "nowrap" }}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -7160,8 +7314,8 @@ function MeetingDiaryPage({ staffRows, userEmail, userRole }: { staffRows: Staff
     if (expanded === id) setExpanded(null);
   }
 
-  const inp: React.CSSProperties = { fontSize: "13px", color: "var(--rc-ink)", background: "var(--rc-surface)", border: "1px solid var(--rc-border)", borderRadius: "8px", padding: "9px 12px", outline: "none", fontFamily: "var(--font-inter)", width: "100%", boxSizing: "border-box" };
-  const lbl: React.CSSProperties = { fontSize: "12px", fontWeight: 600, color: "var(--rc-muted)", marginBottom: "5px", display: "block" };
+  const inp: React.CSSProperties = { fontSize: "13px", color: "var(--rc-ink)", background: "#fff", border: "1px solid var(--rc-border)", borderRadius: "6px", padding: "8px 12px", outline: "none", fontFamily: "var(--font-inter)", width: "100%", boxSizing: "border-box", transition: "border-color 0.15s" };
+  const lbl: React.CSSProperties = { fontSize: "11.5px", fontWeight: 600, color: "var(--rc-faint)", marginBottom: "5px", display: "block", letterSpacing: "0.03em", textTransform: "uppercase" };
   const meetingTypes = ["Staff Meeting", "One-on-One", "Principal Meeting", "Department Meeting", "Training Session", "External Meeting"];
 
   return (
@@ -7171,7 +7325,7 @@ function MeetingDiaryPage({ staffRows, userEmail, userRole }: { staffRows: Staff
           <h1 style={PAGE_H1}>Meeting Diary</h1>
           <p style={PAGE_SUB}>Record staff meetings, one-on-ones and training sessions — including attendees, notes and action items</p>
         </div>
-        <button onClick={() => { setShowAdd(p => !p); setError(""); }} style={{ fontSize: "13px", fontWeight: 600, color: "white", background: "var(--rc-primary)", border: "none", borderRadius: "8px", padding: "9px 18px", cursor: "pointer", fontFamily: "var(--font-inter)" }}>
+        <button onClick={() => { setShowAdd(p => !p); setError(""); }} style={{ fontSize: "13px", fontWeight: 600, color: "white", background: "var(--rc-primary)", border: "none", borderRadius: "6px", padding: "8px 18px", cursor: "pointer", fontFamily: "var(--font-inter)", letterSpacing: "-0.01em" }}>
           {showAdd ? "Cancel" : "+ Add Meeting"}
         </button>
       </div>
@@ -7272,7 +7426,7 @@ function MeetingDiaryPage({ staffRows, userEmail, userRole }: { staffRows: Staff
 
           {error && <p style={{ fontSize: "13px", color: "oklch(0.55 0.18 25)", margin: 0, maxWidth: "none" }}>{error}</p>}
           <div style={{ display: "flex", justifyContent: "flex-end" }}>
-            <button onClick={save} disabled={saving} style={{ fontSize: "13px", fontWeight: 600, color: "white", background: "var(--rc-primary)", border: "none", borderRadius: "8px", padding: "9px 22px", cursor: saving ? "not-allowed" : "pointer", opacity: saving ? 0.7 : 1, fontFamily: "var(--font-inter)" }}>
+            <button onClick={save} disabled={saving} style={{ fontSize: "13px", fontWeight: 600, color: "white", background: "var(--rc-primary)", border: "none", borderRadius: "6px", padding: "8px 20px", cursor: saving ? "not-allowed" : "pointer", opacity: saving ? 0.7 : 1, fontFamily: "var(--font-inter)" }}>
               {saving ? "Saving…" : "Save Meeting"}
             </button>
           </div>
@@ -7365,7 +7519,7 @@ function StaticSubPage({ label, agencyName, agencyAbn, userEmail, userId, userRo
     case "Audit Reports":           return <AuditReportsPage />;
     case "Transaction Log":         return <TransactionLogPage />;
     case "AML Compliance":          return <AMLCompliancePage />;
-    case "Account":                 return <AccountSettingsPage agencyName={agencyName} agencyAbn={agencyAbn} userEmail={userEmail} />;
+    case "Account":                 return <AccountSettingsPage agencyName={agencyName} agencyAbn={agencyAbn} userEmail={userEmail} userRole={userRole} />;
     case "Billing":                 return <BillingSettingsPage userId={userId} />;
     case "Team & Invites":          return <TeamInvitesPage userId={userId} agencyName={agencyName} staffRows={staffRows} />;
     case "Gift Register":           return <GiftRegisterPage />;
@@ -7524,8 +7678,12 @@ export default function DashboardPage() {
     { id: "settings", label: "Settings", icon: <SettingsIcon />, type: "static", children: ["Account", "Billing", "Team & Invites"] },
   ];
 
-  // Standard users cannot access Trust Accounting or Settings
-  const modules = userRole === "owner" ? allModules : allModules.filter(m => m.id !== "trust" && m.id !== "settings");
+  // Standard users cannot access Trust Accounting; Settings limited to Account sub-module only
+  const modules = userRole === "owner"
+    ? allModules
+    : allModules
+        .filter(m => m.id !== "trust")
+        .map(m => m.id === "settings" ? { ...m, children: ["Account"] } : m);
 
   const module = modules.find((m) => m.id === activeModule) ?? null;
 
@@ -7540,41 +7698,41 @@ export default function DashboardPage() {
     <OrgContext.Provider value={orgOwnerId}>
       <div style={{ display: "flex", minHeight: "100svh", background: "var(--rc-page)" }}>
       {/* Sidebar */}
-      <aside style={{ width: "252px", flexShrink: 0, background: "var(--rc-nav)", borderRight: "1px solid var(--rc-nav-border)", display: "flex", flexDirection: "column", position: "fixed", top: 0, left: 0, bottom: 0, overflowY: "auto", zIndex: 10 }}>
-        {/* Logo */}
-        <div style={{ padding: "18px 18px 14px", flexShrink: 0 }}>
-          <img src="/dashboardtitle.png" alt="RealComply" style={{ height: "52px", width: "auto", objectFit: "contain", maxWidth: "216px" }} />
+      <aside style={{ width: "240px", flexShrink: 0, background: "var(--rc-nav)", display: "flex", flexDirection: "column", position: "fixed", top: 0, left: 0, bottom: 0, overflowY: "auto", zIndex: 10 }}>
+        {/* Logo — white strip so dark logo stays visible */}
+        <div style={{ padding: "16px 20px", flexShrink: 0, background: "#ffffff", borderBottom: "1px solid #e8eaf0" }}>
+          <img src="/dashboardtitle.png" alt="RealComply" style={{ height: "44px", width: "auto", objectFit: "contain", maxWidth: "200px" }} />
         </div>
 
         {/* Overview — always visible */}
-        <div style={{ padding: "0 10px 4px", flexShrink: 0 }}>
+        <div style={{ padding: "8px 8px 0", flexShrink: 0 }}>
           <button
             onClick={goBack}
-            style={{ width: "100%", display: "flex", alignItems: "center", gap: "10px", padding: "9px 12px", borderRadius: "8px", border: "none", background: !activeModule ? "var(--rc-primary-light)" : "transparent", color: !activeModule ? "white" : "var(--rc-nav-text)", fontSize: "13px", fontWeight: !activeModule ? 700 : 500, cursor: "pointer", textAlign: "left", fontFamily: "var(--font-inter)", transition: "background 0.12s ease, color 0.12s ease" }}
-            onMouseEnter={(e) => { if (activeModule) { e.currentTarget.style.background = "var(--rc-nav-hover)"; e.currentTarget.style.color = "#8c52ff"; } }}
+            style={{ width: "100%", display: "flex", alignItems: "center", gap: "9px", padding: "8px 12px", borderRadius: "7px", border: "none", background: !activeModule ? "var(--rc-nav-active-bg)" : "transparent", color: !activeModule ? "white" : "var(--rc-nav-text)", fontSize: "13px", fontWeight: !activeModule ? 600 : 400, cursor: "pointer", textAlign: "left", fontFamily: "var(--font-inter)", transition: "background 0.12s ease, color 0.12s ease" }}
+            onMouseEnter={(e) => { if (activeModule) { e.currentTarget.style.background = "var(--rc-nav-hover)"; e.currentTarget.style.color = "rgba(255,255,255,0.95)"; } }}
             onMouseLeave={(e) => { if (activeModule) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--rc-nav-text)"; } }}
           >
-            <span style={{ flexShrink: 0, color: !activeModule ? "rgba(255,255,255,0.8)" : "var(--rc-faint)" }}>
-              <svg width="16" height="16" viewBox="0 0 18 18" fill="none"><path d="M2 9L9 2l7 7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /><path d="M4 7v8a1 1 0 001 1h3v-4h2v4h3a1 1 0 001-1V7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            <span style={{ flexShrink: 0, color: !activeModule ? "rgba(255,255,255,0.75)" : "var(--rc-nav-icon)" }}>
+              <svg width="15" height="15" viewBox="0 0 18 18" fill="none"><path d="M2 9L9 2l7 7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /><path d="M4 7v8a1 1 0 001 1h3v-4h2v4h3a1 1 0 001-1V7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
             </span>
-            <span style={{ flex: 1 }}>Overview</span>
+            <span style={{ flex: 1, letterSpacing: "-0.01em" }}>Overview</span>
           </button>
         </div>
 
         {!activeModule && (
-          <nav key="module-list" className="sidebar-panel-enter" style={{ flex: 1, padding: "4px 10px 10px" }}>
-            <div style={{ padding: "6px 10px 10px" }}>
-              <p style={{ fontSize: "10px", fontWeight: 700, color: "var(--rc-faint)", letterSpacing: "0.08em", textTransform: "uppercase", margin: 0, maxWidth: "none" }}>Modules</p>
+          <nav key="module-list" className="sidebar-panel-enter" style={{ flex: 1, padding: "2px 8px 10px" }}>
+            <div style={{ padding: "14px 12px 6px" }}>
+              <p style={{ fontSize: "10px", fontWeight: 700, color: "var(--rc-nav-label)", letterSpacing: "0.09em", textTransform: "uppercase", margin: 0, maxWidth: "none" }}>Modules</p>
             </div>
             {modules.map((m) => (
               <button key={m.id} onClick={() => openModule(m.id)}
-                style={{ width: "100%", display: "flex", alignItems: "center", gap: "10px", padding: "9px 12px", borderRadius: "8px", border: "none", background: "transparent", color: "var(--rc-nav-text)", fontSize: "13px", fontWeight: 500, cursor: "pointer", textAlign: "left", marginBottom: "2px", fontFamily: "var(--font-inter)", transition: "background 0.12s ease, color 0.12s ease" }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "var(--rc-nav-hover)"; (e.currentTarget as HTMLButtonElement).style.color = "#8c52ff"; }}
+                style={{ width: "100%", display: "flex", alignItems: "center", gap: "9px", padding: "8px 12px", borderRadius: "7px", border: "none", background: "transparent", color: "var(--rc-nav-text)", fontSize: "13px", fontWeight: 400, cursor: "pointer", textAlign: "left", marginBottom: "1px", fontFamily: "var(--font-inter)", transition: "background 0.12s ease, color 0.12s ease" }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "var(--rc-nav-hover)"; (e.currentTarget as HTMLButtonElement).style.color = "rgba(255,255,255,0.95)"; }}
                 onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; (e.currentTarget as HTMLButtonElement).style.color = "var(--rc-nav-text)"; }}
               >
-                <span style={{ flexShrink: 0, color: "var(--rc-faint)" }}>{m.icon}</span>
-                <span style={{ flex: 1 }}>{m.label}</span>
-                <svg width="11" height="11" viewBox="0 0 14 14" fill="none" style={{ flexShrink: 0, color: "var(--rc-faint)" }}><path d="M5 3l4 4-4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                <span style={{ flexShrink: 0, color: "var(--rc-nav-icon)" }}>{m.icon}</span>
+                <span style={{ flex: 1, letterSpacing: "-0.01em" }}>{m.label}</span>
+                <svg width="10" height="10" viewBox="0 0 14 14" fill="none" style={{ flexShrink: 0, color: "var(--rc-nav-label)" }}><path d="M5 3l4 4-4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
               </button>
             ))}
           </nav>
@@ -7582,25 +7740,25 @@ export default function DashboardPage() {
 
         {activeModule && module && (
           <div key={`sub-${activeModule}`} className="sidebar-panel-enter" style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-            <div style={{ borderTop: "1px solid var(--rc-nav-border)", margin: "4px 10px 0", flexShrink: 0 }} />
+            <div style={{ borderTop: "1px solid var(--rc-nav-border)", margin: "8px 8px 0", flexShrink: 0 }} />
             <button onClick={() => setSelected(null)}
-              style={{ width: "calc(100% - 16px)", display: "flex", alignItems: "center", gap: "9px", padding: "12px 16px", border: "none", background: !selected ? "var(--rc-primary-light)" : "transparent", color: !selected ? "white" : "var(--rc-nav-text)", borderRadius: "8px", margin: "8px 8px 0", fontSize: "13px", fontWeight: 700, letterSpacing: "-0.01em", cursor: "pointer", textAlign: "left", flexShrink: 0, fontFamily: "var(--font-inter)", transition: "background 0.12s ease, color 0.12s ease" }}
-              onMouseEnter={(e) => { if (selected) { e.currentTarget.style.background = "var(--rc-nav-hover)"; e.currentTarget.style.color = "#8c52ff"; } }}
+              style={{ width: "calc(100% - 16px)", display: "flex", alignItems: "center", gap: "9px", padding: "10px 14px", border: "none", background: !selected ? "var(--rc-nav-active-bg)" : "transparent", color: !selected ? "white" : "var(--rc-nav-text)", borderRadius: "7px", margin: "8px 8px 0", fontSize: "13px", fontWeight: 600, letterSpacing: "-0.02em", cursor: "pointer", textAlign: "left", flexShrink: 0, fontFamily: "var(--font-inter)", transition: "background 0.12s ease, color 0.12s ease" }}
+              onMouseEnter={(e) => { if (selected) { e.currentTarget.style.background = "var(--rc-nav-hover)"; e.currentTarget.style.color = "rgba(255,255,255,0.95)"; } }}
               onMouseLeave={(e) => { if (selected) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--rc-nav-text)"; } }}
             >
-              <span style={{ flexShrink: 0, color: !selected ? "var(--rc-primary)" : "var(--rc-faint)" }}>{iconMap[activeModule]}</span>
+              <span style={{ flexShrink: 0, color: !selected ? "rgba(255,255,255,0.75)" : "var(--rc-nav-icon)" }}>{iconMap[activeModule]}</span>
               <span>{module.label}</span>
             </button>
-            <nav style={{ flex: 1, padding: "6px 8px 12px" }}>
+            <nav style={{ flex: 1, padding: "4px 8px 12px" }}>
               {module.type === "properties" && module.properties.map((prop) => {
                 const isActive = selected?.type === "property" && selected.id === prop.id;
                 return (
                   <button key={prop.id} onClick={() => setSelected({ type: "property", section: module.id as "sales" | "management", id: prop.id, address: prop.address })}
-                    style={{ width: "100%", display: "flex", alignItems: "flex-start", gap: "8px", padding: "8px 12px", border: "none", background: isActive ? "var(--rc-primary-light)" : "transparent", color: isActive ? "white" : "var(--rc-nav-text)", fontSize: "12.5px", fontWeight: isActive ? 600 : 400, cursor: "pointer", textAlign: "left", borderRadius: "8px", marginBottom: "2px", transition: "background 0.1s ease, color 0.1s ease", fontFamily: "var(--font-inter)", lineHeight: 1.4 }}
-                    onMouseEnter={(e) => { if (!isActive) { (e.currentTarget as HTMLButtonElement).style.background = "var(--rc-nav-hover)"; (e.currentTarget as HTMLButtonElement).style.color = "#8c52ff"; } }}
+                    style={{ width: "100%", display: "flex", alignItems: "flex-start", gap: "8px", padding: "7px 12px", border: "none", background: isActive ? "var(--rc-nav-active-bg)" : "transparent", color: isActive ? "white" : "var(--rc-nav-text)", fontSize: "12.5px", fontWeight: isActive ? 500 : 400, cursor: "pointer", textAlign: "left", borderRadius: "7px", marginBottom: "1px", transition: "background 0.1s ease, color 0.1s ease", fontFamily: "var(--font-inter)", lineHeight: 1.4 }}
+                    onMouseEnter={(e) => { if (!isActive) { (e.currentTarget as HTMLButtonElement).style.background = "var(--rc-nav-hover)"; (e.currentTarget as HTMLButtonElement).style.color = "rgba(255,255,255,0.95)"; } }}
                     onMouseLeave={(e) => { if (!isActive) { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; (e.currentTarget as HTMLButtonElement).style.color = "var(--rc-nav-text)"; } }}
                   >
-                    <span style={{ flexShrink: 0, marginTop: "3px", opacity: isActive ? 0.7 : 0.3, fontSize: "8px" }}>●</span>
+                    <span style={{ flexShrink: 0, marginTop: "4px", color: isActive ? "rgba(255,255,255,0.60)" : "var(--rc-nav-icon)", fontSize: "7px" }}>●</span>
                     {prop.address}
                   </button>
                 );
@@ -7609,8 +7767,8 @@ export default function DashboardPage() {
                 const isActive = selected?.type === "static" && selected.label === child;
                 return (
                   <button key={child} onClick={() => setSelected({ type: "static", label: child })}
-                    style={{ width: "100%", display: "block", padding: "8px 12px", border: "none", background: isActive ? "var(--rc-primary-light)" : "transparent", color: isActive ? "white" : "var(--rc-nav-text)", fontSize: "13px", fontWeight: isActive ? 600 : 400, cursor: "pointer", textAlign: "left", borderRadius: "8px", marginBottom: "2px", transition: "background 0.1s ease, color 0.1s ease", fontFamily: "var(--font-inter)" }}
-                    onMouseEnter={(e) => { if (!isActive) { (e.currentTarget as HTMLButtonElement).style.background = "var(--rc-nav-hover)"; (e.currentTarget as HTMLButtonElement).style.color = "#8c52ff"; } }}
+                    style={{ width: "100%", display: "block", padding: "7px 12px", border: "none", background: isActive ? "var(--rc-nav-active-bg)" : "transparent", color: isActive ? "white" : "var(--rc-nav-text)", fontSize: "13px", fontWeight: isActive ? 500 : 400, cursor: "pointer", textAlign: "left", borderRadius: "7px", marginBottom: "1px", transition: "background 0.1s ease, color 0.1s ease", fontFamily: "var(--font-inter)", letterSpacing: "-0.01em" }}
+                    onMouseEnter={(e) => { if (!isActive) { (e.currentTarget as HTMLButtonElement).style.background = "var(--rc-nav-hover)"; (e.currentTarget as HTMLButtonElement).style.color = "rgba(255,255,255,0.95)"; } }}
                     onMouseLeave={(e) => { if (!isActive) { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; (e.currentTarget as HTMLButtonElement).style.color = "var(--rc-nav-text)"; } }}
                   >
                     {child}
@@ -7622,25 +7780,25 @@ export default function DashboardPage() {
         )}
 
         {/* Bottom: agency + sign out */}
-        <div style={{ padding: "10px 10px 16px", borderTop: "1px solid var(--rc-nav-border)", flexShrink: 0 }}>
+        <div style={{ padding: "8px 8px 14px", borderTop: "1px solid var(--rc-nav-border)", flexShrink: 0 }}>
           <div style={{ padding: "8px 12px 6px" }}>
-            <p style={{ fontSize: "10px", fontWeight: 700, color: "var(--rc-faint)", maxWidth: "none", letterSpacing: "0.07em", textTransform: "uppercase" }}>Agency</p>
-            <p style={{ fontSize: "12.5px", color: "var(--rc-ink)", maxWidth: "none", marginTop: "3px", fontWeight: 600, lineHeight: 1.3 }}>{agencyName}</p>
+            <p style={{ fontSize: "10px", fontWeight: 700, color: "var(--rc-nav-label)", maxWidth: "none", letterSpacing: "0.08em", textTransform: "uppercase" }}>Agency</p>
+            <p style={{ fontSize: "12.5px", color: "rgba(255,255,255,0.82)", maxWidth: "none", marginTop: "3px", fontWeight: 500, lineHeight: 1.3, letterSpacing: "-0.01em" }}>{agencyName}</p>
           </div>
           <button
             onClick={async () => { await supabase.auth.signOut(); window.location.href = "/signin"; }}
-            style={{ display: "flex", alignItems: "center", gap: "8px", padding: "9px 12px", borderRadius: "8px", fontSize: "13px", fontWeight: 500, color: "var(--rc-faint)", background: "transparent", border: "none", cursor: "pointer", fontFamily: "var(--font-inter)", width: "100%", textAlign: "left", transition: "color 0.12s" }}
-            onMouseEnter={(e) => { e.currentTarget.style.color = "oklch(0.48 0.18 25)"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.color = "var(--rc-faint)"; }}
+            style={{ display: "flex", alignItems: "center", gap: "8px", padding: "8px 12px", borderRadius: "7px", fontSize: "13px", fontWeight: 400, color: "var(--rc-nav-icon)", background: "transparent", border: "none", cursor: "pointer", fontFamily: "var(--font-inter)", width: "100%", textAlign: "left", transition: "color 0.12s, background 0.12s" }}
+            onMouseEnter={(e) => { e.currentTarget.style.color = "rgba(255,255,255,0.90)"; e.currentTarget.style.background = "var(--rc-nav-hover)"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.color = "var(--rc-nav-icon)"; e.currentTarget.style.background = "transparent"; }}
           >
-            <svg width="15" height="15" viewBox="0 0 18 18" fill="none"><path d="M7 3H4a1 1 0 00-1 1v10a1 1 0 001 1h3M12 13l4-4-4-4M16 9H7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            <svg width="14" height="14" viewBox="0 0 18 18" fill="none"><path d="M7 3H4a1 1 0 00-1 1v10a1 1 0 001 1h3M12 13l4-4-4-4M16 9H7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
             Sign out
           </button>
         </div>
       </aside>
 
       {/* Main */}
-      <div style={{ flex: 1, marginLeft: "252px", display: "flex", minHeight: "100svh" }}>
+      <div style={{ flex: 1, marginLeft: "240px", display: "flex", minHeight: "100svh" }}>
         <div
           key={`${activeModule ?? "home"}__${selected?.type === "property" ? selected.id : selected?.label ?? "overview"}`}
           className="main-panel-enter"
