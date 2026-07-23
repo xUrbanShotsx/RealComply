@@ -6453,7 +6453,7 @@ export default function DashboardPage() {
         {/* Logo */}
         <div style={{ padding: "20px 16px 16px", flexShrink: 0 }}>
           <Link href="/" style={{ display: "flex", alignItems: "center", textDecoration: "none" }}>
-            <span style={{ fontFamily: "var(--font-arimo)", fontWeight: 700, fontSize: "17px", letterSpacing: "0.08em", color: "var(--rc-nav-text)", textTransform: "uppercase" }}>Real Comply</span>
+            <span style={{ fontFamily: "var(--font-arimo)", fontWeight: 700, fontSize: "22px", letterSpacing: "0.08em", color: "var(--rc-nav-text)", textTransform: "uppercase" }}>Real Comply</span>
           </Link>
         </div>
 
