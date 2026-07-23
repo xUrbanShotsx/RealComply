@@ -3,11 +3,11 @@
 const pillars = [
   "Property & Stock Agents Act 2002",
   "CPD & Licence Tracking",
-  "AUSTRAC AML/CTF Compliance",
+  "Listing Marketing Compliance",
   "Trust Accounting Legislation",
   "NSW Fair Trading Standards",
   "PSBA Audit Framework",
-  "AML Due Diligence",
+  "Property Prospecting Records",
   "Policies & Procedures",
   "Audit Readiness",
   "Certificate of Registration",

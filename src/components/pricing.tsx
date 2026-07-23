@@ -25,7 +25,7 @@ const plans = [
     features: [
       "Up to 60 team members",
       "Everything in Essentials",
-      "AML compliance per property",
+      "Marketing tracking per listing",
       "Full audit readiness suite",
       "Legislative update alerts",
       "Priority support",

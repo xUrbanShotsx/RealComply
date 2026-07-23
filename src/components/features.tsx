@@ -186,27 +186,28 @@ function TrustMockup() {
   );
 }
 
-/* ─── AML mockup ─── */
-function AMLMockup() {
-  const checks = [
-    { label: "Identity documents sighted", done: true },
-    { label: "Proof of address verified", done: true },
-    { label: "Beneficial ownership recorded", done: true },
-    { label: "Source of funds noted", done: true },
-    { label: "PEP & sanctions check completed", done: true },
+/* ─── Marketing mockup ─── */
+function MarketingMockup() {
+  const steps = [
+    { label: "Listed on realestate.com.au", done: true },
+    { label: "Listed on domain.com.au", done: true },
+    { label: "Signboard installed", done: true },
+    { label: "Open home scheduled & promoted", done: true },
+    { label: "Buyer database prospected", done: true },
+    { label: "Vendor marketing report sent", done: false },
   ];
   return (
-    <MockupFrame title="AML Checklist — 23 Harbour St, Sydney">
+    <MockupFrame title="Marketing Checklist — 14 Rosehill Ave, Wollongong">
       <div style={{ marginBottom: "14px" }}>
         <div style={{ fontSize: "13px", fontWeight: 600, color: "white", marginBottom: "2px" }}>
-          AML Checklist
+          Marketing Checklist
         </div>
         <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.35)" }}>
-          23 Harbour St, Sydney &nbsp;·&nbsp; Client: John &amp; Mary Smith
+          14 Rosehill Ave, Wollongong &nbsp;·&nbsp; Listed 3 days ago
         </div>
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: "2px", marginBottom: "14px" }}>
-        {checks.map(({ label, done }) => (
+        {steps.map(({ label, done }) => (
           <div
             key={label}
             style={{
@@ -215,13 +216,13 @@ function AMLMockup() {
               gap: "10px",
               padding: "9px 10px",
               borderRadius: "6px",
-              background: "rgba(255,255,255,0.04)",
+              background: done ? "rgba(255,255,255,0.04)" : "rgba(253,188,64,0.08)",
             }}
           >
-            <span style={{ fontSize: "13px", color: "#34c84a", flexShrink: 0, lineHeight: 1 }}>
+            <span style={{ fontSize: "13px", color: done ? "#34c84a" : "#fdbc40", flexShrink: 0, lineHeight: 1 }}>
               {done ? "✓" : "○"}
             </span>
-            <span style={{ fontSize: "12px", color: "rgba(255,255,255,0.78)" }}>{label}</span>
+            <span style={{ fontSize: "12px", color: done ? "rgba(255,255,255,0.78)" : "#fdbc40" }}>{label}</span>
           </div>
         ))}
       </div>
@@ -236,18 +237,18 @@ function AMLMockup() {
           marginBottom: "12px",
         }}
       >
-        <span style={{ fontSize: "12px", color: "rgba(255,255,255,0.45)" }}>Risk assessment</span>
+        <span style={{ fontSize: "12px", color: "rgba(255,255,255,0.45)" }}>Prospecting progress</span>
         <span
           style={{
             fontSize: "11px",
             fontWeight: 600,
-            background: "rgba(52,200,74,0.14)",
-            color: "#34c84a",
+            background: "rgba(253,188,64,0.14)",
+            color: "#fdbc40",
             padding: "3px 10px",
             borderRadius: "9999px",
           }}
         >
-          Low ●
+          5 / 6 done
         </span>
       </div>
       <button
@@ -264,7 +265,7 @@ function AMLMockup() {
           transition: "background 0.15s",
         }}
       >
-        Mark complete
+        Send vendor report →
       </button>
     </MockupFrame>
   );
@@ -400,14 +401,14 @@ const showcases = [
     bg: "#f6f9fc",
   },
   {
-    id: "aml",
-    badge: "AML Records",
-    heading: "Record your AML checks. Simply.",
-    body: "AUSTRAC requires real estate agencies to complete customer due diligence for every transaction. RealComply gives you a simple per-property checklist to record that each step was done — with a timestamp and full audit trail, not a spreadsheet.",
+    id: "marketing",
+    badge: "Marketing Tracking",
+    heading: "Every listing. Fully prospected.",
+    body: "Track that every listed property has been properly marketed — portals uploaded, signage installed, open homes promoted, buyer database prospected, and vendor reports sent. Never leave a vendor wondering what happened, and never leave a step undone.",
     legislation:
-      "Covers customer identification, beneficial ownership, and transaction monitoring record-keeping under the AML/CTF Act 2006.",
+      "Keeps a date-stamped prospecting record per listing. Demonstrates to vendors and your principal that every marketing obligation was met on time.",
     flip: false,
-    Mockup: AMLMockup,
+    Mockup: MarketingMockup,
     bg: "#ffffff",
   },
   {

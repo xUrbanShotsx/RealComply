@@ -86,7 +86,7 @@ export default function Hero() {
               }}
             >
               RealComply gives real estate offices a single, audit-ready record of every compliance
-              obligation — CPD, trust accounting, AML, policies, and more.
+              obligation — CPD, trust accounting, marketing tracking, policies, and more.
             </p>
 
             {/* CTAs — pill shape */}
@@ -184,7 +184,7 @@ export default function Hero() {
                 {[
                   { label: "CPD & Licence Tracking", status: "8 / 9 current", ok: true },
                   { label: "Trust Account Reconciliation", status: "Balanced", ok: true },
-                  { label: "AML Due Diligence", status: "14 assessed", ok: true },
+                  { label: "Marketing Tracking", status: "12 listings", ok: true },
                   { label: "Policies & Procedures", status: "Review due", ok: false },
                   { label: "Audit Pack", status: "Export ready", ok: true },
                 ].map(({ label, status, ok }, i, arr) => (

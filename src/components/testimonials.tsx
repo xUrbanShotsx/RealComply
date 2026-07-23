@@ -16,7 +16,7 @@ const testimonials = [
     office: "Harcourts, Parramatta",
   },
   {
-    quote: "The AML module alone was worth it. Keeping a compliant customer risk register for 300+ transactions a year manually was untenable. Now it's automatic.",
+    quote: "The marketing tracking module changed how we manage listings. Every agent knows exactly what's been done for each property — portals, open homes, vendor reports. No more chasing people for updates.",
     name: "Michelle Leung",
     title: "Principal",
     office: "Ray White Commercial, Chatswood",
