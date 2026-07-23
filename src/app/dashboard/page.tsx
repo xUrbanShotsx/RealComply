@@ -1982,66 +1982,75 @@ function ModuleOverview({ moduleId, onSelectProperty, salesProps, mgmtProps, onA
       { label: "Needs attention", value: String(notStarted), sub: "Not yet started" },
     ];
     content = (
-      <div style={{ display: "flex", flexDirection: "column", gap: "12px", flex: 1 }}>
-        {/* Search */}
-        <div style={{ position: "relative" }}>
-          <svg width="15" height="15" viewBox="0 0 15 15" fill="none" style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: "var(--rc-faint)", pointerEvents: "none" }}>
-            <circle cx="6.5" cy="6.5" r="4.5" stroke="currentColor" strokeWidth="1.4" />
-            <path d="M10 10l3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-          </svg>
-          <input
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search properties…"
-            style={{ width: "100%", padding: "9px 12px 9px 34px", border: "1px solid var(--rc-border)", borderRadius: "8px", fontSize: "13.5px", color: "var(--rc-ink)", background: "var(--rc-bg)", outline: "none", fontFamily: "var(--font-inter)", boxSizing: "border-box", transition: "border-color 0.15s" }}
-            onFocus={(e) => (e.target.style.borderColor = "var(--rc-primary)")}
-            onBlur={(e) => (e.target.style.borderColor = "var(--rc-border)")}
-          />
-          {searchQuery && (
-            <button onClick={() => setSearchQuery("")} style={{ position: "absolute", right: "10px", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "var(--rc-faint)", padding: "2px", display: "flex", alignItems: "center" }}>
-              <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2.5 2.5l8 8M10.5 2.5l-8 8" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" /></svg>
-            </button>
-          )}
-        </div>
-      <div style={{ border: "1px solid var(--rc-border)", borderRadius: "12px", overflow: "hidden", flex: 1, display: "flex", flexDirection: "column", boxShadow: "var(--rc-shadow-sm)" }}>
-        {props.length === 0 && (
-          <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "40px 24px", color: "var(--rc-faint)", fontSize: "13.5px" }}>
-            {q ? `No properties match "${searchQuery}"` : "No properties yet."}
+      <div style={{ display: "flex", flexDirection: "column", gap: "16px", flex: 1 }}>
+        {/* Filter bar */}
+        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          <div style={{ position: "relative", flex: 1 }}>
+            <svg width="14" height="14" viewBox="0 0 15 15" fill="none" style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: "var(--rc-faint)", pointerEvents: "none" }}>
+              <circle cx="6.5" cy="6.5" r="4.5" stroke="currentColor" strokeWidth="1.4" /><path d="M10 10l3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+            </svg>
+            <input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search by address or vendor…"
+              style={{ width: "100%", padding: "9px 12px 9px 34px", border: "1px solid var(--rc-border)", borderRadius: "8px", fontSize: "13px", color: "var(--rc-ink)", background: "var(--rc-bg)", outline: "none", fontFamily: "var(--font-inter)", boxSizing: "border-box" }}
+              onFocus={(e) => (e.target.style.borderColor = "var(--rc-primary)")}
+              onBlur={(e) => (e.target.style.borderColor = "var(--rc-border)")} />
+            {searchQuery && <button onClick={() => setSearchQuery("")} style={{ position: "absolute", right: "10px", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "var(--rc-faint)", padding: "2px", display: "flex" }}><svg width="12" height="12" viewBox="0 0 13 13" fill="none"><path d="M2.5 2.5l8 8M10.5 2.5l-8 8" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" /></svg></button>}
           </div>
-        )}
-        {props.map((prop, i) => {
-          const done = defaultChecked[prop.id]?.length ?? 0;
-          const total = checklist.length;
-          const pct = Math.round((done / total) * 100);
-          const trackColor = pct === 100 ? "var(--rc-primary)" : pct >= 50 ? "oklch(0.60 0.14 55)" : "oklch(0.55 0.20 25)";
-          const pctColor = pct === 100 ? "oklch(0.38 0.12 145)" : pct >= 50 ? "oklch(0.46 0.12 55)" : "oklch(0.46 0.18 25)";
-          return (
-            <div
-              key={prop.id}
-              onClick={() => onSelectProperty({ type: "property", section, id: prop.id, address: prop.address })}
-              style={{ display: "grid", gridTemplateColumns: "1fr 200px 56px", alignItems: "center", gap: "20px", padding: "12px 24px", borderBottom: i < props.length - 1 ? "1px solid var(--rc-border)" : "none", background: "var(--rc-bg)", cursor: "pointer", transition: "background 0.12s ease" }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.background = "var(--rc-surface)"; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.background = "var(--rc-bg)"; }}
-            >
-              <div style={{ minWidth: 0 }}>
-                <p style={{ fontSize: "13.5px", fontWeight: 500, color: "var(--rc-ink)", margin: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{prop.address}</p>
-                {(prop.vendorName || prop.addedAt) && (
-                  <p style={{ fontSize: "11px", color: "var(--rc-faint)", margin: "2px 0 0", maxWidth: "none" }}>
-                    {prop.vendorName}{prop.vendorName && prop.addedAt ? " · " : ""}{prop.addedAt ? `Added ${prop.addedAt}` : ""}
-                  </p>
-                )}
-              </div>
-              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                <div style={{ flex: 1, height: "2px", background: "var(--rc-border-subtle)", borderRadius: "100px", overflow: "hidden" }}>
-                  <div style={{ width: `${pct}%`, height: "100%", background: trackColor, borderRadius: "100px" }} />
-                </div>
-                <span style={{ fontSize: "11.5px", color: "var(--rc-faint)", flexShrink: 0 }}>{done}/{total}</span>
-              </div>
-              <span style={{ fontSize: "13px", fontWeight: 600, color: pctColor, textAlign: "right" }}>{pct}%</span>
+        </div>
+
+        {/* Table */}
+        <div style={{ border: "1px solid var(--rc-border)", borderRadius: "12px", overflow: "hidden", flex: 1, display: "flex", flexDirection: "column", boxShadow: "var(--rc-shadow-sm)" }}>
+          {/* Column headers */}
+          <div style={{ display: "grid", gridTemplateColumns: "48px 1fr 140px 130px 80px 100px", padding: "10px 20px", borderBottom: "1px solid var(--rc-border)", background: "var(--rc-surface)", flexShrink: 0 }}>
+            {["#", "Property", "Owner / Vendor", "Added", "Status", ""].map(h => (
+              <span key={h} style={{ fontSize: "11.5px", fontWeight: 600, color: "var(--rc-faint)", letterSpacing: "0.03em" }}>{h}</span>
+            ))}
+          </div>
+
+          {props.length === 0 && (
+            <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "48px 24px", color: "var(--rc-faint)", fontSize: "13.5px" }}>
+              {q ? `No properties match "${searchQuery}"` : "No properties yet. Click \"Add property\" to get started."}
             </div>
-          );
-        })}
-      </div>
+          )}
+
+          {props.map((prop, i) => {
+            const done = defaultChecked[prop.id]?.length ?? 0;
+            const total = checklist.length;
+            const pct = Math.round((done / total) * 100);
+            const statusLabel = pct === 100 ? "Compliant" : pct > 0 ? "In Progress" : "Not Started";
+            const statusColor = pct === 100 ? "oklch(0.42 0.14 145)" : pct > 0 ? "oklch(0.52 0.18 55)" : "oklch(0.50 0.20 25)";
+            return (
+              <div key={prop.id}
+                style={{ display: "grid", gridTemplateColumns: "48px 1fr 140px 130px 80px 100px", alignItems: "center", padding: "14px 20px", borderBottom: i < props.length - 1 ? "1px solid var(--rc-border)" : "none", background: "var(--rc-bg)", transition: "background 0.12s ease" }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.background = "var(--rc-surface)"; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.background = "var(--rc-bg)"; }}
+              >
+                {/* Row number badge */}
+                <div style={{ width: "28px", height: "28px", borderRadius: "6px", border: "1.5px solid var(--rc-primary)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <span style={{ fontSize: "11.5px", fontWeight: 700, color: "var(--rc-primary)" }}>{i + 1}</span>
+                </div>
+                {/* Address */}
+                <div style={{ minWidth: 0, paddingRight: "8px" }}>
+                  <p style={{ fontSize: "13.5px", fontWeight: 600, color: "var(--rc-ink)", margin: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{prop.address}</p>
+                </div>
+                {/* Vendor */}
+                <span style={{ fontSize: "12.5px", color: "var(--rc-faint)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{prop.vendorName || "—"}</span>
+                {/* Added date */}
+                <span style={{ fontSize: "12.5px", color: "var(--rc-faint)" }}>{prop.addedAt || "—"}</span>
+                {/* Status */}
+                <span style={{ fontSize: "12.5px", fontWeight: 600, color: statusColor }}>{statusLabel}</span>
+                {/* View button */}
+                <button
+                  onClick={() => onSelectProperty({ type: "property", section, id: prop.id, address: prop.address })}
+                  style={{ fontSize: "12px", fontWeight: 600, color: "white", background: "var(--rc-primary)", border: "none", borderRadius: "7px", padding: "6px 14px", cursor: "pointer", fontFamily: "var(--font-inter)", whiteSpace: "nowrap", transition: "opacity 0.1s" }}
+                  onMouseEnter={(e) => { e.currentTarget.style.opacity = "0.85"; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.opacity = "1"; }}
+                >
+                  Open →
+                </button>
+              </div>
+            );
+          })}
+        </div>
       </div>
     );
   }
@@ -2116,27 +2125,27 @@ function ModuleOverview({ moduleId, onSelectProperty, salesProps, mgmtProps, onA
     <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "100vh", overflow: "hidden", padding: "32px 44px", gap: "20px" }}>
 
       {/* Header */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0, paddingBottom: "20px", borderBottom: "1px solid var(--rc-border)" }}>
-        <div>
-          <h1 style={{ fontSize: "1.05rem", fontWeight: 600, color: "var(--rc-ink)", letterSpacing: "-0.02em" }}>{mod.label}</h1>
-          <p style={{ fontSize: "12.5px", color: "var(--rc-faint)", maxWidth: "none", marginTop: "1px" }}>{modDetail}</p>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          {(moduleId === "sales" || moduleId === "management") && (
-            <button
-              onClick={() => setShowAdd(true)}
-              style={{ fontSize: "12.5px", fontWeight: 600, color: "white", background: "var(--rc-primary)", border: "none", borderRadius: "8px", padding: "7px 14px", cursor: "pointer", fontFamily: "var(--font-inter)" }}
-            >
-              + Add property
-            </button>
-          )}
-          <div style={{ width: "80px", height: "2px", background: "var(--rc-border)", borderRadius: "100px", overflow: "hidden" }}>
-            <div style={{ width: `${modScore}%`, height: "100%", background: barColor, borderRadius: "100px" }} />
+      <div style={{ flexShrink: 0, paddingBottom: "24px", borderBottom: "1px solid var(--rc-border)" }}>
+        <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between" }}>
+          <h1 style={{ fontSize: "2rem", fontWeight: 800, color: "var(--rc-primary)", letterSpacing: "-0.04em", margin: 0 }}>{mod.label}</h1>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            {(moduleId === "sales" || moduleId === "management") && (
+              <button
+                onClick={() => setShowAdd(true)}
+                style={{ fontSize: "13px", fontWeight: 600, color: "white", background: "var(--rc-primary)", border: "none", borderRadius: "8px", padding: "9px 18px", cursor: "pointer", fontFamily: "var(--font-inter)", display: "flex", alignItems: "center", gap: "6px" }}
+              >
+                <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M7 2v10M2 7h10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
+                Add property
+              </button>
+            )}
+            <div style={{ display: "flex", alignItems: "center", gap: "6px", padding: "6px 12px", borderRadius: "8px", border: "1px solid var(--rc-border)", background: "var(--rc-surface)" }}>
+              <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: barColor, flexShrink: 0 }} />
+              <span style={{ fontSize: "12.5px", fontWeight: 600, color: scoreColor }}>{modScore}%</span>
+              <span style={{ fontSize: "12px", color: "var(--rc-faint)" }}>{scoreLabel}</span>
+            </div>
           </div>
-          <span style={{ fontSize: "13px", fontWeight: 600, color: scoreColor }}>{modScore}%</span>
-          <span style={{ color: "var(--rc-border)", fontSize: "16px", lineHeight: 1 }}>|</span>
-          <span style={{ fontSize: "12.5px", color: "var(--rc-faint)" }}>{scoreLabel}</span>
         </div>
+        <p style={{ fontSize: "13px", color: "var(--rc-faint)", maxWidth: "none", marginTop: "6px" }}>{modDetail}</p>
       </div>
 
       {/* Stats — unified strip */}
@@ -6464,32 +6473,28 @@ export default function DashboardPage() {
     <OrgContext.Provider value={orgOwnerId}>
       <div style={{ display: "flex", minHeight: "100svh", background: "var(--rc-bg)" }}>
       {/* Sidebar */}
-      <aside style={{ width: "252px", flexShrink: 0, background: "var(--rc-nav)", display: "flex", flexDirection: "column", position: "fixed", top: 0, left: 0, bottom: 0, overflowY: "auto", zIndex: 10 }}>
+      <aside style={{ width: "252px", flexShrink: 0, background: "var(--rc-nav)", borderRight: "1px solid var(--rc-nav-border)", display: "flex", flexDirection: "column", position: "fixed", top: 0, left: 0, bottom: 0, overflowY: "auto", zIndex: 10 }}>
         {/* Logo */}
-        <div style={{ padding: "20px 16px 16px", flexShrink: 0 }}>
+        <div style={{ padding: "22px 18px 18px", flexShrink: 0 }}>
           <div style={{ display: "flex", alignItems: "center" }}>
-            <span style={{ fontFamily: "var(--font-arimo)", fontWeight: 700, fontSize: "26px", letterSpacing: "0.08em", color: "var(--rc-nav-text)", textTransform: "uppercase" }}>Real Comply</span>
+            <span style={{ fontFamily: "var(--font-arimo)", fontWeight: 700, fontSize: "22px", letterSpacing: "0.06em", color: "var(--rc-primary)", textTransform: "uppercase" }}>Real Comply</span>
           </div>
         </div>
 
         {!activeModule && (
-          <nav style={{ flex: 1, padding: "2px 10px 10px" }}>
-            <button onClick={goBack}
-              style={{ width: "100%", display: "flex", alignItems: "center", gap: "9px", padding: "9px 12px", paddingRight: "22px", borderRadius: "8px 0 0 8px", border: "none", background: "var(--rc-bg)", color: "var(--rc-ink)", fontSize: "13.5px", fontWeight: 600, cursor: "pointer", textAlign: "left", marginBottom: "1px", marginRight: "-10px", fontFamily: "var(--font-inter)" }}
-            >
-              <svg width="15" height="15" viewBox="0 0 18 18" fill="none" style={{ flexShrink: 0 }}><path d="M3 8.5L9 3l6 5.5V15a1 1 0 01-1 1H11v-4H7v4H4a1 1 0 01-1-1V8.5z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" /></svg>
-              <span style={{ flex: 1 }}>Home</span>
-            </button>
-            <div style={{ height: "1px", background: "var(--rc-nav-border)", margin: "8px 2px" }} />
+          <nav style={{ flex: 1, padding: "4px 10px 10px" }}>
+            <div style={{ padding: "6px 10px 10px" }}>
+              <p style={{ fontSize: "10px", fontWeight: 700, color: "var(--rc-faint)", letterSpacing: "0.08em", textTransform: "uppercase", margin: 0, maxWidth: "none" }}>Menu</p>
+            </div>
             {modules.map((m) => (
               <button key={m.id} onClick={() => openModule(m.id)}
-                style={{ width: "100%", display: "flex", alignItems: "center", gap: "9px", padding: "9px 12px", borderRadius: "8px", border: "none", background: "transparent", color: "var(--rc-nav-text)", fontSize: "13.5px", fontWeight: 500, cursor: "pointer", textAlign: "left", marginBottom: "1px", fontFamily: "var(--font-inter)", transition: "background 0.12s ease, color 0.12s ease" }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "var(--rc-nav-hover)"; (e.currentTarget as HTMLButtonElement).style.color = "oklch(0.14 0.10 162)"; }}
+                style={{ width: "100%", display: "flex", alignItems: "center", gap: "10px", padding: "9px 12px", borderRadius: "8px", border: "none", background: "transparent", color: "var(--rc-nav-text)", fontSize: "13px", fontWeight: 500, cursor: "pointer", textAlign: "left", marginBottom: "2px", fontFamily: "var(--font-inter)", transition: "background 0.12s ease, color 0.12s ease" }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "var(--rc-nav-hover)"; (e.currentTarget as HTMLButtonElement).style.color = "var(--rc-primary)"; }}
                 onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; (e.currentTarget as HTMLButtonElement).style.color = "var(--rc-nav-text)"; }}
               >
-                <span style={{ flexShrink: 0, opacity: 0.75 }}>{m.icon}</span>
+                <span style={{ flexShrink: 0, color: "var(--rc-faint)" }}>{m.icon}</span>
                 <span style={{ flex: 1 }}>{m.label}</span>
-                <svg width="11" height="11" viewBox="0 0 14 14" fill="none" style={{ flexShrink: 0, opacity: 0.22 }}><path d="M5 3l4 4-4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                <svg width="11" height="11" viewBox="0 0 14 14" fill="none" style={{ flexShrink: 0, color: "var(--rc-faint)" }}><path d="M5 3l4 4-4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
               </button>
             ))}
           </nav>
@@ -6497,31 +6502,31 @@ export default function DashboardPage() {
 
         {activeModule && module && (
           <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-            <button onClick={goBack} style={{ display: "flex", alignItems: "center", gap: "6px", padding: "12px 16px", border: "none", borderBottom: "1px solid var(--rc-nav-border)", background: "transparent", color: "var(--rc-nav-text)", fontSize: "12px", fontWeight: 500, cursor: "pointer", fontFamily: "var(--font-inter)", textAlign: "left", flexShrink: 0, transition: "color 0.12s ease" }}
-              onMouseEnter={(e) => { e.currentTarget.style.color = "oklch(0.14 0.10 162)"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.color = "var(--rc-nav-text)"; }}
+            <button onClick={goBack} style={{ display: "flex", alignItems: "center", gap: "6px", padding: "12px 16px", border: "none", borderBottom: "1px solid var(--rc-nav-border)", background: "transparent", color: "var(--rc-faint)", fontSize: "12px", fontWeight: 500, cursor: "pointer", fontFamily: "var(--font-inter)", textAlign: "left", flexShrink: 0, transition: "color 0.12s ease" }}
+              onMouseEnter={(e) => { e.currentTarget.style.color = "var(--rc-primary)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.color = "var(--rc-faint)"; }}
             >
               <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M9 3L5 7l4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
               All modules
             </button>
             <button onClick={() => setSelected(null)}
-              style={{ width: "100%", display: "flex", alignItems: "center", gap: "9px", padding: "14px 16px", border: "none", background: !selected ? "var(--rc-bg)" : "transparent", color: !selected ? "var(--rc-ink)" : "var(--rc-nav-text)", borderRadius: !selected ? "8px 0 0 8px" : "0", fontSize: "13px", fontWeight: 700, letterSpacing: "-0.015em", cursor: "pointer", textAlign: "left", flexShrink: 0, fontFamily: "var(--font-inter)", transition: "background 0.12s ease, color 0.12s ease" }}
-              onMouseEnter={(e) => { if (selected) { e.currentTarget.style.background = "var(--rc-nav-hover)"; e.currentTarget.style.color = "oklch(0.14 0.10 162)"; } }}
+              style={{ width: "calc(100% - 16px)", display: "flex", alignItems: "center", gap: "9px", padding: "12px 16px", border: "none", background: !selected ? "var(--rc-primary-light)" : "transparent", color: !selected ? "var(--rc-primary)" : "var(--rc-nav-text)", borderRadius: "8px", margin: "8px 8px 0", fontSize: "13px", fontWeight: 700, letterSpacing: "-0.01em", cursor: "pointer", textAlign: "left", flexShrink: 0, fontFamily: "var(--font-inter)", transition: "background 0.12s ease, color 0.12s ease" }}
+              onMouseEnter={(e) => { if (selected) { e.currentTarget.style.background = "var(--rc-nav-hover)"; e.currentTarget.style.color = "var(--rc-primary)"; } }}
               onMouseLeave={(e) => { if (selected) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--rc-nav-text)"; } }}
             >
-              <span style={{ flexShrink: 0, opacity: !selected ? 1 : 0.8 }}>{iconMap[activeModule]}</span>
+              <span style={{ flexShrink: 0, color: !selected ? "var(--rc-primary)" : "var(--rc-faint)" }}>{iconMap[activeModule]}</span>
               <span>{module.label}</span>
             </button>
-            <nav style={{ flex: 1, padding: "4px 10px 12px" }}>
+            <nav style={{ flex: 1, padding: "6px 8px 12px" }}>
               {module.type === "properties" && module.properties.map((prop) => {
                 const isActive = selected?.type === "property" && selected.id === prop.id;
                 return (
                   <button key={prop.id} onClick={() => setSelected({ type: "property", section: module.id as "sales" | "management", id: prop.id, address: prop.address })}
-                    style={{ width: "100%", display: "flex", alignItems: "flex-start", gap: "8px", padding: "9px 12px", paddingRight: isActive ? "22px" : "12px", border: "none", background: isActive ? "var(--rc-bg)" : "transparent", color: isActive ? "var(--rc-ink)" : "var(--rc-nav-text)", fontSize: "13px", fontWeight: isActive ? 600 : 400, cursor: "pointer", textAlign: "left", borderRadius: isActive ? "8px 0 0 8px" : "8px", marginBottom: "2px", marginRight: isActive ? "-10px" : "0", transition: "background 0.1s ease, color 0.1s ease", fontFamily: "var(--font-inter)", lineHeight: 1.4 }}
-                    onMouseEnter={(e) => { if (!isActive) { (e.currentTarget as HTMLButtonElement).style.background = "var(--rc-nav-hover)"; (e.currentTarget as HTMLButtonElement).style.color = "oklch(0.14 0.10 162)"; } }}
+                    style={{ width: "100%", display: "flex", alignItems: "flex-start", gap: "8px", padding: "8px 12px", border: "none", background: isActive ? "var(--rc-primary)" : "transparent", color: isActive ? "white" : "var(--rc-nav-text)", fontSize: "12.5px", fontWeight: isActive ? 600 : 400, cursor: "pointer", textAlign: "left", borderRadius: "8px", marginBottom: "2px", transition: "background 0.1s ease, color 0.1s ease", fontFamily: "var(--font-inter)", lineHeight: 1.4 }}
+                    onMouseEnter={(e) => { if (!isActive) { (e.currentTarget as HTMLButtonElement).style.background = "var(--rc-nav-hover)"; (e.currentTarget as HTMLButtonElement).style.color = "var(--rc-primary)"; } }}
                     onMouseLeave={(e) => { if (!isActive) { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; (e.currentTarget as HTMLButtonElement).style.color = "var(--rc-nav-text)"; } }}
                   >
-                    <span style={{ flexShrink: 0, marginTop: "3px", opacity: 0.35, fontSize: "8px" }}>●</span>
+                    <span style={{ flexShrink: 0, marginTop: "3px", opacity: isActive ? 0.7 : 0.3, fontSize: "8px" }}>●</span>
                     {prop.address}
                   </button>
                 );
@@ -6530,8 +6535,8 @@ export default function DashboardPage() {
                 const isActive = selected?.type === "static" && selected.label === child;
                 return (
                   <button key={child} onClick={() => setSelected({ type: "static", label: child })}
-                    style={{ width: "100%", display: "block", padding: "9px 12px", paddingRight: isActive ? "22px" : "12px", border: "none", background: isActive ? "var(--rc-bg)" : "transparent", color: isActive ? "var(--rc-ink)" : "var(--rc-nav-text)", fontSize: "13.5px", fontWeight: isActive ? 600 : 400, cursor: "pointer", textAlign: "left", borderRadius: isActive ? "8px 0 0 8px" : "8px", marginBottom: "2px", marginRight: isActive ? "-10px" : "0", transition: "background 0.1s ease, color 0.1s ease", fontFamily: "var(--font-inter)" }}
-                    onMouseEnter={(e) => { if (!isActive) { (e.currentTarget as HTMLButtonElement).style.background = "var(--rc-nav-hover)"; (e.currentTarget as HTMLButtonElement).style.color = "oklch(0.14 0.10 162)"; } }}
+                    style={{ width: "100%", display: "block", padding: "8px 12px", border: "none", background: isActive ? "var(--rc-primary)" : "transparent", color: isActive ? "white" : "var(--rc-nav-text)", fontSize: "13px", fontWeight: isActive ? 600 : 400, cursor: "pointer", textAlign: "left", borderRadius: "8px", marginBottom: "2px", transition: "background 0.1s ease, color 0.1s ease", fontFamily: "var(--font-inter)" }}
+                    onMouseEnter={(e) => { if (!isActive) { (e.currentTarget as HTMLButtonElement).style.background = "var(--rc-nav-hover)"; (e.currentTarget as HTMLButtonElement).style.color = "var(--rc-primary)"; } }}
                     onMouseLeave={(e) => { if (!isActive) { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; (e.currentTarget as HTMLButtonElement).style.color = "var(--rc-nav-text)"; } }}
                   >
                     {child}
@@ -6545,12 +6550,14 @@ export default function DashboardPage() {
         {/* Bottom: agency + sign out */}
         <div style={{ padding: "10px 10px 16px", borderTop: "1px solid var(--rc-nav-border)", flexShrink: 0 }}>
           <div style={{ padding: "8px 12px 6px" }}>
-            <p style={{ fontSize: "10.5px", fontWeight: 600, color: "var(--rc-nav-text)", maxWidth: "none", letterSpacing: "0.05em", textTransform: "uppercase" }}>Agency</p>
-            <p style={{ fontSize: "12.5px", color: "var(--rc-nav-text)", maxWidth: "none", marginTop: "3px", fontWeight: 500, lineHeight: 1.3 }}>{agencyName}</p>
+            <p style={{ fontSize: "10px", fontWeight: 700, color: "var(--rc-faint)", maxWidth: "none", letterSpacing: "0.07em", textTransform: "uppercase" }}>Agency</p>
+            <p style={{ fontSize: "12.5px", color: "var(--rc-ink)", maxWidth: "none", marginTop: "3px", fontWeight: 600, lineHeight: 1.3 }}>{agencyName}</p>
           </div>
           <button
             onClick={async () => { await supabase.auth.signOut(); window.location.href = "/signin"; }}
-            style={{ display: "flex", alignItems: "center", gap: "8px", padding: "9px 12px", borderRadius: "8px", fontSize: "13px", fontWeight: 500, color: "var(--rc-nav-text)", background: "transparent", border: "none", cursor: "pointer", fontFamily: "var(--font-inter)", width: "100%", textAlign: "left" }}
+            style={{ display: "flex", alignItems: "center", gap: "8px", padding: "9px 12px", borderRadius: "8px", fontSize: "13px", fontWeight: 500, color: "var(--rc-faint)", background: "transparent", border: "none", cursor: "pointer", fontFamily: "var(--font-inter)", width: "100%", textAlign: "left", transition: "color 0.12s" }}
+            onMouseEnter={(e) => { e.currentTarget.style.color = "oklch(0.50 0.20 25)"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.color = "var(--rc-faint)"; }}
           >
             <svg width="15" height="15" viewBox="0 0 18 18" fill="none"><path d="M7 3H4a1 1 0 00-1 1v10a1 1 0 001 1h3M12 13l4-4-4-4M16 9H7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
             Sign out

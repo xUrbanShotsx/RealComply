@@ -1,29 +1,29 @@
 @import "tailwindcss";
 
 :root {
-  /* Navigation (light green sidebar) */
-  --rc-nav: oklch(0.88 0.08 162);
-  --rc-nav-text: oklch(0.26 0.10 162);
-  --rc-nav-hover: oklch(0.82 0.10 162);
-  --rc-nav-active-bg: oklch(0.78 0.12 162);
-  --rc-nav-border: oklch(0.80 0.09 162);
+  /* Navigation (white sidebar) */
+  --rc-nav: #ffffff;
+  --rc-nav-text: oklch(0.32 0.07 264);
+  --rc-nav-hover: oklch(0.96 0.04 264);
+  --rc-nav-active-bg: oklch(0.57 0.24 264);
+  --rc-nav-border: oklch(0.91 0.02 264);
 
   /* Page surfaces */
   --rc-bg: #ffffff;
-  --rc-surface: #ffffff;
-  --rc-surface-2: oklch(0.962 0.004 250);
-  --rc-ink: oklch(0.12 0.008 250);
-  --rc-muted: oklch(0.42 0.008 250);
-  --rc-faint: oklch(0.57 0.005 250);
-  --rc-border: oklch(0.898 0.004 250);
-  --rc-border-subtle: oklch(0.942 0.003 250);
+  --rc-surface: oklch(0.975 0.01 264);
+  --rc-surface-2: oklch(0.962 0.012 264);
+  --rc-ink: oklch(0.14 0.04 264);
+  --rc-muted: oklch(0.40 0.05 264);
+  --rc-faint: oklch(0.58 0.03 264);
+  --rc-border: oklch(0.90 0.02 264);
+  --rc-border-subtle: oklch(0.945 0.01 264);
 
-  /* Brand — emerald */
-  --rc-primary: oklch(0.46 0.16 162);
-  --rc-primary-mid: oklch(0.54 0.18 162);
-  --rc-primary-light: oklch(0.94 0.05 162);
-  --rc-accent: oklch(0.68 0.16 55);
-  --rc-accent-dark: oklch(0.50 0.13 55);
+  /* Brand — indigo */
+  --rc-primary: oklch(0.57 0.24 264);
+  --rc-primary-mid: oklch(0.50 0.26 264);
+  --rc-primary-light: oklch(0.95 0.06 264);
+  --rc-accent: oklch(0.72 0.17 55);
+  --rc-accent-dark: oklch(0.52 0.19 55);
 
   /* Elevation */
   --rc-shadow-sm: 0 1px 3px oklch(0.10 0.005 250 / 0.07), 0 1px 2px oklch(0.10 0.005 250 / 0.04);
