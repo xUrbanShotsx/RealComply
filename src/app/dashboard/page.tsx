@@ -5194,8 +5194,8 @@ function OnboardingChecklist({ member, onBack, onUpdateMember }: { member: Onboa
                 <div style={{ width: "20px", height: "20px", borderRadius: "6px", flexShrink: 0, border: isDone ? "none" : "1.5px solid var(--rc-border)", background: isDone ? "oklch(0.60 0.16 145)" : "transparent", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.15s ease" }}>
                   {isDone && <svg width="11" height="9" viewBox="0 0 11 9" fill="none"><path d="M1 4l3.5 3.5L10 1" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>}
                 </div>
-                <span style={{ fontSize: "13px", flex: 1, color: isDone ? "var(--rc-faint)" : isSelected ? "var(--rc-primary)" : "var(--rc-ink)", textDecoration: isDone ? "line-through" : "none", fontWeight: isSelected ? 600 : 400 }}>{item.label}</span>
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ flexShrink: 0 }}><path d="M5 3l4 4-4 4" stroke={isSelected ? "var(--rc-primary)" : "var(--rc-border)"} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                <span style={{ fontSize: "13px", flex: 1, color: isDone ? "var(--rc-faint)" : isSelected ? "white" : "var(--rc-ink)", textDecoration: isDone ? "line-through" : "none", fontWeight: isSelected ? 600 : 400 }}>{item.label}</span>
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ flexShrink: 0 }}><path d="M5 3l4 4-4 4" stroke={isSelected ? "white" : "var(--rc-border)"} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
               </div>
             );
           })}
