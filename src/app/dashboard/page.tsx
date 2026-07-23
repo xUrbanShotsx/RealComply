@@ -77,9 +77,10 @@ function MgmtIcon() { return <svg width="18" height="18" viewBox="0 0 18 18" fil
 function StaffIcon() { return <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="6" r="3" stroke="currentColor" strokeWidth="1.6" /><path d="M3 15c0-3.314 2.686-6 6-6s6 2.686 6 6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /></svg>; }
 function TrustIcon() { return <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="2" y="4" width="14" height="11" rx="2" stroke="currentColor" strokeWidth="1.6" /><path d="M2 8h14" stroke="currentColor" strokeWidth="1.6" /><path d="M6 12h2M10 12h2" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /></svg>; }
 function SettingsIcon() { return <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="2.5" stroke="currentColor" strokeWidth="1.6" /><path d="M9 2v1.5M9 14.5V16M2 9h1.5M14.5 9H16M3.93 3.93l1.06 1.06M13.01 13.01l1.06 1.06M14.07 3.93l-1.06 1.06M4.99 13.01l-1.06 1.06" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /></svg>; }
+function MeetingsIcon() { return <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="2" y="3" width="14" height="12" rx="2" stroke="currentColor" strokeWidth="1.6" /><path d="M2 7h14" stroke="currentColor" strokeWidth="1.6" /><path d="M6 2v2M12 2v2" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /><path d="M5 11h4M5 13.5h6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" /></svg>; }
 
 const iconMap: Record<string, React.ReactNode> = {
-  policies: <PolIcon />, sales: <SalesIcon />, management: <MgmtIcon />, staff: <StaffIcon />, trust: <TrustIcon />, registers: <RegIcon />,
+  policies: <PolIcon />, sales: <SalesIcon />, management: <MgmtIcon />, staff: <StaffIcon />, trust: <TrustIcon />, registers: <RegIcon />, meetings: <MeetingsIcon />,
 };
 
 // --- Types ---
@@ -1516,6 +1517,7 @@ const moduleOverview = [
   { id: "staff",      label: "Staff",                      icon: <StaffIcon /> },
   { id: "trust",      label: "Trust Accounting",           icon: <TrustIcon /> },
   { id: "registers",  label: "Registers",                  icon: <RegIcon /> },
+  { id: "meetings",   label: "Meetings",                    icon: <MeetingsIcon /> },
 ];
 
 function computeModuleData(
@@ -1583,7 +1585,10 @@ function computeModuleData(
     return { score: 0, detail: "Add trust accounts to track reconciliation" };
   }
   if (moduleId === "registers") {
-    return { score: 0, detail: "Log gifts, incidents and risks" };
+    return { score: 0, detail: "Log gifts, incidents, risks and complaints" };
+  }
+  if (moduleId === "meetings") {
+    return { score: 0, detail: "Diary staff meetings and one-on-ones" };
   }
   return { score: 0, detail: "" };
 }
@@ -7054,6 +7059,292 @@ function ComplaintsRegisterPage({ userRole }: { userRole: "owner" | "standard" }
   );
 }
 
+// ─── Meeting Diary ────────────────────────────────────────────────────────────
+type MeetingRow = {
+  id: string;
+  user_id: string;
+  created_by: string;
+  meeting_date: string;
+  meeting_type: string;
+  title: string;
+  attendees: string[];
+  notes: string;
+  bullet_points: string[];
+  visible_to: string[];
+  created_at: string;
+};
+
+function MeetingDiaryPage({ staffRows, userEmail, userRole }: { staffRows: StaffRow[]; userEmail: string | null; userRole: "owner" | "standard" }) {
+  const orgOwnerId = useContext(OrgContext);
+  const [rows, setRows] = useState<MeetingRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showAdd, setShowAdd] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [expanded, setExpanded] = useState<string | null>(null);
+
+  const today = new Date().toISOString().slice(0, 10);
+  const staffNames = staffRows.map(s => s.name);
+
+  const [form, setForm] = useState({
+    meeting_date: today,
+    meeting_type: "Staff Meeting",
+    title: "",
+    attendees: [] as string[],
+    notes: "",
+    bullet_points: [""] as string[],
+    visible_to: ["all"] as string[],
+  });
+
+  useEffect(() => {
+    if (!orgOwnerId) { setLoading(false); return; }
+    supabase.from("meetings").select("*").eq("user_id", orgOwnerId).order("meeting_date", { ascending: false }).order("created_at", { ascending: false }).then(({ data }) => {
+      if (data) setRows(data as MeetingRow[]);
+      setLoading(false);
+    });
+  }, [orgOwnerId]);
+
+  const visibleRows = userRole === "owner"
+    ? rows
+    : rows.filter(r =>
+        r.created_by === userEmail ||
+        r.visible_to?.includes("all") ||
+        r.visible_to?.includes(userEmail ?? "")
+      );
+
+  function toggleAttendee(name: string) {
+    setForm(p => ({ ...p, attendees: p.attendees.includes(name) ? p.attendees.filter(a => a !== name) : [...p.attendees, name] }));
+  }
+  function toggleVisible(val: string) {
+    if (val === "all") {
+      setForm(p => ({ ...p, visible_to: p.visible_to.includes("all") ? [] : ["all"] }));
+    } else {
+      setForm(p => {
+        const next = p.visible_to.filter(v => v !== "all");
+        return { ...p, visible_to: next.includes(val) ? next.filter(v => v !== val) : [...next, val] };
+      });
+    }
+  }
+  function setBullet(i: number, v: string) {
+    setForm(p => { const bp = [...p.bullet_points]; bp[i] = v; return { ...p, bullet_points: bp }; });
+  }
+  function addBullet() { setForm(p => ({ ...p, bullet_points: [...p.bullet_points, ""] })); }
+  function removeBullet(i: number) { setForm(p => ({ ...p, bullet_points: p.bullet_points.filter((_, j) => j !== i) })); }
+
+  async function save() {
+    if (!form.meeting_date || !orgOwnerId) { setError("Meeting date is required."); return; }
+    if (form.visible_to.length === 0) { setError("Select at least one visibility option."); return; }
+    setSaving(true); setError("");
+    const payload = {
+      user_id: orgOwnerId,
+      created_by: userEmail ?? "",
+      meeting_date: form.meeting_date,
+      meeting_type: form.meeting_type,
+      title: form.title,
+      attendees: form.attendees,
+      notes: form.notes,
+      bullet_points: form.bullet_points.filter(b => b.trim()),
+      visible_to: form.visible_to,
+    };
+    const { data, error: err } = await supabase.from("meetings").insert(payload).select().single();
+    setSaving(false);
+    if (err) { setError("Failed to save. Please try again."); return; }
+    if (data) setRows(p => [data as MeetingRow, ...p]);
+    setForm({ meeting_date: today, meeting_type: "Staff Meeting", title: "", attendees: [], notes: "", bullet_points: [""], visible_to: ["all"] });
+    setShowAdd(false);
+  }
+
+  async function del(id: string) {
+    await supabase.from("meetings").delete().eq("id", id);
+    setRows(p => p.filter(r => r.id !== id));
+    if (expanded === id) setExpanded(null);
+  }
+
+  const inp: React.CSSProperties = { fontSize: "13px", color: "var(--rc-ink)", background: "var(--rc-surface)", border: "1px solid var(--rc-border)", borderRadius: "8px", padding: "9px 12px", outline: "none", fontFamily: "var(--font-inter)", width: "100%", boxSizing: "border-box" };
+  const lbl: React.CSSProperties = { fontSize: "12px", fontWeight: 600, color: "var(--rc-muted)", marginBottom: "5px", display: "block" };
+  const meetingTypes = ["Staff Meeting", "One-on-One", "Principal Meeting", "Department Meeting", "Training Session", "External Meeting"];
+
+  return (
+    <div style={PAGE_WRAP}>
+      <div style={PAGE_HEADER}>
+        <div>
+          <h1 style={PAGE_H1}>Meeting Diary</h1>
+          <p style={PAGE_SUB}>Record staff meetings, one-on-ones and training sessions — including attendees, notes and action items</p>
+        </div>
+        <button onClick={() => { setShowAdd(p => !p); setError(""); }} style={{ fontSize: "13px", fontWeight: 600, color: "white", background: "var(--rc-primary)", border: "none", borderRadius: "8px", padding: "9px 18px", cursor: "pointer", fontFamily: "var(--font-inter)" }}>
+          {showAdd ? "Cancel" : "+ Add Meeting"}
+        </button>
+      </div>
+
+      {showAdd && (
+        <div style={{ background: "var(--rc-surface)", border: "1px solid var(--rc-border)", borderRadius: "12px", padding: "24px 28px", display: "flex", flexDirection: "column", gap: "20px", flexShrink: 0 }}>
+          <p style={{ fontSize: "13.5px", fontWeight: 700, color: "var(--rc-ink)", margin: 0 }}>New Meeting</p>
+
+          {/* Date / Type / Title */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 2fr", gap: "14px" }}>
+            <div><label style={lbl}>Date *</label><input type="date" value={form.meeting_date} onChange={e => setForm(p => ({ ...p, meeting_date: e.target.value }))} style={{ ...inp, colorScheme: "light" }} /></div>
+            <div>
+              <label style={lbl}>Meeting Type</label>
+              <select value={form.meeting_type} onChange={e => setForm(p => ({ ...p, meeting_type: e.target.value }))} style={{ ...inp, cursor: "pointer" }}>
+                {meetingTypes.map(o => <option key={o}>{o}</option>)}
+              </select>
+            </div>
+            <div><label style={lbl}>Title / Agenda (optional)</label><input placeholder="e.g. Monthly team meeting, Performance review — John" value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} style={inp} /></div>
+          </div>
+
+          {/* Attendees */}
+          {staffNames.length > 0 && (
+            <div>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px" }}>
+                <label style={{ ...lbl, margin: 0 }}>Attendees</label>
+                <button type="button" onClick={() => setForm(p => ({ ...p, attendees: p.attendees.length === staffNames.length ? [] : [...staffNames] }))} style={{ fontSize: "11.5px", color: "var(--rc-primary)", background: "none", border: "none", cursor: "pointer", fontFamily: "var(--font-inter)", fontWeight: 600, padding: 0 }}>
+                  {form.attendees.length === staffNames.length ? "Deselect all" : "Select all"}
+                </button>
+              </div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+                {staffNames.map(name => {
+                  const on = form.attendees.includes(name);
+                  return (
+                    <button key={name} type="button" onClick={() => toggleAttendee(name)} style={{ fontSize: "12.5px", fontWeight: 500, color: on ? "white" : "var(--rc-ink)", background: on ? "var(--rc-primary)" : "var(--rc-bg)", border: `1px solid ${on ? "var(--rc-primary)" : "var(--rc-border)"}`, borderRadius: "9999px", padding: "5px 14px", cursor: "pointer", fontFamily: "var(--font-inter)", transition: "all 0.15s" }}>
+                      {on && <span style={{ marginRight: "5px" }}>✓</span>}{name}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Notes */}
+          <div>
+            <label style={lbl}>Meeting Notes</label>
+            <textarea rows={4} placeholder="Record key discussion points, decisions made, or any important context from the meeting." value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} style={{ ...inp, resize: "vertical" }} />
+          </div>
+
+          {/* Bullet points */}
+          <div>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px" }}>
+              <label style={{ ...lbl, margin: 0 }}>Action Items / Key Points</label>
+              <button type="button" onClick={addBullet} style={{ fontSize: "11.5px", color: "var(--rc-primary)", background: "none", border: "none", cursor: "pointer", fontFamily: "var(--font-inter)", fontWeight: 600, padding: 0 }}>+ Add point</button>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+              {form.bullet_points.map((bp, i) => (
+                <div key={i} style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <span style={{ color: "var(--rc-muted)", fontSize: "16px", flexShrink: 0, width: "12px" }}>•</span>
+                  <input placeholder={`Point ${i + 1}`} value={bp} onChange={e => setBullet(i, e.target.value)} style={{ ...inp, flex: 1 }} />
+                  {form.bullet_points.length > 1 && (
+                    <button type="button" onClick={() => removeBullet(i)} style={{ fontSize: "18px", color: "var(--rc-faint)", background: "none", border: "none", cursor: "pointer", padding: "0 4px", lineHeight: 1, flexShrink: 0 }}>×</button>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Visibility */}
+          <div>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px" }}>
+              <label style={{ ...lbl, margin: 0 }}>Who can see these notes?</label>
+            </div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+              {/* All staff option */}
+              {(() => {
+                const on = form.visible_to.includes("all");
+                return (
+                  <button type="button" onClick={() => toggleVisible("all")} style={{ fontSize: "12.5px", fontWeight: 600, color: on ? "white" : "var(--rc-ink)", background: on ? "oklch(0.42 0.12 145)" : "var(--rc-bg)", border: `1px solid ${on ? "oklch(0.42 0.12 145)" : "var(--rc-border)"}`, borderRadius: "9999px", padding: "5px 14px", cursor: "pointer", fontFamily: "var(--font-inter)", transition: "all 0.15s" }}>
+                    {on && <span style={{ marginRight: "5px" }}>✓</span>}All staff
+                  </button>
+                );
+              })()}
+              {/* Per-person options (emails) */}
+              {staffRows.map(s => {
+                const on = !form.visible_to.includes("all") && form.visible_to.includes(s.email);
+                const disabled = form.visible_to.includes("all");
+                return (
+                  <button key={s.email} type="button" onClick={() => !disabled && toggleVisible(s.email)} style={{ fontSize: "12.5px", fontWeight: 500, color: disabled ? "var(--rc-faint)" : on ? "white" : "var(--rc-ink)", background: on ? "var(--rc-primary)" : "var(--rc-bg)", border: `1px solid ${on ? "var(--rc-primary)" : "var(--rc-border)"}`, borderRadius: "9999px", padding: "5px 14px", cursor: disabled ? "default" : "pointer", fontFamily: "var(--font-inter)", transition: "all 0.15s", opacity: disabled ? 0.45 : 1 }}>
+                    {on && <span style={{ marginRight: "5px" }}>✓</span>}{s.name}
+                  </button>
+                );
+              })}
+            </div>
+            <p style={{ fontSize: "11.5px", color: "var(--rc-faint)", marginTop: "8px", maxWidth: "none" }}>
+              {form.visible_to.includes("all") ? "All staff members will see this meeting." : form.visible_to.length === 0 ? "Only you (the creator) will see this meeting." : `Only the selected ${form.visible_to.length} ${form.visible_to.length === 1 ? "person" : "people"} will see this meeting.`}
+            </p>
+          </div>
+
+          {error && <p style={{ fontSize: "13px", color: "oklch(0.55 0.18 25)", margin: 0, maxWidth: "none" }}>{error}</p>}
+          <div style={{ display: "flex", justifyContent: "flex-end" }}>
+            <button onClick={save} disabled={saving} style={{ fontSize: "13px", fontWeight: 600, color: "white", background: "var(--rc-primary)", border: "none", borderRadius: "8px", padding: "9px 22px", cursor: saving ? "not-allowed" : "pointer", opacity: saving ? 0.7 : 1, fontFamily: "var(--font-inter)" }}>
+              {saving ? "Saving…" : "Save Meeting"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: "10px" }}>
+        {loading ? (
+          <p style={{ color: "var(--rc-faint)", fontSize: "13px" }}>Loading…</p>
+        ) : visibleRows.length === 0 ? (
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "200px" }}>
+            <p style={{ fontSize: "14px", color: "var(--rc-faint)", maxWidth: "none", textAlign: "center" }}>No meetings recorded yet. Use the button above to add the first entry.</p>
+          </div>
+        ) : (
+          visibleRows.map(r => {
+            const isOpen = expanded === r.id;
+            const dateStr = r.meeting_date ? new Date(r.meeting_date + "T00:00:00").toLocaleDateString("en-AU", { weekday: "short", day: "numeric", month: "short", year: "numeric" }) : "—";
+            const visLabel = r.visible_to?.includes("all") ? "All staff" : `${r.visible_to?.length ?? 0} ${(r.visible_to?.length ?? 0) === 1 ? "person" : "people"}`;
+            const canDelete = userRole === "owner" || r.created_by === userEmail;
+            return (
+              <div key={r.id} style={{ background: "var(--rc-surface)", border: "1px solid var(--rc-border)", borderRadius: "12px", overflow: "hidden" }}>
+                {/* Card header — always visible */}
+                <div onClick={() => setExpanded(p => p === r.id ? null : r.id)} style={{ padding: "16px 20px", display: "flex", alignItems: "center", gap: "16px", cursor: "pointer" }}>
+                  <div style={{ flexShrink: 0, textAlign: "center", background: "var(--rc-bg)", border: "1px solid var(--rc-border)", borderRadius: "8px", padding: "6px 10px", minWidth: "52px" }}>
+                    <div style={{ fontSize: "11px", fontWeight: 700, color: "var(--rc-faint)", textTransform: "uppercase", letterSpacing: "0.05em" }}>{r.meeting_date ? new Date(r.meeting_date + "T00:00:00").toLocaleDateString("en-AU", { month: "short" }) : ""}</div>
+                    <div style={{ fontSize: "20px", fontWeight: 700, color: "var(--rc-ink)", lineHeight: 1.1 }}>{r.meeting_date ? new Date(r.meeting_date + "T00:00:00").getDate() : "—"}</div>
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+                      <span style={{ fontSize: "11.5px", fontWeight: 600, color: "var(--rc-primary)", background: "var(--rc-bg)", border: "1px solid var(--rc-border)", borderRadius: "6px", padding: "2px 9px" }}>{r.meeting_type}</span>
+                      <span style={{ fontSize: "13.5px", fontWeight: 600, color: "var(--rc-ink)" }}>{r.title || dateStr}</span>
+                    </div>
+                    <div style={{ display: "flex", gap: "14px", marginTop: "5px", flexWrap: "wrap" }}>
+                      {(r.attendees?.length ?? 0) > 0 && <span style={{ fontSize: "12px", color: "var(--rc-muted)" }}>👥 {r.attendees.join(", ")}</span>}
+                      <span style={{ fontSize: "12px", color: "var(--rc-faint)" }}>👁 {visLabel}</span>
+                    </div>
+                  </div>
+                  <span style={{ fontSize: "18px", color: "var(--rc-faint)", flexShrink: 0, transform: isOpen ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>⌄</span>
+                </div>
+
+                {/* Expanded details */}
+                {isOpen && (
+                  <div style={{ borderTop: "1px solid var(--rc-border)", padding: "20px 20px 20px 20px", display: "flex", flexDirection: "column", gap: "16px" }}>
+                    {r.notes && (
+                      <div>
+                        <p style={{ fontSize: "11.5px", fontWeight: 700, color: "var(--rc-faint)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "8px", maxWidth: "none" }}>Notes</p>
+                        <p style={{ fontSize: "13.5px", color: "var(--rc-ink)", lineHeight: 1.7, whiteSpace: "pre-wrap", maxWidth: "none" }}>{r.notes}</p>
+                      </div>
+                    )}
+                    {(r.bullet_points?.length ?? 0) > 0 && (
+                      <div>
+                        <p style={{ fontSize: "11.5px", fontWeight: 700, color: "var(--rc-faint)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "8px", maxWidth: "none" }}>Action Items / Key Points</p>
+                        <ul style={{ margin: 0, paddingLeft: "18px", display: "flex", flexDirection: "column", gap: "6px" }}>
+                          {r.bullet_points.map((bp, i) => <li key={i} style={{ fontSize: "13.5px", color: "var(--rc-ink)", lineHeight: 1.6 }}>{bp}</li>)}
+                        </ul>
+                      </div>
+                    )}
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: "4px" }}>
+                      <span style={{ fontSize: "12px", color: "var(--rc-faint)" }}>Added by {r.created_by || "unknown"} · {new Date(r.created_at).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" })}</span>
+                      {canDelete && <button onClick={() => del(r.id)} style={{ fontSize: "12px", color: "oklch(0.55 0.18 25)", background: "none", border: "none", cursor: "pointer", fontFamily: "var(--font-inter)", padding: 0 }}>Delete meeting</button>}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })
+        )}
+      </div>
+    </div>
+  );
+}
+
 function StaticSubPage({ label, agencyName, agencyAbn, userEmail, userId, userRole, staffRows, policies, onPolicySaved, onPolicyUpdated, onPolicyDeleted, onStaffAdded }: {
   label: string; agencyName: string; agencyAbn: string; userEmail: string | null; userId: string | null; userRole: "owner" | "standard"; staffRows: StaffRow[];
   policies: PolicyRow[]; onPolicySaved: (p: PolicyRow) => void; onPolicyUpdated: (p: PolicyRow) => void; onPolicyDeleted: (id: string) => void;
@@ -7081,6 +7372,7 @@ function StaticSubPage({ label, agencyName, agencyAbn, userEmail, userId, userRo
     case "Incident Register":       return <IncidentRegisterPage />;
     case "Risk Register":           return <RiskRegisterPage />;
     case "Complaints Register":     return <ComplaintsRegisterPage userRole={userRole} />;
+    case "Meeting Diary":           return <MeetingDiaryPage staffRows={staffRows} userEmail={userEmail} userRole={userRole} />;
     default:                        return null;
   }
 }
@@ -7228,6 +7520,7 @@ export default function DashboardPage() {
     { id: "staff", label: "Staff", icon: <StaffIcon />, type: "static", children: ["Team Overview", "Licence Tracking", "CPD Records", "Onboarding"] },
     { id: "trust", label: "Trust Accounting", icon: <TrustIcon />, type: "static", children: ["Account Reconciliation", "Monthly Reports", "Transaction Log", "AML Compliance", "Audit Reports"] },
     { id: "registers", label: "Registers", icon: <RegIcon />, type: "static", children: ["Gift Register", "Incident Register", "Risk Register", "Complaints Register"] },
+    { id: "meetings", label: "Meetings", icon: <MeetingsIcon />, type: "static", children: ["Meeting Diary"] },
     { id: "settings", label: "Settings", icon: <SettingsIcon />, type: "static", children: ["Account", "Billing", "Team & Invites"] },
   ];
 
