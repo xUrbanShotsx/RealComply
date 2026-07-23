@@ -30,7 +30,6 @@ const managementChecklist = [
   "Management Agreement signed",
   "Property condition report completed",
   "Bond lodged with authority",
-  "Tenant identity verified (AML)",
   "Entry condition report completed",
   "Smoke alarm compliance checked",
   "Pool safety certificate obtained",
