@@ -22,6 +22,7 @@ const plans = [
     price: { monthly: 129 },
     description: "For single-office agencies getting compliance under control.",
     members: "Up to 20 team members",
+    storage: "10 GB storage",
     cta: "Sign up",
     highlight: false,
   },
@@ -30,6 +31,7 @@ const plans = [
     price: { monthly: 249 },
     description: "For growing offices with complex compliance requirements.",
     members: "Up to 60 team members",
+    storage: "40 GB storage",
     cta: "Sign up",
     highlight: true,
   },
@@ -38,6 +40,7 @@ const plans = [
     price: { monthly: 549 },
     description: "For large offices and multi-branch operations.",
     members: "Up to 120 team members",
+    storage: "100 GB storage",
     cta: "Sign up",
     highlight: false,
   },
@@ -84,7 +87,7 @@ export default function Pricing() {
           className="reveal"
           style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "16px", alignItems: "start" }}
         >
-          {plans.map(({ name, price, description, members, cta, highlight }) => (
+          {plans.map(({ name, price, description, members, storage, cta, highlight }) => (
             <div
               key={name}
               style={{
@@ -180,15 +183,26 @@ export default function Pricing() {
                 {cta}
               </a>
 
-              {/* Team member count — the key differentiator */}
-              <div style={{
-                display: "flex", alignItems: "center", gap: "8px",
-                padding: "10px 14px", borderRadius: "8px", marginBottom: "20px",
-                background: highlight ? "rgba(255,255,255,0.10)" : "rgba(83,58,253,0.06)",
-                border: highlight ? "1px solid rgba(255,255,255,0.12)" : "1px solid rgba(83,58,253,0.12)",
-              }}>
-                <span style={{ fontSize: "15px" }}>👥</span>
-                <span style={{ fontSize: "13px", fontWeight: 600, color: highlight ? "white" : "var(--s-ink)" }}>{members}</span>
+              {/* Key differentiators: team members + storage */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "20px" }}>
+                <div style={{
+                  display: "flex", alignItems: "center", gap: "8px",
+                  padding: "9px 14px", borderRadius: "8px",
+                  background: highlight ? "rgba(255,255,255,0.10)" : "rgba(83,58,253,0.06)",
+                  border: highlight ? "1px solid rgba(255,255,255,0.12)" : "1px solid rgba(83,58,253,0.12)",
+                }}>
+                  <span style={{ fontSize: "14px" }}>👥</span>
+                  <span style={{ fontSize: "13px", fontWeight: 600, color: highlight ? "white" : "var(--s-ink)" }}>{members}</span>
+                </div>
+                <div style={{
+                  display: "flex", alignItems: "center", gap: "8px",
+                  padding: "9px 14px", borderRadius: "8px",
+                  background: highlight ? "rgba(255,255,255,0.10)" : "rgba(83,58,253,0.06)",
+                  border: highlight ? "1px solid rgba(255,255,255,0.12)" : "1px solid rgba(83,58,253,0.12)",
+                }}>
+                  <span style={{ fontSize: "14px" }}>🗄️</span>
+                  <span style={{ fontSize: "13px", fontWeight: 600, color: highlight ? "white" : "var(--s-ink)" }}>{storage}</span>
+                </div>
               </div>
 
               <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: "10px" }}>
