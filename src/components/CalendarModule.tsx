@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { supabase } from "@/lib/supabase";
 
 type Ev = {
@@ -275,12 +276,12 @@ export default function CalendarModule({
 
   // ── Event modal ────────────────────────────────────────────────────────────
   function EventModal() {
-    if (!modal) return null;
+    if (!modal || typeof document === "undefined") return null;
     const isView = modal.mode === "view";
     const ev = (modal.mode === "view" || modal.mode === "edit") ? modal.event : null;
     const canEdit = !ev || ev.created_by === userId;
 
-    return (
+    return createPortal(
       <>
         <div onClick={() => setModal(null)} style={{ position: "fixed", inset: 0, background: "rgba(28,30,84,0.25)", zIndex: 200, backdropFilter: "blur(3px)" }} />
         <div style={{
@@ -392,7 +393,8 @@ export default function CalendarModule({
             )}
           </div>
         </div>
-      </>
+      </>,
+      document.body
     );
   }
 
