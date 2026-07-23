@@ -7095,7 +7095,7 @@ export default function DashboardPage() {
         </div>
 
         {!activeModule && (
-          <nav style={{ flex: 1, padding: "4px 10px 10px" }}>
+          <nav key="module-list" className="sidebar-panel-enter" style={{ flex: 1, padding: "4px 10px 10px" }}>
             <div style={{ padding: "6px 10px 10px" }}>
               <p style={{ fontSize: "10px", fontWeight: 700, color: "var(--rc-faint)", letterSpacing: "0.08em", textTransform: "uppercase", margin: 0, maxWidth: "none" }}>Modules</p>
             </div>
@@ -7114,7 +7114,7 @@ export default function DashboardPage() {
         )}
 
         {activeModule && module && (
-          <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+          <div key={`sub-${activeModule}`} className="sidebar-panel-enter" style={{ flex: 1, display: "flex", flexDirection: "column" }}>
             <div style={{ borderTop: "1px solid var(--rc-nav-border)", margin: "4px 10px 0", flexShrink: 0 }} />
             <button onClick={() => setSelected(null)}
               style={{ width: "calc(100% - 16px)", display: "flex", alignItems: "center", gap: "9px", padding: "12px 16px", border: "none", background: !selected ? "var(--rc-primary-light)" : "transparent", color: !selected ? "white" : "var(--rc-nav-text)", borderRadius: "8px", margin: "8px 8px 0", fontSize: "13px", fontWeight: 700, letterSpacing: "-0.01em", cursor: "pointer", textAlign: "left", flexShrink: 0, fontFamily: "var(--font-inter)", transition: "background 0.12s ease, color 0.12s ease" }}
@@ -7174,6 +7174,11 @@ export default function DashboardPage() {
 
       {/* Main */}
       <div style={{ flex: 1, marginLeft: "252px", display: "flex", minHeight: "100svh" }}>
+        <div
+          key={`${activeModule ?? "home"}__${selected?.type === "property" ? selected.id : selected?.label ?? "overview"}`}
+          className="main-panel-enter"
+          style={{ flex: 1, display: "flex" }}
+        >
         {selected?.type === "property" ? (
           selected.section === "sales" ? (
             <SalesPropertyChecklist key={selected.id} propertyId={selected.id} address={selected.address} onRemove={() => handleRemoveProperty(selected.id, "sales")} />
@@ -7187,8 +7192,29 @@ export default function DashboardPage() {
         ) : (
           <DashboardHome onNavigate={openModule} agencyName={agencyName} staffRows={staffRows} salesProps={salesProps} mgmtProps={mgmtProps} policies={policies} />
         )}
+        </div>
       </div>
     </div>
+
+    <style>{`
+      @keyframes sidebarSlideIn {
+        from { opacity: 0; transform: translateX(-14px); }
+        to   { opacity: 1; transform: translateX(0); }
+      }
+      @keyframes mainFadeUp {
+        from { opacity: 0; transform: translateY(10px); }
+        to   { opacity: 1; transform: translateY(0); }
+      }
+      .sidebar-panel-enter {
+        animation: sidebarSlideIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
+      }
+      .main-panel-enter {
+        animation: mainFadeUp 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .sidebar-panel-enter, .main-panel-enter { animation: none; }
+      }
+    `}</style>
     </OrgContext.Provider>
   );
 }
