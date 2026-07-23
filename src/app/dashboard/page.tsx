@@ -7075,10 +7075,8 @@ export default function DashboardPage() {
       {/* Sidebar */}
       <aside style={{ width: "252px", flexShrink: 0, background: "var(--rc-nav)", borderRight: "1px solid var(--rc-nav-border)", display: "flex", flexDirection: "column", position: "fixed", top: 0, left: 0, bottom: 0, overflowY: "auto", zIndex: 10 }}>
         {/* Logo */}
-        <div style={{ padding: "22px 18px 18px", flexShrink: 0 }}>
-          <div style={{ display: "flex", alignItems: "center" }}>
-            <span style={{ fontFamily: "var(--font-arimo)", fontWeight: 700, fontSize: "22px", letterSpacing: "0.06em", color: "var(--rc-primary)", textTransform: "uppercase" }}>Real Comply</span>
-          </div>
+        <div style={{ padding: "18px 18px 14px", flexShrink: 0 }}>
+          <img src="/dashboardtitle.png" alt="RealComply" style={{ height: "36px", width: "auto", objectFit: "contain", maxWidth: "216px" }} />
         </div>
 
         {/* Overview — always visible */}
