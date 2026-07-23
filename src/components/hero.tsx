@@ -117,7 +117,7 @@ export default function Hero() {
                 opacity: 0.7,
               }}
             >
-              No credit card required · Set up in under 15 minutes
+              14 day free trial
             </p>
           </div>
 
