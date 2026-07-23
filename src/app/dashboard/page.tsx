@@ -540,6 +540,36 @@ function PropertyChecklist({
 
   const [openItem, setOpenItem] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<"compliance" | "marketing">("compliance");
+  const orgOwnerId = useContext(OrgContext);
+  const [savedStatuses, setSavedStatuses] = useState<Record<string, string> | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    if (!orgOwnerId) return;
+    supabase.from("property_checklist_states").select("state").eq("property_id", propertyId).eq("user_id", orgOwnerId).maybeSingle().then(({ data }) => {
+      const saved = (data?.state ?? {}) as Record<string, string>;
+      setSavedStatuses(saved);
+      if (Object.keys(saved).length > 0) {
+        setItemData(prev => {
+          const next = { ...prev };
+          items.forEach((_, i) => { if (saved[String(i)]) { const k = `${propertyId}_${i}`; next[k] = { ...next[k], status: saved[String(i)] as ItemStatus }; } });
+          return next;
+        });
+      }
+    });
+  }, [propertyId, orgOwnerId]);
+
+  const isDirty = savedStatuses !== null && items.some((_, i) => itemData[`${propertyId}_${i}`]?.status !== (savedStatuses[String(i)] ?? "not_started"));
+
+  async function handleSave() {
+    if (!orgOwnerId) return;
+    setIsSaving(true);
+    const statusMap: Record<string, string> = {};
+    items.forEach((_, i) => { statusMap[String(i)] = itemData[`${propertyId}_${i}`]?.status ?? "not_started"; });
+    await supabase.from("property_checklist_states").upsert({ property_id: propertyId, user_id: orgOwnerId, state: statusMap, updated_at: new Date().toISOString() }, { onConflict: "property_id,user_id" });
+    setSavedStatuses(statusMap);
+    setIsSaving(false);
+  }
 
   function updateItem(key: string, data: ItemData) {
     setItemData((prev) => ({ ...prev, [key]: data }));
@@ -684,7 +714,12 @@ function PropertyChecklist({
             </div>
           )}
 
-          <div style={{ marginTop: "40px", paddingTop: "24px", borderTop: "1px solid var(--rc-border)" }}>
+          <div style={{ marginTop: "40px", paddingTop: "24px", borderTop: "1px solid var(--rc-border)", display: "flex", alignItems: "center", gap: "10px" }}>
+            {isDirty && (
+              <button onClick={handleSave} disabled={isSaving} style={{ fontSize: "13px", fontWeight: 600, color: "white", background: "var(--rc-primary)", border: "none", borderRadius: "8px", padding: "8px 16px", cursor: isSaving ? "not-allowed" : "pointer", opacity: isSaving ? 0.7 : 1, fontFamily: "var(--font-inter)" }}>
+                {isSaving ? "Saving…" : "Save changes"}
+              </button>
+            )}
             <button
               onClick={() => { if (window.confirm(`Remove "${address}" from your properties? This cannot be undone.`)) onRemove(); }}
               style={{ fontSize: "13px", fontWeight: 500, color: "oklch(0.50 0.18 25)", background: "transparent", border: "1px solid oklch(0.82 0.06 25)", borderRadius: "8px", padding: "8px 16px", cursor: "pointer", fontFamily: "var(--font-inter)", transition: "background 0.15s ease, color 0.15s ease" }}
@@ -1204,11 +1239,45 @@ function SalesPropertyChecklist({
   const [selectedItem, setSelectedItem] = useState<keyof SalesPropertyState | null>(null);
   const [activeTab, setActiveTab] = useState<"compliance" | "marketing">("compliance");
   const [savedSlots, setSavedSlots] = useState<Set<string>>(new Set());
+  const orgOwnerId = useContext(OrgContext);
+  const [savedStatuses, setSavedStatuses] = useState<Record<string, string> | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const SALES_KEYS: (keyof SalesPropertyState)[] = ["cma", "identification", "rates", "aml", "agencyAgreement", "contract"];
 
   useEffect(() => {
     supabase.from("property_files").select("slot").eq("property_id", propertyId)
       .then(({ data }) => { if (data) setSavedSlots(new Set(data.map((r: { slot: string }) => r.slot))); });
   }, [propertyId]);
+
+  useEffect(() => {
+    if (!orgOwnerId) return;
+    supabase.from("property_checklist_states").select("state").eq("property_id", propertyId).eq("user_id", orgOwnerId).maybeSingle().then(({ data }) => {
+      const saved = (data?.state ?? {}) as Record<string, string>;
+      setSavedStatuses(saved);
+      if (Object.keys(saved).length > 0) {
+        setState(prev => ({
+          cma: { ...prev.cma, status: (saved.cma as ItemStatus) ?? prev.cma.status },
+          identification: { ...prev.identification, status: (saved.identification as ItemStatus) ?? prev.identification.status },
+          rates: { ...prev.rates, status: (saved.rates as ItemStatus) ?? prev.rates.status },
+          aml: { ...prev.aml, status: (saved.aml as ItemStatus) ?? prev.aml.status },
+          agencyAgreement: { ...prev.agencyAgreement, status: (saved.agencyAgreement as ItemStatus) ?? prev.agencyAgreement.status },
+          contract: { ...prev.contract, status: (saved.contract as ItemStatus) ?? prev.contract.status },
+        }));
+      }
+    });
+  }, [propertyId, orgOwnerId]);
+
+  const isDirty = savedStatuses !== null && SALES_KEYS.some(k => state[k].status !== (savedStatuses[k] ?? "not_started"));
+
+  async function handleSave() {
+    if (!orgOwnerId) return;
+    setIsSaving(true);
+    const statusMap = Object.fromEntries(SALES_KEYS.map(k => [k, state[k].status]));
+    await supabase.from("property_checklist_states").upsert({ property_id: propertyId, user_id: orgOwnerId, state: statusMap, updated_at: new Date().toISOString() }, { onConflict: "property_id,user_id" });
+    setSavedStatuses(statusMap);
+    setIsSaving(false);
+  }
 
   function handleFileChange(slot: string, hasFile: boolean) {
     setSavedSlots((prev) => {
@@ -1402,7 +1471,12 @@ function SalesPropertyChecklist({
             </div>
           )}
 
-          <div style={{ marginTop: "40px", paddingTop: "24px", borderTop: "1px solid var(--rc-border)" }}>
+          <div style={{ marginTop: "40px", paddingTop: "24px", borderTop: "1px solid var(--rc-border)", display: "flex", alignItems: "center", gap: "10px" }}>
+            {isDirty && (
+              <button onClick={handleSave} disabled={isSaving} style={{ fontSize: "13px", fontWeight: 600, color: "white", background: "var(--rc-primary)", border: "none", borderRadius: "8px", padding: "8px 16px", cursor: isSaving ? "not-allowed" : "pointer", opacity: isSaving ? 0.7 : 1, fontFamily: "var(--font-inter)" }}>
+                {isSaving ? "Saving…" : "Save changes"}
+              </button>
+            )}
             <button
               onClick={() => { if (window.confirm(`Remove "${address}" from your properties? This cannot be undone.`)) onRemove(); }}
               style={{ fontSize: "13px", fontWeight: 500, color: "oklch(0.50 0.18 25)", background: "transparent", border: "1px solid oklch(0.82 0.06 25)", borderRadius: "8px", padding: "8px 16px", cursor: "pointer", fontFamily: "var(--font-inter)", transition: "background 0.15s ease, color 0.15s ease" }}
@@ -6393,9 +6467,9 @@ export default function DashboardPage() {
       <aside style={{ width: "252px", flexShrink: 0, background: "var(--rc-nav)", display: "flex", flexDirection: "column", position: "fixed", top: 0, left: 0, bottom: 0, overflowY: "auto", zIndex: 10 }}>
         {/* Logo */}
         <div style={{ padding: "20px 16px 16px", flexShrink: 0 }}>
-          <Link href="/" style={{ display: "flex", alignItems: "center", textDecoration: "none" }}>
+          <div style={{ display: "flex", alignItems: "center" }}>
             <span style={{ fontFamily: "var(--font-arimo)", fontWeight: 700, fontSize: "26px", letterSpacing: "0.08em", color: "var(--rc-nav-text)", textTransform: "uppercase" }}>Real Comply</span>
-          </Link>
+          </div>
         </div>
 
         {!activeModule && (
