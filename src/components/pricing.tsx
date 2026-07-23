@@ -8,10 +8,7 @@ const sharedFeatures = [
   "Policies & procedures library",
   "Marketing tracking per listing",
   "Complaints & incident registers",
-  "Meeting diary",
-  "Email reminders & alerts",
   "Full audit readiness suite",
-  "Audit export (PDF)",
   "Legislative update alerts",
   "Priority support",
 ];
