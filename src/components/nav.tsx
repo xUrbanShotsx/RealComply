@@ -38,7 +38,7 @@ export default function Nav() {
       >
         {/* Logo */}
         <a href="/" style={{ display: "flex", alignItems: "center" }}>
-          <img src="/RealComply (2000 x 1000 px).png" alt="RealComply" style={{ height: "40px", width: "auto", objectFit: "contain", mixBlendMode: "multiply" }} />
+          <img src="/RealComply (2000 x 1000 px).png" alt="RealComply" style={{ height: "52px", width: "auto", objectFit: "contain", mixBlendMode: "multiply" }} />
         </a>
 
         {/* Desktop links */}

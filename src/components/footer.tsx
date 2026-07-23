@@ -26,7 +26,7 @@ export default function Footer() {
           {/* Brand */}
           <div>
             <div style={{ marginBottom: "20px" }}>
-              <img src="/RealComply (2000 x 1000 px).png" alt="RealComply" style={{ height: "36px", width: "auto", objectFit: "contain", mixBlendMode: "multiply" }} />
+              <img src="/RealComply (2000 x 1000 px).png" alt="RealComply" style={{ height: "52px", width: "auto", objectFit: "contain", mixBlendMode: "multiply" }} />
             </div>
             <p style={{ fontSize: "14px", color: "var(--rc-muted)", lineHeight: 1.75, maxWidth: "280px" }}>
               The compliance platform built for Australian real estate businesses. CPD, trust accounting, AML, audit readiness — one place.
