@@ -6,6 +6,7 @@ import { useState, useRef, useEffect, useCallback, createContext, useContext } f
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import type { Document } from "@/lib/supabase";
+import CalendarModule from "@/components/CalendarModule";
 
 // Org context — provides the org owner's user_id to all sub-components
 const OrgContext = createContext<string | null>(null);
@@ -78,6 +79,7 @@ function StaffIcon() { return <svg width="18" height="18" viewBox="0 0 18 18" fi
 function TrustIcon() { return <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="2" y="4" width="14" height="11" rx="2" stroke="currentColor" strokeWidth="1.6" /><path d="M2 8h14" stroke="currentColor" strokeWidth="1.6" /><path d="M6 12h2M10 12h2" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /></svg>; }
 function SettingsIcon() { return <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="2.5" stroke="currentColor" strokeWidth="1.6" /><path d="M9 2v1.5M9 14.5V16M2 9h1.5M14.5 9H16M3.93 3.93l1.06 1.06M13.01 13.01l1.06 1.06M14.07 3.93l-1.06 1.06M4.99 13.01l-1.06 1.06" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /></svg>; }
 function MeetingsIcon() { return <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="2" y="3" width="14" height="12" rx="2" stroke="currentColor" strokeWidth="1.6" /><path d="M2 7h14" stroke="currentColor" strokeWidth="1.6" /><path d="M6 2v2M12 2v2" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /><path d="M5 11h4M5 13.5h6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" /></svg>; }
+function CalendarIcon() { return <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="2" y="3" width="14" height="13" rx="2" stroke="currentColor" strokeWidth="1.6" /><path d="M2 8h14" stroke="currentColor" strokeWidth="1.6" /><path d="M6 2v2M12 2v2" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /><circle cx="6" cy="12" r="1" fill="currentColor" /><circle cx="9" cy="12" r="1" fill="currentColor" /><circle cx="12" cy="12" r="1" fill="currentColor" /></svg>; }
 
 const iconMap: Record<string, React.ReactNode> = {
   policies: <PolIcon />, sales: <SalesIcon />, management: <MgmtIcon />, staff: <StaffIcon />, trust: <TrustIcon />, registers: <RegIcon />, meetings: <MeetingsIcon />,
@@ -7499,8 +7501,8 @@ function MeetingDiaryPage({ staffRows, userEmail, userRole }: { staffRows: Staff
   );
 }
 
-function StaticSubPage({ label, agencyName, agencyAbn, userEmail, userId, userRole, staffRows, policies, onPolicySaved, onPolicyUpdated, onPolicyDeleted, onStaffAdded }: {
-  label: string; agencyName: string; agencyAbn: string; userEmail: string | null; userId: string | null; userRole: "owner" | "standard"; staffRows: StaffRow[];
+function StaticSubPage({ label, agencyName, agencyAbn, userEmail, userId, orgOwnerId, userRole, staffRows, policies, onPolicySaved, onPolicyUpdated, onPolicyDeleted, onStaffAdded }: {
+  label: string; agencyName: string; agencyAbn: string; userEmail: string | null; userId: string | null; orgOwnerId: string | null; userRole: "owner" | "standard"; staffRows: StaffRow[];
   policies: PolicyRow[]; onPolicySaved: (p: PolicyRow) => void; onPolicyUpdated: (p: PolicyRow) => void; onPolicyDeleted: (id: string) => void;
   onStaffAdded: (s: StaffRow) => void;
 }) {
@@ -7527,6 +7529,7 @@ function StaticSubPage({ label, agencyName, agencyAbn, userEmail, userId, userRo
     case "Risk Register":           return <RiskRegisterPage />;
     case "Complaints Register":     return <ComplaintsRegisterPage userRole={userRole} />;
     case "Meeting Diary":           return <MeetingDiaryPage staffRows={staffRows} userEmail={userEmail} userRole={userRole} />;
+    case "Calendar":                return <CalendarModule orgOwnerId={orgOwnerId} userId={userId} />;
     default:                        return null;
   }
 }
@@ -7675,6 +7678,7 @@ export default function DashboardPage() {
     { id: "staff", label: "Staff", icon: <StaffIcon />, type: "static", children: ["Team Overview", "Licence Tracking", "CPD Records", "Onboarding"] },
     { id: "trust", label: "Trust Accounting", icon: <TrustIcon />, type: "static", children: ["Account Reconciliation", "Monthly Reports", "Transaction Log", "AML Compliance", "Audit Reports"] },
     { id: "registers", label: "Registers", icon: <RegIcon />, type: "static", children: ["Gift Register", "Incident Register", "Risk Register", "Complaints Register"] },
+    { id: "calendar", label: "Calendar", icon: <CalendarIcon />, type: "static", children: ["Calendar"] },
     { id: "meetings", label: "Meetings", icon: <MeetingsIcon />, type: "static", children: ["Meeting Diary"] },
     { id: "settings", label: "Settings", icon: <SettingsIcon />, type: "static", children: ["Account", "Billing", "Team & Invites"] },
   ];
@@ -7828,7 +7832,7 @@ export default function DashboardPage() {
             <PropertyChecklist key={selected.id} propertyId={selected.id} address={selected.address} type={selected.section} onRemove={() => handleRemoveProperty(selected.id, "management")} />
           )
         ) : selected?.type === "static" ? (
-          <StaticSubPage label={selected.label} agencyName={agencyName} agencyAbn={agencyAbn} userEmail={userEmail} userId={userId} userRole={userRole} staffRows={staffRows} policies={policies} onPolicySaved={handlePolicySaved} onPolicyUpdated={handlePolicyUpdated} onPolicyDeleted={handlePolicyDeleted} onStaffAdded={(s) => setStaffRows(prev => [...prev, s])} />
+          <StaticSubPage label={selected.label} agencyName={agencyName} agencyAbn={agencyAbn} userEmail={userEmail} userId={userId} orgOwnerId={orgOwnerId} userRole={userRole} staffRows={staffRows} policies={policies} onPolicySaved={handlePolicySaved} onPolicyUpdated={handlePolicyUpdated} onPolicyDeleted={handlePolicyDeleted} onStaffAdded={(s) => setStaffRows(prev => [...prev, s])} />
         ) : activeModule && activeModule !== "settings" ? (
           <ModuleOverview moduleId={activeModule} onSelectProperty={setSelected} salesProps={salesProps} mgmtProps={mgmtProps} onAddSalesProperty={handleAddSalesProperty} onAddMgmtProperty={handleAddMgmtProperty} staffRows={staffRows} policies={policies} />
         ) : (
