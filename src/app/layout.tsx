@@ -20,6 +20,7 @@ export const metadata: Metadata = {
   title: "Real Comply — Compliance Software for Australian Real Estate",
   description:
     "The compliance platform built for Australian real estate businesses. CPD tracking, audit readiness, trust accounting compliance, AML, policies and procedures — all in one place.",
+  icons: { icon: "/RealComplyicon.png", apple: "/RealComplyicon.png" },
 };
 
 export default function RootLayout({
