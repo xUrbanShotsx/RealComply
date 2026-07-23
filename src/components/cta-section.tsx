@@ -128,7 +128,7 @@ export default function CtaSection() {
             maxWidth: "none",
           }}
         >
-          No credit card required · Cancel any time
+          Sign up for a 14 day free trial · No lock in contracts
         </p>
       </div>
     </section>

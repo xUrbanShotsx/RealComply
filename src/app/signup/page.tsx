@@ -218,7 +218,7 @@ export default function SignUpPage() {
           ) : step === 2 ? (
             <>
               <h1 style={{ fontSize: "1.75rem", fontWeight: 800, color: "var(--rc-ink)", letterSpacing: "-0.035em", marginBottom: "8px", textAlign: "center" }}>Choose your plan</h1>
-              <p style={{ fontSize: "15px", color: "var(--rc-muted)", marginBottom: "36px", textAlign: "center", maxWidth: "none" }}>No lock-in contracts. Cancel any time.</p>
+              <p style={{ fontSize: "15px", color: "var(--rc-muted)", marginBottom: "36px", textAlign: "center", maxWidth: "none" }}>Sign up for a 14 day free trial · No lock in contracts</p>
 
               <form onSubmit={handleStep2}>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px", marginBottom: "28px" }} className="plan-grid">

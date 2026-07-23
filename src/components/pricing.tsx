@@ -221,7 +221,7 @@ export default function Pricing() {
         </div>
 
         <p style={{ textAlign: "center", marginTop: "28px", fontSize: "13px", color: "var(--s-ink-mute)", maxWidth: "none", opacity: 0.75 }}>
-          No credit card required. Cancel any time.
+          Sign up for a 14 day free trial · No lock in contracts
         </p>
       </div>
     </section>
