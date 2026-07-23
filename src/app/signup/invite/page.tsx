@@ -44,8 +44,12 @@ function InviteContent() {
 
     if (authError) { setError(authError.message); setLoading(false); return; }
 
-    // Mark invite as accepted
-    await supabase.from("invites").update({ accepted_at: new Date().toISOString(), email }).eq("token", token!);
+    // Mark invite as accepted via server route (service role bypasses RLS)
+    await fetch("/api/accept-invite", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token, email }),
+    });
 
     router.push("/signin?invited=1");
   }
