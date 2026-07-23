@@ -1,37 +1,38 @@
 @import "tailwindcss";
 
 :root {
-  /* Navigation (white sidebar) */
+  /* Navigation (light blue sidebar) */
   --rc-nav: #ffffff;
-  --rc-nav-text: oklch(0.32 0.07 264);
-  --rc-nav-hover: oklch(0.96 0.04 264);
-  --rc-nav-active-bg: oklch(0.57 0.24 264);
-  --rc-nav-border: oklch(0.91 0.02 264);
+  --rc-nav-text: oklch(0.38 0.008 220);
+  --rc-nav-hover: oklch(0.95 0.010 220);
+  --rc-nav-active-bg: #8c52ff;
+  --rc-nav-border: oklch(0.90 0.008 220);
 
   /* Page surfaces */
+  --rc-page: oklch(0.965 0.010 295);
   --rc-bg: #ffffff;
-  --rc-surface: oklch(0.975 0.01 264);
-  --rc-surface-2: oklch(0.962 0.012 264);
-  --rc-ink: oklch(0.14 0.04 264);
-  --rc-muted: oklch(0.40 0.05 264);
-  --rc-faint: oklch(0.58 0.03 264);
-  --rc-border: oklch(0.90 0.02 264);
-  --rc-border-subtle: oklch(0.945 0.01 264);
+  --rc-surface: #ffffff;
+  --rc-surface-2: oklch(0.97 0.006 220);
+  --rc-ink: oklch(0.18 0.008 220);
+  --rc-muted: oklch(0.42 0.008 220);
+  --rc-faint: oklch(0.58 0.007 220);
+  --rc-border: oklch(0.85 0.008 220);
+  --rc-border-subtle: oklch(0.90 0.006 220);
 
-  /* Brand — indigo */
-  --rc-primary: oklch(0.57 0.24 264);
-  --rc-primary-mid: oklch(0.50 0.26 264);
-  --rc-primary-light: oklch(0.95 0.06 264);
-  --rc-accent: oklch(0.72 0.17 55);
-  --rc-accent-dark: oklch(0.52 0.19 55);
+  /* Brand — green */
+  --rc-primary: #8c52ff;
+  --rc-primary-mid: oklch(0.40 0.20 295);
+  --rc-primary-light: #8c52ff;
+  --rc-accent: oklch(0.62 0.15 55);
+  --rc-accent-dark: oklch(0.50 0.16 55);
 
   /* Elevation */
-  --rc-shadow-sm: 0 1px 3px oklch(0.10 0.005 250 / 0.07), 0 1px 2px oklch(0.10 0.005 250 / 0.04);
-  --rc-shadow: 0 2px 8px oklch(0.10 0.005 250 / 0.10), 0 1px 3px oklch(0.10 0.005 250 / 0.05);
+  --rc-shadow-sm: 0 1px 3px oklch(0.10 0.005 240 / 0.08), 0 1px 2px oklch(0.10 0.005 240 / 0.05);
+  --rc-shadow: 0 2px 8px oklch(0.10 0.005 240 / 0.10), 0 1px 3px oklch(0.10 0.005 240 / 0.06);
 }
 
 @theme inline {
-  --color-background: var(--rc-bg);
+  --color-background: var(--rc-page);
   --color-foreground: var(--rc-ink);
   --font-sans: var(--font-inter);
 }
@@ -47,7 +48,7 @@ html {
 }
 
 body {
-  background-color: var(--rc-bg);
+  background-color: var(--rc-page);
   color: var(--rc-ink);
   font-family: var(--font-inter), system-ui, sans-serif;
   line-height: 1.6;

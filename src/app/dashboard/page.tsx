@@ -102,7 +102,7 @@ type ItemDataMap = Record<string, ItemData>;
 const STATUS_CONFIG: Record<ItemStatus, { label: string; color: string; bg: string; border: string }> = {
   not_started: { label: "Not started", color: "var(--rc-faint)", bg: "transparent", border: "var(--rc-border)" },
   in_progress: { label: "In progress", color: "oklch(0.55 0.15 55)", bg: "oklch(0.97 0.025 55)", border: "oklch(0.82 0.09 55)" },
-  complete: { label: "Complete", color: "oklch(0.45 0.14 145)", bg: "oklch(0.96 0.025 145)", border: "oklch(0.82 0.08 145)" },
+  complete: { label: "Complete", color: "oklch(0.45 0.14 145)", bg: "oklch(0.95 0.05 185)", border: "oklch(0.80 0.08 185)" },
   na: { label: "N/A", color: "var(--rc-muted)", bg: "var(--rc-surface)", border: "var(--rc-border)" },
 };
 
@@ -482,7 +482,7 @@ function MarketingChecklist({ propertyId }: { propertyId: string }) {
             <div style={{ padding: "28px 20px", textAlign: "center", color: "var(--rc-faint)", fontSize: "13px" }}>No items yet — add one below.</div>
           )}
           {items.map((item, i) => (
-            <div key={item.id} style={{ display: "flex", alignItems: "center", gap: "12px", padding: "13px 18px", borderBottom: i < items.length - 1 ? "1px solid var(--rc-border)" : "none", background: item.done ? "oklch(0.985 0.006 145)" : "var(--rc-bg)", transition: "background 0.15s" }}>
+            <div key={item.id} style={{ display: "flex", alignItems: "center", gap: "12px", padding: "13px 18px", borderBottom: i < items.length - 1 ? "1px solid var(--rc-border)" : "none", background: item.done ? "oklch(0.97 0.04 185)" : "var(--rc-bg)", transition: "background 0.15s" }}>
               <button onClick={() => toggleItem(item.id)}
                 style={{ width: "20px", height: "20px", borderRadius: "6px", border: item.done ? "none" : "1.5px solid var(--rc-border)", background: item.done ? "oklch(0.60 0.16 145)" : "transparent", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, cursor: "pointer", padding: 0, transition: "all 0.15s" }}>
                 {item.done && <svg width="11" height="9" viewBox="0 0 11 9" fill="none"><path d="M1 4l3.5 3.5L10 1" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>}
@@ -505,7 +505,7 @@ function MarketingChecklist({ propertyId }: { propertyId: string }) {
         </button>
 
         {pct === 100 && items.length > 0 && (
-          <div style={{ marginTop: "20px", padding: "14px 18px", background: "oklch(0.96 0.025 145)", border: "1px solid oklch(0.82 0.08 145)", borderRadius: "10px", display: "flex", alignItems: "center", gap: "10px" }}>
+          <div style={{ marginTop: "20px", padding: "14px 18px", background: "oklch(0.95 0.05 185)", border: "1px solid oklch(0.80 0.08 185)", borderRadius: "10px", display: "flex", alignItems: "center", gap: "10px" }}>
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="7" fill="oklch(0.60 0.16 145)" /><path d="M5.5 9l2.5 2.5 4-5" stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
             <span style={{ fontSize: "14px", fontWeight: 600, color: "oklch(0.38 0.13 145)" }}>All marketing tasks complete.</span>
           </div>
@@ -636,7 +636,7 @@ function PropertyChecklist({
                     gap: "14px",
                     padding: "14px 18px",
                     borderBottom: i < items.length - 1 ? "1px solid var(--rc-border)" : "none",
-                    background: isOpen ? "var(--rc-surface)" : status === "complete" ? "oklch(0.985 0.006 145)" : "var(--rc-bg)",
+                    background: isOpen ? "var(--rc-surface)" : status === "complete" ? "oklch(0.97 0.04 185)" : "var(--rc-bg)",
                     cursor: "pointer",
                     transition: "background 0.15s ease",
                     userSelect: "none",
@@ -706,7 +706,7 @@ function PropertyChecklist({
           </div>
 
           {pct === 100 && (
-            <div style={{ marginTop: "20px", padding: "14px 18px", background: "oklch(0.96 0.025 145)", border: "1px solid oklch(0.82 0.08 145)", borderRadius: "10px", display: "flex", alignItems: "center", gap: "10px" }}>
+            <div style={{ marginTop: "20px", padding: "14px 18px", background: "oklch(0.95 0.05 185)", border: "1px solid oklch(0.80 0.08 185)", borderRadius: "10px", display: "flex", alignItems: "center", gap: "10px" }}>
               <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
                 <circle cx="9" cy="9" r="7" fill="oklch(0.60 0.16 145)" />
                 <path d="M5.5 9l2.5 2.5 4-5" stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
@@ -1163,9 +1163,9 @@ function SalesItemPanel({
               alignItems: "center",
               gap: "10px",
               padding: "12px 14px",
-              background: idSighted ? "oklch(0.96 0.025 145)" : "var(--rc-surface)",
+              background: idSighted ? "oklch(0.95 0.05 185)" : "var(--rc-surface)",
               borderRadius: "9px",
-              border: `1px solid ${idSighted ? "oklch(0.82 0.08 145)" : "var(--rc-border)"}`,
+              border: `1px solid ${idSighted ? "oklch(0.80 0.08 185)" : "var(--rc-border)"}`,
               cursor: "pointer",
               transition: "all 0.15s ease",
               userSelect: "none",
@@ -1269,8 +1269,6 @@ function SalesPropertyChecklist({
     });
   }, [propertyId, orgOwnerId]);
 
-  const isDirty = savedStatuses !== null && SALES_KEYS.some(k => state[k].status !== (savedStatuses[k] ?? "not_started"));
-
   async function handleSave() {
     if (!orgOwnerId) return;
     setIsSaving(true);
@@ -1296,6 +1294,8 @@ function SalesPropertyChecklist({
     agencyAgreement: { files: [], status: "not_started" },
     contract: { files: [], status: "not_started" },
   });
+
+  const isDirty = savedStatuses !== null && SALES_KEYS.some(k => state[k].status !== (savedStatuses[k] ?? "not_started"));
 
   const items: { key: keyof SalesPropertyState; label: string; subtitle: () => string }[] = [
     {
@@ -1398,7 +1398,7 @@ function SalesPropertyChecklist({
                     gap: "14px",
                     padding: "14px 18px",
                     borderBottom: i < items.length - 1 ? "1px solid var(--rc-border)" : "none",
-                    background: isOpen ? "var(--rc-surface)" : st === "complete" ? "oklch(0.985 0.006 145)" : "var(--rc-bg)",
+                    background: isOpen ? "var(--rc-surface)" : st === "complete" ? "oklch(0.97 0.04 185)" : "var(--rc-bg)",
                     cursor: "pointer",
                     transition: "background 0.15s ease",
                     userSelect: "none",
@@ -1463,7 +1463,7 @@ function SalesPropertyChecklist({
           </div>
 
           {pct === 100 && (
-            <div style={{ marginTop: "20px", padding: "14px 18px", background: "oklch(0.96 0.025 145)", border: "1px solid oklch(0.82 0.08 145)", borderRadius: "10px", display: "flex", alignItems: "center", gap: "10px" }}>
+            <div style={{ marginTop: "20px", padding: "14px 18px", background: "oklch(0.95 0.05 185)", border: "1px solid oklch(0.80 0.08 185)", borderRadius: "10px", display: "flex", alignItems: "center", gap: "10px" }}>
               <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
                 <circle cx="9" cy="9" r="7" fill="oklch(0.60 0.16 145)" />
                 <path d="M5.5 9l2.5 2.5 4-5" stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
@@ -1754,8 +1754,8 @@ function DashboardHome({ onNavigate, agencyName, staffRows, salesProps, mgmtProp
   const moduleScores = moduleOverview.map(m => computeModuleData(m.id, staffRows, salesProps, mgmtProps, policies).score);
   const overallScore = Math.round(moduleScores.reduce((a, b) => a + b, 0) / moduleScores.length);
   const scoreLabel = overallScore >= 85 ? "Good standing" : overallScore >= 65 ? "Needs attention" : "Action required";
-  const badgeColor = overallScore >= 85 ? "oklch(0.46 0.13 145)" : overallScore >= 65 ? "oklch(0.50 0.12 55)" : "oklch(0.46 0.18 25)";
-  const badgeBg = overallScore >= 85 ? "oklch(0.94 0.04 145)" : overallScore >= 65 ? "oklch(0.96 0.04 55)" : "oklch(0.95 0.05 25)";
+  const badgeColor = overallScore >= 85 ? "oklch(0.38 0.13 145)" : overallScore >= 65 ? "oklch(0.44 0.13 55)" : "oklch(0.44 0.17 25)";
+  const badgeBg = overallScore >= 85 ? "oklch(0.93 0.06 185)" : overallScore >= 65 ? "oklch(0.93 0.06 55)" : "oklch(0.93 0.05 25)";
 
   const totalProps = salesProps.length + mgmtProps.length;
   const totalStaff = staffRows.length;
@@ -1826,7 +1826,7 @@ function DashboardHome({ onNavigate, agencyName, staffRows, salesProps, mgmtProp
             <div key={label} style={{ display: "grid", gridTemplateColumns: "130px 110px 1fr", alignItems: "center", padding: "13px 22px", borderBottom: i < stats.length - 1 ? "1px solid var(--rc-border)" : "none", gap: "0" }}>
               <p style={{ fontSize: "12.5px", color: "var(--rc-faint)", maxWidth: "none", fontWeight: 500 }}>{label}</p>
               <p style={{ fontSize: "14px", fontWeight: 700, color: "var(--rc-ink)", letterSpacing: "-0.025em", maxWidth: "none" }}>{value}</p>
-              <p style={{ fontSize: "12px", color: warn ? "oklch(0.50 0.12 55)" : "var(--rc-faint)", maxWidth: "none", fontWeight: warn ? 500 : 400 }}>{detail}</p>
+              <p style={{ fontSize: "12px", color: warn ? "oklch(0.44 0.13 55)" : "var(--rc-faint)", maxWidth: "none", fontWeight: warn ? 500 : 400 }}>{detail}</p>
             </div>
           ))}
         </div>
@@ -1837,7 +1837,7 @@ function DashboardHome({ onNavigate, agencyName, staffRows, salesProps, mgmtProp
         {moduleOverview.map((m, i) => {
           const { score } = computeModuleData(m.id, staffRows, salesProps, mgmtProps, policies);
           const trackColor = score >= 85 ? "var(--rc-primary)" : score >= 65 ? "oklch(0.58 0.13 55)" : "oklch(0.52 0.18 25)";
-          const pctColor = score >= 85 ? "oklch(0.38 0.12 260)" : score >= 65 ? "oklch(0.44 0.12 55)" : "oklch(0.44 0.17 25)";
+          const pctColor = score >= 85 ? "var(--rc-primary-mid)" : score >= 65 ? "oklch(0.44 0.12 55)" : "oklch(0.44 0.17 25)";
           return (
             <button
               key={m.id}
@@ -1846,7 +1846,7 @@ function DashboardHome({ onNavigate, agencyName, staffRows, salesProps, mgmtProp
               onMouseEnter={(e) => { e.currentTarget.style.background = "var(--rc-surface-2)"; }}
               onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
             >
-              <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "var(--rc-primary-light)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--rc-primary)", flexShrink: 0 }}>
+              <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "var(--rc-primary-light)", display: "flex", alignItems: "center", justifyContent: "center", color: "white", flexShrink: 0 }}>
                 {m.icon}
               </div>
               <span style={{ fontSize: "13.5px", fontWeight: 500, color: "var(--rc-ink)", letterSpacing: "-0.01em" }}>{m.label}</span>
@@ -2141,7 +2141,7 @@ function ModuleOverview({ moduleId, onSelectProperty, salesProps, mgmtProps, onA
       </div>
 
       {/* Stats — unified strip */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", flexShrink: 0, border: "1px solid var(--rc-border)", borderRadius: "12px", overflow: "hidden", boxShadow: "var(--rc-shadow-sm)" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", flexShrink: 0, border: "1px solid var(--rc-border)", borderRadius: "12px", overflow: "hidden", boxShadow: "var(--rc-shadow-sm)", background: "#ffffff" }}>
         {stats.map(({ label, value, sub }, i) => (
           <div key={label} style={{ padding: "18px 20px", borderRight: i < 3 ? "1px solid var(--rc-border)" : "none", display: "flex", flexDirection: "column", gap: "5px" }}>
             <p style={{ fontSize: "11.5px", color: "var(--rc-faint)", maxWidth: "none" }}>{label}</p>
@@ -2605,7 +2605,7 @@ const catColors: Record<string, { color: string; bg: string }> = {
   Sales:      { color: "oklch(0.38 0.12 260)", bg: "oklch(0.94 0.03 260)" },
   Management: { color: "oklch(0.40 0.12 195)", bg: "oklch(0.94 0.03 195)" },
   Compliance: { color: "oklch(0.46 0.18 25)",  bg: "oklch(0.96 0.03 25)"  },
-  Trust:      { color: "oklch(0.42 0.12 145)", bg: "oklch(0.95 0.025 145)" },
+  Trust:      { color: "oklch(0.42 0.12 145)", bg: "oklch(0.94 0.05 185)" },
   Admin:      { color: "var(--rc-muted)",       bg: "var(--rc-surface)"    },
   Staff:      { color: "oklch(0.40 0.12 310)", bg: "oklch(0.95 0.025 310)" },
 };
@@ -4104,7 +4104,7 @@ function PolicyTemplatesPage({ onPolicySaved, savedNames, agencyName, agencyAbn 
             const cat = catColors[t.category] ?? catColors.Admin;
             const isSaved = savedNames.includes(t.name);
             return (
-              <div key={t.name} style={{ border: "1px solid var(--rc-border)", borderRadius: "12px", padding: "20px 22px", background: "var(--rc-bg)", boxShadow: "var(--rc-shadow-sm)", display: "flex", flexDirection: "column", gap: "12px" }}>
+              <div key={t.name} style={{ border: "1px solid var(--rc-border)", borderRadius: "12px", padding: "20px 22px", background: "#ffffff", boxShadow: "var(--rc-shadow-sm)", display: "flex", flexDirection: "column", gap: "12px" }}>
                 <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "12px" }}>
                   <div style={{ minWidth: 0 }}>
                     <span style={{ fontSize: "11px", fontWeight: 600, color: cat.color, background: cat.bg, padding: "2px 9px", borderRadius: "100px", display: "inline-block", marginBottom: "8px" }}>{t.category}</span>
@@ -4119,7 +4119,7 @@ function PolicyTemplatesPage({ onPolicySaved, savedNames, agencyName, agencyAbn 
                   }
                   <button
                     onClick={() => startTemplate(t)}
-                    style={{ fontSize: "12.5px", fontWeight: 600, color: "var(--rc-primary)", background: "var(--rc-primary-light)", border: "none", padding: "6px 14px", borderRadius: "7px", cursor: "pointer", fontFamily: "var(--font-inter)" }}
+                    style={{ fontSize: "12.5px", fontWeight: 600, color: "white", background: "var(--rc-primary-light)", border: "none", padding: "6px 14px", borderRadius: "7px", cursor: "pointer", fontFamily: "var(--font-inter)" }}
                   >
                     {isSaved ? "Recreate" : "Create →"}
                   </button>
@@ -4242,7 +4242,7 @@ function PolicyTemplatesPage({ onPolicySaved, savedNames, agencyName, agencyAbn 
     return (
       <div style={PAGE_WRAP}>
         <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "16px" }}>
-          <div style={{ width: "56px", height: "56px", borderRadius: "50%", background: "oklch(0.96 0.025 145)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <div style={{ width: "56px", height: "56px", borderRadius: "50%", background: "oklch(0.95 0.05 185)", display: "flex", alignItems: "center", justifyContent: "center" }}>
             <svg width="26" height="26" viewBox="0 0 26 26" fill="none"><circle cx="13" cy="13" r="10" fill="oklch(0.60 0.16 145)" /><path d="M8 13l3.5 3.5L18 9" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
           </div>
           <div style={{ textAlign: "center" }}>
@@ -4251,7 +4251,7 @@ function PolicyTemplatesPage({ onPolicySaved, savedNames, agencyName, agencyAbn 
           </div>
           <button
             onClick={() => { setView("list"); setSelectedTemplate(null); setStep(0); setAnswers({}); }}
-            style={{ fontSize: "13px", fontWeight: 600, color: "var(--rc-primary)", background: "var(--rc-primary-light)", border: "none", borderRadius: "8px", padding: "10px 20px", cursor: "pointer", fontFamily: "var(--font-inter)", marginTop: "8px" }}
+            style={{ fontSize: "13px", fontWeight: 600, color: "white", background: "var(--rc-primary-light)", border: "none", borderRadius: "8px", padding: "10px 20px", cursor: "pointer", fontFamily: "var(--font-inter)", marginTop: "8px" }}
           >
             Back to templates
           </button>
@@ -4500,9 +4500,9 @@ function UploadDocumentPage({ onPolicySaved }: { onPolicySaved: (p: PolicyRow) =
 
 
 const docCategoryColor: Record<string, { bg: string; color: string }> = {
-  Contract: { bg: "var(--rc-primary-light)", color: "var(--rc-primary)" },
+  Contract: { bg: "var(--rc-primary-light)", color: "white" },
   Licence: { bg: "oklch(0.93 0.04 195)", color: "oklch(0.38 0.10 195)" },
-  Compliance: { bg: "oklch(0.94 0.04 145)", color: "oklch(0.38 0.13 145)" },
+  Compliance: { bg: "oklch(0.93 0.06 185)", color: "oklch(0.38 0.13 145)" },
   CPD: { bg: "oklch(0.95 0.03 55)", color: "oklch(0.42 0.12 55)" },
   WHS: { bg: "oklch(0.94 0.04 25)", color: "oklch(0.42 0.14 25)" },
   Training: { bg: "oklch(0.93 0.04 195)", color: "oklch(0.38 0.10 195)" },
@@ -4820,7 +4820,7 @@ function StaffFilePage({ staffRow, onBack, agencyName }: { staffRow: StaffRow; o
             ← Back to Team Overview
           </button>
           <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
-            <div style={{ width: "44px", height: "44px", borderRadius: "12px", background: "var(--rc-primary-light)", color: "var(--rc-primary)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "15px", fontWeight: 700, flexShrink: 0 }}>
+            <div style={{ width: "44px", height: "44px", borderRadius: "12px", background: "var(--rc-primary-light)", color: "white", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "15px", fontWeight: 700, flexShrink: 0 }}>
               {initials}
             </div>
             <div>
@@ -4830,11 +4830,11 @@ function StaffFilePage({ staffRow, onBack, agencyName }: { staffRow: StaffRow; o
           </div>
         </div>
         <div style={{ display: "flex", gap: "8px" }}>
-          <span style={{ fontSize: "11.5px", fontWeight: 600, padding: "4px 12px", borderRadius: "100px", background: licOk ? "oklch(0.94 0.04 145)" : "oklch(0.94 0.06 25)", color: licOk ? "oklch(0.38 0.13 145)" : "oklch(0.42 0.18 25)" }}>
+          <span style={{ fontSize: "11.5px", fontWeight: 600, padding: "4px 12px", borderRadius: "100px", background: licOk ? "oklch(0.93 0.06 185)" : "oklch(0.94 0.06 25)", color: licOk ? "oklch(0.38 0.13 145)" : "oklch(0.42 0.18 25)" }}>
             {s.licence === "exempt" ? "Exempt" : licOk ? "Licensed" : "Renewal due"}
           </span>
           {s.cpd !== "na" && (
-            <span style={{ fontSize: "11.5px", fontWeight: 600, padding: "4px 12px", borderRadius: "100px", background: cpdOk ? "oklch(0.94 0.04 145)" : s.cpd === "due-soon" ? "oklch(0.95 0.04 55)" : "oklch(0.94 0.06 25)", color: cpdOk ? "oklch(0.38 0.13 145)" : s.cpd === "due-soon" ? "oklch(0.42 0.12 55)" : "oklch(0.42 0.18 25)" }}>
+            <span style={{ fontSize: "11.5px", fontWeight: 600, padding: "4px 12px", borderRadius: "100px", background: cpdOk ? "oklch(0.93 0.06 185)" : s.cpd === "due-soon" ? "oklch(0.95 0.04 55)" : "oklch(0.94 0.06 25)", color: cpdOk ? "oklch(0.38 0.13 145)" : s.cpd === "due-soon" ? "oklch(0.42 0.12 55)" : "oklch(0.42 0.18 25)" }}>
               {s.cpd === "complete" ? "CPD complete" : s.cpd === "due-soon" ? "CPD due soon" : "CPD overdue"}
             </span>
           )}
@@ -4886,7 +4886,7 @@ function StaffFilePage({ staffRow, onBack, agencyName }: { staffRow: StaffRow; o
                 <button
                   onClick={() => fileInputRef.current?.click()}
                   disabled={uploading}
-                  style={{ fontSize: "11px", fontWeight: 600, color: "var(--rc-primary)", background: "var(--rc-primary-light)", border: "none", borderRadius: "6px", padding: "4px 10px", cursor: uploading ? "not-allowed" : "pointer", fontFamily: "var(--font-inter)", opacity: uploading ? 0.6 : 1 }}
+                  style={{ fontSize: "11px", fontWeight: 600, color: "white", background: "var(--rc-primary-light)", border: "none", borderRadius: "6px", padding: "4px 10px", cursor: uploading ? "not-allowed" : "pointer", fontFamily: "var(--font-inter)", opacity: uploading ? 0.6 : 1 }}
                 >
                   {uploading ? "Uploading…" : "+ Upload PDF"}
                 </button>
@@ -4939,7 +4939,7 @@ function StaffFilePage({ staffRow, onBack, agencyName }: { staffRow: StaffRow; o
                 {(() => { const cat = docCategoryColor[docs[selectedDocIdx].category] ?? { bg: "var(--rc-surface-2)", color: "var(--rc-muted)" }; return <span style={{ fontSize: "10px", fontWeight: 700, color: cat.color, background: cat.bg, padding: "3px 9px", borderRadius: "100px" }}>{docs[selectedDocIdx].category}</span>; })()}
                 <span style={{ fontSize: "12.5px", fontWeight: 600, color: "var(--rc-ink)", flex: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{docs[selectedDocIdx].title}</span>
                 {viewerUrl && (
-                  <a href={viewerUrl} target="_blank" rel="noreferrer" style={{ fontSize: "11px", fontWeight: 600, color: "var(--rc-primary)", textDecoration: "none", padding: "3px 8px", background: "var(--rc-primary-light)", borderRadius: "6px" }}>Open ↗</a>
+                  <a href={viewerUrl} target="_blank" rel="noreferrer" style={{ fontSize: "11px", fontWeight: 600, color: "white", textDecoration: "none", padding: "3px 8px", background: "var(--rc-primary-light)", borderRadius: "6px" }}>Open ↗</a>
                 )}
                 <button onClick={() => { setSelectedDocIdx(null); setViewerUrl(null); }} style={{ fontSize: "12px", color: "var(--rc-faint)", background: "transparent", border: "none", cursor: "pointer", fontFamily: "var(--font-inter)", padding: "4px", display: "flex", alignItems: "center" }}>✕</button>
               </div>
@@ -4993,7 +4993,7 @@ function TeamOverviewPage({ agencyName, staffRows }: { agencyName: string; staff
               onMouseEnter={e => { e.currentTarget.style.boxShadow = "var(--rc-shadow)"; e.currentTarget.style.borderColor = "oklch(0.82 0.015 260)"; }}
               onMouseLeave={e => { e.currentTarget.style.boxShadow = "var(--rc-shadow-sm)"; e.currentTarget.style.borderColor = "var(--rc-border)"; }}
             >
-              <div style={{ width: "42px", height: "42px", borderRadius: "10px", background: "var(--rc-primary-light)", color: "var(--rc-primary)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "14px", fontWeight: 700, flexShrink: 0 }}>
+              <div style={{ width: "42px", height: "42px", borderRadius: "10px", background: "var(--rc-primary-light)", color: "white", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "14px", fontWeight: 700, flexShrink: 0 }}>
                 {initials}
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
@@ -5190,7 +5190,7 @@ function OnboardingChecklist({ member, onBack, onUpdateMember }: { member: Onboa
             const isSelected = selectedIdx === i;
             return (
               <div key={item.id} onClick={() => selectItem(i)}
-                style={{ display: "flex", alignItems: "center", gap: "12px", padding: "13px 16px", borderBottom: i < onboardingItems.length - 1 ? "1px solid var(--rc-border)" : "none", background: isSelected ? "var(--rc-primary-light)" : isDone ? "oklch(0.985 0.006 145)" : "var(--rc-bg)", cursor: "pointer", transition: "background 0.15s ease", userSelect: "none" }}>
+                style={{ display: "flex", alignItems: "center", gap: "12px", padding: "13px 16px", borderBottom: i < onboardingItems.length - 1 ? "1px solid var(--rc-border)" : "none", background: isSelected ? "var(--rc-primary-light)" : isDone ? "oklch(0.97 0.04 185)" : "var(--rc-bg)", cursor: "pointer", transition: "background 0.15s ease", userSelect: "none" }}>
                 <div style={{ width: "20px", height: "20px", borderRadius: "6px", flexShrink: 0, border: isDone ? "none" : "1.5px solid var(--rc-border)", background: isDone ? "oklch(0.60 0.16 145)" : "transparent", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.15s ease" }}>
                   {isDone && <svg width="11" height="9" viewBox="0 0 11 9" fill="none"><path d="M1 4l3.5 3.5L10 1" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>}
                 </div>
@@ -5216,14 +5216,14 @@ function OnboardingChecklist({ member, onBack, onUpdateMember }: { member: Onboa
                   <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
                     <p style={{ fontSize: "11px", fontWeight: 600, color: "var(--rc-faint)", margin: 0, textTransform: "uppercase", letterSpacing: "0.06em" }}>Step {selectedIdx! + 1} of {total}</p>
                     {isComplete && !editing && (
-                      <span style={{ fontSize: "11px", fontWeight: 600, color: "oklch(0.38 0.13 145)", background: "oklch(0.94 0.04 145)", padding: "2px 8px", borderRadius: "100px" }}>Saved to Documents</span>
+                      <span style={{ fontSize: "11px", fontWeight: 600, color: "oklch(0.38 0.13 145)", background: "oklch(0.93 0.06 185)", padding: "2px 8px", borderRadius: "100px" }}>Saved to Documents</span>
                     )}
                   </div>
                   <p style={{ fontSize: "15px", fontWeight: 700, color: "var(--rc-ink)", margin: 0, letterSpacing: "-0.02em" }}>{selectedItem.label}</p>
                   <p style={{ fontSize: "12.5px", color: "var(--rc-faint)", margin: "4px 0 0", maxWidth: "none" }}>{selectedItem.description}</p>
                 </div>
                 {isComplete && !editing && (
-                  <button onClick={() => { setEditing(true); setSavedAnim(false); }} style={{ fontSize: "12px", fontWeight: 500, color: "var(--rc-primary)", background: "var(--rc-primary-light)", border: "none", borderRadius: "7px", padding: "6px 12px", cursor: "pointer", fontFamily: "var(--font-inter)", flexShrink: 0 }}>Edit</button>
+                  <button onClick={() => { setEditing(true); setSavedAnim(false); }} style={{ fontSize: "12px", fontWeight: 500, color: "white", background: "var(--rc-primary-light)", border: "none", borderRadius: "7px", padding: "6px 12px", cursor: "pointer", fontFamily: "var(--font-inter)", flexShrink: 0 }}>Edit</button>
                 )}
               </div>
 
@@ -5293,7 +5293,7 @@ function OnboardingChecklist({ member, onBack, onUpdateMember }: { member: Onboa
       </div>
 
       {pct === 100 && (
-        <div style={{ flexShrink: 0, padding: "14px 18px", background: "oklch(0.96 0.025 145)", border: "1px solid oklch(0.82 0.08 145)", borderRadius: "10px", display: "flex", alignItems: "center", gap: "10px" }}>
+        <div style={{ flexShrink: 0, padding: "14px 18px", background: "oklch(0.95 0.05 185)", border: "1px solid oklch(0.80 0.08 185)", borderRadius: "10px", display: "flex", alignItems: "center", gap: "10px" }}>
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="7" fill="oklch(0.60 0.16 145)" /><path d="M5.5 9l2.5 2.5 4-5" stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
           <span style={{ fontSize: "14px", fontWeight: 600, color: "oklch(0.38 0.13 145)" }}>Onboarding complete for {member.name}. All documents saved.</span>
         </div>
@@ -6047,7 +6047,7 @@ const SETTINGS_BTN: React.CSSProperties = {
 };
 
 const CARD: React.CSSProperties = {
-  border: "1px solid var(--rc-border)", borderRadius: "12px", overflow: "hidden",
+  border: "1px solid var(--rc-border)", borderRadius: "12px", overflow: "hidden", background: "#ffffff",
 };
 
 function SettingsRow({ label, value }: { label: string; value: string }) {
@@ -6201,7 +6201,7 @@ function BillingSettingsPage({ userId }: { userId: string | null }) {
                   <span style={{
                     padding: "4px 12px", borderRadius: "100px", fontSize: "12px", fontWeight: 700,
                     background: sub.status === "active" ? "var(--rc-primary-light)" : "oklch(0.97 0.02 25)",
-                    color: sub.status === "active" ? "var(--rc-primary)" : "oklch(0.55 0.18 25)",
+                    color: sub.status === "active" ? "white" : "oklch(0.55 0.18 25)",
                   }}>
                     {sub.status === "active" ? "Active" : sub.status}
                   </span>
@@ -6358,8 +6358,8 @@ function TeamInvitesPage({ userId, agencyName, staffRows }: { userId: string | n
             {inviteError && <p style={{ marginTop: "10px", fontSize: "13px", color: "oklch(0.55 0.18 25)", maxWidth: "none" }}>{inviteError}</p>}
             {inviteLink && (
               <div style={{ marginTop: "14px", padding: "14px 16px", background: "var(--rc-primary-light)", borderRadius: "8px", display: "flex", alignItems: "center", gap: "12px" }}>
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}><path d="M6.5 9.5a4 4 0 005.657-5.657L10.5 2.2A4 4 0 004.843 7.857" stroke="var(--rc-primary)" strokeWidth="1.5" strokeLinecap="round" /><path d="M9.5 6.5a4 4 0 00-5.657 5.657L5.5 13.8A4 4 0 0011.157 8.143" stroke="var(--rc-primary)" strokeWidth="1.5" strokeLinecap="round" /></svg>
-                <span style={{ flex: 1, fontSize: "13px", color: "var(--rc-ink)", wordBreak: "break-all", maxWidth: "none" }}>{inviteLink}</span>
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}><path d="M6.5 9.5a4 4 0 005.657-5.657L10.5 2.2A4 4 0 004.843 7.857" stroke="white" strokeWidth="1.5" strokeLinecap="round" /><path d="M9.5 6.5a4 4 0 00-5.657 5.657L5.5 13.8A4 4 0 0011.157 8.143" stroke="white" strokeWidth="1.5" strokeLinecap="round" /></svg>
+                <span style={{ flex: 1, fontSize: "13px", color: "white", wordBreak: "break-all", maxWidth: "none" }}>{inviteLink}</span>
                 <button onClick={copyLink} style={{ flexShrink: 0, padding: "7px 16px", background: copied ? "var(--rc-primary)" : "white", color: copied ? "white" : "var(--rc-primary)", border: "1px solid var(--rc-primary)", borderRadius: "6px", fontWeight: 600, fontSize: "12px", cursor: "pointer", fontFamily: "var(--font-inter)", transition: "all 0.15s ease", whiteSpace: "nowrap" }}>
                   {copied ? "Copied!" : "Copy link"}
                 </button>
@@ -7045,7 +7045,7 @@ export default function DashboardPage() {
 
   return (
     <OrgContext.Provider value={orgOwnerId}>
-      <div style={{ display: "flex", minHeight: "100svh", background: "var(--rc-bg)" }}>
+      <div style={{ display: "flex", minHeight: "100svh", background: "var(--rc-page)" }}>
       {/* Sidebar */}
       <aside style={{ width: "252px", flexShrink: 0, background: "var(--rc-nav)", borderRight: "1px solid var(--rc-nav-border)", display: "flex", flexDirection: "column", position: "fixed", top: 0, left: 0, bottom: 0, overflowY: "auto", zIndex: 10 }}>
         {/* Logo */}
@@ -7059,8 +7059,8 @@ export default function DashboardPage() {
         <div style={{ padding: "0 10px 4px", flexShrink: 0 }}>
           <button
             onClick={goBack}
-            style={{ width: "100%", display: "flex", alignItems: "center", gap: "10px", padding: "9px 12px", borderRadius: "8px", border: "none", background: !activeModule ? "var(--rc-primary)" : "transparent", color: !activeModule ? "white" : "var(--rc-nav-text)", fontSize: "13px", fontWeight: !activeModule ? 700 : 500, cursor: "pointer", textAlign: "left", fontFamily: "var(--font-inter)", transition: "background 0.12s ease, color 0.12s ease" }}
-            onMouseEnter={(e) => { if (activeModule) { e.currentTarget.style.background = "var(--rc-nav-hover)"; e.currentTarget.style.color = "var(--rc-primary)"; } }}
+            style={{ width: "100%", display: "flex", alignItems: "center", gap: "10px", padding: "9px 12px", borderRadius: "8px", border: "none", background: !activeModule ? "var(--rc-primary-light)" : "transparent", color: !activeModule ? "white" : "var(--rc-nav-text)", fontSize: "13px", fontWeight: !activeModule ? 700 : 500, cursor: "pointer", textAlign: "left", fontFamily: "var(--font-inter)", transition: "background 0.12s ease, color 0.12s ease" }}
+            onMouseEnter={(e) => { if (activeModule) { e.currentTarget.style.background = "var(--rc-nav-hover)"; e.currentTarget.style.color = "#8c52ff"; } }}
             onMouseLeave={(e) => { if (activeModule) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--rc-nav-text)"; } }}
           >
             <span style={{ flexShrink: 0, color: !activeModule ? "rgba(255,255,255,0.8)" : "var(--rc-faint)" }}>
@@ -7078,7 +7078,7 @@ export default function DashboardPage() {
             {modules.map((m) => (
               <button key={m.id} onClick={() => openModule(m.id)}
                 style={{ width: "100%", display: "flex", alignItems: "center", gap: "10px", padding: "9px 12px", borderRadius: "8px", border: "none", background: "transparent", color: "var(--rc-nav-text)", fontSize: "13px", fontWeight: 500, cursor: "pointer", textAlign: "left", marginBottom: "2px", fontFamily: "var(--font-inter)", transition: "background 0.12s ease, color 0.12s ease" }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "var(--rc-nav-hover)"; (e.currentTarget as HTMLButtonElement).style.color = "var(--rc-primary)"; }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "var(--rc-nav-hover)"; (e.currentTarget as HTMLButtonElement).style.color = "#8c52ff"; }}
                 onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; (e.currentTarget as HTMLButtonElement).style.color = "var(--rc-nav-text)"; }}
               >
                 <span style={{ flexShrink: 0, color: "var(--rc-faint)" }}>{m.icon}</span>
@@ -7093,8 +7093,8 @@ export default function DashboardPage() {
           <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
             <div style={{ borderTop: "1px solid var(--rc-nav-border)", margin: "4px 10px 0", flexShrink: 0 }} />
             <button onClick={() => setSelected(null)}
-              style={{ width: "calc(100% - 16px)", display: "flex", alignItems: "center", gap: "9px", padding: "12px 16px", border: "none", background: !selected ? "var(--rc-primary-light)" : "transparent", color: !selected ? "var(--rc-primary)" : "var(--rc-nav-text)", borderRadius: "8px", margin: "8px 8px 0", fontSize: "13px", fontWeight: 700, letterSpacing: "-0.01em", cursor: "pointer", textAlign: "left", flexShrink: 0, fontFamily: "var(--font-inter)", transition: "background 0.12s ease, color 0.12s ease" }}
-              onMouseEnter={(e) => { if (selected) { e.currentTarget.style.background = "var(--rc-nav-hover)"; e.currentTarget.style.color = "var(--rc-primary)"; } }}
+              style={{ width: "calc(100% - 16px)", display: "flex", alignItems: "center", gap: "9px", padding: "12px 16px", border: "none", background: !selected ? "var(--rc-primary-light)" : "transparent", color: !selected ? "white" : "var(--rc-nav-text)", borderRadius: "8px", margin: "8px 8px 0", fontSize: "13px", fontWeight: 700, letterSpacing: "-0.01em", cursor: "pointer", textAlign: "left", flexShrink: 0, fontFamily: "var(--font-inter)", transition: "background 0.12s ease, color 0.12s ease" }}
+              onMouseEnter={(e) => { if (selected) { e.currentTarget.style.background = "var(--rc-nav-hover)"; e.currentTarget.style.color = "#8c52ff"; } }}
               onMouseLeave={(e) => { if (selected) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--rc-nav-text)"; } }}
             >
               <span style={{ flexShrink: 0, color: !selected ? "var(--rc-primary)" : "var(--rc-faint)" }}>{iconMap[activeModule]}</span>
@@ -7105,8 +7105,8 @@ export default function DashboardPage() {
                 const isActive = selected?.type === "property" && selected.id === prop.id;
                 return (
                   <button key={prop.id} onClick={() => setSelected({ type: "property", section: module.id as "sales" | "management", id: prop.id, address: prop.address })}
-                    style={{ width: "100%", display: "flex", alignItems: "flex-start", gap: "8px", padding: "8px 12px", border: "none", background: isActive ? "var(--rc-primary)" : "transparent", color: isActive ? "white" : "var(--rc-nav-text)", fontSize: "12.5px", fontWeight: isActive ? 600 : 400, cursor: "pointer", textAlign: "left", borderRadius: "8px", marginBottom: "2px", transition: "background 0.1s ease, color 0.1s ease", fontFamily: "var(--font-inter)", lineHeight: 1.4 }}
-                    onMouseEnter={(e) => { if (!isActive) { (e.currentTarget as HTMLButtonElement).style.background = "var(--rc-nav-hover)"; (e.currentTarget as HTMLButtonElement).style.color = "var(--rc-primary)"; } }}
+                    style={{ width: "100%", display: "flex", alignItems: "flex-start", gap: "8px", padding: "8px 12px", border: "none", background: isActive ? "var(--rc-primary-light)" : "transparent", color: isActive ? "white" : "var(--rc-nav-text)", fontSize: "12.5px", fontWeight: isActive ? 600 : 400, cursor: "pointer", textAlign: "left", borderRadius: "8px", marginBottom: "2px", transition: "background 0.1s ease, color 0.1s ease", fontFamily: "var(--font-inter)", lineHeight: 1.4 }}
+                    onMouseEnter={(e) => { if (!isActive) { (e.currentTarget as HTMLButtonElement).style.background = "var(--rc-nav-hover)"; (e.currentTarget as HTMLButtonElement).style.color = "#8c52ff"; } }}
                     onMouseLeave={(e) => { if (!isActive) { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; (e.currentTarget as HTMLButtonElement).style.color = "var(--rc-nav-text)"; } }}
                   >
                     <span style={{ flexShrink: 0, marginTop: "3px", opacity: isActive ? 0.7 : 0.3, fontSize: "8px" }}>●</span>
@@ -7118,8 +7118,8 @@ export default function DashboardPage() {
                 const isActive = selected?.type === "static" && selected.label === child;
                 return (
                   <button key={child} onClick={() => setSelected({ type: "static", label: child })}
-                    style={{ width: "100%", display: "block", padding: "8px 12px", border: "none", background: isActive ? "var(--rc-primary)" : "transparent", color: isActive ? "white" : "var(--rc-nav-text)", fontSize: "13px", fontWeight: isActive ? 600 : 400, cursor: "pointer", textAlign: "left", borderRadius: "8px", marginBottom: "2px", transition: "background 0.1s ease, color 0.1s ease", fontFamily: "var(--font-inter)" }}
-                    onMouseEnter={(e) => { if (!isActive) { (e.currentTarget as HTMLButtonElement).style.background = "var(--rc-nav-hover)"; (e.currentTarget as HTMLButtonElement).style.color = "var(--rc-primary)"; } }}
+                    style={{ width: "100%", display: "block", padding: "8px 12px", border: "none", background: isActive ? "var(--rc-primary-light)" : "transparent", color: isActive ? "white" : "var(--rc-nav-text)", fontSize: "13px", fontWeight: isActive ? 600 : 400, cursor: "pointer", textAlign: "left", borderRadius: "8px", marginBottom: "2px", transition: "background 0.1s ease, color 0.1s ease", fontFamily: "var(--font-inter)" }}
+                    onMouseEnter={(e) => { if (!isActive) { (e.currentTarget as HTMLButtonElement).style.background = "var(--rc-nav-hover)"; (e.currentTarget as HTMLButtonElement).style.color = "#8c52ff"; } }}
                     onMouseLeave={(e) => { if (!isActive) { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; (e.currentTarget as HTMLButtonElement).style.color = "var(--rc-nav-text)"; } }}
                   >
                     {child}
@@ -7139,7 +7139,7 @@ export default function DashboardPage() {
           <button
             onClick={async () => { await supabase.auth.signOut(); window.location.href = "/signin"; }}
             style={{ display: "flex", alignItems: "center", gap: "8px", padding: "9px 12px", borderRadius: "8px", fontSize: "13px", fontWeight: 500, color: "var(--rc-faint)", background: "transparent", border: "none", cursor: "pointer", fontFamily: "var(--font-inter)", width: "100%", textAlign: "left", transition: "color 0.12s" }}
-            onMouseEnter={(e) => { e.currentTarget.style.color = "oklch(0.50 0.20 25)"; }}
+            onMouseEnter={(e) => { e.currentTarget.style.color = "oklch(0.48 0.18 25)"; }}
             onMouseLeave={(e) => { e.currentTarget.style.color = "var(--rc-faint)"; }}
           >
             <svg width="15" height="15" viewBox="0 0 18 18" fill="none"><path d="M7 3H4a1 1 0 00-1 1v10a1 1 0 001 1h3M12 13l4-4-4-4M16 9H7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
