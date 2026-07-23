@@ -1178,77 +1178,6 @@ function SalesItemPanel({
     );
   }
 
-  if (itemKey === "aml") {
-    const gc = { bg: "oklch(0.96 0.025 145)", color: "oklch(0.45 0.14 145)", border: "oklch(0.82 0.08 145)" };
-    const sp: React.CSSProperties = { padding: "16px 20px", borderBottom: "1px solid var(--rc-border)" };
-    const stitle: React.CSSProperties = { fontSize: "13px", fontWeight: 700, color: "var(--rc-ink)" };
-    const sdesc: React.CSSProperties = { fontSize: "12px", color: "var(--rc-faint)", margin: "4px 0 0", maxWidth: "none", lineHeight: 1.45 };
-    const ghostBtn2 = (lbl: string) => (
-      <button style={{ fontSize: "11px", fontWeight: 500, color: "var(--rc-faint)", background: "transparent", border: "1px solid var(--rc-border)", padding: "3px 8px", borderRadius: "5px", cursor: "pointer", fontFamily: "var(--font-inter)", whiteSpace: "nowrap" }}>
-        {lbl}
-      </button>
-    );
-
-    return (
-      <div style={panelWrap}>
-        <PanelHeader />
-        <div style={{ flex: 1, overflowY: "auto" }}>
-
-          {/* AML Onboarding Form */}
-          <div style={sp}>
-            <span style={stitle}>AML Onboarding Form</span>
-            <p style={{ ...sdesc, margin: "4px 0 8px" }}>Completed in REI Forms Live and attached to this client file.</p>
-            <p style={{ fontSize: "11.5px", color: "var(--rc-faint)", margin: 0, maxWidth: "none", lineHeight: 1.4, padding: "8px 10px", background: "var(--rc-surface)", borderRadius: "6px" }}>
-              Pick the AML CDD form that matches each buyer's entity type, then create it in REI Forms Live.
-            </p>
-          </div>
-
-          {/* Client Info Request */}
-          <div style={sp}>
-            <span style={stitle}>Client Info Request</span>
-            <p style={{ ...sdesc, margin: "4px 0 10px" }}>Sent from the onboarding form for each buyer to complete their identity & KYC details from their own device.</p>
-            <div style={{ display: "flex", gap: "6px" }}>
-              <button style={{ fontSize: "12px", fontWeight: 600, color: "white", background: "var(--rc-primary)", border: "none", padding: "6px 12px", borderRadius: "6px", cursor: "pointer", fontFamily: "var(--font-inter)" }}>
-                Send to all
-              </button>
-              {ghostBtn2("Refresh status")}
-            </div>
-          </div>
-
-          {/* Risk Assessment */}
-          <div style={sp}>
-            <span style={stitle}>Risk Assessment</span>
-            <p style={{ ...sdesc, margin: "4px 0 10px" }}>Complete the AML/CTF risk assessment (Section A) for each buyer — the form matches their entity type — and record the rating.</p>
-            <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
-              {ghostBtn2("Review")}
-              <span style={{ fontSize: "12px", fontWeight: 700, color: gc.color, background: gc.bg, border: `1px solid ${gc.border}`, padding: "3px 10px", borderRadius: "6px" }}>Low</span>
-              {ghostBtn2("Escalate to compliance officer")}
-              {ghostBtn2("Record UAR")}
-            </div>
-          </div>
-
-          {/* Verification of ID */}
-          <div style={sp}>
-            <span style={stitle}>Verification of ID</span>
-            <p style={sdesc}>Verify each buyer's identity by risk rating — low risk allows a manual document check; medium/high require a full electronic VOI.</p>
-          </div>
-
-          {/* Sanction Check */}
-          <div style={sp}>
-            <span style={stitle}>Sanction Check</span>
-            <p style={sdesc}>Screen each buyer against the DFAT Consolidated List, then adjudicate any potential match.</p>
-          </div>
-
-          {/* PEP Check */}
-          <div style={{ ...sp, borderBottom: "none" }}>
-            <span style={stitle}>PEP Check</span>
-            <p style={sdesc}>Screen each buyer's occupation against the PEP occupations list, then adjudicate any potential match.</p>
-          </div>
-
-        </div>
-      </div>
-    );
-  }
 
   const slot = itemKey === "agencyAgreement" ? "agency_agreement" : "contract";
 
@@ -1323,10 +1252,7 @@ function SalesPropertyChecklist({
     {
       key: "aml",
       label: "AML Compliance",
-      subtitle: () => {
-        const done = state.aml.checks.filter(Boolean).length;
-        return `${done}/${amlSubChecklist.length} checks complete`;
-      },
+      subtitle: () => state.aml.status === "complete" ? "Completed" : "Not completed",
     },
     {
       key: "agencyAgreement",
@@ -1383,12 +1309,19 @@ function SalesPropertyChecklist({
             {items.map((item, i) => {
               const st = state[item.key].status;
               const cfg = STATUS_CONFIG[st];
-              const isOpen = selectedItem === item.key;
+              const isAml = item.key === "aml";
+              const isOpen = !isAml && selectedItem === item.key;
 
               return (
                 <div
                   key={item.key}
-                  onClick={() => setSelectedItem(isOpen ? null : item.key)}
+                  onClick={() => {
+                    if (isAml) {
+                      setState(prev => ({ ...prev, aml: { ...prev.aml, status: prev.aml.status === "complete" ? "not_started" : "complete" } }));
+                    } else {
+                      setSelectedItem(isOpen ? null : item.key);
+                    }
+                  }}
                   style={{
                     display: "flex",
                     alignItems: "center",
