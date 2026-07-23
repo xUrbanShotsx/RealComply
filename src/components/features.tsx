@@ -2,7 +2,7 @@
 
 import { useReveal } from "@/hooks/use-reveal";
 
-/* ─── Shared mockup wrapper — Stripe brand dark chrome ─── */
+/* ─── Shared mockup wrapper — light chrome ─── */
 function MockupFrame({
   title,
   children,
@@ -13,18 +13,18 @@ function MockupFrame({
   return (
     <div
       style={{
-        background: "#1c1e54",
-        border: "1px solid rgba(255,255,255,0.08)",
+        background: "#f6f9fc",
+        border: "1px solid #e3e8ee",
         borderRadius: "14px",
         overflow: "hidden",
-        boxShadow: "var(--s-shadow-panel), 0 32px 64px rgba(28,30,84,0.18)",
+        boxShadow: "0 4px 24px rgba(0,55,112,0.08), 0 1px 4px rgba(0,55,112,0.05)",
       }}
     >
       {/* Window chrome */}
       <div
         style={{
-          background: "#252762",
-          borderBottom: "1px solid rgba(255,255,255,0.07)",
+          background: "#ffffff",
+          borderBottom: "1px solid #e3e8ee",
           padding: "11px 16px",
           display: "flex",
           alignItems: "center",
@@ -34,7 +34,7 @@ function MockupFrame({
         <span style={{ width: "9px", height: "9px", borderRadius: "50%", background: "#fc5c57", display: "inline-block" }} />
         <span style={{ width: "9px", height: "9px", borderRadius: "50%", background: "#fdbc40", display: "inline-block" }} />
         <span style={{ width: "9px", height: "9px", borderRadius: "50%", background: "#34c84a", display: "inline-block" }} />
-        <span style={{ fontSize: "11px", color: "rgba(255,255,255,0.32)", marginLeft: "10px" }}>{title}</span>
+        <span style={{ fontSize: "11px", color: "#8898aa", marginLeft: "10px" }}>{title}</span>
       </div>
       <div style={{ padding: "20px" }}>{children}</div>
     </div>
@@ -53,10 +53,10 @@ function CPDMockup() {
   return (
     <MockupFrame title="Team Licences">
       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "12px", padding: "0 2px" }}>
-        <span style={{ fontSize: "13px", fontWeight: 600, color: "white" }}>Team Licences</span>
-        <span style={{ fontSize: "12px", color: "#34c84a", fontWeight: 600 }}>4 / 5 current</span>
+        <span style={{ fontSize: "13px", fontWeight: 600, color: "#0d253d" }}>Team Licences</span>
+        <span style={{ fontSize: "12px", color: "#16a34a", fontWeight: 600 }}>4 / 5 current</span>
       </div>
-      <div style={{ borderRadius: "8px", overflow: "hidden", border: "1px solid rgba(255,255,255,0.08)" }}>
+      <div style={{ borderRadius: "8px", overflow: "hidden", border: "1px solid #e3e8ee" }}>
         {staff.map(({ name, cls, ok, exp }, i) => (
           <div
             key={name}
@@ -64,8 +64,8 @@ function CPDMockup() {
               display: "flex",
               alignItems: "center",
               padding: "10px 14px",
-              borderBottom: i < staff.length - 1 ? "1px solid rgba(255,255,255,0.06)" : "none",
-              background: ok ? "rgba(255,255,255,0.03)" : "rgba(253,188,64,0.08)",
+              borderBottom: i < staff.length - 1 ? "1px solid #eef1f5" : "none",
+              background: ok ? "#ffffff" : "rgba(245,158,11,0.06)",
             }}
           >
             <div
@@ -73,19 +73,19 @@ function CPDMockup() {
                 width: "7px",
                 height: "7px",
                 borderRadius: "50%",
-                background: ok ? "#34c84a" : "#fdbc40",
+                background: ok ? "#22c55e" : "#f59e0b",
                 flexShrink: 0,
                 marginRight: "10px",
               }}
             />
-            <span style={{ fontSize: "12.5px", color: "rgba(255,255,255,0.82)", flex: 1 }}>{name}</span>
-            <span style={{ fontSize: "11px", color: "rgba(255,255,255,0.35)", marginRight: "12px" }}>{cls}</span>
+            <span style={{ fontSize: "12.5px", color: "#273951", flex: 1 }}>{name}</span>
+            <span style={{ fontSize: "11px", color: "#8898aa", marginRight: "12px" }}>{cls}</span>
             <span
               className="tnum"
               style={{
                 fontSize: "11px",
-                color: ok ? "#34c84a" : "#fdbc40",
-                background: ok ? "rgba(52,200,74,0.14)" : "rgba(253,188,64,0.14)",
+                color: ok ? "#16a34a" : "#b45309",
+                background: ok ? "rgba(34,197,94,0.10)" : "rgba(245,158,11,0.10)",
                 padding: "2px 9px",
                 borderRadius: "9999px",
                 fontWeight: 600,
@@ -101,16 +101,17 @@ function CPDMockup() {
         style={{
           marginTop: "12px",
           padding: "8px 12px",
-          background: "rgba(0,0,0,0.22)",
+          background: "#f6f9fc",
           borderRadius: "6px",
           fontSize: "11px",
-          color: "rgba(255,255,255,0.30)",
+          color: "#8898aa",
           display: "flex",
           justifyContent: "space-between",
+          border: "1px solid #eef1f5",
         }}
       >
         <span>Reminder sent · Emma Winters · 2 days ago</span>
-        <span style={{ color: "#b9b9f9", fontWeight: 500, cursor: "pointer" }}>View all →</span>
+        <span style={{ color: "#533afd", fontWeight: 500, cursor: "pointer" }}>View all →</span>
       </div>
     </MockupFrame>
   );
@@ -121,8 +122,8 @@ function TrustMockup() {
   return (
     <MockupFrame title="Trust Accounts">
       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "16px" }}>
-        <span style={{ fontSize: "13px", fontWeight: 600, color: "white" }}>Trust Accounts</span>
-        <span style={{ fontSize: "12px", color: "#34c84a", fontWeight: 600 }}>All balanced</span>
+        <span style={{ fontSize: "13px", fontWeight: 600, color: "#0d253d" }}>Trust Accounts</span>
+        <span style={{ fontSize: "12px", color: "#16a34a", fontWeight: 600 }}>All balanced</span>
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "14px" }}>
         {[
@@ -132,10 +133,10 @@ function TrustMockup() {
           <div
             key={type}
             style={{
-              background: "rgba(0,0,0,0.25)",
+              background: "#ffffff",
               borderRadius: "8px",
               padding: "14px",
-              border: "1px solid rgba(255,255,255,0.08)",
+              border: "1px solid #e3e8ee",
             }}
           >
             <div
@@ -143,7 +144,7 @@ function TrustMockup() {
                 fontSize: "10px",
                 fontWeight: 600,
                 letterSpacing: "0.05em",
-                color: "rgba(255,255,255,0.35)",
+                color: "#8898aa",
                 marginBottom: "6px",
               }}
             >
@@ -154,7 +155,7 @@ function TrustMockup() {
               style={{
                 fontSize: "17px",
                 fontWeight: 700,
-                color: "white",
+                color: "#0d253d",
                 letterSpacing: "-0.02em",
                 marginBottom: "8px",
               }}
@@ -162,8 +163,8 @@ function TrustMockup() {
               {amount}
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
-              <span style={{ color: "#34c84a", fontSize: "12px" }}>✓</span>
-              <span style={{ fontSize: "10.5px", color: "rgba(255,255,255,0.35)" }}>
+              <span style={{ color: "#16a34a", fontSize: "12px" }}>✓</span>
+              <span style={{ fontSize: "10.5px", color: "#8898aa" }}>
                 Reconciled · {date}
               </span>
             </div>
@@ -173,14 +174,14 @@ function TrustMockup() {
       <div
         style={{
           fontSize: "11px",
-          color: "rgba(255,255,255,0.30)",
+          color: "#8898aa",
           textAlign: "center",
           paddingTop: "10px",
-          borderTop: "1px solid rgba(255,255,255,0.07)",
+          borderTop: "1px solid #eef1f5",
         }}
       >
         June 2025 · All accounts balanced &nbsp;·&nbsp;{" "}
-        <span style={{ color: "#b9b9f9", fontWeight: 500, cursor: "pointer" }}>Export report →</span>
+        <span style={{ color: "#533afd", fontWeight: 500, cursor: "pointer" }}>Export report →</span>
       </div>
     </MockupFrame>
   );
@@ -199,10 +200,10 @@ function MarketingMockup() {
   return (
     <MockupFrame title="Marketing Checklist — 14 Rosehill Ave, Wollongong">
       <div style={{ marginBottom: "14px" }}>
-        <div style={{ fontSize: "13px", fontWeight: 600, color: "white", marginBottom: "2px" }}>
+        <div style={{ fontSize: "13px", fontWeight: 600, color: "#0d253d", marginBottom: "2px" }}>
           Marketing Checklist
         </div>
-        <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.35)" }}>
+        <div style={{ fontSize: "11px", color: "#8898aa" }}>
           14 Rosehill Ave, Wollongong &nbsp;·&nbsp; Listed 3 days ago
         </div>
       </div>
@@ -216,13 +217,13 @@ function MarketingMockup() {
               gap: "10px",
               padding: "9px 10px",
               borderRadius: "6px",
-              background: done ? "rgba(255,255,255,0.04)" : "rgba(253,188,64,0.08)",
+              background: done ? "transparent" : "rgba(245,158,11,0.06)",
             }}
           >
-            <span style={{ fontSize: "13px", color: done ? "#34c84a" : "#fdbc40", flexShrink: 0, lineHeight: 1 }}>
+            <span style={{ fontSize: "13px", color: done ? "#16a34a" : "#b45309", flexShrink: 0, lineHeight: 1 }}>
               {done ? "✓" : "○"}
             </span>
-            <span style={{ fontSize: "12px", color: done ? "rgba(255,255,255,0.78)" : "#fdbc40" }}>{label}</span>
+            <span style={{ fontSize: "12px", color: done ? "#273951" : "#b45309" }}>{label}</span>
           </div>
         ))}
       </div>
@@ -232,18 +233,19 @@ function MarketingMockup() {
           alignItems: "center",
           justifyContent: "space-between",
           padding: "10px 12px",
-          background: "rgba(0,0,0,0.22)",
+          background: "#f6f9fc",
           borderRadius: "8px",
           marginBottom: "12px",
+          border: "1px solid #eef1f5",
         }}
       >
-        <span style={{ fontSize: "12px", color: "rgba(255,255,255,0.45)" }}>Prospecting progress</span>
+        <span style={{ fontSize: "12px", color: "#8898aa" }}>Prospecting progress</span>
         <span
           style={{
             fontSize: "11px",
             fontWeight: 600,
-            background: "rgba(253,188,64,0.14)",
-            color: "#fdbc40",
+            background: "rgba(245,158,11,0.10)",
+            color: "#b45309",
             padding: "3px 10px",
             borderRadius: "9999px",
           }}
@@ -292,8 +294,8 @@ function AuditMockup() {
         }}
       >
         <div>
-          <div style={{ fontSize: "13px", fontWeight: 600, color: "white" }}>Audit Pack</div>
-          <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.35)", marginTop: "2px" }}>
+          <div style={{ fontSize: "13px", fontWeight: 600, color: "#0d253d" }}>Audit Pack</div>
+          <div style={{ fontSize: "11px", color: "#8898aa", marginTop: "2px" }}>
             June 2025
           </div>
         </div>
@@ -303,14 +305,14 @@ function AuditMockup() {
             style={{
               fontSize: "22px",
               fontWeight: 700,
-              color: "#b9b9f9",
+              color: "#533afd",
               letterSpacing: "-0.03em",
               lineHeight: 1,
             }}
           >
             94
           </div>
-          <div style={{ fontSize: "10px", color: "rgba(255,255,255,0.30)" }}>/ 100</div>
+          <div style={{ fontSize: "10px", color: "#8898aa" }}>/ 100</div>
         </div>
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: "2px", marginBottom: "14px" }}>
@@ -323,13 +325,13 @@ function AuditMockup() {
               gap: "10px",
               padding: "8px 10px",
               borderRadius: "6px",
-              background: done ? "transparent" : "rgba(253,188,64,0.08)",
+              background: done ? "transparent" : "rgba(245,158,11,0.06)",
             }}
           >
             <span
               style={{
                 fontSize: "13px",
-                color: done ? "#34c84a" : "#fdbc40",
+                color: done ? "#16a34a" : "#b45309",
                 flexShrink: 0,
                 lineHeight: 1,
               }}
@@ -339,14 +341,14 @@ function AuditMockup() {
             <span
               style={{
                 fontSize: "12px",
-                color: done ? "rgba(255,255,255,0.78)" : "#fdbc40",
+                color: done ? "#273951" : "#b45309",
                 flex: 1,
               }}
             >
               {label}
             </span>
             {note && (
-              <span style={{ fontSize: "10px", color: "#fdbc40", whiteSpace: "nowrap" }}>
+              <span style={{ fontSize: "10px", color: "#b45309", whiteSpace: "nowrap" }}>
                 {note}
               </span>
             )}

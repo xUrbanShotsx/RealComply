@@ -125,18 +125,18 @@ export default function Hero() {
           <div className="hero-fade hero-mockup" style={{ animationDelay: "0.3s" }}>
             <div
               style={{
-                background: "#1c1e54",
-                border: "1px solid rgba(255,255,255,0.08)",
+                background: "#f6f9fc",
+                border: "1px solid #e3e8ee",
                 borderRadius: "16px",
                 overflow: "hidden",
-                boxShadow: "var(--s-shadow-panel), 0 40px 80px rgba(28,30,84,0.20)",
+                boxShadow: "0 4px 24px rgba(0,55,112,0.08), 0 40px 80px rgba(0,55,112,0.06)",
               }}
             >
               {/* Window chrome */}
               <div
                 style={{
-                  background: "#252762",
-                  borderBottom: "1px solid rgba(255,255,255,0.07)",
+                  background: "#ffffff",
+                  borderBottom: "1px solid #e3e8ee",
                   padding: "12px 18px",
                   display: "flex",
                   alignItems: "center",
@@ -146,7 +146,7 @@ export default function Hero() {
                 <span style={{ width: "9px", height: "9px", borderRadius: "50%", background: "#fc5c57", display: "inline-block" }} />
                 <span style={{ width: "9px", height: "9px", borderRadius: "50%", background: "#fdbc40", display: "inline-block" }} />
                 <span style={{ width: "9px", height: "9px", borderRadius: "50%", background: "#34c84a", display: "inline-block" }} />
-                <span style={{ fontSize: "11px", color: "rgba(255,255,255,0.35)", marginLeft: "10px" }}>
+                <span style={{ fontSize: "11px", color: "#8898aa", marginLeft: "10px" }}>
                   Compliance Overview — Hartley &amp; Associates
                 </span>
               </div>
@@ -161,22 +161,22 @@ export default function Hero() {
                     gap: "20px",
                     marginBottom: "20px",
                     padding: "18px",
-                    background: "rgba(0,0,0,0.25)",
+                    background: "#ffffff",
                     borderRadius: "10px",
-                    border: "1px solid rgba(255,255,255,0.08)",
+                    border: "1px solid #e3e8ee",
                   }}
                 >
                   <svg width="86" height="86" viewBox="0 0 90 90" style={{ flexShrink: 0 }} aria-label="Compliance score: 94 out of 100">
-                    <circle cx="45" cy="45" r="38" fill="none" stroke="rgba(255,255,255,0.10)" strokeWidth="7" />
+                    <circle cx="45" cy="45" r="38" fill="none" stroke="#e3e8ee" strokeWidth="7" />
                     <circle cx="45" cy="45" r="38" fill="none" stroke="#533afd" strokeWidth="7" strokeLinecap="round" className="score-ring" transform="rotate(-90 45 45)" />
-                    <text x="45" y="41" textAnchor="middle" fill="white" fontSize="18" fontWeight="700" fontFamily="system-ui, sans-serif">94</text>
-                    <text x="45" y="57" textAnchor="middle" fill="rgba(255,255,255,0.40)" fontSize="10" fontFamily="system-ui, sans-serif">/ 100</text>
+                    <text x="45" y="41" textAnchor="middle" fill="#0d253d" fontSize="18" fontWeight="700" fontFamily="system-ui, sans-serif">94</text>
+                    <text x="45" y="57" textAnchor="middle" fill="#8898aa" fontSize="10" fontFamily="system-ui, sans-serif">/ 100</text>
                   </svg>
 
                   <div>
-                    <div style={{ fontSize: "13px", fontWeight: 600, color: "white", marginBottom: "4px" }}>Overall Compliance Score</div>
-                    <div style={{ fontSize: "12px", color: "#34c84a", fontWeight: 600 }}>Audit-ready</div>
-                    <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.35)", marginTop: "4px" }}>Last updated today, 9:41am</div>
+                    <div style={{ fontSize: "13px", fontWeight: 600, color: "#0d253d", marginBottom: "4px" }}>Overall Compliance Score</div>
+                    <div style={{ fontSize: "12px", color: "#22c55e", fontWeight: 600 }}>Audit-ready</div>
+                    <div style={{ fontSize: "11px", color: "#8898aa", marginTop: "4px" }}>Last updated today, 9:41am</div>
                   </div>
                 </div>
 
@@ -195,12 +195,12 @@ export default function Hero() {
                       alignItems: "center",
                       justifyContent: "space-between",
                       padding: "11px 4px",
-                      borderBottom: i < arr.length - 1 ? "1px solid rgba(255,255,255,0.07)" : "none",
+                      borderBottom: i < arr.length - 1 ? "1px solid #eef1f5" : "none",
                     }}
                   >
                     <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                      <div style={{ width: "7px", height: "7px", borderRadius: "50%", background: ok ? "#34c84a" : "#fdbc40", flexShrink: 0 }} />
-                      <span style={{ fontSize: "13px", color: "rgba(255,255,255,0.80)", fontWeight: 400 }}>{label}</span>
+                      <div style={{ width: "7px", height: "7px", borderRadius: "50%", background: ok ? "#22c55e" : "#f59e0b", flexShrink: 0 }} />
+                      <span style={{ fontSize: "13px", color: "#273951", fontWeight: 400 }}>{label}</span>
                     </div>
                     <span
                       className="tnum"
@@ -208,8 +208,8 @@ export default function Hero() {
                         fontSize: "11px",
                         padding: "3px 10px",
                         borderRadius: "9999px",
-                        background: ok ? "rgba(52,200,74,0.15)" : "rgba(253,188,64,0.15)",
-                        color: ok ? "#34c84a" : "#fdbc40",
+                        background: ok ? "rgba(34,197,94,0.10)" : "rgba(245,158,11,0.10)",
+                        color: ok ? "#16a34a" : "#b45309",
                         fontWeight: 600,
                         whiteSpace: "nowrap",
                       }}
