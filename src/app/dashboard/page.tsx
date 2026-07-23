@@ -71,6 +71,7 @@ type StaffRow = {
 
 // --- Icons ---
 function PolIcon() { return <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M4 4h10M4 8h7M4 12h9" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /></svg>; }
+function RegIcon() { return <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="3" y="2" width="12" height="14" rx="2" stroke="currentColor" strokeWidth="1.6" /><path d="M6 6h6M6 9h4M6 12h5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>; }
 function SalesIcon() { return <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M2 13L7 8l3 3 5-6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>; }
 function MgmtIcon() { return <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="2" y="9" width="4" height="7" rx="1" stroke="currentColor" strokeWidth="1.6" /><rect x="7" y="5" width="4" height="11" rx="1" stroke="currentColor" strokeWidth="1.6" /><rect x="12" y="2" width="4" height="14" rx="1" stroke="currentColor" strokeWidth="1.6" /></svg>; }
 function StaffIcon() { return <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="6" r="3" stroke="currentColor" strokeWidth="1.6" /><path d="M3 15c0-3.314 2.686-6 6-6s6 2.686 6 6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /></svg>; }
@@ -78,7 +79,7 @@ function TrustIcon() { return <svg width="18" height="18" viewBox="0 0 18 18" fi
 function SettingsIcon() { return <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="2.5" stroke="currentColor" strokeWidth="1.6" /><path d="M9 2v1.5M9 14.5V16M2 9h1.5M14.5 9H16M3.93 3.93l1.06 1.06M13.01 13.01l1.06 1.06M14.07 3.93l-1.06 1.06M4.99 13.01l-1.06 1.06" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /></svg>; }
 
 const iconMap: Record<string, React.ReactNode> = {
-  policies: <PolIcon />, sales: <SalesIcon />, management: <MgmtIcon />, staff: <StaffIcon />, trust: <TrustIcon />,
+  policies: <PolIcon />, sales: <SalesIcon />, management: <MgmtIcon />, staff: <StaffIcon />, trust: <TrustIcon />, registers: <RegIcon />,
 };
 
 // --- Types ---
@@ -1514,6 +1515,7 @@ const moduleOverview = [
   { id: "management", label: "Residential Management",     icon: <MgmtIcon /> },
   { id: "staff",      label: "Staff",                      icon: <StaffIcon /> },
   { id: "trust",      label: "Trust Accounting",           icon: <TrustIcon /> },
+  { id: "registers",  label: "Registers",                  icon: <RegIcon /> },
 ];
 
 function computeModuleData(
@@ -1579,6 +1581,9 @@ function computeModuleData(
   }
   if (moduleId === "trust") {
     return { score: 0, detail: "Add trust accounts to track reconciliation" };
+  }
+  if (moduleId === "registers") {
+    return { score: 0, detail: "Log gifts, incidents and risks" };
   }
   return { score: 0, detail: "" };
 }
@@ -6447,6 +6452,423 @@ function TeamInvitesPage({ userId, agencyName, staffRows }: { userId: string | n
   );
 }
 
+// ─── Gift Register ───────────────────────────────────────────────────────────
+type GiftRow = { id: string; date_received: string; received_from: string; received_by: string; description: string; estimated_value: string; action_taken: string; notes: string };
+
+function GiftRegisterPage() {
+  const orgOwnerId = useContext(OrgContext);
+  const [rows, setRows] = useState<GiftRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showAdd, setShowAdd] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [form, setForm] = useState({ date_received: "", received_from: "", received_by: "", description: "", estimated_value: "", action_taken: "Kept & Disclosed", notes: "" });
+
+  useEffect(() => {
+    if (!orgOwnerId) { setLoading(false); return; }
+    supabase.from("gift_register").select("*").eq("user_id", orgOwnerId).order("created_at", { ascending: false }).then(({ data }) => {
+      if (data) setRows(data as GiftRow[]);
+      setLoading(false);
+    });
+  }, [orgOwnerId]);
+
+  function setF(k: keyof typeof form, v: string) { setForm(p => ({ ...p, [k]: v })); }
+
+  async function save() {
+    if (!form.date_received || !form.received_from || !form.description || !orgOwnerId) { setError("Date, received from, and description are required."); return; }
+    setSaving(true); setError("");
+    const { data, error: err } = await supabase.from("gift_register").insert({ user_id: orgOwnerId, ...form }).select().single();
+    setSaving(false);
+    if (err) { setError("Failed to save. Please try again."); return; }
+    if (data) setRows(p => [data as GiftRow, ...p]);
+    setForm({ date_received: "", received_from: "", received_by: "", description: "", estimated_value: "", action_taken: "Kept & Disclosed", notes: "" });
+    setShowAdd(false);
+  }
+
+  async function del(id: string) {
+    await supabase.from("gift_register").delete().eq("id", id);
+    setRows(p => p.filter(r => r.id !== id));
+  }
+
+  const inp: React.CSSProperties = { fontSize: "13px", color: "var(--rc-ink)", background: "var(--rc-surface)", border: "1px solid var(--rc-border)", borderRadius: "8px", padding: "9px 12px", outline: "none", fontFamily: "var(--font-inter)", width: "100%", boxSizing: "border-box" };
+  const lbl: React.CSSProperties = { fontSize: "12px", fontWeight: 600, color: "var(--rc-muted)", marginBottom: "5px", display: "block" };
+  const actionColors: Record<string, string> = { "Kept & Disclosed": "oklch(0.42 0.12 145)", "Donated": "oklch(0.48 0.15 250)", "Returned": "oklch(0.50 0.18 55)", "Referred to Principal": "oklch(0.50 0.22 264)" };
+
+  return (
+    <div style={PAGE_WRAP}>
+      <div style={PAGE_HEADER}>
+        <div>
+          <h1 style={PAGE_H1}>Gift Register</h1>
+          <p style={PAGE_SUB}>Record all gifts and benefits received by staff — required for transparency and conflicts-of-interest compliance</p>
+        </div>
+        <button onClick={() => { setShowAdd(p => !p); setError(""); }} style={{ fontSize: "13px", fontWeight: 600, color: "white", background: "var(--rc-primary)", border: "none", borderRadius: "8px", padding: "9px 18px", cursor: "pointer", fontFamily: "var(--font-inter)" }}>
+          {showAdd ? "Cancel" : "+ Log Gift"}
+        </button>
+      </div>
+
+      {showAdd && (
+        <div style={{ background: "var(--rc-surface)", border: "1px solid var(--rc-border)", borderRadius: "12px", padding: "24px 28px", display: "flex", flexDirection: "column", gap: "16px", flexShrink: 0 }}>
+          <p style={{ fontSize: "13.5px", fontWeight: 700, color: "var(--rc-ink)", margin: 0 }}>New Gift Entry</p>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "14px" }}>
+            <div><label style={lbl}>Date Received *</label><input type="date" value={form.date_received} onChange={e => setF("date_received", e.target.value)} style={{ ...inp, colorScheme: "light" }} /></div>
+            <div><label style={lbl}>Received From *</label><input placeholder="Name of person / organisation" value={form.received_from} onChange={e => setF("received_from", e.target.value)} style={inp} /></div>
+            <div><label style={lbl}>Received By</label><input placeholder="Staff member who received it" value={form.received_by} onChange={e => setF("received_by", e.target.value)} style={inp} /></div>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr", gap: "14px" }}>
+            <div><label style={lbl}>Description *</label><input placeholder="e.g. Bottle of wine, gift basket" value={form.description} onChange={e => setF("description", e.target.value)} style={inp} /></div>
+            <div><label style={lbl}>Estimated Value</label><input placeholder="e.g. $50" value={form.estimated_value} onChange={e => setF("estimated_value", e.target.value)} style={inp} /></div>
+            <div>
+              <label style={lbl}>Action Taken</label>
+              <select value={form.action_taken} onChange={e => setF("action_taken", e.target.value)} style={{ ...inp, cursor: "pointer" }}>
+                {["Kept & Disclosed", "Donated", "Returned", "Referred to Principal"].map(o => <option key={o}>{o}</option>)}
+              </select>
+            </div>
+          </div>
+          <div><label style={lbl}>Notes</label><textarea rows={2} placeholder="Any additional context" value={form.notes} onChange={e => setF("notes", e.target.value)} style={{ ...inp, resize: "vertical" }} /></div>
+          {error && <p style={{ fontSize: "13px", color: "oklch(0.55 0.18 25)", margin: 0, maxWidth: "none" }}>{error}</p>}
+          <div style={{ display: "flex", justifyContent: "flex-end" }}>
+            <button onClick={save} disabled={saving} style={{ fontSize: "13px", fontWeight: 600, color: "white", background: "var(--rc-primary)", border: "none", borderRadius: "8px", padding: "9px 22px", cursor: saving ? "not-allowed" : "pointer", opacity: saving ? 0.7 : 1, fontFamily: "var(--font-inter)" }}>
+              {saving ? "Saving…" : "Save Entry"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div style={{ flex: 1, overflowY: "auto" }}>
+        {loading ? <p style={{ color: "var(--rc-faint)", fontSize: "13px" }}>Loading…</p> : rows.length === 0 ? (
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "200px", gap: "8px" }}>
+            <p style={{ fontSize: "14px", color: "var(--rc-faint)", maxWidth: "none", textAlign: "center" }}>No gifts recorded yet. Use the button above to log the first entry.</p>
+          </div>
+        ) : (
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
+            <thead>
+              <tr style={{ borderBottom: "1px solid var(--rc-border)" }}>
+                {["Date", "Received From", "Received By", "Description", "Value", "Action", ""].map(h => (
+                  <th key={h} style={{ textAlign: "left", padding: "10px 14px", fontSize: "11px", fontWeight: 700, color: "var(--rc-faint)", textTransform: "uppercase", letterSpacing: "0.05em", whiteSpace: "nowrap" }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r, i) => (
+                <tr key={r.id} style={{ borderBottom: i < rows.length - 1 ? "1px solid var(--rc-border-subtle)" : "none" }}>
+                  <td style={{ padding: "12px 14px", color: "var(--rc-muted)", whiteSpace: "nowrap" }}>{r.date_received ? new Date(r.date_received).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" }) : "—"}</td>
+                  <td style={{ padding: "12px 14px", fontWeight: 500, color: "var(--rc-ink)" }}>{r.received_from}</td>
+                  <td style={{ padding: "12px 14px", color: "var(--rc-muted)" }}>{r.received_by || "—"}</td>
+                  <td style={{ padding: "12px 14px", color: "var(--rc-ink)" }}>{r.description}</td>
+                  <td style={{ padding: "12px 14px", color: "var(--rc-muted)", whiteSpace: "nowrap" }}>{r.estimated_value || "—"}</td>
+                  <td style={{ padding: "12px 14px" }}>
+                    <span style={{ fontSize: "11.5px", fontWeight: 600, color: actionColors[r.action_taken] ?? "var(--rc-muted)", background: "var(--rc-surface)", border: "1px solid var(--rc-border)", borderRadius: "6px", padding: "3px 10px", whiteSpace: "nowrap" }}>{r.action_taken}</span>
+                  </td>
+                  <td style={{ padding: "12px 14px" }}>
+                    <button onClick={() => del(r.id)} style={{ fontSize: "11px", color: "var(--rc-faint)", background: "transparent", border: "none", cursor: "pointer", fontFamily: "var(--font-inter)", padding: 0 }}>Remove</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Incident Register ────────────────────────────────────────────────────────
+type IncidentRow = { id: string; incident_date: string; incident_type: string; description: string; location: string; persons_involved: string; immediate_action: string; reported_to: string; notifiable: boolean; outcome: string };
+
+function IncidentRegisterPage() {
+  const orgOwnerId = useContext(OrgContext);
+  const [rows, setRows] = useState<IncidentRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showAdd, setShowAdd] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [form, setForm] = useState({ incident_date: "", incident_type: "WHS Incident", description: "", location: "", persons_involved: "", immediate_action: "", reported_to: "Internal only", notifiable: false, outcome: "" });
+
+  useEffect(() => {
+    if (!orgOwnerId) { setLoading(false); return; }
+    supabase.from("incident_register").select("*").eq("user_id", orgOwnerId).order("created_at", { ascending: false }).then(({ data }) => {
+      if (data) setRows(data as IncidentRow[]);
+      setLoading(false);
+    });
+  }, [orgOwnerId]);
+
+  function setF<K extends keyof typeof form>(k: K, v: typeof form[K]) { setForm(p => ({ ...p, [k]: v })); }
+
+  async function save() {
+    if (!form.incident_date || !form.description || !orgOwnerId) { setError("Date and description are required."); return; }
+    setSaving(true); setError("");
+    const { data, error: err } = await supabase.from("incident_register").insert({ user_id: orgOwnerId, ...form }).select().single();
+    setSaving(false);
+    if (err) { setError("Failed to save. Please try again."); return; }
+    if (data) setRows(p => [data as IncidentRow, ...p]);
+    setForm({ incident_date: "", incident_type: "WHS Incident", description: "", location: "", persons_involved: "", immediate_action: "", reported_to: "Internal only", notifiable: false, outcome: "" });
+    setShowAdd(false);
+  }
+
+  async function del(id: string) {
+    await supabase.from("incident_register").delete().eq("id", id);
+    setRows(p => p.filter(r => r.id !== id));
+  }
+
+  const inp: React.CSSProperties = { fontSize: "13px", color: "var(--rc-ink)", background: "var(--rc-surface)", border: "1px solid var(--rc-border)", borderRadius: "8px", padding: "9px 12px", outline: "none", fontFamily: "var(--font-inter)", width: "100%", boxSizing: "border-box" };
+  const lbl: React.CSSProperties = { fontSize: "12px", fontWeight: 600, color: "var(--rc-muted)", marginBottom: "5px", display: "block" };
+  const typeColors: Record<string, string> = { "WHS Incident": "oklch(0.55 0.18 25)", "Near Miss": "oklch(0.50 0.18 55)", "Client Complaint": "oklch(0.48 0.15 250)", "Data Breach": "oklch(0.42 0.22 330)", "Property Damage": "oklch(0.44 0.12 200)", "Other": "var(--rc-faint)" };
+
+  return (
+    <div style={PAGE_WRAP}>
+      <div style={PAGE_HEADER}>
+        <div>
+          <h1 style={PAGE_H1}>Incident Register</h1>
+          <p style={PAGE_SUB}>Record workplace incidents, near misses, client complaints and data breaches as required by WHS and privacy obligations</p>
+        </div>
+        <button onClick={() => { setShowAdd(p => !p); setError(""); }} style={{ fontSize: "13px", fontWeight: 600, color: "white", background: "var(--rc-primary)", border: "none", borderRadius: "8px", padding: "9px 18px", cursor: "pointer", fontFamily: "var(--font-inter)" }}>
+          {showAdd ? "Cancel" : "+ Log Incident"}
+        </button>
+      </div>
+
+      {showAdd && (
+        <div style={{ background: "var(--rc-surface)", border: "1px solid var(--rc-border)", borderRadius: "12px", padding: "24px 28px", display: "flex", flexDirection: "column", gap: "16px", flexShrink: 0 }}>
+          <p style={{ fontSize: "13.5px", fontWeight: 700, color: "var(--rc-ink)", margin: 0 }}>New Incident Entry</p>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "14px" }}>
+            <div><label style={lbl}>Incident Date *</label><input type="date" value={form.incident_date} onChange={e => setF("incident_date", e.target.value)} style={{ ...inp, colorScheme: "light" }} /></div>
+            <div>
+              <label style={lbl}>Incident Type</label>
+              <select value={form.incident_type} onChange={e => setF("incident_type", e.target.value)} style={{ ...inp, cursor: "pointer" }}>
+                {["WHS Incident", "Near Miss", "Client Complaint", "Data Breach", "Property Damage", "Other"].map(o => <option key={o}>{o}</option>)}
+              </select>
+            </div>
+            <div><label style={lbl}>Location</label><input placeholder="e.g. Office, 42 Smith St" value={form.location} onChange={e => setF("location", e.target.value)} style={inp} /></div>
+          </div>
+          <div><label style={lbl}>Description *</label><textarea rows={3} placeholder="What happened? Describe the incident in detail." value={form.description} onChange={e => setF("description", e.target.value)} style={{ ...inp, resize: "vertical" }} /></div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
+            <div><label style={lbl}>Persons Involved</label><input placeholder="Names of staff, clients or contractors involved" value={form.persons_involved} onChange={e => setF("persons_involved", e.target.value)} style={inp} /></div>
+            <div>
+              <label style={lbl}>Reported To</label>
+              <select value={form.reported_to} onChange={e => setF("reported_to", e.target.value)} style={{ ...inp, cursor: "pointer" }}>
+                {["Internal only", "SafeWork NSW", "NSW Fair Trading", "Office of the Australian Information Commissioner (OAIC)", "Police", "Other regulator"].map(o => <option key={o}>{o}</option>)}
+              </select>
+            </div>
+          </div>
+          <div><label style={lbl}>Immediate Action Taken</label><textarea rows={2} placeholder="Steps taken immediately after the incident" value={form.immediate_action} onChange={e => setF("immediate_action", e.target.value)} style={{ ...inp, resize: "vertical" }} /></div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 120px", gap: "14px", alignItems: "start" }}>
+            <div><label style={lbl}>Outcome / Resolution</label><input placeholder="e.g. Staff member received first aid; no further injury" value={form.outcome} onChange={e => setF("outcome", e.target.value)} style={inp} /></div>
+            <div style={{ paddingTop: "22px" }}>
+              <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", fontSize: "13px", color: "var(--rc-ink)", fontWeight: 500 }}>
+                <input type="checkbox" checked={form.notifiable} onChange={e => setF("notifiable", e.target.checked)} style={{ width: "16px", height: "16px", cursor: "pointer", accentColor: "var(--rc-primary)" }} />
+                Notifiable
+              </label>
+            </div>
+          </div>
+          {error && <p style={{ fontSize: "13px", color: "oklch(0.55 0.18 25)", margin: 0, maxWidth: "none" }}>{error}</p>}
+          <div style={{ display: "flex", justifyContent: "flex-end" }}>
+            <button onClick={save} disabled={saving} style={{ fontSize: "13px", fontWeight: 600, color: "white", background: "var(--rc-primary)", border: "none", borderRadius: "8px", padding: "9px 22px", cursor: saving ? "not-allowed" : "pointer", opacity: saving ? 0.7 : 1, fontFamily: "var(--font-inter)" }}>
+              {saving ? "Saving…" : "Save Entry"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div style={{ flex: 1, overflowY: "auto" }}>
+        {loading ? <p style={{ color: "var(--rc-faint)", fontSize: "13px" }}>Loading…</p> : rows.length === 0 ? (
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "200px" }}>
+            <p style={{ fontSize: "14px", color: "var(--rc-faint)", maxWidth: "none", textAlign: "center" }}>No incidents recorded yet. Use the button above to log an entry.</p>
+          </div>
+        ) : (
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
+            <thead>
+              <tr style={{ borderBottom: "1px solid var(--rc-border)" }}>
+                {["Date", "Type", "Description", "Location", "Reported To", "Notifiable", ""].map(h => (
+                  <th key={h} style={{ textAlign: "left", padding: "10px 14px", fontSize: "11px", fontWeight: 700, color: "var(--rc-faint)", textTransform: "uppercase", letterSpacing: "0.05em", whiteSpace: "nowrap" }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r, i) => (
+                <tr key={r.id} style={{ borderBottom: i < rows.length - 1 ? "1px solid var(--rc-border-subtle)" : "none" }}>
+                  <td style={{ padding: "12px 14px", color: "var(--rc-muted)", whiteSpace: "nowrap" }}>{r.incident_date ? new Date(r.incident_date).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" }) : "—"}</td>
+                  <td style={{ padding: "12px 14px" }}>
+                    <span style={{ fontSize: "11.5px", fontWeight: 600, color: typeColors[r.incident_type] ?? "var(--rc-faint)", background: "var(--rc-surface)", border: "1px solid var(--rc-border)", borderRadius: "6px", padding: "3px 10px", whiteSpace: "nowrap" }}>{r.incident_type}</span>
+                  </td>
+                  <td style={{ padding: "12px 14px", color: "var(--rc-ink)", maxWidth: "260px" }}><span style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{r.description}</span></td>
+                  <td style={{ padding: "12px 14px", color: "var(--rc-muted)" }}>{r.location || "—"}</td>
+                  <td style={{ padding: "12px 14px", color: "var(--rc-muted)", whiteSpace: "nowrap" }}>{r.reported_to}</td>
+                  <td style={{ padding: "12px 14px", textAlign: "center" }}>{r.notifiable ? <span style={{ fontSize: "11.5px", fontWeight: 700, color: "oklch(0.55 0.18 25)" }}>Yes</span> : <span style={{ fontSize: "11.5px", color: "var(--rc-faint)" }}>No</span>}</td>
+                  <td style={{ padding: "12px 14px" }}>
+                    <button onClick={() => del(r.id)} style={{ fontSize: "11px", color: "var(--rc-faint)", background: "transparent", border: "none", cursor: "pointer", fontFamily: "var(--font-inter)", padding: 0 }}>Remove</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Risk Register ────────────────────────────────────────────────────────────
+type RiskRow = { id: string; risk_ref: string; category: string; description: string; likelihood: string; consequence: string; risk_rating: string; controls: string; owner: string; review_date: string; status: string };
+
+function riskRating(likelihood: string, consequence: string): string {
+  const l = likelihood === "High" ? 3 : likelihood === "Medium" ? 2 : 1;
+  const c = consequence === "High" ? 3 : consequence === "Medium" ? 2 : 1;
+  const score = l * c;
+  if (score >= 6) return "Critical";
+  if (score >= 4) return "High";
+  if (score >= 2) return "Medium";
+  return "Low";
+}
+
+function RiskRegisterPage() {
+  const orgOwnerId = useContext(OrgContext);
+  const [rows, setRows] = useState<RiskRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showAdd, setShowAdd] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [form, setForm] = useState({ category: "Compliance", description: "", likelihood: "Medium", consequence: "Medium", controls: "", owner: "", review_date: "", status: "Open" });
+
+  useEffect(() => {
+    if (!orgOwnerId) { setLoading(false); return; }
+    supabase.from("risk_register").select("*").eq("user_id", orgOwnerId).order("created_at", { ascending: false }).then(({ data }) => {
+      if (data) setRows(data as RiskRow[]);
+      setLoading(false);
+    });
+  }, [orgOwnerId]);
+
+  function setF(k: keyof typeof form, v: string) { setForm(p => ({ ...p, [k]: v })); }
+
+  async function save() {
+    if (!form.description || !orgOwnerId) { setError("Description is required."); return; }
+    setSaving(true); setError("");
+    const ref = `R-${String((rows.length + 1)).padStart(3, "0")}`;
+    const rating = riskRating(form.likelihood, form.consequence);
+    const { data, error: err } = await supabase.from("risk_register").insert({ user_id: orgOwnerId, risk_ref: ref, risk_rating: rating, ...form }).select().single();
+    setSaving(false);
+    if (err) { setError("Failed to save. Please try again."); return; }
+    if (data) setRows(p => [data as RiskRow, ...p]);
+    setForm({ category: "Compliance", description: "", likelihood: "Medium", consequence: "Medium", controls: "", owner: "", review_date: "", status: "Open" });
+    setShowAdd(false);
+  }
+
+  async function del(id: string) {
+    await supabase.from("risk_register").delete().eq("id", id);
+    setRows(p => p.filter(r => r.id !== id));
+  }
+
+  async function updateStatus(id: string, status: string) {
+    await supabase.from("risk_register").update({ status }).eq("id", id);
+    setRows(p => p.map(r => r.id === id ? { ...r, status } : r));
+  }
+
+  const inp: React.CSSProperties = { fontSize: "13px", color: "var(--rc-ink)", background: "var(--rc-surface)", border: "1px solid var(--rc-border)", borderRadius: "8px", padding: "9px 12px", outline: "none", fontFamily: "var(--font-inter)", width: "100%", boxSizing: "border-box" };
+  const lbl: React.CSSProperties = { fontSize: "12px", fontWeight: 600, color: "var(--rc-muted)", marginBottom: "5px", display: "block" };
+  const ratingColor = (r: string) => r === "Critical" ? "oklch(0.50 0.22 25)" : r === "High" ? "oklch(0.52 0.18 45)" : r === "Medium" ? "oklch(0.50 0.18 75)" : "oklch(0.42 0.12 145)";
+  const statusColor = (s: string) => s === "Open" ? "oklch(0.55 0.18 25)" : s === "Under Review" ? "oklch(0.50 0.18 55)" : s === "Mitigated" ? "oklch(0.48 0.15 250)" : "oklch(0.42 0.12 145)";
+
+  return (
+    <div style={PAGE_WRAP}>
+      <div style={PAGE_HEADER}>
+        <div>
+          <h1 style={PAGE_H1}>Risk Register</h1>
+          <p style={PAGE_SUB}>Identify, assess and track business risks — rated by likelihood and consequence</p>
+        </div>
+        <button onClick={() => { setShowAdd(p => !p); setError(""); }} style={{ fontSize: "13px", fontWeight: 600, color: "white", background: "var(--rc-primary)", border: "none", borderRadius: "8px", padding: "9px 18px", cursor: "pointer", fontFamily: "var(--font-inter)" }}>
+          {showAdd ? "Cancel" : "+ Add Risk"}
+        </button>
+      </div>
+
+      {showAdd && (
+        <div style={{ background: "var(--rc-surface)", border: "1px solid var(--rc-border)", borderRadius: "12px", padding: "24px 28px", display: "flex", flexDirection: "column", gap: "16px", flexShrink: 0 }}>
+          <p style={{ fontSize: "13.5px", fontWeight: 700, color: "var(--rc-ink)", margin: 0 }}>New Risk Entry</p>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: "14px" }}>
+            <div>
+              <label style={lbl}>Category</label>
+              <select value={form.category} onChange={e => setF("category", e.target.value)} style={{ ...inp, cursor: "pointer" }}>
+                {["Compliance", "Operational", "Financial", "Reputational", "WHS", "Technology", "Other"].map(o => <option key={o}>{o}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={lbl}>Likelihood</label>
+              <select value={form.likelihood} onChange={e => setF("likelihood", e.target.value)} style={{ ...inp, cursor: "pointer" }}>
+                {["Low", "Medium", "High"].map(o => <option key={o}>{o}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={lbl}>Consequence</label>
+              <select value={form.consequence} onChange={e => setF("consequence", e.target.value)} style={{ ...inp, cursor: "pointer" }}>
+                {["Low", "Medium", "High"].map(o => <option key={o}>{o}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={lbl}>Rating (auto)</label>
+              <div style={{ ...inp, background: "var(--rc-bg)", color: ratingColor(riskRating(form.likelihood, form.consequence)), fontWeight: 700 }}>{riskRating(form.likelihood, form.consequence)}</div>
+            </div>
+          </div>
+          <div><label style={lbl}>Risk Description *</label><textarea rows={2} placeholder="Describe the risk clearly — what could go wrong and why" value={form.description} onChange={e => setF("description", e.target.value)} style={{ ...inp, resize: "vertical" }} /></div>
+          <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr", gap: "14px" }}>
+            <div><label style={lbl}>Existing Controls</label><input placeholder="What controls are already in place?" value={form.controls} onChange={e => setF("controls", e.target.value)} style={inp} /></div>
+            <div><label style={lbl}>Risk Owner</label><input placeholder="Responsible person" value={form.owner} onChange={e => setF("owner", e.target.value)} style={inp} /></div>
+            <div><label style={lbl}>Review Date</label><input type="date" value={form.review_date} onChange={e => setF("review_date", e.target.value)} style={{ ...inp, colorScheme: "light" }} /></div>
+            <div>
+              <label style={lbl}>Status</label>
+              <select value={form.status} onChange={e => setF("status", e.target.value)} style={{ ...inp, cursor: "pointer" }}>
+                {["Open", "Under Review", "Mitigated", "Closed"].map(o => <option key={o}>{o}</option>)}
+              </select>
+            </div>
+          </div>
+          {error && <p style={{ fontSize: "13px", color: "oklch(0.55 0.18 25)", margin: 0, maxWidth: "none" }}>{error}</p>}
+          <div style={{ display: "flex", justifyContent: "flex-end" }}>
+            <button onClick={save} disabled={saving} style={{ fontSize: "13px", fontWeight: 600, color: "white", background: "var(--rc-primary)", border: "none", borderRadius: "8px", padding: "9px 22px", cursor: saving ? "not-allowed" : "pointer", opacity: saving ? 0.7 : 1, fontFamily: "var(--font-inter)" }}>
+              {saving ? "Saving…" : "Save Risk"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div style={{ flex: 1, overflowY: "auto" }}>
+        {loading ? <p style={{ color: "var(--rc-faint)", fontSize: "13px" }}>Loading…</p> : rows.length === 0 ? (
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "200px" }}>
+            <p style={{ fontSize: "14px", color: "var(--rc-faint)", maxWidth: "none", textAlign: "center" }}>No risks logged yet. Use the button above to add the first entry.</p>
+          </div>
+        ) : (
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
+            <thead>
+              <tr style={{ borderBottom: "1px solid var(--rc-border)" }}>
+                {["Ref", "Category", "Description", "Rating", "Owner", "Review", "Status", ""].map(h => (
+                  <th key={h} style={{ textAlign: "left", padding: "10px 14px", fontSize: "11px", fontWeight: 700, color: "var(--rc-faint)", textTransform: "uppercase", letterSpacing: "0.05em", whiteSpace: "nowrap" }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r, i) => (
+                <tr key={r.id} style={{ borderBottom: i < rows.length - 1 ? "1px solid var(--rc-border-subtle)" : "none" }}>
+                  <td style={{ padding: "12px 14px", fontWeight: 700, color: "var(--rc-primary)", fontSize: "12px", whiteSpace: "nowrap" }}>{r.risk_ref}</td>
+                  <td style={{ padding: "12px 14px", color: "var(--rc-muted)", whiteSpace: "nowrap" }}>{r.category}</td>
+                  <td style={{ padding: "12px 14px", color: "var(--rc-ink)", maxWidth: "240px" }}><span style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{r.description}</span></td>
+                  <td style={{ padding: "12px 14px" }}>
+                    <span style={{ fontSize: "11.5px", fontWeight: 700, color: ratingColor(r.risk_rating), background: "var(--rc-surface)", border: "1px solid var(--rc-border)", borderRadius: "6px", padding: "3px 10px", whiteSpace: "nowrap" }}>{r.risk_rating}</span>
+                  </td>
+                  <td style={{ padding: "12px 14px", color: "var(--rc-muted)" }}>{r.owner || "—"}</td>
+                  <td style={{ padding: "12px 14px", color: "var(--rc-muted)", whiteSpace: "nowrap" }}>{r.review_date ? new Date(r.review_date).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" }) : "—"}</td>
+                  <td style={{ padding: "12px 14px" }}>
+                    <select value={r.status} onChange={e => updateStatus(r.id, e.target.value)} style={{ fontSize: "11.5px", fontWeight: 600, color: statusColor(r.status), background: "var(--rc-surface)", border: "1px solid var(--rc-border)", borderRadius: "6px", padding: "3px 8px", cursor: "pointer", fontFamily: "var(--font-inter)", outline: "none" }}>
+                      {["Open", "Under Review", "Mitigated", "Closed"].map(o => <option key={o}>{o}</option>)}
+                    </select>
+                  </td>
+                  <td style={{ padding: "12px 14px" }}>
+                    <button onClick={() => del(r.id)} style={{ fontSize: "11px", color: "var(--rc-faint)", background: "transparent", border: "none", cursor: "pointer", fontFamily: "var(--font-inter)", padding: 0 }}>Remove</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function StaticSubPage({ label, agencyName, agencyAbn, userEmail, userId, staffRows, policies, onPolicySaved, onPolicyUpdated, onPolicyDeleted }: {
   label: string; agencyName: string; agencyAbn: string; userEmail: string | null; userId: string | null; staffRows: StaffRow[];
   policies: PolicyRow[]; onPolicySaved: (p: PolicyRow) => void; onPolicyUpdated: (p: PolicyRow) => void; onPolicyDeleted: (id: string) => void;
@@ -6469,6 +6891,9 @@ function StaticSubPage({ label, agencyName, agencyAbn, userEmail, userId, staffR
     case "Account":                 return <AccountSettingsPage agencyName={agencyName} agencyAbn={agencyAbn} userEmail={userEmail} />;
     case "Billing":                 return <BillingSettingsPage userId={userId} />;
     case "Team & Invites":          return <TeamInvitesPage userId={userId} agencyName={agencyName} staffRows={staffRows} />;
+    case "Gift Register":           return <GiftRegisterPage />;
+    case "Incident Register":       return <IncidentRegisterPage />;
+    case "Risk Register":           return <RiskRegisterPage />;
     default:                        return null;
   }
 }
@@ -6615,6 +7040,7 @@ export default function DashboardPage() {
     { id: "management", label: "Residential Management", icon: <MgmtIcon />, type: "properties", properties: mgmtProps },
     { id: "staff", label: "Staff", icon: <StaffIcon />, type: "static", children: ["Team Overview", "Licence Tracking", "CPD Records", "Onboarding"] },
     { id: "trust", label: "Trust Accounting", icon: <TrustIcon />, type: "static", children: ["Account Reconciliation", "Monthly Reports", "Transaction Log", "AML Compliance", "Audit Reports"] },
+    { id: "registers", label: "Registers", icon: <RegIcon />, type: "static", children: ["Gift Register", "Incident Register", "Risk Register"] },
     { id: "settings", label: "Settings", icon: <SettingsIcon />, type: "static", children: ["Account", "Billing", "Team & Invites"] },
   ];
 
