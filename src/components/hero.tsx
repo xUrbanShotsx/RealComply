@@ -117,7 +117,7 @@ export default function Hero() {
                 opacity: 0.7,
               }}
             >
-              14 day free trial
+              Sign up for a 14 day free trial · No lock in contracts
             </p>
           </div>
 
