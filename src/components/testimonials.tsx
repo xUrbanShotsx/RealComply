@@ -28,7 +28,7 @@ export default function Testimonials() {
   const cardsRef = useReveal(0.05);
 
   return (
-    <section style={{ background: "var(--rc-bg)", padding: "120px 24px", borderTop: "1px solid var(--rc-border)" }}>
+    <section style={{ background: "var(--rc-bg)", padding: "120px 24px" }}>
       <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
         <div ref={headerRef as React.RefObject<HTMLDivElement>} className="reveal" style={{ marginBottom: "64px" }}>
           <h2 style={{ fontSize: "clamp(2rem, 4vw, 3rem)", fontWeight: 800, color: "var(--rc-ink)", letterSpacing: "-0.04em", lineHeight: 1.05, marginBottom: "16px" }}>

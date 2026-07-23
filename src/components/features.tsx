@@ -186,84 +186,83 @@ function TrustMockup() {
 
 /* ─── AML mockup ─── */
 function AMLMockup() {
-  const records = [
-    { address: "12 Harbour St, Sydney", client: "John & Mary Smith", risk: "low" as const },
-    { address: "45 Beach Rd, Bondi", client: "Chen Family Trust", risk: "low" as const },
-    { address: "88 Kings Cross Ave", client: "Victor Holdings Pty", risk: "medium" as const },
-    { address: "3 Pacific Hwy, Chatswood", client: "Andrew Williams", risk: "low" as const },
+  const checks = [
+    { label: "Identity documents sighted", done: true },
+    { label: "Proof of address verified", done: true },
+    { label: "Beneficial ownership recorded", done: true },
+    { label: "Source of funds noted", done: true },
+    { label: "PEP & sanctions check completed", done: true },
   ];
-  const riskStyle = {
-    low: { bg: "oklch(0.22 0.055 145)", text: "oklch(0.72 0.14 145)", label: "Low" },
-    medium: { bg: "oklch(0.24 0.075 60)", text: "oklch(0.78 0.13 60)", label: "Medium" },
-    high: { bg: "oklch(0.22 0.060 25)", text: "oklch(0.72 0.14 25)", label: "High" },
-  };
   return (
-    <MockupFrame title="Customer Risk Register — Q2 2025">
-      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "12px" }}>
-        <span style={{ fontSize: "13px", fontWeight: 700, color: "white" }}>Customer Risk Register</span>
-        <span style={{ fontSize: "12px", color: "oklch(0.58 0.022 295)" }}>Q2 2025</span>
-      </div>
-      <div style={{ borderRadius: "8px", overflow: "hidden", border: "1px solid oklch(0.19 0.030 295)" }}>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1fr auto",
-            padding: "8px 14px",
-            background: "oklch(0.17 0.025 295)",
-            borderBottom: "1px solid oklch(0.20 0.030 295)",
-          }}
-        >
-          <span style={{ fontSize: "10px", fontWeight: 700, color: "oklch(0.50 0.022 295)", letterSpacing: "0.05em" }}>PROPERTY</span>
-          <span style={{ fontSize: "10px", fontWeight: 700, color: "oklch(0.50 0.022 295)", letterSpacing: "0.05em" }}>RISK</span>
+    <MockupFrame title="AML Checklist — 23 Harbour St, Sydney">
+      <div style={{ marginBottom: "14px" }}>
+        <div style={{ fontSize: "13px", fontWeight: 700, color: "white", marginBottom: "2px" }}>
+          AML Checklist
         </div>
-        {records.map(({ address, client, risk }, i) => {
-          const s = riskStyle[risk];
-          return (
-            <div
-              key={address}
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr auto",
-                padding: "10px 14px",
-                alignItems: "center",
-                borderBottom: i < records.length - 1 ? "1px solid oklch(0.17 0.025 295)" : "none",
-                background: risk === "medium" ? "oklch(0.15 0.035 60)" : "oklch(0.14 0.022 295)",
-              }}
-            >
-              <div>
-                <div style={{ fontSize: "12px", color: "oklch(0.84 0.014 295)", fontWeight: 500 }}>
-                  {address}
-                </div>
-                <div style={{ fontSize: "10.5px", color: "oklch(0.50 0.022 295)", marginTop: "1px" }}>
-                  {client}
-                </div>
-              </div>
-              <span
-                style={{
-                  fontSize: "10px",
-                  fontWeight: 700,
-                  background: s.bg,
-                  color: s.text,
-                  padding: "2px 8px",
-                  borderRadius: "100px",
-                }}
-              >
-                {s.label}
-              </span>
-            </div>
-          );
-        })}
+        <div style={{ fontSize: "11px", color: "oklch(0.52 0.022 295)" }}>
+          23 Harbour St, Sydney &nbsp;·&nbsp; Client: John &amp; Mary Smith
+        </div>
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: "2px", marginBottom: "14px" }}>
+        {checks.map(({ label, done }) => (
+          <div
+            key={label}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "10px",
+              padding: "9px 10px",
+              borderRadius: "6px",
+              background: "oklch(0.15 0.022 295)",
+            }}
+          >
+            <span style={{ fontSize: "13px", color: "oklch(0.62 0.17 145)", flexShrink: 0, lineHeight: 1 }}>
+              {done ? "✓" : "○"}
+            </span>
+            <span style={{ fontSize: "12px", color: "oklch(0.80 0.016 295)" }}>{label}</span>
+          </div>
+        ))}
       </div>
       <div
         style={{
-          marginTop: "10px",
-          fontSize: "11px",
-          color: "oklch(0.48 0.022 295)",
-          textAlign: "center",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "10px 12px",
+          background: "oklch(0.10 0.022 295)",
+          borderRadius: "8px",
+          marginBottom: "12px",
         }}
       >
-        14 assessments this quarter · 1 requiring follow-up
+        <span style={{ fontSize: "12px", color: "oklch(0.62 0.022 295)" }}>Risk assessment</span>
+        <span
+          style={{
+            fontSize: "11px",
+            fontWeight: 700,
+            background: "oklch(0.22 0.055 145)",
+            color: "oklch(0.72 0.14 145)",
+            padding: "3px 10px",
+            borderRadius: "100px",
+          }}
+        >
+          Low ●
+        </span>
       </div>
+      <button
+        style={{
+          width: "100%",
+          padding: "10px 16px",
+          background: "#8c52ff",
+          color: "white",
+          borderRadius: "8px",
+          border: "none",
+          fontSize: "13px",
+          fontWeight: 700,
+          cursor: "pointer",
+        }}
+      >
+        Mark complete
+      </button>
     </MockupFrame>
   );
 }
@@ -397,11 +396,11 @@ const showcases = [
   },
   {
     id: "aml",
-    badge: "AML Compliance",
-    heading: "AUSTRAC obligations, handled.",
-    body: "Create an AML risk assessment per property, track customer due diligence records, and maintain a compliant transaction register — all without the spreadsheet trail that gets agencies into trouble.",
+    badge: "AML Records",
+    heading: "Record your AML checks. Simply.",
+    body: "AUSTRAC requires real estate agencies to complete customer due diligence for every transaction. RealComply gives you a simple per-property checklist to record that each step was done — with a timestamp and full audit trail, not a spreadsheet.",
     legislation:
-      "Built around the Anti-Money Laundering and Counter-Terrorism Financing Act 2006 (Cth).",
+      "Covers customer identification, beneficial ownership, and transaction monitoring record-keeping under the AML/CTF Act 2006.",
     flip: false,
     Mockup: AMLMockup,
     bg: "var(--rc-bg)",
@@ -435,7 +434,6 @@ function ShowcaseSection({
       style={{
         background: bg,
         padding: "100px 24px",
-        borderTop: "1px solid var(--rc-border)",
       }}
     >
       <div
@@ -533,7 +531,6 @@ export default function Features() {
         style={{
           background: "var(--rc-bg)",
           padding: "100px 24px 60px",
-          borderTop: "1px solid var(--rc-border)",
         }}
       >
         <div

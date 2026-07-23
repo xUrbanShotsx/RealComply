@@ -27,7 +27,7 @@ export default function HowItWorks() {
   return (
     <section
       id="product"
-      style={{ background: "var(--rc-surface)", padding: "120px 24px", borderTop: "1px solid var(--rc-border)" }}
+      style={{ background: "var(--rc-surface)", padding: "120px 24px" }}
     >
       <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
         {/* Header */}

@@ -63,8 +63,6 @@ export default function Pricing() {
       style={{
         background: "var(--rc-surface)",
         padding: "120px 24px",
-        borderTop: "1px solid var(--rc-border)",
-        borderBottom: "1px solid var(--rc-border)",
       }}
     >
       <div style={{ maxWidth: "1200px", margin: "0 auto" }}>

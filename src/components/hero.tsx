@@ -4,7 +4,7 @@ export default function Hero() {
   return (
     <section
       style={{
-        background: "oklch(0.10 0.025 295)",
+        background: "#ffffff",
         minHeight: "100svh",
         display: "flex",
         alignItems: "center",
@@ -13,24 +13,14 @@ export default function Hero() {
         paddingTop: "80px",
       }}
     >
-      {/* Background glows */}
+      {/* Subtle purple tint in top-right */}
       <div
         aria-hidden
         style={{
           position: "absolute",
           inset: 0,
           background:
-            "radial-gradient(ellipse 60% 50% at 75% 55%, oklch(0.22 0.08 295 / 0.28), transparent)",
-          pointerEvents: "none",
-        }}
-      />
-      <div
-        aria-hidden
-        style={{
-          position: "absolute",
-          inset: 0,
-          background:
-            "radial-gradient(ellipse 40% 40% at 15% 20%, oklch(0.25 0.06 295 / 0.14), transparent)",
+            "radial-gradient(ellipse 50% 60% at 80% 30%, oklch(0.92 0.04 295 / 0.5), transparent)",
           pointerEvents: "none",
         }}
       />
@@ -63,13 +53,13 @@ export default function Hero() {
                   display: "inline-flex",
                   alignItems: "center",
                   gap: "8px",
-                  background: "oklch(0.18 0.050 295)",
-                  border: "1px solid oklch(0.28 0.07 295)",
+                  background: "oklch(0.95 0.04 295)",
+                  border: "1px solid oklch(0.86 0.06 295)",
                   borderRadius: "100px",
                   padding: "6px 14px 6px 8px",
                   fontSize: "12px",
                   fontWeight: 600,
-                  color: "oklch(0.80 0.06 295)",
+                  color: "#8c52ff",
                   marginBottom: "32px",
                 }}
               >
@@ -92,7 +82,7 @@ export default function Hero() {
                 fontFamily: "var(--font-display), system-ui, sans-serif",
                 fontWeight: 800,
                 fontSize: "clamp(3rem, 5.5vw, 5.5rem)",
-                color: "white",
+                color: "var(--rc-ink)",
                 lineHeight: 1.0,
                 letterSpacing: "-0.04em",
                 marginBottom: "28px",
@@ -122,7 +112,7 @@ export default function Hero() {
               style={{
                 animationDelay: "0.42s",
                 fontSize: "1.125rem",
-                color: "oklch(0.66 0.022 295)",
+                color: "var(--rc-muted)",
                 lineHeight: 1.75,
                 maxWidth: "480px",
                 marginBottom: "44px",
@@ -156,7 +146,7 @@ export default function Hero() {
                 animationDelay: "0.72s",
                 marginTop: "22px",
                 fontSize: "13px",
-                color: "oklch(0.46 0.022 295)",
+                color: "var(--rc-faint)",
               }}
             >
               No credit card required · Set up in under 15 minutes
@@ -172,7 +162,7 @@ export default function Hero() {
                 borderRadius: "16px",
                 overflow: "hidden",
                 boxShadow:
-                  "0 40px 80px oklch(0.04 0.015 295 / 0.7), 0 0 0 1px oklch(0.22 0.035 295)",
+                  "0 40px 80px oklch(0.10 0.025 295 / 0.20), 0 8px 24px oklch(0.10 0.025 295 / 0.12)",
               }}
             >
               {/* Window chrome */}
@@ -186,41 +176,10 @@ export default function Hero() {
                   gap: "6px",
                 }}
               >
-                <span
-                  style={{
-                    width: "9px",
-                    height: "9px",
-                    borderRadius: "50%",
-                    background: "oklch(0.60 0.17 25)",
-                    display: "inline-block",
-                  }}
-                />
-                <span
-                  style={{
-                    width: "9px",
-                    height: "9px",
-                    borderRadius: "50%",
-                    background: "oklch(0.72 0.18 60)",
-                    display: "inline-block",
-                  }}
-                />
-                <span
-                  style={{
-                    width: "9px",
-                    height: "9px",
-                    borderRadius: "50%",
-                    background: "oklch(0.62 0.17 145)",
-                    display: "inline-block",
-                  }}
-                />
-                <span
-                  style={{
-                    fontSize: "11px",
-                    color: "oklch(0.48 0.022 295)",
-                    marginLeft: "10px",
-                    fontFamily: "var(--font-inter)",
-                  }}
-                >
+                <span style={{ width: "9px", height: "9px", borderRadius: "50%", background: "oklch(0.60 0.17 25)", display: "inline-block" }} />
+                <span style={{ width: "9px", height: "9px", borderRadius: "50%", background: "oklch(0.72 0.18 60)", display: "inline-block" }} />
+                <span style={{ width: "9px", height: "9px", borderRadius: "50%", background: "oklch(0.62 0.17 145)", display: "inline-block" }} />
+                <span style={{ fontSize: "11px", color: "oklch(0.48 0.022 295)", marginLeft: "10px" }}>
                   Compliance Overview — Hartley &amp; Associates
                 </span>
               </div>
@@ -241,84 +200,17 @@ export default function Hero() {
                   }}
                 >
                   {/* Score ring — r=38, circumference≈239, 94%≈225 */}
-                  <svg
-                    width="86"
-                    height="86"
-                    viewBox="0 0 90 90"
-                    style={{ flexShrink: 0 }}
-                    aria-label="Compliance score: 94 out of 100"
-                  >
-                    <circle
-                      cx="45"
-                      cy="45"
-                      r="38"
-                      fill="none"
-                      stroke="oklch(0.22 0.035 295)"
-                      strokeWidth="7"
-                    />
-                    <circle
-                      cx="45"
-                      cy="45"
-                      r="38"
-                      fill="none"
-                      stroke="#8c52ff"
-                      strokeWidth="7"
-                      strokeLinecap="round"
-                      className="score-ring"
-                      transform="rotate(-90 45 45)"
-                    />
-                    <text
-                      x="45"
-                      y="41"
-                      textAnchor="middle"
-                      fill="white"
-                      fontSize="18"
-                      fontWeight="800"
-                      fontFamily="system-ui, sans-serif"
-                    >
-                      94
-                    </text>
-                    <text
-                      x="45"
-                      y="57"
-                      textAnchor="middle"
-                      fill="oklch(0.50 0.022 295)"
-                      fontSize="10"
-                      fontFamily="system-ui, sans-serif"
-                    >
-                      / 100
-                    </text>
+                  <svg width="86" height="86" viewBox="0 0 90 90" style={{ flexShrink: 0 }} aria-label="Compliance score: 94 out of 100">
+                    <circle cx="45" cy="45" r="38" fill="none" stroke="oklch(0.22 0.035 295)" strokeWidth="7" />
+                    <circle cx="45" cy="45" r="38" fill="none" stroke="#8c52ff" strokeWidth="7" strokeLinecap="round" className="score-ring" transform="rotate(-90 45 45)" />
+                    <text x="45" y="41" textAnchor="middle" fill="white" fontSize="18" fontWeight="800" fontFamily="system-ui, sans-serif">94</text>
+                    <text x="45" y="57" textAnchor="middle" fill="oklch(0.50 0.022 295)" fontSize="10" fontFamily="system-ui, sans-serif">/ 100</text>
                   </svg>
 
                   <div>
-                    <div
-                      style={{
-                        fontSize: "13px",
-                        fontWeight: 700,
-                        color: "white",
-                        marginBottom: "4px",
-                      }}
-                    >
-                      Overall Compliance Score
-                    </div>
-                    <div
-                      style={{
-                        fontSize: "12px",
-                        color: "oklch(0.62 0.17 145)",
-                        fontWeight: 600,
-                      }}
-                    >
-                      Audit-ready
-                    </div>
-                    <div
-                      style={{
-                        fontSize: "11px",
-                        color: "oklch(0.48 0.022 295)",
-                        marginTop: "4px",
-                      }}
-                    >
-                      Last updated today, 9:41am
-                    </div>
+                    <div style={{ fontSize: "13px", fontWeight: 700, color: "white", marginBottom: "4px" }}>Overall Compliance Score</div>
+                    <div style={{ fontSize: "12px", color: "oklch(0.62 0.17 145)", fontWeight: 600 }}>Audit-ready</div>
+                    <div style={{ fontSize: "11px", color: "oklch(0.48 0.022 295)", marginTop: "4px" }}>Last updated today, 9:41am</div>
                   </div>
                 </div>
 
@@ -337,29 +229,12 @@ export default function Hero() {
                       alignItems: "center",
                       justifyContent: "space-between",
                       padding: "11px 4px",
-                      borderBottom:
-                        i < arr.length - 1 ? "1px solid oklch(0.19 0.028 295)" : "none",
+                      borderBottom: i < arr.length - 1 ? "1px solid oklch(0.19 0.028 295)" : "none",
                     }}
                   >
                     <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                      <div
-                        style={{
-                          width: "7px",
-                          height: "7px",
-                          borderRadius: "50%",
-                          background: ok ? "oklch(0.62 0.17 145)" : "oklch(0.72 0.18 60)",
-                          flexShrink: 0,
-                        }}
-                      />
-                      <span
-                        style={{
-                          fontSize: "13px",
-                          color: "oklch(0.80 0.018 295)",
-                          fontWeight: 500,
-                        }}
-                      >
-                        {label}
-                      </span>
+                      <div style={{ width: "7px", height: "7px", borderRadius: "50%", background: ok ? "oklch(0.62 0.17 145)" : "oklch(0.72 0.18 60)", flexShrink: 0 }} />
+                      <span style={{ fontSize: "13px", color: "oklch(0.80 0.018 295)", fontWeight: 500 }}>{label}</span>
                     </div>
                     <span
                       style={{
@@ -396,16 +271,7 @@ export default function Hero() {
           gap: "6px",
         }}
       >
-        <span
-          style={{
-            fontSize: "10px",
-            letterSpacing: "0.08em",
-            color: "oklch(0.40 0.022 295)",
-            fontWeight: 600,
-          }}
-        >
-          SCROLL
-        </span>
+        <span style={{ fontSize: "10px", letterSpacing: "0.08em", color: "var(--rc-faint)", fontWeight: 600 }}>SCROLL</span>
         <div className="scroll-line" />
       </div>
 
@@ -426,7 +292,6 @@ export default function Hero() {
         @keyframes heroFade {
           to { opacity: 1; transform: translateY(0); }
         }
-        /* r=38, circumference=238.76≈239; 94%=224.6≈225 */
         .score-ring {
           stroke-dasharray: 0 239;
           animation: ringFill 1.4s cubic-bezier(0.16, 1, 0.3, 1) 0.5s forwards;
@@ -437,12 +302,12 @@ export default function Hero() {
         .scroll-line {
           width: 1px;
           height: 28px;
-          background: linear-gradient(to bottom, oklch(0.40 0.022 295), transparent);
+          background: linear-gradient(to bottom, var(--rc-border), transparent);
           animation: scrollPulse 1.8s ease-in-out infinite;
         }
         @keyframes scrollPulse {
-          0%, 100% { opacity: 0.8; transform: scaleY(1); }
-          50% { opacity: 0.25; transform: scaleY(0.4); }
+          0%, 100% { opacity: 0.7; transform: scaleY(1); }
+          50% { opacity: 0.2; transform: scaleY(0.4); }
         }
         .btn-hero-primary {
           display: inline-flex;
@@ -460,27 +325,24 @@ export default function Hero() {
           display: inline-flex;
           align-items: center;
           padding: 14px 28px;
-          background: oklch(0.16 0.028 295);
-          color: oklch(0.76 0.022 295);
+          background: transparent;
+          color: var(--rc-ink);
           border-radius: 8px;
           font-weight: 600;
           font-size: 15px;
-          border: 1px solid oklch(0.26 0.035 295);
-          transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+          border: 1px solid var(--rc-border);
+          transition: border-color 0.15s ease, background 0.15s ease;
         }
         .btn-hero-ghost:hover {
-          border-color: oklch(0.42 0.04 295);
-          color: white;
-          background: oklch(0.18 0.035 295);
+          border-color: oklch(0.55 0.08 295);
+          background: oklch(0.97 0.02 295);
         }
         @media (max-width: 900px) {
           .hero-grid { grid-template-columns: 1fr !important; gap: 48px !important; }
           .hero-mockup { display: none !important; }
         }
         @media (prefers-reduced-motion: reduce) {
-          .line-reveal, .hero-fade {
-            opacity: 1; clip-path: none; transform: none; animation: none;
-          }
+          .line-reveal, .hero-fade { opacity: 1; clip-path: none; transform: none; animation: none; }
           .score-ring { stroke-dasharray: 225 239; animation: none; }
           .scroll-line { animation: none; }
         }
