@@ -7550,6 +7550,7 @@ export default function DashboardPage() {
   const [agencyName, setAgencyName] = useState<string>("Your Agency");
   const [agencyAbn, setAgencyAbn] = useState<string>("");
   const [userRole, setUserRole] = useState<"owner" | "standard">("standard");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data }) => {
@@ -7691,17 +7692,33 @@ export default function DashboardPage() {
     setActiveModule(id);
     if (id === "settings") setSelected({ type: "static", label: "Account" });
     else setSelected(null);
+    setSidebarOpen(false);
   }
-  function goBack() { setActiveModule(null); setSelected(null); }
+  function goBack() { setActiveModule(null); setSelected(null); setSidebarOpen(false); }
 
   return (
     <OrgContext.Provider value={orgOwnerId}>
       <div style={{ display: "flex", minHeight: "100svh", background: "var(--rc-page)" }}>
+
+      {/* Mobile top bar */}
+      <div className="rc-mobile-header">
+        <button className="rc-hamburger" onClick={() => setSidebarOpen(v => !v)} aria-label="Open menu">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"/></svg>
+        </button>
+        <img src="/dashboardtitle.png" alt="RealComply" style={{ height: "30px", width: "auto", objectFit: "contain", filter: "brightness(0) invert(1)" }} />
+      </div>
+
+      {/* Sidebar overlay (mobile) */}
+      {sidebarOpen && <div className="rc-overlay" onClick={() => setSidebarOpen(false)} />}
+
       {/* Sidebar */}
-      <aside style={{ width: "240px", flexShrink: 0, background: "var(--rc-nav)", display: "flex", flexDirection: "column", position: "fixed", top: 0, left: 0, bottom: 0, overflowY: "auto", zIndex: 10 }}>
+      <aside className={`rc-sidebar${sidebarOpen ? " rc-sidebar-open" : ""}`} style={{ width: "240px", flexShrink: 0, background: "var(--rc-nav)", display: "flex", flexDirection: "column", position: "fixed", top: 0, left: 0, bottom: 0, overflowY: "auto", zIndex: 10 }}>
         {/* Logo — white strip so dark logo stays visible */}
-        <div style={{ padding: "16px 20px", flexShrink: 0, background: "#ffffff", borderBottom: "1px solid #e8eaf0" }}>
-          <img src="/dashboardtitle.png" alt="RealComply" style={{ height: "44px", width: "auto", objectFit: "contain", maxWidth: "200px" }} />
+        <div style={{ padding: "16px 20px", flexShrink: 0, background: "#ffffff", borderBottom: "1px solid #e8eaf0", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <img src="/dashboardtitle.png" alt="RealComply" style={{ height: "44px", width: "auto", objectFit: "contain", maxWidth: "180px" }} />
+          <button className="rc-sidebar-close" onClick={() => setSidebarOpen(false)} aria-label="Close menu">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="#64748d" strokeWidth="1.6" strokeLinecap="round"/></svg>
+          </button>
         </div>
 
         {/* Overview — always visible */}
@@ -7753,7 +7770,7 @@ export default function DashboardPage() {
               {module.type === "properties" && module.properties.map((prop) => {
                 const isActive = selected?.type === "property" && selected.id === prop.id;
                 return (
-                  <button key={prop.id} onClick={() => setSelected({ type: "property", section: module.id as "sales" | "management", id: prop.id, address: prop.address })}
+                  <button key={prop.id} onClick={() => { setSelected({ type: "property", section: module.id as "sales" | "management", id: prop.id, address: prop.address }); setSidebarOpen(false); }}
                     style={{ width: "100%", display: "flex", alignItems: "flex-start", gap: "8px", padding: "7px 12px", border: "none", background: isActive ? "var(--rc-nav-active-bg)" : "transparent", color: isActive ? "white" : "var(--rc-nav-text)", fontSize: "12.5px", fontWeight: isActive ? 500 : 400, cursor: "pointer", textAlign: "left", borderRadius: "7px", marginBottom: "1px", transition: "background 0.1s ease, color 0.1s ease", fontFamily: "var(--font-inter)", lineHeight: 1.4 }}
                     onMouseEnter={(e) => { if (!isActive) { (e.currentTarget as HTMLButtonElement).style.background = "var(--rc-nav-hover)"; (e.currentTarget as HTMLButtonElement).style.color = "rgba(255,255,255,0.95)"; } }}
                     onMouseLeave={(e) => { if (!isActive) { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; (e.currentTarget as HTMLButtonElement).style.color = "var(--rc-nav-text)"; } }}
@@ -7766,7 +7783,7 @@ export default function DashboardPage() {
               {module.type === "static" && module.children.map((child) => {
                 const isActive = selected?.type === "static" && selected.label === child;
                 return (
-                  <button key={child} onClick={() => setSelected({ type: "static", label: child })}
+                  <button key={child} onClick={() => { setSelected({ type: "static", label: child }); setSidebarOpen(false); }}
                     style={{ width: "100%", display: "block", padding: "7px 12px", border: "none", background: isActive ? "var(--rc-nav-active-bg)" : "transparent", color: isActive ? "white" : "var(--rc-nav-text)", fontSize: "13px", fontWeight: isActive ? 500 : 400, cursor: "pointer", textAlign: "left", borderRadius: "7px", marginBottom: "1px", transition: "background 0.1s ease, color 0.1s ease", fontFamily: "var(--font-inter)", letterSpacing: "-0.01em" }}
                     onMouseEnter={(e) => { if (!isActive) { (e.currentTarget as HTMLButtonElement).style.background = "var(--rc-nav-hover)"; (e.currentTarget as HTMLButtonElement).style.color = "rgba(255,255,255,0.95)"; } }}
                     onMouseLeave={(e) => { if (!isActive) { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; (e.currentTarget as HTMLButtonElement).style.color = "var(--rc-nav-text)"; } }}
@@ -7798,7 +7815,7 @@ export default function DashboardPage() {
       </aside>
 
       {/* Main */}
-      <div style={{ flex: 1, marginLeft: "240px", display: "flex", minHeight: "100svh" }}>
+      <div className="rc-main" style={{ flex: 1, marginLeft: "240px", display: "flex", minHeight: "100svh" }}>
         <div
           key={`${activeModule ?? "home"}__${selected?.type === "property" ? selected.id : selected?.label ?? "overview"}`}
           className="main-panel-enter"
@@ -7838,6 +7855,92 @@ export default function DashboardPage() {
       }
       @media (prefers-reduced-motion: reduce) {
         .sidebar-panel-enter, .main-panel-enter { animation: none; }
+      }
+
+      /* ── Mobile layout ── */
+      .rc-mobile-header { display: none; }
+      .rc-overlay { display: none; }
+      .rc-sidebar-close { display: none; }
+
+      @media (max-width: 768px) {
+        /* Mobile top bar */
+        .rc-mobile-header {
+          display: flex;
+          position: fixed;
+          top: 0; left: 0; right: 0;
+          height: 54px;
+          background: var(--rc-nav);
+          align-items: center;
+          padding: 0 16px;
+          gap: 14px;
+          z-index: 40;
+          border-bottom: 1px solid var(--rc-nav-border);
+        }
+        .rc-hamburger {
+          background: none;
+          border: none;
+          color: rgba(255,255,255,0.78);
+          cursor: pointer;
+          padding: 7px;
+          border-radius: 6px;
+          display: flex;
+          align-items: center;
+          flex-shrink: 0;
+        }
+        .rc-hamburger:hover { background: var(--rc-nav-hover); }
+
+        /* Sidebar becomes a drawer */
+        .rc-sidebar {
+          transform: translateX(-100%);
+          transition: transform 0.26s cubic-bezier(0.16, 1, 0.3, 1);
+          z-index: 50 !important;
+          width: 260px !important;
+          top: 0 !important;
+        }
+        .rc-sidebar.rc-sidebar-open { transform: translateX(0); }
+
+        /* Close × button inside sidebar */
+        .rc-sidebar-close {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: none;
+          border: none;
+          cursor: pointer;
+          padding: 5px;
+          border-radius: 5px;
+          flex-shrink: 0;
+        }
+        .rc-sidebar-close:hover { background: #f0f2f5; }
+
+        /* Backdrop */
+        .rc-overlay {
+          display: block;
+          position: fixed;
+          inset: 0;
+          background: rgba(0, 0, 0, 0.45);
+          z-index: 45;
+          cursor: pointer;
+        }
+
+        /* Main area — no left margin, push down below top bar */
+        .rc-main {
+          margin-left: 0 !important;
+          padding-top: 54px;
+          min-height: 100svh;
+          box-sizing: border-box;
+        }
+
+        /* Page content padding */
+        .rc-main .main-panel-enter > div:first-child {
+          padding: 20px 16px !important;
+          height: auto !important;
+          min-height: calc(100svh - 54px);
+        }
+
+        /* Tables: allow horizontal scroll on small screens */
+        .s-table { font-size: 12px !important; }
+        .s-table th, .s-table td { padding: 10px 10px !important; }
       }
     `}</style>
     </OrgContext.Provider>
