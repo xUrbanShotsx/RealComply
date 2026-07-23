@@ -442,9 +442,9 @@ export default function CalendarModule({
       {/* Content */}
       {loading ? (
         <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", color: "#a0aec0", fontSize: "14px" }}>Loading…</div>
-      ) : view === "month" ? <MonthView /> : <DayView />}
+      ) : view === "month" ? MonthView() : DayView()}
 
-      <EventModal />
+      {EventModal()}
     </div>
   );
 }
