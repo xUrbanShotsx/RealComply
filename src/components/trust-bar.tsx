@@ -1,45 +1,79 @@
 "use client";
 
-import { useReveal } from "@/hooks/use-reveal";
-
 const pillars = [
+  "Property & Stock Agents Act 2002",
   "CPD & Licence Tracking",
-  "Trust Account Compliance",
+  "AUSTRAC AML/CTF Compliance",
+  "Trust Accounting Legislation",
+  "NSW Fair Trading Standards",
+  "PSBA Audit Framework",
   "AML Due Diligence",
-  "Audit Readiness",
   "Policies & Procedures",
-  "NSW Fair Trading Aligned",
+  "Audit Readiness",
+  "Certificate of Registration",
+  "Buyers Agency Compliance",
+  "Strata Management Obligations",
 ];
 
 export default function TrustBar() {
-  const ref = useReveal(0.1);
+  const doubled = [...pillars, ...pillars];
 
   return (
-    <section style={{ background: "oklch(0.13 0.030 260)", padding: "28px 24px" }}>
-      <div
-        ref={ref as React.RefObject<HTMLDivElement>}
-        className="reveal"
-        style={{
-          maxWidth: "1200px",
-          margin: "0 auto",
-          display: "flex",
-          alignItems: "center",
-          flexWrap: "wrap",
-          gap: "0",
-          justifyContent: "center",
-        }}
-      >
-        {pillars.map((p, i) => (
-          <div key={p} style={{ display: "flex", alignItems: "center" }}>
-            <span style={{ fontSize: "13px", fontWeight: 500, color: "oklch(0.75 0.015 260)", whiteSpace: "nowrap", padding: "4px 20px" }}>
+    <section
+      aria-label="Compliance coverage"
+      style={{
+        background: "oklch(0.13 0.028 295)",
+        padding: "22px 0",
+        overflow: "hidden",
+        borderTop: "1px solid oklch(0.19 0.030 295)",
+        borderBottom: "1px solid oklch(0.19 0.030 295)",
+      }}
+    >
+      <div className="marquee-track" aria-hidden>
+        {doubled.map((p, i) => (
+          <div
+            key={i}
+            style={{ display: "flex", alignItems: "center", flexShrink: 0 }}
+          >
+            <span
+              style={{
+                fontSize: "12.5px",
+                fontWeight: 500,
+                color: "oklch(0.68 0.018 295)",
+                whiteSpace: "nowrap",
+                padding: "0 28px",
+              }}
+            >
               {p}
             </span>
-            {i < pillars.length - 1 && (
-              <span style={{ width: "1px", height: "14px", background: "oklch(0.28 0.020 260)", flexShrink: 0 }} />
-            )}
+            <span
+              style={{
+                width: "3px",
+                height: "3px",
+                borderRadius: "50%",
+                background: "oklch(0.32 0.050 295)",
+                flexShrink: 0,
+              }}
+            />
           </div>
         ))}
       </div>
+
+      <style>{`
+        .marquee-track {
+          display: flex;
+          align-items: center;
+          width: max-content;
+          animation: marqueeScroll 40s linear infinite;
+        }
+        @keyframes marqueeScroll {
+          from { transform: translateX(0); }
+          to { transform: translateX(-50%); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .marquee-track { animation: none; }
+        }
+      `}</style>
     </section>
   );
 }

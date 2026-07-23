@@ -21,7 +21,9 @@ export default function Nav() {
         right: 0,
         zIndex: 50,
         transition: "background 0.3s ease, border-color 0.3s ease, backdrop-filter 0.3s ease",
-        background: "#ffffff",
+        background: scrolled ? "rgba(255, 255, 255, 0.92)" : "#ffffff",
+        backdropFilter: scrolled ? "blur(12px)" : "none",
+        WebkitBackdropFilter: scrolled ? "blur(12px)" : "none",
         borderBottom: scrolled ? "1px solid var(--rc-border)" : "1px solid transparent",
       }}
     >
