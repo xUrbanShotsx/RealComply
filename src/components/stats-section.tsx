@@ -8,7 +8,7 @@ export default function StatsSection() {
   return (
     <section
       style={{
-        background: "oklch(0.10 0.025 295)",
+        background: "#1c1e54",
         padding: "80px 24px",
       }}
     >
@@ -19,41 +19,25 @@ export default function StatsSection() {
       >
         <p
           style={{
+            fontFamily: "var(--font-inter), system-ui, sans-serif",
             fontSize: "clamp(1.35rem, 2.5vw, 1.9rem)",
-            color: "oklch(0.62 0.022 295)",
+            color: "rgba(255,255,255,0.48)",
             lineHeight: 1.65,
-            fontWeight: 400,
+            fontWeight: 300,
+            letterSpacing: "-0.02em",
             maxWidth: "none",
           }}
         >
           Over{" "}
-          <strong
-            style={{
-              color: "white",
-              fontFamily: "var(--font-display), system-ui, sans-serif",
-              fontWeight: 800,
-            }}
-          >
+          <strong style={{ color: "white", fontWeight: 500 }}>
             200 offices
           </strong>{" "}
           across{" "}
-          <strong
-            style={{
-              color: "white",
-              fontFamily: "var(--font-display), system-ui, sans-serif",
-              fontWeight: 800,
-            }}
-          >
+          <strong style={{ color: "white", fontWeight: 500 }}>
             8 Australian states
           </strong>{" "}
           track{" "}
-          <strong
-            style={{
-              color: "#8c52ff",
-              fontFamily: "var(--font-display), system-ui, sans-serif",
-              fontWeight: 800,
-            }}
-          >
+          <strong style={{ color: "#b9b9f9", fontWeight: 500 }}>
             40+ compliance obligations
           </strong>{" "}
           in RealComply — all in one place, always audit-ready.

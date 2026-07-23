@@ -27,7 +27,7 @@ export default function HowItWorks() {
   return (
     <section
       id="product"
-      style={{ background: "var(--rc-surface)", padding: "120px 24px" }}
+      style={{ background: "#f6f9fc", padding: "120px 24px" }}
     >
       <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
         {/* Header */}
@@ -38,10 +38,10 @@ export default function HowItWorks() {
         >
           <h2
             style={{
-              fontFamily: "var(--font-display), system-ui, sans-serif",
+              fontFamily: "var(--font-inter), system-ui, sans-serif",
               fontSize: "clamp(2rem, 4vw, 3rem)",
-              fontWeight: 800,
-              color: "var(--rc-ink)",
+              fontWeight: 300,
+              color: "var(--s-ink)",
               letterSpacing: "-0.04em",
               lineHeight: 1.05,
               marginBottom: "20px",
@@ -54,7 +54,7 @@ export default function HowItWorks() {
           <p
             style={{
               fontSize: "17px",
-              color: "var(--rc-muted)",
+              color: "var(--s-ink-mute)",
               lineHeight: 1.7,
               maxWidth: "480px",
               margin: "0 auto",
@@ -71,7 +71,7 @@ export default function HowItWorks() {
           className="reveal hiw-steps"
           style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "48px", position: "relative" }}
         >
-          {/* Connecting line between step numbers */}
+          {/* Connecting line */}
           <div
             aria-hidden
             className="hiw-line"
@@ -82,29 +82,29 @@ export default function HowItWorks() {
               right: "calc(100% / 6)",
               height: "1px",
               background:
-                "linear-gradient(to right, transparent 0%, oklch(0.80 0.040 295) 15%, oklch(0.80 0.040 295) 85%, transparent 100%)",
+                "linear-gradient(to right, transparent 0%, var(--s-hairline) 15%, var(--s-hairline) 85%, transparent 100%)",
               zIndex: 0,
             }}
           />
 
           {steps.map(({ n, heading, body }) => (
             <div key={n} style={{ position: "relative", zIndex: 1 }}>
-              {/* Step number */}
+              {/* Step circle — Stripe pill style */}
               <div
                 style={{
                   width: "40px",
                   height: "40px",
                   borderRadius: "50%",
-                  background: "white",
-                  border: "2px solid #8c52ff",
+                  background: "#ffffff",
+                  border: "1.5px solid var(--s-primary)",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  fontSize: "15px",
-                  fontWeight: 800,
-                  color: "#8c52ff",
+                  fontSize: "14px",
+                  fontWeight: 500,
+                  color: "var(--s-primary)",
                   marginBottom: "24px",
-                  fontFamily: "var(--font-display), system-ui, sans-serif",
+                  boxShadow: "var(--s-shadow-card)",
                 }}
               >
                 {n}
@@ -112,9 +112,10 @@ export default function HowItWorks() {
 
               <h3
                 style={{
-                  fontSize: "1.15rem",
-                  fontWeight: 700,
-                  color: "var(--rc-ink)",
+                  fontFamily: "var(--font-inter), system-ui, sans-serif",
+                  fontSize: "1.1rem",
+                  fontWeight: 500,
+                  color: "var(--s-ink)",
                   marginBottom: "12px",
                   letterSpacing: "-0.025em",
                   lineHeight: 1.2,
@@ -125,7 +126,7 @@ export default function HowItWorks() {
               <p
                 style={{
                   fontSize: "15px",
-                  color: "var(--rc-muted)",
+                  color: "var(--s-ink-mute)",
                   lineHeight: 1.75,
                   maxWidth: "none",
                 }}

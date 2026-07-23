@@ -2,7 +2,7 @@
 
 import { useReveal } from "@/hooks/use-reveal";
 
-/* ─── Shared mockup wrapper ─── */
+/* ─── Shared mockup wrapper — Stripe brand dark chrome ─── */
 function MockupFrame({
   title,
   children,
@@ -13,28 +13,28 @@ function MockupFrame({
   return (
     <div
       style={{
-        background: "oklch(0.13 0.025 295)",
-        border: "1px solid oklch(0.20 0.035 295)",
-        borderRadius: "16px",
+        background: "#1c1e54",
+        border: "1px solid rgba(255,255,255,0.08)",
+        borderRadius: "14px",
         overflow: "hidden",
-        boxShadow: "0 32px 64px oklch(0.04 0.015 295 / 0.55)",
+        boxShadow: "var(--s-shadow-panel), 0 32px 64px rgba(28,30,84,0.18)",
       }}
     >
       {/* Window chrome */}
       <div
         style={{
-          background: "oklch(0.17 0.028 295)",
-          borderBottom: "1px solid oklch(0.20 0.030 295)",
-          padding: "12px 16px",
+          background: "#252762",
+          borderBottom: "1px solid rgba(255,255,255,0.07)",
+          padding: "11px 16px",
           display: "flex",
           alignItems: "center",
           gap: "6px",
         }}
       >
-        <span style={{ width: "9px", height: "9px", borderRadius: "50%", background: "oklch(0.60 0.17 25)", display: "inline-block" }} />
-        <span style={{ width: "9px", height: "9px", borderRadius: "50%", background: "oklch(0.72 0.18 60)", display: "inline-block" }} />
-        <span style={{ width: "9px", height: "9px", borderRadius: "50%", background: "oklch(0.62 0.17 145)", display: "inline-block" }} />
-        <span style={{ fontSize: "11px", color: "oklch(0.46 0.020 295)", marginLeft: "10px" }}>{title}</span>
+        <span style={{ width: "9px", height: "9px", borderRadius: "50%", background: "#fc5c57", display: "inline-block" }} />
+        <span style={{ width: "9px", height: "9px", borderRadius: "50%", background: "#fdbc40", display: "inline-block" }} />
+        <span style={{ width: "9px", height: "9px", borderRadius: "50%", background: "#34c84a", display: "inline-block" }} />
+        <span style={{ fontSize: "11px", color: "rgba(255,255,255,0.32)", marginLeft: "10px" }}>{title}</span>
       </div>
       <div style={{ padding: "20px" }}>{children}</div>
     </div>
@@ -53,10 +53,10 @@ function CPDMockup() {
   return (
     <MockupFrame title="Team Licences">
       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "12px", padding: "0 2px" }}>
-        <span style={{ fontSize: "13px", fontWeight: 700, color: "white" }}>Team Licences</span>
-        <span style={{ fontSize: "12px", color: "oklch(0.62 0.17 145)", fontWeight: 600 }}>4 / 5 current</span>
+        <span style={{ fontSize: "13px", fontWeight: 600, color: "white" }}>Team Licences</span>
+        <span style={{ fontSize: "12px", color: "#34c84a", fontWeight: 600 }}>4 / 5 current</span>
       </div>
-      <div style={{ borderRadius: "8px", overflow: "hidden", border: "1px solid oklch(0.20 0.030 295)" }}>
+      <div style={{ borderRadius: "8px", overflow: "hidden", border: "1px solid rgba(255,255,255,0.08)" }}>
         {staff.map(({ name, cls, ok, exp }, i) => (
           <div
             key={name}
@@ -64,8 +64,8 @@ function CPDMockup() {
               display: "flex",
               alignItems: "center",
               padding: "10px 14px",
-              borderBottom: i < staff.length - 1 ? "1px solid oklch(0.17 0.025 295)" : "none",
-              background: ok ? "oklch(0.15 0.022 295)" : "oklch(0.16 0.038 60)",
+              borderBottom: i < staff.length - 1 ? "1px solid rgba(255,255,255,0.06)" : "none",
+              background: ok ? "rgba(255,255,255,0.03)" : "rgba(253,188,64,0.08)",
             }}
           >
             <div
@@ -73,20 +73,21 @@ function CPDMockup() {
                 width: "7px",
                 height: "7px",
                 borderRadius: "50%",
-                background: ok ? "oklch(0.62 0.17 145)" : "oklch(0.72 0.18 60)",
+                background: ok ? "#34c84a" : "#fdbc40",
                 flexShrink: 0,
                 marginRight: "10px",
               }}
             />
-            <span style={{ fontSize: "12.5px", color: "oklch(0.85 0.014 295)", flex: 1 }}>{name}</span>
-            <span style={{ fontSize: "11px", color: "oklch(0.52 0.022 295)", marginRight: "12px" }}>{cls}</span>
+            <span style={{ fontSize: "12.5px", color: "rgba(255,255,255,0.82)", flex: 1 }}>{name}</span>
+            <span style={{ fontSize: "11px", color: "rgba(255,255,255,0.35)", marginRight: "12px" }}>{cls}</span>
             <span
+              className="tnum"
               style={{
                 fontSize: "11px",
-                color: ok ? "oklch(0.65 0.12 145)" : "oklch(0.78 0.12 60)",
-                background: ok ? "oklch(0.22 0.055 145)" : "oklch(0.24 0.075 60)",
+                color: ok ? "#34c84a" : "#fdbc40",
+                background: ok ? "rgba(52,200,74,0.14)" : "rgba(253,188,64,0.14)",
                 padding: "2px 9px",
-                borderRadius: "100px",
+                borderRadius: "9999px",
                 fontWeight: 600,
                 whiteSpace: "nowrap",
               }}
@@ -100,16 +101,16 @@ function CPDMockup() {
         style={{
           marginTop: "12px",
           padding: "8px 12px",
-          background: "oklch(0.10 0.022 295)",
+          background: "rgba(0,0,0,0.22)",
           borderRadius: "6px",
           fontSize: "11px",
-          color: "oklch(0.50 0.022 295)",
+          color: "rgba(255,255,255,0.30)",
           display: "flex",
           justifyContent: "space-between",
         }}
       >
         <span>Reminder sent · Emma Winters · 2 days ago</span>
-        <span style={{ color: "#8c52ff", fontWeight: 600, cursor: "pointer" }}>View all →</span>
+        <span style={{ color: "#b9b9f9", fontWeight: 500, cursor: "pointer" }}>View all →</span>
       </div>
     </MockupFrame>
   );
@@ -120,8 +121,8 @@ function TrustMockup() {
   return (
     <MockupFrame title="Trust Accounts">
       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "16px" }}>
-        <span style={{ fontSize: "13px", fontWeight: 700, color: "white" }}>Trust Accounts</span>
-        <span style={{ fontSize: "12px", color: "oklch(0.62 0.17 145)", fontWeight: 600 }}>All balanced</span>
+        <span style={{ fontSize: "13px", fontWeight: 600, color: "white" }}>Trust Accounts</span>
+        <span style={{ fontSize: "12px", color: "#34c84a", fontWeight: 600 }}>All balanced</span>
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "14px" }}>
         {[
@@ -131,27 +132,28 @@ function TrustMockup() {
           <div
             key={type}
             style={{
-              background: "oklch(0.10 0.022 295)",
+              background: "rgba(0,0,0,0.25)",
               borderRadius: "8px",
               padding: "14px",
-              border: "1px solid oklch(0.19 0.028 295)",
+              border: "1px solid rgba(255,255,255,0.08)",
             }}
           >
             <div
               style={{
                 fontSize: "10px",
-                fontWeight: 700,
+                fontWeight: 600,
                 letterSpacing: "0.05em",
-                color: "oklch(0.50 0.022 295)",
+                color: "rgba(255,255,255,0.35)",
                 marginBottom: "6px",
               }}
             >
               {type}
             </div>
             <div
+              className="tnum"
               style={{
                 fontSize: "17px",
-                fontWeight: 800,
+                fontWeight: 700,
                 color: "white",
                 letterSpacing: "-0.02em",
                 marginBottom: "8px",
@@ -160,8 +162,8 @@ function TrustMockup() {
               {amount}
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
-              <span style={{ color: "oklch(0.62 0.17 145)", fontSize: "12px" }}>✓</span>
-              <span style={{ fontSize: "10.5px", color: "oklch(0.52 0.022 295)" }}>
+              <span style={{ color: "#34c84a", fontSize: "12px" }}>✓</span>
+              <span style={{ fontSize: "10.5px", color: "rgba(255,255,255,0.35)" }}>
                 Reconciled · {date}
               </span>
             </div>
@@ -171,14 +173,14 @@ function TrustMockup() {
       <div
         style={{
           fontSize: "11px",
-          color: "oklch(0.48 0.022 295)",
+          color: "rgba(255,255,255,0.30)",
           textAlign: "center",
           paddingTop: "10px",
-          borderTop: "1px solid oklch(0.18 0.025 295)",
+          borderTop: "1px solid rgba(255,255,255,0.07)",
         }}
       >
         June 2025 · All accounts balanced &nbsp;·&nbsp;{" "}
-        <span style={{ color: "#8c52ff", fontWeight: 600, cursor: "pointer" }}>Export report →</span>
+        <span style={{ color: "#b9b9f9", fontWeight: 500, cursor: "pointer" }}>Export report →</span>
       </div>
     </MockupFrame>
   );
@@ -196,10 +198,10 @@ function AMLMockup() {
   return (
     <MockupFrame title="AML Checklist — 23 Harbour St, Sydney">
       <div style={{ marginBottom: "14px" }}>
-        <div style={{ fontSize: "13px", fontWeight: 700, color: "white", marginBottom: "2px" }}>
+        <div style={{ fontSize: "13px", fontWeight: 600, color: "white", marginBottom: "2px" }}>
           AML Checklist
         </div>
-        <div style={{ fontSize: "11px", color: "oklch(0.52 0.022 295)" }}>
+        <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.35)" }}>
           23 Harbour St, Sydney &nbsp;·&nbsp; Client: John &amp; Mary Smith
         </div>
       </div>
@@ -213,13 +215,13 @@ function AMLMockup() {
               gap: "10px",
               padding: "9px 10px",
               borderRadius: "6px",
-              background: "oklch(0.15 0.022 295)",
+              background: "rgba(255,255,255,0.04)",
             }}
           >
-            <span style={{ fontSize: "13px", color: "oklch(0.62 0.17 145)", flexShrink: 0, lineHeight: 1 }}>
+            <span style={{ fontSize: "13px", color: "#34c84a", flexShrink: 0, lineHeight: 1 }}>
               {done ? "✓" : "○"}
             </span>
-            <span style={{ fontSize: "12px", color: "oklch(0.80 0.016 295)" }}>{label}</span>
+            <span style={{ fontSize: "12px", color: "rgba(255,255,255,0.78)" }}>{label}</span>
           </div>
         ))}
       </div>
@@ -229,20 +231,20 @@ function AMLMockup() {
           alignItems: "center",
           justifyContent: "space-between",
           padding: "10px 12px",
-          background: "oklch(0.10 0.022 295)",
+          background: "rgba(0,0,0,0.22)",
           borderRadius: "8px",
           marginBottom: "12px",
         }}
       >
-        <span style={{ fontSize: "12px", color: "oklch(0.62 0.022 295)" }}>Risk assessment</span>
+        <span style={{ fontSize: "12px", color: "rgba(255,255,255,0.45)" }}>Risk assessment</span>
         <span
           style={{
             fontSize: "11px",
-            fontWeight: 700,
-            background: "oklch(0.22 0.055 145)",
-            color: "oklch(0.72 0.14 145)",
+            fontWeight: 600,
+            background: "rgba(52,200,74,0.14)",
+            color: "#34c84a",
             padding: "3px 10px",
-            borderRadius: "100px",
+            borderRadius: "9999px",
           }}
         >
           Low ●
@@ -252,13 +254,14 @@ function AMLMockup() {
         style={{
           width: "100%",
           padding: "10px 16px",
-          background: "#8c52ff",
+          background: "#533afd",
           color: "white",
-          borderRadius: "8px",
+          borderRadius: "9999px",
           border: "none",
           fontSize: "13px",
-          fontWeight: 700,
+          fontWeight: 500,
           cursor: "pointer",
+          transition: "background 0.15s",
         }}
       >
         Mark complete
@@ -288,24 +291,25 @@ function AuditMockup() {
         }}
       >
         <div>
-          <div style={{ fontSize: "13px", fontWeight: 700, color: "white" }}>Audit Pack</div>
-          <div style={{ fontSize: "11px", color: "oklch(0.52 0.022 295)", marginTop: "2px" }}>
+          <div style={{ fontSize: "13px", fontWeight: 600, color: "white" }}>Audit Pack</div>
+          <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.35)", marginTop: "2px" }}>
             June 2025
           </div>
         </div>
         <div style={{ textAlign: "right" }}>
           <div
+            className="tnum"
             style={{
               fontSize: "22px",
-              fontWeight: 800,
-              color: "#8c52ff",
+              fontWeight: 700,
+              color: "#b9b9f9",
               letterSpacing: "-0.03em",
               lineHeight: 1,
             }}
           >
             94
           </div>
-          <div style={{ fontSize: "10px", color: "oklch(0.50 0.022 295)" }}>/ 100</div>
+          <div style={{ fontSize: "10px", color: "rgba(255,255,255,0.30)" }}>/ 100</div>
         </div>
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: "2px", marginBottom: "14px" }}>
@@ -318,13 +322,13 @@ function AuditMockup() {
               gap: "10px",
               padding: "8px 10px",
               borderRadius: "6px",
-              background: done ? "transparent" : "oklch(0.16 0.038 60)",
+              background: done ? "transparent" : "rgba(253,188,64,0.08)",
             }}
           >
             <span
               style={{
                 fontSize: "13px",
-                color: done ? "oklch(0.62 0.17 145)" : "oklch(0.72 0.18 60)",
+                color: done ? "#34c84a" : "#fdbc40",
                 flexShrink: 0,
                 lineHeight: 1,
               }}
@@ -334,14 +338,14 @@ function AuditMockup() {
             <span
               style={{
                 fontSize: "12px",
-                color: done ? "oklch(0.78 0.018 295)" : "oklch(0.84 0.040 60)",
+                color: done ? "rgba(255,255,255,0.78)" : "#fdbc40",
                 flex: 1,
               }}
             >
               {label}
             </span>
             {note && (
-              <span style={{ fontSize: "10px", color: "oklch(0.70 0.12 60)", whiteSpace: "nowrap" }}>
+              <span style={{ fontSize: "10px", color: "#fdbc40", whiteSpace: "nowrap" }}>
                 {note}
               </span>
             )}
@@ -352,17 +356,18 @@ function AuditMockup() {
         style={{
           width: "100%",
           padding: "11px 16px",
-          background: "#8c52ff",
+          background: "#533afd",
           color: "white",
-          borderRadius: "8px",
+          borderRadius: "9999px",
           border: "none",
           fontSize: "13px",
-          fontWeight: 700,
+          fontWeight: 500,
           cursor: "pointer",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           gap: "6px",
+          transition: "background 0.15s",
         }}
       >
         Export PDF →
@@ -381,7 +386,7 @@ const showcases = [
     legislation: "Covers CPD frameworks across NSW, VIC, QLD, WA, SA, ACT, TAS and NT. Syncs with your team roster automatically.",
     flip: false,
     Mockup: CPDMockup,
-    bg: "var(--rc-bg)",
+    bg: "#ffffff",
   },
   {
     id: "trust",
@@ -392,7 +397,7 @@ const showcases = [
       "Aligned to the Property and Stock Agents Act 2002 (NSW) and equivalent frameworks in every Australian state.",
     flip: true,
     Mockup: TrustMockup,
-    bg: "var(--rc-page)",
+    bg: "#f6f9fc",
   },
   {
     id: "aml",
@@ -403,7 +408,7 @@ const showcases = [
       "Covers customer identification, beneficial ownership, and transaction monitoring record-keeping under the AML/CTF Act 2006.",
     flip: false,
     Mockup: AMLMockup,
-    bg: "var(--rc-bg)",
+    bg: "#ffffff",
   },
   {
     id: "audit",
@@ -414,7 +419,7 @@ const showcases = [
       "Structured around the PSBA audit framework. One-click export to the required format.",
     flip: true,
     Mockup: AuditMockup,
-    bg: "var(--rc-page)",
+    bg: "#f6f9fc",
   },
 ];
 
@@ -430,12 +435,7 @@ function ShowcaseSection({
   const ref = useReveal(0.1);
 
   return (
-    <section
-      style={{
-        background: bg,
-        padding: "100px 24px",
-      }}
-    >
+    <section style={{ background: bg, padding: "100px 24px" }}>
       <div
         ref={ref as React.RefObject<HTMLDivElement>}
         className="reveal showcase-row"
@@ -450,28 +450,28 @@ function ShowcaseSection({
       >
         {/* Copy */}
         <div style={{ flex: "0 0 40%", maxWidth: "460px" }}>
+          {/* Stripe pill badge — no uppercase, just a soft label */}
           <span
             style={{
               display: "inline-block",
-              fontSize: "11px",
-              fontWeight: 700,
-              letterSpacing: "0.06em",
-              textTransform: "uppercase",
-              color: "#8c52ff",
-              marginBottom: "18px",
-              background: "oklch(0.95 0.04 295)",
+              fontSize: "12px",
+              fontWeight: 500,
+              color: "var(--s-primary-deep)",
+              marginBottom: "20px",
+              background: "var(--s-primary-subdued)",
               padding: "4px 12px",
-              borderRadius: "100px",
+              borderRadius: "9999px",
+              opacity: 0.9,
             }}
           >
             {badge}
           </span>
           <h2
             style={{
-              fontFamily: "var(--font-display), system-ui, sans-serif",
+              fontFamily: "var(--font-inter), system-ui, sans-serif",
               fontSize: "clamp(1.8rem, 3.2vw, 2.8rem)",
-              fontWeight: 800,
-              color: "var(--rc-ink)",
+              fontWeight: 300,
+              color: "var(--s-ink)",
               lineHeight: 1.05,
               letterSpacing: "-0.04em",
               marginBottom: "20px",
@@ -482,7 +482,7 @@ function ShowcaseSection({
           <p
             style={{
               fontSize: "16px",
-              color: "var(--rc-muted)",
+              color: "var(--s-ink-mute)",
               lineHeight: 1.8,
               marginBottom: "24px",
               maxWidth: "none",
@@ -490,18 +490,18 @@ function ShowcaseSection({
           >
             {body}
           </p>
+          {/* Canvas-cream legislation callout */}
           <div
             style={{
               padding: "14px 16px",
-              background: bg === "var(--rc-bg)" ? "var(--rc-page)" : "var(--rc-bg)",
-              borderRadius: "8px",
-              border: "1px solid var(--rc-border)",
+              background: "var(--s-canvas-cream)",
+              borderRadius: "10px",
             }}
           >
             <p
               style={{
                 fontSize: "13px",
-                color: "var(--rc-faint)",
+                color: "var(--s-ink-secondary)",
                 lineHeight: 1.65,
                 maxWidth: "none",
                 margin: 0,
@@ -527,12 +527,7 @@ export default function Features() {
   return (
     <div id="features">
       {/* Section header */}
-      <section
-        style={{
-          background: "var(--rc-bg)",
-          padding: "100px 24px 60px",
-        }}
-      >
+      <section style={{ background: "#ffffff", padding: "100px 24px 60px" }}>
         <div
           ref={headerRef as React.RefObject<HTMLDivElement>}
           className="reveal"
@@ -540,10 +535,10 @@ export default function Features() {
         >
           <h2
             style={{
-              fontFamily: "var(--font-display), system-ui, sans-serif",
+              fontFamily: "var(--font-inter), system-ui, sans-serif",
               fontSize: "clamp(2rem, 4vw, 3.2rem)",
-              fontWeight: 800,
-              color: "var(--rc-ink)",
+              fontWeight: 300,
+              color: "var(--s-ink)",
               letterSpacing: "-0.04em",
               lineHeight: 1.05,
               marginBottom: "20px",
@@ -556,7 +551,7 @@ export default function Features() {
           <p
             style={{
               fontSize: "17px",
-              color: "var(--rc-muted)",
+              color: "var(--s-ink-mute)",
               lineHeight: 1.7,
               maxWidth: "520px",
             }}

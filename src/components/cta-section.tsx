@@ -8,20 +8,19 @@ export default function CtaSection() {
   return (
     <section
       style={{
-        background: "oklch(0.10 0.025 295)",
+        background: "#1c1e54",
         padding: "120px 24px",
         position: "relative",
         overflow: "hidden",
       }}
     >
-      {/* Background glow */}
+      {/* Subtle indigo radial glow at center */}
       <div
         aria-hidden
         style={{
           position: "absolute",
           inset: 0,
-          background:
-            "radial-gradient(ellipse 70% 60% at 50% 100%, oklch(0.22 0.08 295 / 0.25), transparent)",
+          background: "radial-gradient(ellipse 60% 55% at 50% 100%, rgba(83,58,253,0.30), transparent)",
           pointerEvents: "none",
         }}
       />
@@ -33,26 +32,27 @@ export default function CtaSection() {
       >
         <h2
           style={{
-            fontFamily: "var(--font-display), system-ui, sans-serif",
-            fontSize: "clamp(2.2rem, 5vw, 4rem)",
-            fontWeight: 800,
+            fontFamily: "var(--font-inter), system-ui, sans-serif",
+            fontSize: "clamp(2.2rem, 5vw, 3.8rem)",
+            fontWeight: 300,
             color: "white",
             letterSpacing: "-0.04em",
-            lineHeight: 1.02,
+            lineHeight: 1.05,
             marginBottom: "24px",
           }}
         >
           Stop worrying about compliance.
           <br />
-          <span style={{ color: "#8c52ff" }}>Start running your business.</span>
+          <span style={{ color: "#b9b9f9" }}>Start running your business.</span>
         </h2>
         <p
           style={{
             fontSize: "17px",
-            color: "oklch(0.60 0.018 295)",
+            color: "rgba(255,255,255,0.50)",
             lineHeight: 1.7,
             maxWidth: "520px",
             margin: "0 auto 48px",
+            fontWeight: 300,
           }}
         >
           Join 200+ Australian real estate offices that have made compliance a solved problem.
@@ -62,7 +62,7 @@ export default function CtaSection() {
         <div
           style={{
             display: "flex",
-            gap: "12px",
+            gap: "10px",
             justifyContent: "center",
             flexWrap: "wrap",
           }}
@@ -71,21 +71,21 @@ export default function CtaSection() {
             href="/signup"
             style={{
               display: "inline-block",
-              padding: "15px 32px",
-              background: "#8c52ff",
+              padding: "12px 28px",
+              background: "var(--s-primary)",
               color: "white",
-              borderRadius: "8px",
-              fontWeight: 700,
+              borderRadius: "9999px",
+              fontWeight: 500,
               fontSize: "15px",
               whiteSpace: "nowrap",
-              transition: "opacity 0.15s ease, transform 0.15s ease",
+              transition: "background 0.15s ease, transform 0.15s ease",
             }}
             onMouseEnter={(e) => {
-              (e.currentTarget as HTMLAnchorElement).style.opacity = "0.88";
+              (e.currentTarget as HTMLAnchorElement).style.background = "var(--s-primary-deep)";
               (e.currentTarget as HTMLAnchorElement).style.transform = "translateY(-1px)";
             }}
             onMouseLeave={(e) => {
-              (e.currentTarget as HTMLAnchorElement).style.opacity = "1";
+              (e.currentTarget as HTMLAnchorElement).style.background = "var(--s-primary)";
               (e.currentTarget as HTMLAnchorElement).style.transform = "translateY(0)";
             }}
           >
@@ -95,25 +95,25 @@ export default function CtaSection() {
             href="#"
             style={{
               display: "inline-block",
-              padding: "15px 32px",
+              padding: "12px 28px",
               background: "transparent",
-              color: "oklch(0.65 0.018 295)",
-              borderRadius: "8px",
-              fontWeight: 600,
+              color: "rgba(255,255,255,0.65)",
+              borderRadius: "9999px",
+              fontWeight: 400,
               fontSize: "15px",
-              border: "1px solid oklch(0.26 0.030 295)",
+              border: "1px solid rgba(255,255,255,0.18)",
               whiteSpace: "nowrap",
               transition: "border-color 0.15s ease, color 0.15s ease",
             }}
             onMouseEnter={(e) => {
               const el = e.currentTarget as HTMLAnchorElement;
-              el.style.borderColor = "oklch(0.45 0.030 295)";
+              el.style.borderColor = "rgba(255,255,255,0.40)";
               el.style.color = "white";
             }}
             onMouseLeave={(e) => {
               const el = e.currentTarget as HTMLAnchorElement;
-              el.style.borderColor = "oklch(0.26 0.030 295)";
-              el.style.color = "oklch(0.65 0.018 295)";
+              el.style.borderColor = "rgba(255,255,255,0.18)";
+              el.style.color = "rgba(255,255,255,0.65)";
             }}
           >
             Book a demo
@@ -124,7 +124,7 @@ export default function CtaSection() {
           style={{
             marginTop: "20px",
             fontSize: "13px",
-            color: "oklch(0.42 0.018 295)",
+            color: "rgba(255,255,255,0.32)",
             maxWidth: "none",
           }}
         >

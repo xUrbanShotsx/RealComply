@@ -28,37 +28,61 @@ export default function Testimonials() {
   const cardsRef = useReveal(0.05);
 
   return (
-    <section style={{ background: "var(--rc-bg)", padding: "120px 24px" }}>
+    <section style={{ background: "#ffffff", padding: "120px 24px" }}>
       <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
         <div ref={headerRef as React.RefObject<HTMLDivElement>} className="reveal" style={{ marginBottom: "64px" }}>
-          <h2 style={{ fontSize: "clamp(2rem, 4vw, 3rem)", fontWeight: 800, color: "var(--rc-ink)", letterSpacing: "-0.04em", lineHeight: 1.05, marginBottom: "16px" }}>
+          <h2
+            style={{
+              fontFamily: "var(--font-inter), system-ui, sans-serif",
+              fontSize: "clamp(2rem, 4vw, 3rem)",
+              fontWeight: 300,
+              color: "var(--s-ink)",
+              letterSpacing: "-0.04em",
+              lineHeight: 1.05,
+              marginBottom: "16px",
+            }}
+          >
             What offices say.
           </h2>
-          <p style={{ fontSize: "17px", color: "var(--rc-muted)", lineHeight: 1.7, maxWidth: "460px" }}>
+          <p style={{ fontSize: "17px", color: "var(--s-ink-mute)", lineHeight: 1.7, maxWidth: "460px" }}>
             From property management-heavy offices to commercial agencies across Australia.
           </p>
         </div>
 
-        <div ref={cardsRef as React.RefObject<HTMLDivElement>} className="reveal testimonial-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "24px" }}>
+        <div
+          ref={cardsRef as React.RefObject<HTMLDivElement>}
+          className="reveal testimonial-grid"
+          style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "20px" }}
+        >
           {testimonials.map(({ quote, name, title, office }) => (
             <div
               key={name}
               style={{
-                background: "var(--rc-surface)",
-                border: "1px solid var(--rc-border)",
-                borderRadius: "14px",
-                padding: "36px",
+                background: "#ffffff",
+                border: "1px solid var(--s-hairline)",
+                borderRadius: "12px",
+                padding: "32px",
                 display: "flex",
                 flexDirection: "column",
+                boxShadow: "var(--s-shadow-card)",
               }}
             >
-              <p style={{ fontSize: "15px", color: "var(--rc-ink)", lineHeight: 1.8, flex: 1, marginBottom: "32px", maxWidth: "none", fontStyle: "italic" }}>
-                "{quote}"
+              <p
+                style={{
+                  fontSize: "15px",
+                  color: "var(--s-ink-secondary)",
+                  lineHeight: 1.8,
+                  flex: 1,
+                  marginBottom: "28px",
+                  maxWidth: "none",
+                }}
+              >
+                &ldquo;{quote}&rdquo;
               </p>
-              <div style={{ borderTop: "1px solid var(--rc-border)", paddingTop: "20px" }}>
-                <div style={{ fontSize: "14px", fontWeight: 700, color: "var(--rc-ink)", marginBottom: "3px" }}>{name}</div>
-                <div style={{ fontSize: "13px", color: "var(--rc-muted)" }}>{title}</div>
-                <div style={{ fontSize: "12px", color: "var(--rc-faint)", marginTop: "2px" }}>{office}</div>
+              <div style={{ borderTop: "1px solid var(--s-hairline)", paddingTop: "18px" }}>
+                <div style={{ fontSize: "14px", fontWeight: 500, color: "var(--s-ink)", marginBottom: "3px" }}>{name}</div>
+                <div style={{ fontSize: "13px", color: "var(--s-ink-mute)" }}>{title}</div>
+                <div style={{ fontSize: "12px", color: "var(--s-ink-mute)", marginTop: "2px", opacity: 0.7 }}>{office}</div>
               </div>
             </div>
           ))}

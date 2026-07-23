@@ -22,11 +22,9 @@ export default function TrustBar() {
     <section
       aria-label="Compliance coverage"
       style={{
-        background: "oklch(0.13 0.028 295)",
-        padding: "22px 0",
+        background: "#1c1e54",
+        padding: "20px 0",
         overflow: "hidden",
-        borderTop: "1px solid oklch(0.19 0.030 295)",
-        borderBottom: "1px solid oklch(0.19 0.030 295)",
       }}
     >
       <div className="marquee-track" aria-hidden>
@@ -37,11 +35,12 @@ export default function TrustBar() {
           >
             <span
               style={{
-                fontSize: "12.5px",
-                fontWeight: 500,
-                color: "oklch(0.68 0.018 295)",
+                fontSize: "12px",
+                fontWeight: 400,
+                color: "rgba(255,255,255,0.50)",
                 whiteSpace: "nowrap",
                 padding: "0 28px",
+                letterSpacing: "0.01em",
               }}
             >
               {p}
@@ -51,7 +50,7 @@ export default function TrustBar() {
                 width: "3px",
                 height: "3px",
                 borderRadius: "50%",
-                background: "oklch(0.32 0.050 295)",
+                background: "rgba(255,255,255,0.18)",
                 flexShrink: 0,
               }}
             />
