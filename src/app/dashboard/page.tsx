@@ -2635,7 +2635,10 @@ const policyTemplateConfigs: PTConfig[] = [
       { id: "meetingFreq", label: "Team meeting / supervision meeting frequency", placeholder: "e.g. Weekly team meetings every Monday at 8:30am, plus daily morning check-ins" },
       { id: "checkInMethod", label: "Day-to-day supervision method", placeholder: "e.g. open-door policy, daily activity logs reviewed each afternoon, CRM pipeline reviewed weekly", multiline: true },
       { id: "cpdMethod", label: "How CPD obligations are monitored", placeholder: "e.g. tracked in RealComply with automated expiry alerts 90 and 30 days before deadline" },
+      { id: "delegationLimits", label: "Decisions that require LIC sign-off (cannot be delegated)", placeholder: "e.g. agency agreement execution, price guidance letters, trust account disbursements over $5,000, any communication with NSW Fair Trading, marketing material approval", multiline: true },
+      { id: "inductionSteps", label: "Key steps in your new staff induction program", placeholder: "e.g. Day 1: agency tour, IT setup, WHS briefing; Week 1: shadow senior agent on 3 appraisals; Week 2: client file management training; Month 1: first unsupervised open homes under LIC observation", multiline: true },
       { id: "breach", label: "Process when a compliance breach or concern is identified", placeholder: "e.g. immediate verbal counselling, written incident report filed within 24 hours, principal reviews and determines remedial action", multiline: true },
+      { id: "performanceReview", label: "Staff performance review frequency and format", placeholder: "e.g. 90-day probation review, then 6-monthly; written KPI assessment covering listings won, compliance incidents, CPD completion, client satisfaction" },
       { id: "records", label: "How are supervision records kept and where?", placeholder: "e.g. documented in RealComply and individual staff files; reviewed monthly by the principal" },
       { id: "review", label: "How often is this policy reviewed?", placeholder: "e.g. Annually in July, or immediately following any regulatory change or Fair Trading audit" },
     ],
@@ -2714,11 +2717,27 @@ All staff are required to maintain a current licence or certificate of registrat
 ${a.cpdMethod}. Staff who fail to complete mandatory CPD by the required deadline must cease performing functions requiring a licence or certificate until CPD obligations are met and the relevant regulatory body has been notified as required.
 
 5.6  New Staff Induction
-All new staff members undergo an induction covering: agency policies and procedures; the Act and Regulation; the Code of Conduct; trust accounting obligations; client care standards; and the agency's filing and document management requirements. Induction is completed before the new staff member undertakes any unsupervised client-facing activity.
+All new staff members complete a structured induction programme before undertaking any unsupervised client-facing activity. The induction covers: agency policies and procedures; the Act and Regulation; the Code of Conduct; trust accounting obligations; client care standards; and the agency's filing and document management requirements.
+
+Induction programme:
+${a.inductionSteps || "Induction programme to be documented by the Licensee in Charge."}
+
+5.7  Decisions Requiring LIC Sign-Off
+The following matters require the personal sign-off of ${a.principal} and may not be delegated without express written authority in each instance:
+${a.delegationLimits || "Refer to Licensee in Charge for any matter involving trust account access, agency agreement execution, or communications with NSW Fair Trading."}
 
 ────────────────────────────────────────
 
-6. BREACH IDENTIFICATION AND RESPONSE
+6. PERFORMANCE REVIEWS
+
+Staff performance is reviewed on the following basis:
+${a.performanceReview || "Periodic performance reviews conducted by the Licensee in Charge."}
+
+Performance reviews cover compliance incident history, CPD completion status, client feedback, and any unsatisfactory conduct issues. Performance review outcomes are documented and retained in the relevant staff member's file.
+
+────────────────────────────────────────
+
+7. BREACH IDENTIFICATION AND RESPONSE
 
 ${a.breach}
 
@@ -2731,15 +2750,15 @@ Breaches of the Act, the Regulation, the Code of Conduct, or this policy are tak
 
 ────────────────────────────────────────
 
-7. RECORD KEEPING
+8. RECORD KEEPING
 
 ${a.records}
 
-All supervision records — including meeting minutes, staff attendance, file review outcomes, CPD records, licence registers, and breach incident reports — are retained for a minimum of three (3) years and are made available to NSW Fair Trading on request in accordance with s118 of the Act.
+All supervision records — including meeting minutes, staff attendance, file review outcomes, CPD records, licence registers, performance review records, and breach incident reports — are retained for a minimum of three (3) years and are made available to NSW Fair Trading on request in accordance with s118 of the Act. Staff personnel files are retained for a minimum of seven (7) years from the end of employment.
 
 ────────────────────────────────────────
 
-8. REVIEW OF THIS POLICY
+9. REVIEW OF THIS POLICY
 
 This policy is reviewed ${a.review}. The LIC is responsible for ensuring the policy reflects any changes to the Act, the Regulation, the Code of Conduct, or Fair Trading guidance. Staff are notified of any material changes promptly.
 
@@ -2770,6 +2789,8 @@ Date: ${date}`;
       { id: "overseas", label: "Is personal information disclosed overseas? If so, to which countries?", placeholder: "e.g. No overseas disclosure / e.g. Cloud storage provider servers in the USA under AWS" },
       { id: "storage", label: "How is personal information stored and protected?", placeholder: "e.g. encrypted cloud-based CRM (PropertyMe) with role-based access controls; locked physical filing cabinets; password-protected workstations" },
       { id: "retention", label: "Retention period for personal information", placeholder: "e.g. 7 years after conclusion of the relevant transaction; rental applications not proceeding destroyed within 1 year" },
+      { id: "directMarketing", label: "Direct marketing — how consent is obtained and opt-out managed", placeholder: "e.g. explicit opt-in on rental/buyer enquiry forms; unsubscribe link in all marketing emails processed within 5 business days; no marketing to parties who have opted out" },
+      { id: "cookies", label: "Website cookies and tracking (if website used)", placeholder: "e.g. website uses Google Analytics (anonymised IP); cookies consent banner on first visit; no personal data sold to third parties; session cookies only for booking forms" },
       { id: "contact", label: "Privacy enquiries contact (email or postal address)", placeholder: "e.g. privacy@agency.com.au or PO Box 123, Suburb NSW 2000" },
     ],
     generate: (a) => {
@@ -2872,7 +2893,23 @@ After the relevant retention period, personal information is securely destroyed 
 
 ────────────────────────────────────────
 
-9. ACCESS AND CORRECTION
+9. DIRECT MARKETING
+
+${a.directMarketing || "Direct marketing is only conducted with the individual's prior consent. All marketing communications include a clear opt-out mechanism. Opt-out requests are honoured within 5 business days."}
+
+We do not use personal information for direct marketing purposes without prior consent, or where you have opted out. We do not disclose personal information to third parties for their direct marketing purposes.
+
+────────────────────────────────────────
+
+10. WEBSITE COOKIES AND TRACKING
+
+${a.cookies || "Not applicable / details to be provided by the agency."}
+
+You may configure your browser to refuse cookies; however, this may affect the functionality of our website.
+
+────────────────────────────────────────
+
+11. ACCESS AND CORRECTION
 
 You have the right to request access to personal information we hold about you, and to request correction of any information that is inaccurate, out of date, incomplete or misleading.
 
@@ -2882,15 +2919,15 @@ We do not charge a fee for making an access request but may recover reasonable c
 
 ────────────────────────────────────────
 
-10. COMPLAINTS
+12. COMPLAINTS
 
-If you believe ${a.agency} has handled your personal information in breach of the Privacy Act or this Policy, please contact our Privacy Officer in the first instance (see clause 11). We will acknowledge your complaint within 5 business days and aim to resolve it within 30 days.
+If you believe ${a.agency} has handled your personal information in breach of the Privacy Act or this Policy, please contact our Privacy Officer in the first instance (see clause 13). We will acknowledge your complaint within 5 business days and aim to resolve it within 30 days.
 
 If you are not satisfied with our response, you may lodge a complaint with the Office of the Australian Information Commissioner (OAIC) at www.oaic.gov.au or by calling 1300 363 992.
 
 ────────────────────────────────────────
 
-11. CONTACT
+13. CONTACT
 
 Privacy Officer: ${a.principal}
 ${a.agency} (ABN ${a.abn})
@@ -2914,12 +2951,15 @@ Date: ${date}`;
       { id: "abn", label: "Agency ABN", placeholder: "e.g. 12 345 678 901" },
       { id: "officer", label: "AML/CTF Compliance Officer name", placeholder: "e.g. Sarah Mitchell" },
       { id: "officerRole", label: "AML Compliance Officer's role / title", placeholder: "e.g. Principal Licensee & Director" },
+      { id: "austracNo", label: "AUSTRAC enrolment / registration number (if known)", placeholder: "e.g. 12345678 / 'Not yet enrolled — enrolment in progress'" },
       { id: "serviceTypes", label: "Designated services provided (real estate)", placeholder: "e.g. acting as agent in the buying and selling of real property on behalf of buyers or sellers" },
       { id: "stdVerification", label: "Standard CDD — identity documents accepted", placeholder: "e.g. Australian driver licence or passport (primary); Medicare card or utility bill (secondary); verified using AUSTRAC-compliant digital verification service", multiline: true },
       { id: "enhancedCDD", label: "When is enhanced CDD applied?", placeholder: "e.g. politically exposed persons (PEPs), transactions above $100,000 in cash or cryptocurrency, non-face-to-face customers, complex or unusual transaction structures", multiline: true },
       { id: "lowRisk", label: "Examples of low-risk customers/transactions", placeholder: "e.g. Australian residents with straightforward owner-occupier purchases under market value threshold" },
       { id: "highRisk", label: "Examples of high-risk indicators", placeholder: "e.g. cash or cryptocurrency payment, offshore buyer with no Australian connection, third-party payments, rushed settlement with little explanation", multiline: true },
       { id: "smrProcess", label: "Suspicious Matter Report (SMR) internal process", placeholder: "e.g. staff report concern to Compliance Officer immediately; officer assesses within 24 hours and lodges SMR via AUSTRAC Online within 3 business days if warranted", multiline: true },
+      { id: "cryptoPolicy", label: "Agency policy on cryptocurrency or digital asset payments", placeholder: "e.g. the agency does not accept cryptocurrency or digital asset payments for any transactions; all payments must be by bank transfer or bank cheque" },
+      { id: "pepsProcess", label: "Process for identifying and handling Politically Exposed Persons (PEPs)", placeholder: "e.g. all new clients screened against DFAT consolidated list and World-Check database; PEPs automatically escalated to Compliance Officer for enhanced CDD before any service is provided", multiline: true },
       { id: "training", label: "Staff AML/CTF training frequency and format", placeholder: "e.g. induction training for all new staff; annual refresher for all staff; training records maintained by Compliance Officer" },
       { id: "records", label: "AML/CTF record retention period", placeholder: "e.g. 7 years from the date of the relevant designated service or transaction" },
     ],
@@ -2930,6 +2970,7 @@ ${a.agency} (ABN ${a.abn})
 
 EFFECTIVE DATE: ${date}
 AML/CTF COMPLIANCE OFFICER: ${a.officer} — ${a.officerRole}
+AUSTRAC ENROLMENT NUMBER: ${a.austracNo || "To be confirmed"}
 NEXT REVIEW DATE: ${new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" })}
 
 ────────────────────────────────────────
@@ -3036,7 +3077,25 @@ The Compliance Officer is responsible for identifying and lodging all TTRs via A
 
 ────────────────────────────────────────
 
-9. SANCTIONS SCREENING
+9. CRYPTOCURRENCY AND DIGITAL ASSET PAYMENTS
+
+${a.cryptoPolicy || "The agency does not accept cryptocurrency or digital asset payments. All transaction payments must be made via bank transfer, bank cheque, or other approved payment method that allows full traceability of funds."}
+
+Where a client proposes payment in any form other than those above, the matter is escalated immediately to the Compliance Officer for assessment before any agreement is entered into.
+
+────────────────────────────────────────
+
+10. POLITICALLY EXPOSED PERSONS (PEPs)
+
+A Politically Exposed Person (PEP) is an individual who holds or has held a prominent public position or function in a government body, international organisation, or military, domestically or overseas, or who is a close family member or associate of such a person.
+
+${a.pepsProcess || "All clients are screened for PEP status as part of standard CDD. PEP screening results are documented and retained. PEPs are subject to enhanced CDD and require Compliance Officer sign-off before any designated service is provided."}
+
+The Compliance Officer maintains a log of all identified PEP relationships, including the enhanced CDD steps taken.
+
+────────────────────────────────────────
+
+11. SANCTIONS SCREENING
 
 Before entering a new client relationship, ${a.agency} screens the customer against:
   • Australia's Consolidated List (DFAT)
@@ -3047,7 +3106,7 @@ A client who appears on any sanctions list must not receive a designated service
 
 ────────────────────────────────────────
 
-10. STAFF TRAINING
+12. STAFF TRAINING
 
 ${a.training}
 
@@ -3062,7 +3121,7 @@ Training records (name, date, content) are maintained by the Compliance Officer 
 
 ────────────────────────────────────────
 
-11. RECORD KEEPING
+13. RECORD KEEPING
 
 The following records are retained for ${a.records}:
   • CDD documents and verification records for each customer;
@@ -3075,7 +3134,7 @@ Records are stored securely and available to AUSTRAC on request under s116 of th
 
 ────────────────────────────────────────
 
-12. INDEPENDENT REVIEW
+14. INDEPENDENT REVIEW
 
 This AML/CTF Programme will be subject to independent review no less than every three (3) years, or sooner if there is a material change in business activities, a significant regulatory development, or an adverse finding by AUSTRAC. The Compliance Officer will commission and oversee the review.
 
@@ -3105,6 +3164,8 @@ Date: ${date}`;
       { id: "remoteWork", label: "WHS obligations for staff working remotely or at property inspections", placeholder: "e.g. staff conducting open homes must advise principal of address and expected return time; check-in protocol if solo inspection", multiline: true },
       { id: "incidentProcess", label: "Incident and near-miss reporting process", placeholder: "e.g. immediate first aid, call 000 if required, notify principal immediately, complete incident report within 24 hours, preserve scene if notifiable incident", multiline: true },
       { id: "emergency", label: "Emergency response — fire, medical, evacuation", placeholder: "e.g. call 000, activate fire panel if required, evacuate to assembly point (front carpark), account for all persons, contact principal on 0400 000 000" },
+      { id: "contractors", label: "WHS obligations applied to contractors and visitors on-site", placeholder: "e.g. all contractors must provide evidence of public liability insurance ($20M minimum) and sign in at reception; hazard induction completed before commencing work; tradesperson inductions for maintenance staff working at managed properties" },
+      { id: "psychosocial", label: "Specific controls for psychosocial hazards (e.g. client aggression, isolation)", placeholder: "e.g. lone worker check-in protocol for after-hours open homes; client aggression incident report process; principal available by phone at all times; staff encouraged to report aggressive client behaviour without stigma", multiline: true },
       { id: "mentalHealth", label: "Mental health and wellbeing support available to staff", placeholder: "e.g. EAP (Employee Assistance Programme) via [provider] on 1800 XXX XXX; open-door policy with principal; annual wellbeing check-in" },
       { id: "review", label: "WHS policy review frequency", placeholder: "e.g. Annually each July, or immediately following any workplace incident, change in legislation, or new risk identified" },
     ],
@@ -3236,7 +3297,25 @@ Emergency procedures are posted visibly at all exits and near all first aid kits
 
 ────────────────────────────────────────
 
-10. MENTAL HEALTH AND WELLBEING
+10. CONTRACTORS AND VISITORS
+
+${a.contractors || "All contractors working on agency premises or at managed properties must comply with this WHS Policy. Contractors must provide evidence of public liability insurance on request. The PCBU will conduct a site-specific hazard briefing for any contractor undertaking significant work on agency premises."}
+
+${a.agency} takes reasonable steps to satisfy itself that contractors working at managed properties are competent, appropriately insured, and have been inducted to the relevant site hazards.
+
+────────────────────────────────────────
+
+11. PSYCHOSOCIAL HAZARDS
+
+Psychosocial hazards in the real estate industry include: client aggression and difficult behaviour; working alone or in isolation; high work demands; poor communication; and exposure to traumatic situations (such as deceased estates or evictions).
+
+${a.psychosocial || "The agency manages psychosocial hazards through: lone worker protocols for after-hours inspections; client aggression reporting procedures; regular check-ins with the PCBU; and access to the EAP."}
+
+Workers who experience client aggression or distressing work situations are encouraged to report the matter to the PCBU without delay and will not be criticised for doing so.
+
+────────────────────────────────────────
+
+12. MENTAL HEALTH AND WELLBEING
 
 ${a.agency} acknowledges that psychosocial hazards — including bullying, harassment, excessive work demands, remote isolation and client-related aggression — are real workplace health risks.
 
@@ -3246,7 +3325,7 @@ Any worker who experiences or witnesses bullying, harassment, discrimination or 
 
 ────────────────────────────────────────
 
-11. REVIEW
+13. REVIEW
 
 This Policy is reviewed ${a.review}. The PCBU is responsible for ensuring the Policy remains current and reflecting any changes in the WHS Act, WHS Regulation, SafeWork NSW guidance, or the agency's risk profile.
 
@@ -3276,6 +3355,8 @@ Date: ${date}`;
       { id: "progressUpdate", label: "Progress update timeframe for ongoing complaints", placeholder: "e.g. every 5 business days" },
       { id: "resolution", label: "Target resolution timeframe", placeholder: "e.g. within 10 business days of receipt; complex matters within 30 business days" },
       { id: "escalation", label: "Internal escalation process (e.g. to franchisor or director)", placeholder: "e.g. if the Complaints Officer is the subject of the complaint, escalated to the agency director or franchisor principal" },
+      { id: "compensationPolicy", label: "Agency position on compensation or goodwill gestures for complainants", placeholder: "e.g. where a complaint is substantiated, the principal may offer a fee reduction, refund of advertising costs, or written apology; any compensation over $500 requires written authority from the director" },
+      { id: "systemicTracking", label: "How systemic or recurring complaint patterns are identified and addressed", placeholder: "e.g. Complaints Officer reviews register quarterly; more than 2 complaints on the same issue in a rolling 6-month period triggers a formal process review; findings reported to agency principal and shared with team" },
       { id: "externalBodies", label: "External bodies available to complainants", placeholder: "e.g. NSW Fair Trading (1300 799 001), NSW Civil & Administrative Tribunal (NCAT), REI NSW, Office of the Australian Information Commissioner (for privacy complaints)" },
     ],
     generate: (a) => {
@@ -3379,7 +3460,15 @@ Where a complaint is substantiated in whole or in part, the agency will promptly
 
 ────────────────────────────────────────
 
-6. EXTERNAL ESCALATION
+6. COMPENSATION AND GOODWILL GESTURES
+
+${a.compensationPolicy || "Where a complaint is substantiated in whole or in part, the Complaints Officer may recommend a goodwill gesture appropriate to the nature of the complaint, subject to the approval of the agency principal or director."}
+
+Offering compensation or a goodwill gesture does not constitute an admission of liability unless expressly stated in writing. All offers of compensation are documented in the complaints register.
+
+────────────────────────────────────────
+
+7. EXTERNAL ESCALATION
 
 If a complainant is not satisfied with the agency's handling of their complaint, they may contact any of the following external bodies:
 
@@ -3391,9 +3480,11 @@ The NSW Civil and Administrative Tribunal (NCAT) hears certain residential tenan
 
 ────────────────────────────────────────
 
-7. RECORD KEEPING AND CONTINUOUS IMPROVEMENT
+8. RECORD KEEPING AND CONTINUOUS IMPROVEMENT
 
 All complaints, including their nature, date received, investigation steps, and outcome, are recorded in the agency's complaints register and retained for a minimum of three (3) years in accordance with legislative requirements.
+
+Systemic issues: ${a.systemicTracking || "The Complaints Officer reviews the register quarterly to identify recurring issues and reports findings to management annually."}
 
 The Complaints Officer reviews the complaints register at least quarterly to identify any patterns or systemic issues and to implement improvements to agency service and procedures. An annual summary of complaints and outcomes is reported to agency management.
 
@@ -3425,6 +3516,8 @@ Date: ${date}`;
       { id: "reconciliation", label: "Reconciliation frequency and process", placeholder: "e.g. trial balance reconciliation completed monthly on the last business day; three-way reconciliation (trust ledger, bank statement, client ledger) reviewed and signed by LIC within 5 days of month end" },
       { id: "software", label: "Trust accounting software used", placeholder: "e.g. PropertyMe / Console Cloud / Managed App / Palace" },
       { id: "shortage", label: "Process if a trust account shortage is identified", placeholder: "e.g. LIC notified immediately; agency funds used to remedy shortage immediately; NSW Fair Trading notified in writing within 3 days; external audit commissioned if required" },
+      { id: "unusedFunds", label: "Process for unclaimed or dormant trust money", placeholder: "e.g. funds held in trust more than 2 years with no client contact are reviewed by LIC; reasonable efforts made to contact client; if unsuccessful, matter referred to NSW Fair Trading under the Unclaimed Money Act 1995 (NSW)" },
+      { id: "eftCutoff", label: "EFT / bank transfer cut-off times and payment processing days", placeholder: "e.g. EFT disbursements processed by 2pm AEST on business days only; payments requested after 2pm processed the following business day; same-day processing available for urgent disbursements with LIC approval" },
       { id: "audit", label: "Annual audit arrangement", placeholder: "e.g. audited annually by [Auditor Name], approved auditor under s90 of the Act, within 3 months of the end of each financial year; audit report submitted to NSW Fair Trading" },
     ],
     generate: (a) => {
@@ -3549,7 +3642,23 @@ Under s107 of the Act, the Licensee in Charge must notify NSW Fair Trading in wr
 
 ────────────────────────────────────────
 
-11. ANNUAL AUDIT
+11. UNCLAIMED AND DORMANT TRUST MONEY
+
+${a.unusedFunds || "Trust money held for more than two (2) years without client contact is reviewed by the LIC. Reasonable efforts to contact the client are documented. If funds remain unclaimed after exhausting all reasonable contact attempts, the matter is referred to NSW Fair Trading in accordance with applicable legislation."}
+
+Records of all attempts to return unclaimed trust money are maintained in the trust accounting records.
+
+────────────────────────────────────────
+
+12. EFT / BANK TRANSFER PAYMENT PROCEDURES
+
+${a.eftCutoff || "Electronic payments are processed on business days only. The LIC reviews and authorises all EFT disbursements before processing. Payment details are verified against the client ledger before any transfer is initiated."}
+
+Under no circumstances is a trust disbursement processed based solely on oral instruction. All EFT payments require written (including email) authority from the client or as otherwise permitted by the Act.
+
+────────────────────────────────────────
+
+13. ANNUAL AUDIT
 
 ${a.audit}
 
@@ -3557,7 +3666,7 @@ Under s90 of the Act, the Licensee in Charge must cause the trust accounts to be
 
 ────────────────────────────────────────
 
-12. PROHIBITED USES OF TRUST MONEY
+14. PROHIBITED USES OF TRUST MONEY
 
 Trust money must never be used:
   (a) To fund agency operating expenses, wages or any business cost;
@@ -3592,6 +3701,8 @@ Date: ${date}`;
       { id: "listingStandards", label: "Advertising and listing content standards", placeholder: "e.g. all prices, fees and property details must be accurate; estimated sale price ranges require a current CMA; rent amounts must match management agreement; no use of 'offers above' or price ranges in violation of the Regulation", multiline: true },
       { id: "prohibited", label: "Prohibited content — specific to real estate", placeholder: "e.g. client names or personal details without consent; undisclosed testimonials or endorsements; discriminatory content in property advertising; representations about price, area or features that cannot be substantiated; agent comparisons without factual basis", multiline: true },
       { id: "personalUse", label: "Personal social media — obligations for staff", placeholder: "e.g. staff must not post agency listings or property details on personal accounts without approval; must not post client information; must identify posts as personal opinion and not the agency's view", multiline: true },
+      { id: "aiContent", label: "Policy on AI-generated content for social media", placeholder: "e.g. AI-generated content (including ChatGPT, Canva AI, and similar tools) may be used as a starting draft only; all AI content must be reviewed and approved by a licensed agent before publishing; AI must not generate property valuations, price guidance or legal-adjacent statements" },
+      { id: "crisisComms", label: "Crisis communications procedure (e.g. negative viral post, data breach announcement)", placeholder: "e.g. any post attracting significant negative attention or legal risk is immediately taken down by the social media manager pending principal review; principal contacted within 1 hour; legal advice sought if required; no reactive public responses made without principal approval" },
       { id: "breach", label: "Consequence of breach", placeholder: "e.g. verbal warning for minor first breach; formal written warning for second breach; termination or referral to NSW Fair Trading for serious breaches involving client information disclosure or misleading conduct" },
       { id: "retention", label: "How long are social media posts / content records retained?", placeholder: "e.g. screenshots of all published posts retained for 3 years in agency marketing files" },
     ],
@@ -3691,7 +3802,21 @@ In particular, staff using personal accounts:
 
 ────────────────────────────────────────
 
-7. RECORDS RETENTION
+7. AI-GENERATED CONTENT
+
+${a.aiContent || "AI-generated content tools may assist in drafting social media posts but all content must be reviewed and approved before publication. AI tools must not be used to generate property valuations, price estimates, legal statements, or personalised financial advice. All published content remains the responsibility of the human agent who approved it."}
+
+Staff must ensure that AI-generated content is factually accurate and does not create a misleading impression. The use of AI does not reduce or transfer the agency's legal obligations under the ACL or the Property and Stock Agents Act.
+
+────────────────────────────────────────
+
+8. CRISIS COMMUNICATIONS
+
+${a.crisisComms || "Any social media post or published content that is subject to a complaint, legal challenge, or public controversy is to be immediately reported to the principal. Content that poses a legal or reputational risk may be removed pending review. No reactive statement or apology will be published without approval from the principal and, where appropriate, legal advice."}
+
+────────────────────────────────────────
+
+9. RECORDS RETENTION
 
 ${a.retention}
 
@@ -3699,7 +3824,7 @@ Records of published advertising content — including property listings, price 
 
 ────────────────────────────────────────
 
-8. BREACH OF POLICY
+10. BREACH OF POLICY
 
 ${a.breach}
 
@@ -3731,6 +3856,8 @@ Date: ${date}`;
       { id: "access", label: "Who has access to different categories of records?", placeholder: "e.g. trust records — LIC only; client files — relevant agent plus LIC; AML/CTF records — LIC and Compliance Officer only; HR records — LIC only", multiline: true },
       { id: "backup", label: "Data backup frequency and method", placeholder: "e.g. automated daily backup via cloud provider; weekly verified restore test conducted monthly; offsite backup maintained" },
       { id: "physicalSecurity", label: "Physical security for paper records", placeholder: "e.g. locked filing cabinets in secure office; access restricted to authorised staff; visitor access to office is escorted at all times" },
+      { id: "cloudProvider", label: "Primary cloud storage provider and data sovereignty position", placeholder: "e.g. PropertyMe (Australian data centres, SOC 2 compliant); Microsoft 365 (Australian data region selected); Google Workspace (data residency policy applied to Australian region)" },
+      { id: "cyberIncident", label: "Immediate steps if agency records are compromised or lost (cyber incident)", placeholder: "e.g. isolate affected system, notify principal immediately, change all passwords, contact IT provider, assess whether Privacy Act Notifiable Data Breach obligations are triggered, notify OAIC if required" },
       { id: "disposal", label: "Approved disposal methods for records at end of retention period", placeholder: "e.g. physical documents — commercial cross-cut shredding by certified secure destruction provider; digital records — verified deletion with confirmation log; disposal recorded in the records register" },
       { id: "review", label: "How often is this policy reviewed?", placeholder: "e.g. Annually in July, or following any legislative change or data breach" },
     ],
@@ -3790,7 +3917,19 @@ Physical records must be maintained as set out in clause 6 below.
 
 ────────────────────────────────────────
 
-5. DATA BACKUP
+5. CLOUD STORAGE AND DATA SOVEREIGNTY
+
+Primary cloud provider(s) used by ${a.agency}: ${a.cloudProvider || "Refer to IT and software register maintained by the Records Manager."}
+
+The agency ensures that any cloud provider used for storing personal information or trust records meets the following minimum requirements:
+  (a) Data stored within Australia or in a jurisdiction with equivalent privacy protections;
+  (b) SOC 2 Type II or ISO 27001 certification (or equivalent);
+  (c) End-to-end encryption at rest and in transit;
+  (d) Contractual obligations consistent with APP 8 (cross-border disclosure) and the agency's Privacy Policy.
+
+────────────────────────────────────────
+
+6. DATA BACKUP
 
 ${a.backup}
 
@@ -3798,7 +3937,7 @@ In the event of data loss or system failure, the agency's disaster recovery proc
 
 ────────────────────────────────────────
 
-6. PHYSICAL SECURITY
+7. PHYSICAL SECURITY
 
 ${a.physicalSecurity}
 
@@ -3806,7 +3945,7 @@ When staff leave the agency (including after-hours), all physical client files a
 
 ────────────────────────────────────────
 
-7. ACCESS CONTROLS
+8. ACCESS CONTROLS
 
 ${a.access}
 
@@ -3814,7 +3953,7 @@ Access to records is reviewed whenever a staff member changes role or leaves the
 
 ────────────────────────────────────────
 
-8. STATUTORY RETENTION PERIODS
+9. STATUTORY RETENTION PERIODS
 
 The following minimum retention periods apply:
 
@@ -3844,7 +3983,7 @@ Where a record is subject to an active complaint, dispute, litigation or regulat
 
 ────────────────────────────────────────
 
-9. DISPOSAL OF RECORDS
+10. DISPOSAL OF RECORDS
 
 Records that have reached the end of their retention period must be disposed of securely. Approved disposal methods:
 ${a.disposal}
@@ -3861,13 +4000,23 @@ Records that are the subject of a current or anticipated complaint, investigatio
 
 ────────────────────────────────────────
 
-10. REGULATOR ACCESS
+11. CYBER INCIDENT — RECORDS COMPROMISE RESPONSE
+
+In the event that agency records are accessed without authorisation, lost, or corrupted due to a cyber incident (including ransomware, phishing, or system breach):
+
+${a.cyberIncident || "1. Isolate affected systems immediately. 2. Notify the Records Manager and principal. 3. Contact IT support provider. 4. Change all access credentials. 5. Assess whether a Notifiable Data Breach has occurred under the Privacy Act 1988 (Cth). 6. If NDB threshold is met, notify the OAIC and affected individuals as required. 7. Document all steps taken and preserve evidence for any insurance claim or regulatory inquiry."}
+
+Cyber incident response records are retained for a minimum of 7 years.
+
+────────────────────────────────────────
+
+12. REGULATOR ACCESS
 
 All records held by ${a.agency} must be made available to authorised NSW Fair Trading inspectors, AUSTRAC, the ATO, the OAIC or other regulators on request, in accordance with the relevant legislative powers. Requests for record access from any regulator must be directed immediately to ${a.responsible}.
 
 ────────────────────────────────────────
 
-11. REVIEW
+13. REVIEW
 
 This Policy is reviewed ${a.review}. ${a.responsible} is responsible for ensuring the Policy reflects any changes in legislation, agency systems, or record types managed by the agency.
 
@@ -3885,7 +4034,7 @@ Date: ${date}`;
   },
 ];
 
-function PolicyTemplatesPage({ onPolicySaved, savedNames }: { onPolicySaved: (p: PolicyRow) => void; savedNames: string[] }) {
+function PolicyTemplatesPage({ onPolicySaved, savedNames, agencyName, agencyAbn }: { onPolicySaved: (p: PolicyRow) => void; savedNames: string[]; agencyName: string; agencyAbn: string }) {
   const orgOwnerId = useContext(OrgContext);
   const [view, setView] = useState<"list" | "questionnaire" | "review" | "saved">("list");
   const [selectedTemplate, setSelectedTemplate] = useState<PTConfig | null>(null);
@@ -3895,9 +4044,20 @@ function PolicyTemplatesPage({ onPolicySaved, savedNames }: { onPolicySaved: (p:
 
   const inputStyPT: React.CSSProperties = { fontSize: "13px", color: "var(--rc-ink)", background: "var(--rc-surface)", border: "1px solid var(--rc-border)", borderRadius: "8px", padding: "10px 12px", outline: "none", fontFamily: "var(--font-inter)", width: "100%", boxSizing: "border-box", resize: "vertical" };
 
+  // Questions that are pre-filled from account — skip them in the step flow
+  const preFilledIds = new Set<string>([
+    ...(agencyName ? ["agency"] : []),
+    ...(agencyAbn ? ["abn"] : []),
+  ]);
+
+  function visibleQuestions(t: PTConfig) {
+    return t.questions.filter(q => !preFilledIds.has(q.id));
+  }
+
   function startTemplate(t: PTConfig) {
     setSelectedTemplate(t);
-    setAnswers({});
+    // Pre-fill org details so the generate function always has them
+    setAnswers({ agency: agencyName || "", abn: agencyAbn || "" });
     setStep(0);
     setView("questionnaire");
   }
@@ -3909,7 +4069,7 @@ function PolicyTemplatesPage({ onPolicySaved, savedNames }: { onPolicySaved: (p:
 
   function nextStep() {
     if (!selectedTemplate) return;
-    if (step < selectedTemplate.questions.length - 1) { setStep(s => s + 1); }
+    if (step < visibleQuestions(selectedTemplate).length - 1) { setStep(s => s + 1); }
     else { setView("review"); }
   }
 
@@ -3963,7 +4123,7 @@ function PolicyTemplatesPage({ onPolicySaved, savedNames }: { onPolicySaved: (p:
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                   {isSaved
                     ? <span style={{ fontSize: "12px", fontWeight: 600, color: "oklch(0.42 0.12 145)", display: "flex", alignItems: "center", gap: "5px" }}><GreenDot /> Saved to library</span>
-                    : <span style={{ fontSize: "11.5px", color: "var(--rc-faint)" }}>{t.questions.length} questions</span>
+                    : <span style={{ fontSize: "11.5px", color: "var(--rc-faint)" }}>{visibleQuestions(t).length} questions</span>
                   }
                   <button
                     onClick={() => startTemplate(t)}
@@ -3982,8 +4142,9 @@ function PolicyTemplatesPage({ onPolicySaved, savedNames }: { onPolicySaved: (p:
 
   // QUESTIONNAIRE VIEW
   if (view === "questionnaire" && selectedTemplate) {
-    const q = selectedTemplate.questions[step];
-    const total = selectedTemplate.questions.length;
+    const visQ = visibleQuestions(selectedTemplate);
+    const q = visQ[step];
+    const total = visQ.length;
     const pct = Math.round((step / total) * 100);
     const currentAnswer = answers[q.id] ?? "";
     return (
@@ -3992,7 +4153,7 @@ function PolicyTemplatesPage({ onPolicySaved, savedNames }: { onPolicySaved: (p:
           <div>
             <button onClick={goBack} style={{ fontSize: "12px", color: "var(--rc-faint)", background: "transparent", border: "none", padding: 0, cursor: "pointer", fontFamily: "var(--font-inter)", marginBottom: "6px", display: "flex", alignItems: "center", gap: "4px" }}>← Back</button>
             <h1 style={PAGE_H1}>{selectedTemplate.name}</h1>
-            <p style={PAGE_SUB}>Question {step + 1} of {total}</p>
+            <p style={PAGE_SUB}>Question {step + 1} of {total}{preFilledIds.size > 0 ? ` · Agency details pre-filled` : ""}</p>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "10px", flexShrink: 0 }}>
             <div style={{ width: "120px", height: "4px", background: "var(--rc-border)", borderRadius: "100px", overflow: "hidden" }}>
@@ -4053,7 +4214,7 @@ function PolicyTemplatesPage({ onPolicySaved, savedNames }: { onPolicySaved: (p:
       <div style={PAGE_WRAP}>
         <div style={PAGE_HEADER}>
           <div>
-            <button onClick={() => { setStep(selectedTemplate.questions.length - 1); setView("questionnaire"); }} style={{ fontSize: "12px", color: "var(--rc-faint)", background: "transparent", border: "none", padding: 0, cursor: "pointer", fontFamily: "var(--font-inter)", marginBottom: "6px", display: "flex", alignItems: "center", gap: "4px" }}>← Edit answers</button>
+            <button onClick={() => { setStep(visibleQuestions(selectedTemplate).length - 1); setView("questionnaire"); }} style={{ fontSize: "12px", color: "var(--rc-faint)", background: "transparent", border: "none", padding: 0, cursor: "pointer", fontFamily: "var(--font-inter)", marginBottom: "6px", display: "flex", alignItems: "center", gap: "4px" }}>← Edit answers</button>
             <h1 style={PAGE_H1}>Review Policy</h1>
             <p style={PAGE_SUB}>{selectedTemplate.name} · Generated {new Date().toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" })}</p>
           </div>
@@ -6293,7 +6454,7 @@ function StaticSubPage({ label, agencyName, agencyAbn, userEmail, userId, staffR
   const savedNames = policies.filter(p => p.source === "template").map(p => p.name);
   switch (label) {
     case "All Policies":            return <AllPoliciesPage policies={policies} onPolicyUpdated={onPolicyUpdated} onPolicyDeleted={onPolicyDeleted} />;
-    case "Policy Templates":        return <PolicyTemplatesPage onPolicySaved={onPolicySaved} savedNames={savedNames} />;
+    case "Policy Templates":        return <PolicyTemplatesPage onPolicySaved={onPolicySaved} savedNames={savedNames} agencyName={agencyName} agencyAbn={agencyAbn} />;
     case "Review Schedule":         return <ReviewSchedulePage policies={policies} onPolicyUpdated={onPolicyUpdated} onPolicyDeleted={onPolicyDeleted} />;
     case "Upload Document":         return <UploadDocumentPage onPolicySaved={onPolicySaved} />;
     case "Team Overview":           return <TeamOverviewPage agencyName={agencyName} staffRows={staffRows} />;
