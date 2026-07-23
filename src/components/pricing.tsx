@@ -2,51 +2,42 @@
 
 import { useReveal } from "@/hooks/use-reveal";
 
+const sharedFeatures = [
+  "CPD & licence tracking",
+  "Trust account checklists",
+  "Policies & procedures library",
+  "Marketing tracking per listing",
+  "Complaints & incident registers",
+  "Meeting diary",
+  "Email reminders & alerts",
+  "Full audit readiness suite",
+  "Audit export (PDF)",
+  "Legislative update alerts",
+  "Priority support",
+];
+
 const plans = [
   {
-    name: "Essentials",
+    name: "Small",
     price: { monthly: 129 },
     description: "For single-office agencies getting compliance under control.",
-    features: [
-      "Up to 20 team members",
-      "CPD & licence tracking",
-      "Trust account checklists",
-      "Policies & procedures library",
-      "Email reminders & alerts",
-      "Audit export (PDF)",
-    ],
+    members: "Up to 20 team members",
     cta: "Sign up",
     highlight: false,
   },
   {
-    name: "Standard",
+    name: "Medium",
     price: { monthly: 249 },
     description: "For growing offices with complex compliance requirements.",
-    features: [
-      "Up to 60 team members",
-      "Everything in Essentials",
-      "Marketing tracking per listing",
-      "Full audit readiness suite",
-      "Legislative update alerts",
-      "Priority support",
-      "Dedicated onboarding session",
-    ],
+    members: "Up to 60 team members",
     cta: "Sign up",
     highlight: true,
   },
   {
-    name: "Professional",
+    name: "Large",
     price: { monthly: 549 },
     description: "For large offices and multi-branch operations.",
-    features: [
-      "Up to 120 team members",
-      "Everything in Standard",
-      "Multi-office dashboard",
-      "Custom policy templates",
-      "Compliance reporting suite",
-      "Dedicated account manager",
-      "SLA-backed support",
-    ],
+    members: "Up to 120 team members",
     cta: "Sign up",
     highlight: false,
   },
@@ -93,7 +84,7 @@ export default function Pricing() {
           className="reveal"
           style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "16px", alignItems: "start" }}
         >
-          {plans.map(({ name, price, description, features, cta, highlight }) => (
+          {plans.map(({ name, price, description, members, cta, highlight }) => (
             <div
               key={name}
               style={{
@@ -189,8 +180,19 @@ export default function Pricing() {
                 {cta}
               </a>
 
+              {/* Team member count — the key differentiator */}
+              <div style={{
+                display: "flex", alignItems: "center", gap: "8px",
+                padding: "10px 14px", borderRadius: "8px", marginBottom: "20px",
+                background: highlight ? "rgba(255,255,255,0.10)" : "rgba(83,58,253,0.06)",
+                border: highlight ? "1px solid rgba(255,255,255,0.12)" : "1px solid rgba(83,58,253,0.12)",
+              }}>
+                <span style={{ fontSize: "15px" }}>👥</span>
+                <span style={{ fontSize: "13px", fontWeight: 600, color: highlight ? "white" : "var(--s-ink)" }}>{members}</span>
+              </div>
+
               <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: "10px" }}>
-                {features.map((feat) => (
+                {sharedFeatures.map((feat) => (
                   <li
                     key={feat}
                     style={{
@@ -201,17 +203,7 @@ export default function Pricing() {
                       color: highlight ? "rgba(255,255,255,0.65)" : "var(--s-ink-mute)",
                     }}
                   >
-                    <span
-                      style={{
-                        color: highlight ? "#b9b9f9" : "var(--s-primary)",
-                        flexShrink: 0,
-                        marginTop: "1px",
-                        fontSize: "14px",
-                        fontWeight: 600,
-                      }}
-                    >
-                      ✓
-                    </span>
+                    <span style={{ color: highlight ? "#b9b9f9" : "var(--s-primary)", flexShrink: 0, marginTop: "1px", fontWeight: 600 }}>✓</span>
                     {feat}
                   </li>
                 ))}
@@ -220,9 +212,14 @@ export default function Pricing() {
           ))}
         </div>
 
-        <p style={{ textAlign: "center", marginTop: "28px", fontSize: "13px", color: "var(--s-ink-mute)", maxWidth: "none", opacity: 0.75 }}>
-          Sign up for a 14 day free trial · No lock in contracts
-        </p>
+        <div style={{ textAlign: "center", marginTop: "32px" }}>
+          <p style={{ fontSize: "13.5px", color: "var(--s-ink-mute)", maxWidth: "none", marginBottom: "6px" }}>
+            All plans include every feature — the only difference is team member count and storage.
+          </p>
+          <p style={{ fontSize: "12.5px", color: "var(--s-ink-mute)", maxWidth: "none", opacity: 0.65 }}>
+            Sign up for a 14 day free trial · No lock in contracts
+          </p>
+        </div>
       </div>
     </section>
   );
