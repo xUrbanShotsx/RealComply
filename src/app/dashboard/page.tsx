@@ -7695,6 +7695,7 @@ export default function DashboardPage() {
   function openModule(id: string) {
     setActiveModule(id);
     if (id === "settings") setSelected({ type: "static", label: "Account" });
+    else if (id === "calendar") setSelected({ type: "static", label: "Calendar" });
     else setSelected(null);
     setSidebarOpen(false);
   }
