@@ -5142,6 +5142,8 @@ function OnboardingPage() {
   const [nameInput, setNameInput] = useState("");
   const [roleInput, setRoleInput] = useState("");
   const [startInput, setStartInput] = useState("");
+  const [addSaving, setAddSaving] = useState(false);
+  const [addError, setAddError] = useState("");
 
   useEffect(() => {
     if (!orgOwnerId) return;
@@ -5162,20 +5164,26 @@ function OnboardingPage() {
 
   async function submitAdd() {
     if (!nameInput.trim() || !orgOwnerId) return;
+    setAddSaving(true);
+    setAddError("");
     const addedAt = new Date().toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" });
+    // Convert YYYY-MM-DD (from date input) to DD/MM/YYYY for storage/display
+    const formattedDate = startInput ? startInput.split("-").reverse().join("/") : "";
     const emptyCheck = Array(onboardingItems.length).fill(null);
-    const { data: row } = await supabase.from("onboarding_members").insert({
+    const { data: row, error } = await supabase.from("onboarding_members").insert({
       user_id: orgOwnerId,
       name: nameInput.trim(),
       role: roleInput.trim(),
-      start_date: startInput.trim(),
+      start_date: formattedDate,
       added_at: addedAt,
       check_data: emptyCheck,
     }).select().single();
+    setAddSaving(false);
+    if (error) { setAddError("Failed to save. Please try again."); return; }
     if (row) {
       setMembers(prev => [...prev, { id: row.id, name: row.name, role: row.role, startDate: row.start_date, addedAt: row.added_at, checkData: emptyCheck }]);
     }
-    setNameInput(""); setRoleInput(""); setStartInput("");
+    setNameInput(""); setRoleInput(""); setStartInput(""); setAddError("");
     setShowAdd(false);
   }
 
@@ -5265,12 +5273,13 @@ function OnboardingPage() {
               </div>
               <div>
                 <p style={{ fontSize: "11.5px", fontWeight: 600, color: "var(--rc-faint)", margin: "0 0 6px", textTransform: "uppercase", letterSpacing: "0.04em" }}>Start date <span style={{ fontWeight: 400, textTransform: "none" }}>(optional)</span></p>
-                <input value={startInput} onChange={e => setStartInput(e.target.value)} onKeyDown={e => { if (e.key === "Enter") submitAdd(); if (e.key === "Escape") setShowAdd(false); }} placeholder="e.g. 28 Jul 2026" style={inputSty2} />
+                <input type="date" value={startInput} onChange={e => setStartInput(e.target.value)} onKeyDown={e => { if (e.key === "Escape") setShowAdd(false); }} style={{ ...inputSty2, colorScheme: "light" }} />
               </div>
             </div>
+            {addError && <p style={{ fontSize: "12px", color: "oklch(0.55 0.18 25)", background: "oklch(0.97 0.02 25)", border: "1px solid oklch(0.88 0.06 25)", borderRadius: "8px", padding: "8px 12px", margin: 0, maxWidth: "none" }}>{addError}</p>}
             <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}>
-              <button onClick={() => setShowAdd(false)} style={{ fontSize: "13px", fontWeight: 500, color: "var(--rc-faint)", background: "transparent", border: "1px solid var(--rc-border)", borderRadius: "8px", padding: "8px 16px", cursor: "pointer", fontFamily: "var(--font-inter)" }}>Cancel</button>
-              <button onClick={submitAdd} style={{ fontSize: "13px", fontWeight: 600, color: "white", background: "var(--rc-primary)", border: "none", borderRadius: "8px", padding: "8px 16px", cursor: "pointer", fontFamily: "var(--font-inter)" }}>Add staff member</button>
+              <button onClick={() => { setShowAdd(false); setAddError(""); }} disabled={addSaving} style={{ fontSize: "13px", fontWeight: 500, color: "var(--rc-faint)", background: "transparent", border: "1px solid var(--rc-border)", borderRadius: "8px", padding: "8px 16px", cursor: "pointer", fontFamily: "var(--font-inter)" }}>Cancel</button>
+              <button onClick={submitAdd} disabled={addSaving} style={{ fontSize: "13px", fontWeight: 600, color: "white", background: "var(--rc-primary)", border: "none", borderRadius: "8px", padding: "8px 16px", cursor: addSaving ? "not-allowed" : "pointer", opacity: addSaving ? 0.7 : 1, fontFamily: "var(--font-inter)" }}>{addSaving ? "Saving…" : "Add staff member"}</button>
             </div>
           </div>
         </div>
