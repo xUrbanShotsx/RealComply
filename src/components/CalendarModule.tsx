@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { supabase } from "@/lib/supabase";
 
 type Ev = {
   id: string;
@@ -49,7 +49,6 @@ export default function CalendarModule({
   orgOwnerId: string | null;
   userId: string | null;
 }) {
-  const supabase = createClientComponentClient();
   const [view, setView] = useState<"month" | "day">("month");
   const [anchor, setAnchor] = useState(new Date());
   const [events, setEvents] = useState<Ev[]>([]);
@@ -340,14 +339,14 @@ export default function CalendarModule({
                 </div>
                 {/* Date/time */}
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
-                  {["start_at", "end_at"].map(k => (
+                  {(["start_at", "end_at"] as const).map(k => (
                     <div key={k}>
                       <label style={{ fontSize: "11px", color: "#8898aa", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", display: "block", marginBottom: "5px" }}>
                         {k === "start_at" ? "Start" : "End"}
                       </label>
                       <input
                         type={form.all_day ? "date" : "datetime-local"}
-                        value={form.all_day ? (form as Record<string, string>)[k].slice(0, 10) : (form as Record<string, string>)[k]}
+                        value={form.all_day ? form[k].slice(0, 10) : form[k]}
                         onChange={e => setForm(f => ({ ...f, [k]: e.target.value }))}
                         style={{ width: "100%", border: "1px solid #e3e8ee", borderRadius: "8px", padding: "8px 10px", fontSize: "12px", color: "#1c1e54", outline: "none", boxSizing: "border-box", fontFamily: "inherit" }}
                       />
