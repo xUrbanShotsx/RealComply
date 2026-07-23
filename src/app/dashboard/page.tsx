@@ -1860,19 +1860,6 @@ function DashboardHome({ onNavigate, agencyName, staffRows, salesProps, mgmtProp
         })}
       </div>
 
-      {/* Compliance trend chart */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-        <div style={{ border: "1px solid var(--rc-border)", borderRadius: "14px", overflow: "hidden", flex: 1, boxShadow: "var(--rc-shadow-sm)", display: "flex", flexDirection: "column", background: "var(--rc-surface)" }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 22px 0", flexShrink: 0 }}>
-            <span style={{ fontSize: "13.5px", fontWeight: 600, color: "var(--rc-ink)", letterSpacing: "-0.02em" }}>Compliance trend</span>
-            <span style={{ fontSize: "12px", color: "var(--rc-faint)", fontWeight: 500 }}>Last 3 months</span>
-          </div>
-          <div style={{ flex: 1, minHeight: 0, padding: "8px 16px 14px" }}>
-            <ComplianceChart currentScore={overallScore} />
-          </div>
-        </div>
-      </div>
-
     </div>
   );
 }
@@ -7068,10 +7055,25 @@ export default function DashboardPage() {
           </div>
         </div>
 
+        {/* Overview — always visible */}
+        <div style={{ padding: "0 10px 4px", flexShrink: 0 }}>
+          <button
+            onClick={goBack}
+            style={{ width: "100%", display: "flex", alignItems: "center", gap: "10px", padding: "9px 12px", borderRadius: "8px", border: "none", background: !activeModule ? "var(--rc-primary)" : "transparent", color: !activeModule ? "white" : "var(--rc-nav-text)", fontSize: "13px", fontWeight: !activeModule ? 700 : 500, cursor: "pointer", textAlign: "left", fontFamily: "var(--font-inter)", transition: "background 0.12s ease, color 0.12s ease" }}
+            onMouseEnter={(e) => { if (activeModule) { e.currentTarget.style.background = "var(--rc-nav-hover)"; e.currentTarget.style.color = "var(--rc-primary)"; } }}
+            onMouseLeave={(e) => { if (activeModule) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--rc-nav-text)"; } }}
+          >
+            <span style={{ flexShrink: 0, color: !activeModule ? "rgba(255,255,255,0.8)" : "var(--rc-faint)" }}>
+              <svg width="16" height="16" viewBox="0 0 18 18" fill="none"><path d="M2 9L9 2l7 7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /><path d="M4 7v8a1 1 0 001 1h3v-4h2v4h3a1 1 0 001-1V7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            </span>
+            <span style={{ flex: 1 }}>Overview</span>
+          </button>
+        </div>
+
         {!activeModule && (
           <nav style={{ flex: 1, padding: "4px 10px 10px" }}>
             <div style={{ padding: "6px 10px 10px" }}>
-              <p style={{ fontSize: "10px", fontWeight: 700, color: "var(--rc-faint)", letterSpacing: "0.08em", textTransform: "uppercase", margin: 0, maxWidth: "none" }}>Menu</p>
+              <p style={{ fontSize: "10px", fontWeight: 700, color: "var(--rc-faint)", letterSpacing: "0.08em", textTransform: "uppercase", margin: 0, maxWidth: "none" }}>Modules</p>
             </div>
             {modules.map((m) => (
               <button key={m.id} onClick={() => openModule(m.id)}
@@ -7089,13 +7091,7 @@ export default function DashboardPage() {
 
         {activeModule && module && (
           <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-            <button onClick={goBack} style={{ display: "flex", alignItems: "center", gap: "6px", padding: "12px 16px", border: "none", borderBottom: "1px solid var(--rc-nav-border)", background: "transparent", color: "var(--rc-faint)", fontSize: "12px", fontWeight: 500, cursor: "pointer", fontFamily: "var(--font-inter)", textAlign: "left", flexShrink: 0, transition: "color 0.12s ease" }}
-              onMouseEnter={(e) => { e.currentTarget.style.color = "var(--rc-primary)"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.color = "var(--rc-faint)"; }}
-            >
-              <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M9 3L5 7l4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
-              All modules
-            </button>
+            <div style={{ borderTop: "1px solid var(--rc-nav-border)", margin: "4px 10px 0", flexShrink: 0 }} />
             <button onClick={() => setSelected(null)}
               style={{ width: "calc(100% - 16px)", display: "flex", alignItems: "center", gap: "9px", padding: "12px 16px", border: "none", background: !selected ? "var(--rc-primary-light)" : "transparent", color: !selected ? "var(--rc-primary)" : "var(--rc-nav-text)", borderRadius: "8px", margin: "8px 8px 0", fontSize: "13px", fontWeight: 700, letterSpacing: "-0.01em", cursor: "pointer", textAlign: "left", flexShrink: 0, fontFamily: "var(--font-inter)", transition: "background 0.12s ease, color 0.12s ease" }}
               onMouseEnter={(e) => { if (selected) { e.currentTarget.style.background = "var(--rc-nav-hover)"; e.currentTarget.style.color = "var(--rc-primary)"; } }}
