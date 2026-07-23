@@ -5302,7 +5302,7 @@ function OnboardingChecklist({ member, onBack, onUpdateMember }: { member: Onboa
   );
 }
 
-function OnboardingPage() {
+function OnboardingPage({ onStaffAdded }: { onStaffAdded?: (s: StaffRow) => void }) {
   const orgOwnerId = useContext(OrgContext);
   const [members, setMembers] = useState<OnboardingMember[]>([]);
   const [selected, setSelected] = useState<OnboardingMember | null>(null);
@@ -5338,18 +5338,43 @@ function OnboardingPage() {
     // Convert YYYY-MM-DD (from date input) to DD/MM/YYYY for storage/display
     const formattedDate = startInput ? startInput.split("-").reverse().join("/") : "";
     const emptyCheck = Array(onboardingItems.length).fill(null);
-    const { data: row, error } = await supabase.from("onboarding_members").insert({
-      user_id: orgOwnerId,
-      name: nameInput.trim(),
-      role: roleInput.trim(),
-      start_date: formattedDate,
-      added_at: addedAt,
-      check_data: emptyCheck,
-    }).select().single();
+    const [{ data: row, error }, { data: staffRow }] = await Promise.all([
+      supabase.from("onboarding_members").insert({
+        user_id: orgOwnerId,
+        name: nameInput.trim(),
+        role: roleInput.trim(),
+        start_date: formattedDate,
+        added_at: addedAt,
+        check_data: emptyCheck,
+      }).select().single(),
+      supabase.from("staff_members").insert({
+        user_id: orgOwnerId,
+        name: nameInput.trim(),
+        role: roleInput.trim(),
+        start_date: formattedDate,
+        licence: "renewal-due",
+        cpd_status: "not-started",
+        licence_expiry: "",
+        licence_number: "",
+        email: "",
+        phone: "",
+        cpd_required: 0,
+        cpd_completed: 0,
+        cpd_deadline: "",
+      }).select().single(),
+    ]);
     setAddSaving(false);
     if (error) { setAddError("Failed to save. Please try again."); return; }
     if (row) {
       setMembers(prev => [...prev, { id: row.id, name: row.name, role: row.role, startDate: row.start_date, addedAt: row.added_at, checkData: emptyCheck }]);
+    }
+    if (staffRow && onStaffAdded) {
+      onStaffAdded({
+        id: staffRow.id, name: staffRow.name, role: staffRow.role,
+        licence: "renewal-due", expiry: "", cpd: "due-soon",
+        email: "", phone: "", start_date: formattedDate,
+        licence_number: "", cpd_required: 0, cpd_completed: 0, cpd_deadline: "",
+      });
     }
     setNameInput(""); setRoleInput(""); setStartInput(""); setAddError("");
     setShowAdd(false);
@@ -6856,9 +6881,10 @@ function RiskRegisterPage() {
   );
 }
 
-function StaticSubPage({ label, agencyName, agencyAbn, userEmail, userId, staffRows, policies, onPolicySaved, onPolicyUpdated, onPolicyDeleted }: {
+function StaticSubPage({ label, agencyName, agencyAbn, userEmail, userId, staffRows, policies, onPolicySaved, onPolicyUpdated, onPolicyDeleted, onStaffAdded }: {
   label: string; agencyName: string; agencyAbn: string; userEmail: string | null; userId: string | null; staffRows: StaffRow[];
   policies: PolicyRow[]; onPolicySaved: (p: PolicyRow) => void; onPolicyUpdated: (p: PolicyRow) => void; onPolicyDeleted: (id: string) => void;
+  onStaffAdded: (s: StaffRow) => void;
 }) {
   const savedNames = policies.filter(p => p.source === "template").map(p => p.name);
   switch (label) {
@@ -6869,7 +6895,7 @@ function StaticSubPage({ label, agencyName, agencyAbn, userEmail, userId, staffR
     case "Team Overview":           return <TeamOverviewPage agencyName={agencyName} staffRows={staffRows} />;
     case "Licence Tracking":        return <LicenceTrackingPage staffRows={staffRows} />;
     case "CPD Records":             return <CPDRecordsPage staffRows={staffRows} />;
-    case "Onboarding":              return <OnboardingPage />;
+    case "Onboarding":              return <OnboardingPage onStaffAdded={onStaffAdded} />;
     case "Account Reconciliation":  return <AccountReconciliationPage />;
     case "Monthly Reports":         return <MonthlyTrustReportsPage />;
     case "Audit Reports":           return <AuditReportsPage />;
@@ -7157,7 +7183,7 @@ export default function DashboardPage() {
             <PropertyChecklist key={selected.id} propertyId={selected.id} address={selected.address} type={selected.section} onRemove={() => handleRemoveProperty(selected.id, "management")} />
           )
         ) : selected?.type === "static" ? (
-          <StaticSubPage label={selected.label} agencyName={agencyName} agencyAbn={agencyAbn} userEmail={userEmail} userId={userId} staffRows={staffRows} policies={policies} onPolicySaved={handlePolicySaved} onPolicyUpdated={handlePolicyUpdated} onPolicyDeleted={handlePolicyDeleted} />
+          <StaticSubPage label={selected.label} agencyName={agencyName} agencyAbn={agencyAbn} userEmail={userEmail} userId={userId} staffRows={staffRows} policies={policies} onPolicySaved={handlePolicySaved} onPolicyUpdated={handlePolicyUpdated} onPolicyDeleted={handlePolicyDeleted} onStaffAdded={(s) => setStaffRows(prev => [...prev, s])} />
         ) : activeModule && activeModule !== "settings" ? (
           <ModuleOverview moduleId={activeModule} onSelectProperty={setSelected} salesProps={salesProps} mgmtProps={mgmtProps} onAddSalesProperty={handleAddSalesProperty} onAddMgmtProperty={handleAddMgmtProperty} staffRows={staffRows} policies={policies} />
         ) : (
