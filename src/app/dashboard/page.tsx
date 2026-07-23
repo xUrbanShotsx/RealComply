@@ -7076,7 +7076,7 @@ export default function DashboardPage() {
       <aside style={{ width: "252px", flexShrink: 0, background: "var(--rc-nav)", borderRight: "1px solid var(--rc-nav-border)", display: "flex", flexDirection: "column", position: "fixed", top: 0, left: 0, bottom: 0, overflowY: "auto", zIndex: 10 }}>
         {/* Logo */}
         <div style={{ padding: "18px 18px 14px", flexShrink: 0 }}>
-          <img src="/dashboardtitle.png" alt="RealComply" style={{ height: "36px", width: "auto", objectFit: "contain", maxWidth: "216px" }} />
+          <img src="/dashboardtitle.png" alt="RealComply" style={{ height: "52px", width: "auto", objectFit: "contain", maxWidth: "216px" }} />
         </div>
 
         {/* Overview — always visible */}
