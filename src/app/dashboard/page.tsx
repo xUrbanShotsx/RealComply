@@ -6881,8 +6881,181 @@ function RiskRegisterPage() {
   );
 }
 
-function StaticSubPage({ label, agencyName, agencyAbn, userEmail, userId, staffRows, policies, onPolicySaved, onPolicyUpdated, onPolicyDeleted, onStaffAdded }: {
-  label: string; agencyName: string; agencyAbn: string; userEmail: string | null; userId: string | null; staffRows: StaffRow[];
+// ─── Complaints Register ──────────────────────────────────────────────────────
+type ComplaintRow = { id: string; date_received: string; complainant_name: string; is_anonymous: boolean; category: string; description: string; staff_involved: string; action_taken: string; status: string; date_resolved: string; created_at: string };
+
+function ComplaintsRegisterPage({ userRole }: { userRole: "owner" | "standard" }) {
+  const orgOwnerId = useContext(OrgContext);
+  const [rows, setRows] = useState<ComplaintRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showAdd, setShowAdd] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [error, setError] = useState("");
+  const [form, setForm] = useState({ date_received: new Date().toISOString().slice(0, 10), complainant_name: "", is_anonymous: false, category: "Service Quality", description: "", staff_involved: "", action_taken: "", status: "Open", date_resolved: "" });
+
+  useEffect(() => {
+    if (!orgOwnerId || userRole !== "owner") { setLoading(false); return; }
+    supabase.from("complaints_register").select("*").eq("user_id", orgOwnerId).order("created_at", { ascending: false }).then(({ data }) => {
+      if (data) setRows(data as ComplaintRow[]);
+      setLoading(false);
+    });
+  }, [orgOwnerId, userRole]);
+
+  function setF<K extends keyof typeof form>(k: K, v: typeof form[K]) { setForm(p => ({ ...p, [k]: v })); }
+
+  async function save() {
+    if (!form.date_received || !form.description || !orgOwnerId) { setError("Date and description are required."); return; }
+    setSaving(true); setError("");
+    const payload = { user_id: orgOwnerId, date_received: form.date_received, complainant_name: form.is_anonymous ? "" : form.complainant_name, is_anonymous: form.is_anonymous, category: form.category, description: form.description, staff_involved: form.staff_involved, action_taken: form.action_taken, status: form.status, date_resolved: form.date_resolved || null };
+    const { data, error: err } = await supabase.from("complaints_register").insert(payload).select().single();
+    setSaving(false);
+    if (err) { setError("Failed to save. Please try again."); return; }
+    if (data) setRows(p => [data as ComplaintRow, ...p]);
+    setForm({ date_received: new Date().toISOString().slice(0, 10), complainant_name: "", is_anonymous: false, category: "Service Quality", description: "", staff_involved: "", action_taken: "", status: "Open", date_resolved: "" });
+    setShowAdd(false);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 4000);
+  }
+
+  async function updateStatus(id: string, status: string) {
+    await supabase.from("complaints_register").update({ status }).eq("id", id);
+    setRows(p => p.map(r => r.id === id ? { ...r, status } : r));
+  }
+
+  async function del(id: string) {
+    await supabase.from("complaints_register").delete().eq("id", id);
+    setRows(p => p.filter(r => r.id !== id));
+  }
+
+  const inp: React.CSSProperties = { fontSize: "13px", color: "var(--rc-ink)", background: "var(--rc-surface)", border: "1px solid var(--rc-border)", borderRadius: "8px", padding: "9px 12px", outline: "none", fontFamily: "var(--font-inter)", width: "100%", boxSizing: "border-box" };
+  const lbl: React.CSSProperties = { fontSize: "12px", fontWeight: 600, color: "var(--rc-muted)", marginBottom: "5px", display: "block" };
+  const statusColor = (s: string) => s === "Open" ? "oklch(0.55 0.18 25)" : s === "In Progress" ? "oklch(0.50 0.18 55)" : s === "Resolved" ? "oklch(0.42 0.12 145)" : "oklch(0.48 0.15 250)";
+  const categories = ["Service Quality", "Misrepresentation", "Agent Conduct", "Trust Accounting", "Advertising", "Disclosure", "Fees & Charges", "Other"];
+
+  return (
+    <div style={PAGE_WRAP}>
+      <div style={PAGE_HEADER}>
+        <div>
+          <h1 style={PAGE_H1}>Complaints Register</h1>
+          <p style={PAGE_SUB}>Log and track client and staff complaints — required for NSW Fair Trading compliance. Complaints can be lodged anonymously.</p>
+        </div>
+        <button onClick={() => { setShowAdd(p => !p); setError(""); setSaved(false); }} style={{ fontSize: "13px", fontWeight: 600, color: "white", background: "var(--rc-primary)", border: "none", borderRadius: "8px", padding: "9px 18px", cursor: "pointer", fontFamily: "var(--font-inter)" }}>
+          {showAdd ? "Cancel" : "+ Lodge Complaint"}
+        </button>
+      </div>
+
+      {saved && !showAdd && (
+        <div style={{ background: "oklch(0.97 0.04 145)", border: "1px solid oklch(0.80 0.10 145)", borderRadius: "10px", padding: "14px 18px", fontSize: "13px", color: "oklch(0.32 0.12 145)", flexShrink: 0 }}>
+          Complaint lodged successfully. {userRole !== "owner" ? "The principal has been notified." : ""}
+        </div>
+      )}
+
+      {showAdd && (
+        <div style={{ background: "var(--rc-surface)", border: "1px solid var(--rc-border)", borderRadius: "12px", padding: "24px 28px", display: "flex", flexDirection: "column", gap: "16px", flexShrink: 0 }}>
+          <p style={{ fontSize: "13.5px", fontWeight: 700, color: "var(--rc-ink)", margin: 0 }}>New Complaint</p>
+
+          {/* Anonymous toggle */}
+          <div style={{ background: form.is_anonymous ? "oklch(0.97 0.02 264)" : "var(--rc-bg)", border: `1px solid ${form.is_anonymous ? "oklch(0.80 0.10 264)" : "var(--rc-border)"}`, borderRadius: "10px", padding: "14px 18px", display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer" }} onClick={() => setF("is_anonymous", !form.is_anonymous)}>
+            <div>
+              <p style={{ fontSize: "13px", fontWeight: 600, color: "var(--rc-ink)", margin: 0 }}>Lodge anonymously</p>
+              <p style={{ fontSize: "12px", color: "var(--rc-muted)", margin: "3px 0 0", maxWidth: "none" }}>Your name will not be stored or visible to anyone, including the principal.</p>
+            </div>
+            <div style={{ width: "40px", height: "22px", borderRadius: "9999px", background: form.is_anonymous ? "var(--rc-primary)" : "var(--rc-border)", position: "relative", transition: "background 0.2s", flexShrink: 0, marginLeft: "16px" }}>
+              <div style={{ position: "absolute", top: "3px", left: form.is_anonymous ? "21px" : "3px", width: "16px", height: "16px", borderRadius: "50%", background: "white", transition: "left 0.2s", boxShadow: "0 1px 3px rgba(0,0,0,0.2)" }} />
+            </div>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "14px" }}>
+            <div><label style={lbl}>Date Received *</label><input type="date" value={form.date_received} onChange={e => setF("date_received", e.target.value)} style={{ ...inp, colorScheme: "light" }} /></div>
+            <div>
+              <label style={lbl}>Category</label>
+              <select value={form.category} onChange={e => setF("category", e.target.value)} style={{ ...inp, cursor: "pointer" }}>
+                {categories.map(o => <option key={o}>{o}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={lbl}>{form.is_anonymous ? "Your Name (not stored)" : "Complainant Name"}</label>
+              <input placeholder={form.is_anonymous ? "Not recorded" : "Full name"} value={form.is_anonymous ? "" : form.complainant_name} onChange={e => setF("complainant_name", e.target.value)} disabled={form.is_anonymous} style={{ ...inp, opacity: form.is_anonymous ? 0.45 : 1 }} />
+            </div>
+          </div>
+
+          <div><label style={lbl}>Description of Complaint *</label><textarea rows={4} placeholder="Describe the complaint in detail — what happened, when, and any relevant context." value={form.description} onChange={e => setF("description", e.target.value)} style={{ ...inp, resize: "vertical" }} /></div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
+            <div><label style={lbl}>Staff Involved</label><input placeholder="Names of staff members involved" value={form.staff_involved} onChange={e => setF("staff_involved", e.target.value)} style={inp} /></div>
+            <div><label style={lbl}>Initial Action Taken</label><input placeholder="e.g. Acknowledged by principal, referred to insurer" value={form.action_taken} onChange={e => setF("action_taken", e.target.value)} style={inp} /></div>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
+            <div>
+              <label style={lbl}>Status</label>
+              <select value={form.status} onChange={e => setF("status", e.target.value)} style={{ ...inp, cursor: "pointer" }}>
+                {["Open", "In Progress", "Resolved", "Escalated"].map(o => <option key={o}>{o}</option>)}
+              </select>
+            </div>
+            <div><label style={lbl}>Date Resolved</label><input type="date" value={form.date_resolved} onChange={e => setF("date_resolved", e.target.value)} style={{ ...inp, colorScheme: "light" }} /></div>
+          </div>
+
+          {error && <p style={{ fontSize: "13px", color: "oklch(0.55 0.18 25)", margin: 0, maxWidth: "none" }}>{error}</p>}
+          <div style={{ display: "flex", justifyContent: "flex-end" }}>
+            <button onClick={save} disabled={saving} style={{ fontSize: "13px", fontWeight: 600, color: "white", background: "var(--rc-primary)", border: "none", borderRadius: "8px", padding: "9px 22px", cursor: saving ? "not-allowed" : "pointer", opacity: saving ? 0.7 : 1, fontFamily: "var(--font-inter)" }}>
+              {saving ? "Lodging…" : "Lodge Complaint"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {userRole !== "owner" ? (
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "10px", padding: "40px 0" }}>
+          <div style={{ width: "48px", height: "48px", borderRadius: "50%", background: "var(--rc-surface)", border: "1px solid var(--rc-border)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "20px" }}>🔒</div>
+          <p style={{ fontSize: "14px", color: "var(--rc-muted)", textAlign: "center", maxWidth: "320px" }}>Only the principal can view lodged complaints. Use the button above to lodge a new complaint.</p>
+        </div>
+      ) : (
+        <div style={{ flex: 1, overflowY: "auto" }}>
+          {loading ? <p style={{ color: "var(--rc-faint)", fontSize: "13px" }}>Loading…</p> : rows.length === 0 ? (
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "200px" }}>
+              <p style={{ fontSize: "14px", color: "var(--rc-faint)", maxWidth: "none", textAlign: "center" }}>No complaints on record. Use the button above to lodge the first entry.</p>
+            </div>
+          ) : (
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
+              <thead>
+                <tr style={{ borderBottom: "1px solid var(--rc-border)" }}>
+                  {["Date", "Complainant", "Category", "Description", "Staff", "Status", "Resolved", ""].map(h => (
+                    <th key={h} style={{ textAlign: "left", padding: "10px 14px", fontSize: "11px", fontWeight: 700, color: "var(--rc-faint)", textTransform: "uppercase", letterSpacing: "0.05em", whiteSpace: "nowrap" }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((r, i) => (
+                  <tr key={r.id} style={{ borderBottom: i < rows.length - 1 ? "1px solid var(--rc-border-subtle)" : "none" }}>
+                    <td style={{ padding: "12px 14px", color: "var(--rc-muted)", whiteSpace: "nowrap" }}>{r.date_received ? new Date(r.date_received).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" }) : "—"}</td>
+                    <td style={{ padding: "12px 14px", fontWeight: 500, color: r.is_anonymous ? "var(--rc-faint)" : "var(--rc-ink)", fontStyle: r.is_anonymous ? "italic" : "normal", whiteSpace: "nowrap" }}>{r.is_anonymous ? "Anonymous" : (r.complainant_name || "—")}</td>
+                    <td style={{ padding: "12px 14px", color: "var(--rc-muted)", whiteSpace: "nowrap" }}>{r.category}</td>
+                    <td style={{ padding: "12px 14px", color: "var(--rc-ink)", maxWidth: "220px" }}><span style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{r.description}</span></td>
+                    <td style={{ padding: "12px 14px", color: "var(--rc-muted)" }}>{r.staff_involved || "—"}</td>
+                    <td style={{ padding: "12px 14px" }}>
+                      <select value={r.status} onChange={e => updateStatus(r.id, e.target.value)} style={{ fontSize: "11.5px", fontWeight: 600, color: statusColor(r.status), background: "var(--rc-surface)", border: "1px solid var(--rc-border)", borderRadius: "6px", padding: "3px 8px", cursor: "pointer", fontFamily: "var(--font-inter)", outline: "none" }}>
+                        {["Open", "In Progress", "Resolved", "Escalated"].map(o => <option key={o}>{o}</option>)}
+                      </select>
+                    </td>
+                    <td style={{ padding: "12px 14px", color: "var(--rc-muted)", whiteSpace: "nowrap" }}>{r.date_resolved ? new Date(r.date_resolved).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" }) : "—"}</td>
+                    <td style={{ padding: "12px 14px" }}>
+                      <button onClick={() => del(r.id)} style={{ fontSize: "11px", color: "var(--rc-faint)", background: "transparent", border: "none", cursor: "pointer", fontFamily: "var(--font-inter)", padding: 0 }}>Remove</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function StaticSubPage({ label, agencyName, agencyAbn, userEmail, userId, userRole, staffRows, policies, onPolicySaved, onPolicyUpdated, onPolicyDeleted, onStaffAdded }: {
+  label: string; agencyName: string; agencyAbn: string; userEmail: string | null; userId: string | null; userRole: "owner" | "standard"; staffRows: StaffRow[];
   policies: PolicyRow[]; onPolicySaved: (p: PolicyRow) => void; onPolicyUpdated: (p: PolicyRow) => void; onPolicyDeleted: (id: string) => void;
   onStaffAdded: (s: StaffRow) => void;
 }) {
@@ -6907,6 +7080,7 @@ function StaticSubPage({ label, agencyName, agencyAbn, userEmail, userId, staffR
     case "Gift Register":           return <GiftRegisterPage />;
     case "Incident Register":       return <IncidentRegisterPage />;
     case "Risk Register":           return <RiskRegisterPage />;
+    case "Complaints Register":     return <ComplaintsRegisterPage userRole={userRole} />;
     default:                        return null;
   }
 }
@@ -7053,7 +7227,7 @@ export default function DashboardPage() {
     { id: "management", label: "Residential Management", icon: <MgmtIcon />, type: "properties", properties: mgmtProps },
     { id: "staff", label: "Staff", icon: <StaffIcon />, type: "static", children: ["Team Overview", "Licence Tracking", "CPD Records", "Onboarding"] },
     { id: "trust", label: "Trust Accounting", icon: <TrustIcon />, type: "static", children: ["Account Reconciliation", "Monthly Reports", "Transaction Log", "AML Compliance", "Audit Reports"] },
-    { id: "registers", label: "Registers", icon: <RegIcon />, type: "static", children: ["Gift Register", "Incident Register", "Risk Register"] },
+    { id: "registers", label: "Registers", icon: <RegIcon />, type: "static", children: ["Gift Register", "Incident Register", "Risk Register", "Complaints Register"] },
     { id: "settings", label: "Settings", icon: <SettingsIcon />, type: "static", children: ["Account", "Billing", "Team & Invites"] },
   ];
 
@@ -7186,7 +7360,7 @@ export default function DashboardPage() {
             <PropertyChecklist key={selected.id} propertyId={selected.id} address={selected.address} type={selected.section} onRemove={() => handleRemoveProperty(selected.id, "management")} />
           )
         ) : selected?.type === "static" ? (
-          <StaticSubPage label={selected.label} agencyName={agencyName} agencyAbn={agencyAbn} userEmail={userEmail} userId={userId} staffRows={staffRows} policies={policies} onPolicySaved={handlePolicySaved} onPolicyUpdated={handlePolicyUpdated} onPolicyDeleted={handlePolicyDeleted} onStaffAdded={(s) => setStaffRows(prev => [...prev, s])} />
+          <StaticSubPage label={selected.label} agencyName={agencyName} agencyAbn={agencyAbn} userEmail={userEmail} userId={userId} userRole={userRole} staffRows={staffRows} policies={policies} onPolicySaved={handlePolicySaved} onPolicyUpdated={handlePolicyUpdated} onPolicyDeleted={handlePolicyDeleted} onStaffAdded={(s) => setStaffRows(prev => [...prev, s])} />
         ) : activeModule && activeModule !== "settings" ? (
           <ModuleOverview moduleId={activeModule} onSelectProperty={setSelected} salesProps={salesProps} mgmtProps={mgmtProps} onAddSalesProperty={handleAddSalesProperty} onAddMgmtProperty={handleAddMgmtProperty} staffRows={staffRows} policies={policies} />
         ) : (
