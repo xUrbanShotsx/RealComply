@@ -42,35 +42,6 @@ export default function Hero() {
         >
           {/* Left — copy */}
           <div>
-            {/* Badge */}
-            <div className="hero-fade" style={{ animationDelay: "0s" }}>
-              <span
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "7px",
-                  background: "var(--s-primary-subdued)",
-                  borderRadius: "9999px",
-                  padding: "5px 14px 5px 9px",
-                  fontSize: "12px",
-                  fontWeight: 500,
-                  color: "var(--s-primary-deep)",
-                  marginBottom: "32px",
-                }}
-              >
-                <span
-                  style={{
-                    width: "6px",
-                    height: "6px",
-                    borderRadius: "50%",
-                    background: "var(--s-primary)",
-                    flexShrink: 0,
-                  }}
-                />
-                Built for Australian real estate
-              </span>
-            </div>
-
             {/* Headline — Inter 300, Stripe display style */}
             <h1
               style={{
@@ -253,24 +224,6 @@ export default function Hero() {
         </div>
       </div>
 
-      {/* Scroll indicator */}
-      <div
-        aria-hidden
-        style={{
-          position: "absolute",
-          bottom: "36px",
-          left: "50%",
-          transform: "translateX(-50%)",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          gap: "6px",
-        }}
-      >
-        <span style={{ fontSize: "10px", letterSpacing: "0.06em", color: "var(--s-ink-mute)", fontWeight: 500, opacity: 0.6 }}>SCROLL</span>
-        <div className="scroll-line" />
-      </div>
-
       <style>{`
         .line-reveal {
           opacity: 0;
@@ -294,16 +247,6 @@ export default function Hero() {
         }
         @keyframes ringFill {
           to { stroke-dasharray: 225 239; }
-        }
-        .scroll-line {
-          width: 1px;
-          height: 28px;
-          background: linear-gradient(to bottom, var(--s-hairline), transparent);
-          animation: scrollPulse 1.8s ease-in-out infinite;
-        }
-        @keyframes scrollPulse {
-          0%, 100% { opacity: 0.7; transform: scaleY(1); }
-          50% { opacity: 0.2; transform: scaleY(0.4); }
         }
         /* Stripe pill buttons */
         .btn-hero-primary {
@@ -343,7 +286,6 @@ export default function Hero() {
         @media (prefers-reduced-motion: reduce) {
           .line-reveal, .hero-fade { opacity: 1; clip-path: none; transform: none; animation: none; }
           .score-ring { stroke-dasharray: 225 239; animation: none; }
-          .scroll-line { animation: none; }
         }
       `}</style>
     </section>
