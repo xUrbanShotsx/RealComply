@@ -223,14 +223,9 @@ export default function Pricing() {
           ))}
         </div>
 
-        <div style={{ textAlign: "center", marginTop: "32px" }}>
-          <p style={{ fontSize: "13.5px", color: "var(--s-ink-mute)", maxWidth: "none", marginBottom: "6px" }}>
-            All plans include every feature — the only difference is team member count and storage.
-          </p>
-          <p style={{ fontSize: "12.5px", color: "var(--s-ink-mute)", maxWidth: "none", opacity: 0.65 }}>
-            Sign up for a 14 day free trial · No lock in contracts
-          </p>
-        </div>
+        <p style={{ textAlign: "center", marginTop: "28px", fontSize: "13px", color: "var(--s-ink-mute)", opacity: 0.65 }}>
+          Sign up for a 14 day free trial · No lock in contracts
+        </p>
       </div>
     </section>
   );
