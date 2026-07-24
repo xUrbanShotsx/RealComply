@@ -7497,6 +7497,60 @@ function MeetingDiaryPage({ staffRows, userEmail, userRole }: { staffRows: Staff
   );
 }
 
+function SuspendedScreen({ userId }: { userId: string | null }) {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  async function openPortal() {
+    if (!userId) return;
+    setLoading(true);
+    setError("");
+    try {
+      const res = await fetch("/api/create-portal-session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId }),
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        setError("Could not open billing portal. Please contact support.");
+        setLoading(false);
+      }
+    } catch {
+      setError("Could not open billing portal. Please contact support.");
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100svh", background: "var(--rc-page)", padding: "24px" }}>
+      <div style={{ maxWidth: "480px", width: "100%", textAlign: "center" }}>
+        <div style={{ width: "64px", height: "64px", borderRadius: "16px", background: "oklch(0.97 0.02 25)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 24px", fontSize: "28px" }}>⚠️</div>
+        <h1 style={{ fontFamily: "var(--font-inter)", fontSize: "1.5rem", fontWeight: 600, color: "var(--rc-ink)", marginBottom: "12px", letterSpacing: "-0.02em" }}>Subscription payment failed</h1>
+        <p style={{ fontSize: "14px", color: "var(--rc-muted)", lineHeight: 1.7, marginBottom: "28px" }}>
+          Your access to RealComply has been suspended due to a failed payment. Your data is safely retained and will remain available for <strong>6 months</strong>. Update your payment method to restore access immediately.
+        </p>
+        {error && <p style={{ fontSize: "13px", color: "oklch(0.55 0.18 25)", marginBottom: "16px" }}>{error}</p>}
+        <button
+          onClick={openPortal}
+          disabled={loading}
+          style={{ display: "inline-block", padding: "12px 28px", background: "var(--rc-primary)", color: "white", borderRadius: "8px", fontWeight: 600, fontSize: "14px", border: "none", cursor: loading ? "not-allowed" : "pointer", opacity: loading ? 0.6 : 1, fontFamily: "var(--font-inter)", marginBottom: "16px" }}
+        >
+          {loading ? "Opening billing portal…" : "Update payment method →"}
+        </button>
+        <p style={{ fontSize: "12px", color: "var(--rc-faint)" }}>
+          Already updated? It may take a few minutes to reflect.{" "}
+          <button onClick={() => window.location.reload()} style={{ background: "none", border: "none", color: "var(--rc-primary)", cursor: "pointer", fontSize: "12px", fontFamily: "var(--font-inter)", padding: 0 }}>
+            Refresh page
+          </button>
+        </p>
+      </div>
+    </div>
+  );
+}
+
 function StaticSubPage({ label, agencyName, agencyAbn, userEmail, userId, orgOwnerId, userRole, staffRows, policies, onPolicySaved, onPolicyUpdated, onPolicyDeleted, onStaffAdded }: {
   label: string; agencyName: string; agencyAbn: string; userEmail: string | null; userId: string | null; orgOwnerId: string | null; userRole: "owner" | "standard"; staffRows: StaffRow[];
   policies: PolicyRow[]; onPolicySaved: (p: PolicyRow) => void; onPolicyUpdated: (p: PolicyRow) => void; onPolicyDeleted: (id: string) => void;
@@ -7704,29 +7758,7 @@ export default function DashboardPage() {
 
   if (orgStatus === "suspended" || orgStatus === "cancelled") {
     return (
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100svh", background: "var(--rc-page)", padding: "24px" }}>
-        <div style={{ maxWidth: "480px", width: "100%", textAlign: "center" }}>
-          <div style={{ width: "64px", height: "64px", borderRadius: "16px", background: "oklch(0.97 0.02 25)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 24px", fontSize: "28px" }}>⚠️</div>
-          <h1 style={{ fontFamily: "var(--font-inter)", fontSize: "1.5rem", fontWeight: 600, color: "var(--rc-ink)", marginBottom: "12px", letterSpacing: "-0.02em" }}>Subscription payment failed</h1>
-          <p style={{ fontSize: "14px", color: "var(--rc-muted)", lineHeight: 1.7, marginBottom: "28px" }}>
-            Your access to RealComply has been suspended due to a failed payment. Your data is safely retained and will remain available for <strong>6 months</strong>. Update your payment method to restore access immediately.
-          </p>
-          <a
-            href="https://billing.stripe.com/p/login/test_28o4jC0He5Hq7XW000"
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{ display: "inline-block", padding: "12px 28px", background: "var(--rc-primary)", color: "white", borderRadius: "8px", fontWeight: 600, fontSize: "14px", textDecoration: "none", marginBottom: "16px" }}
-          >
-            Update payment method →
-          </a>
-          <p style={{ fontSize: "12px", color: "var(--rc-faint)" }}>
-            Already updated? It may take a few minutes to reflect.{" "}
-            <button onClick={() => window.location.reload()} style={{ background: "none", border: "none", color: "var(--rc-primary)", cursor: "pointer", fontSize: "12px", fontFamily: "var(--font-inter)", padding: 0 }}>
-              Refresh page
-            </button>
-          </p>
-        </div>
-      </div>
+      <SuspendedScreen userId={userId} />
     );
   }
 
