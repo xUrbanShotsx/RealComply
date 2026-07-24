@@ -16,7 +16,7 @@ const sharedFeatures = [
 const plans = [
   {
     name: "Small",
-    price: { monthly: 129 },
+    price: { monthly: 99 },
     description: "For single-office agencies getting compliance under control.",
     members: "Up to 20 team members",
     storage: "10 GB storage",
@@ -25,7 +25,7 @@ const plans = [
   },
   {
     name: "Medium",
-    price: { monthly: 249 },
+    price: { monthly: 189 },
     description: "For growing offices with complex compliance requirements.",
     members: "Up to 60 team members",
     storage: "40 GB storage",
@@ -34,7 +34,7 @@ const plans = [
   },
   {
     name: "Large",
-    price: { monthly: 549 },
+    price: { monthly: 349 },
     description: "For large offices and multi-branch operations.",
     members: "Up to 120 team members",
     storage: "100 GB storage",
