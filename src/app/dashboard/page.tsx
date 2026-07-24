@@ -80,9 +80,10 @@ function TrustIcon() { return <svg width="18" height="18" viewBox="0 0 18 18" fi
 function SettingsIcon() { return <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="2.5" stroke="currentColor" strokeWidth="1.6" /><path d="M9 2v1.5M9 14.5V16M2 9h1.5M14.5 9H16M3.93 3.93l1.06 1.06M13.01 13.01l1.06 1.06M14.07 3.93l-1.06 1.06M4.99 13.01l-1.06 1.06" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /></svg>; }
 function MeetingsIcon() { return <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="2" y="3" width="14" height="12" rx="2" stroke="currentColor" strokeWidth="1.6" /><path d="M2 7h14" stroke="currentColor" strokeWidth="1.6" /><path d="M6 2v2M12 2v2" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /><path d="M5 11h4M5 13.5h6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" /></svg>; }
 function CalendarIcon() { return <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="2" y="3" width="14" height="13" rx="2" stroke="currentColor" strokeWidth="1.6" /><path d="M2 8h14" stroke="currentColor" strokeWidth="1.6" /><path d="M6 2v2M12 2v2" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /><circle cx="6" cy="12" r="1" fill="currentColor" /><circle cx="9" cy="12" r="1" fill="currentColor" /><circle cx="12" cy="12" r="1" fill="currentColor" /></svg>; }
+function BellIcon() { return <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 2a5 5 0 00-5 5v3l-1.5 2.5h13L14 10V7a5 5 0 00-5-5z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" /><path d="M7 14.5a2 2 0 004 0" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /></svg>; }
 
 const iconMap: Record<string, React.ReactNode> = {
-  policies: <PolIcon />, sales: <SalesIcon />, management: <MgmtIcon />, staff: <StaffIcon />, trust: <TrustIcon />, registers: <RegIcon />, meetings: <MeetingsIcon />,
+  policies: <PolIcon />, sales: <SalesIcon />, management: <MgmtIcon />, staff: <StaffIcon />, trust: <TrustIcon />, registers: <RegIcon />, meetings: <MeetingsIcon />, calendar: <CalendarIcon />, notifications: <BellIcon />,
 };
 
 // --- Types ---
@@ -5083,59 +5084,133 @@ function LicenceTrackingPage({ staffRows }: { staffRows: StaffRow[] }) {
 }
 
 function CPDRecordsPage({ staffRows }: { staffRows: StaffRow[] }) {
-  const cols = "minmax(0,1fr) 130px 90px 90px 110px 100px";
+  const orgOwnerId = useContext(OrgContext);
+  const [editing, setEditing] = useState<string | null>(null);
+  const [rows, setRows] = useState<StaffRow[]>(staffRows);
+  const [form, setForm] = useState<{ cpd_required: string; cpd_completed: string; cpd_deadline: string; cpd: StaffRow["cpd"] }>({ cpd_required: "", cpd_completed: "", cpd_deadline: "", cpd: "due-soon" });
+  const [saving, setSaving] = useState(false);
+  const cols = "minmax(0,1fr) 110px 180px 120px 110px";
+
+  useEffect(() => { setRows(staffRows); }, [staffRows]);
+
+  function openEdit(s: StaffRow) {
+    setEditing(s.id);
+    setForm({ cpd_required: String(s.cpd_required || ""), cpd_completed: String(s.cpd_completed || ""), cpd_deadline: s.cpd_deadline || "", cpd: s.cpd });
+  }
+
+  async function saveEdit(id: string) {
+    setSaving(true);
+    const req = Number(form.cpd_required) || 0;
+    const comp = Number(form.cpd_completed) || 0;
+    const updates = { cpd_required: req, cpd_completed: comp, cpd_deadline: form.cpd_deadline, cpd_status: form.cpd };
+    await supabase.from("staff_members").update(updates).eq("id", id);
+    setRows(prev => prev.map(r => r.id === id ? { ...r, cpd_required: req, cpd_completed: comp, cpd_deadline: form.cpd_deadline, cpd: form.cpd } : r));
+    setSaving(false);
+    setEditing(null);
+  }
+
+  const inputSty: React.CSSProperties = { fontSize: "12px", color: "var(--rc-ink)", background: "var(--rc-bg)", border: "1px solid var(--rc-border)", borderRadius: "6px", padding: "5px 8px", outline: "none", fontFamily: "var(--font-inter)", width: "100%", boxSizing: "border-box" };
+
   return (
     <div style={PAGE_WRAP}>
       <div style={PAGE_HEADER}>
         <div>
           <h1 style={PAGE_H1}>CPD Records</h1>
-          <p style={PAGE_SUB}>Continuing professional development — {new Date().getFullYear()} cycle</p>
+          <p style={PAGE_SUB}>Continuing professional development — {new Date().getFullYear()} cycle · Click a row to update</p>
         </div>
       </div>
-      {staffRows.length === 0 ? (
+      {rows.length === 0 ? (
         <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "12px", border: "1px dashed var(--rc-border)", borderRadius: "12px", background: "var(--rc-surface)" }}>
           <svg width="32" height="32" viewBox="0 0 32 32" fill="none"><circle cx="16" cy="12" r="6" stroke="var(--rc-faint)" strokeWidth="1.6" /><path d="M10 22h12M13 26h6" stroke="var(--rc-faint)" strokeWidth="1.6" strokeLinecap="round" /></svg>
           <p style={{ fontSize: "13.5px", color: "var(--rc-faint)", maxWidth: "none", textAlign: "center" }}>No staff members yet. Add staff via Onboarding.</p>
         </div>
       ) : (
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, border: "1px solid var(--rc-border)", borderRadius: "12px", overflow: "hidden", boxShadow: "var(--rc-shadow-sm)" }}>
-        <div style={{ display: "grid", gridTemplateColumns: cols, flexShrink: 0, background: "var(--rc-surface)", borderBottom: "1px solid var(--rc-border)" }}>
-          {["Name", "Role", "Required", "Completed", "Deadline", "Status"].map(h => (
-            <span key={h} style={{ fontSize: "11.5px", color: "var(--rc-faint)", padding: "10px 20px" }}>{h}</span>
-          ))}
-        </div>
-        <div style={{ flex: 1, overflowY: "auto" }}>
-          {staffRows.map((s, i) => {
-            const pct = s.cpd_required === 0 ? null : Math.min(100, Math.round((s.cpd_completed / s.cpd_required) * 100));
-            const done = s.cpd === "complete" || s.cpd === "na";
-            const barColor = done ? "oklch(0.60 0.16 145)" : s.cpd === "due-soon" ? "oklch(0.60 0.14 55)" : "oklch(0.55 0.20 25)";
-            return (
-              <div key={s.id} style={{ display: "grid", gridTemplateColumns: cols, alignItems: "center", borderBottom: i < staffRows.length - 1 ? "1px solid var(--rc-border)" : "none", background: "var(--rc-bg)" }}>
-                <span style={{ fontSize: "13px", fontWeight: 500, color: "var(--rc-ink)", padding: "13px 20px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.name}</span>
-                <span style={{ fontSize: "12.5px", color: "var(--rc-faint)", padding: "0 20px" }}>{s.role}</span>
-                <span style={{ fontSize: "12.5px", color: "var(--rc-muted)", padding: "0 20px" }}>{s.cpd_required === 0 ? "—" : `${s.cpd_required} hrs`}</span>
-                <div style={{ padding: "0 20px", display: "flex", flexDirection: "column", gap: "4px" }}>
-                  {pct !== null ? (
-                    <>
-                      <span style={{ fontSize: "12.5px", color: "var(--rc-muted)" }}>{s.cpd_completed} hrs</span>
-                      <div style={{ height: "2px", background: "var(--rc-border)", borderRadius: "100px", overflow: "hidden" }}>
-                        <div style={{ width: `${pct}%`, height: "100%", background: barColor, borderRadius: "100px" }} />
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, border: "1px solid var(--rc-border)", borderRadius: "12px", overflow: "hidden", boxShadow: "var(--rc-shadow-sm)" }}>
+          <div style={{ display: "grid", gridTemplateColumns: cols, flexShrink: 0, background: "var(--rc-surface)", borderBottom: "1px solid var(--rc-border)" }}>
+            {["Name / Role", "Status", "Progress", "Deadline", ""].map(h => (
+              <span key={h} style={{ fontSize: "11.5px", color: "var(--rc-faint)", padding: "10px 20px" }}>{h}</span>
+            ))}
+          </div>
+          <div style={{ flex: 1, overflowY: "auto" }}>
+            {rows.map((s, i) => {
+              const pct = s.cpd_required === 0 ? null : Math.min(100, Math.round((s.cpd_completed / s.cpd_required) * 100));
+              const barColor = s.cpd === "complete" || s.cpd === "na" ? "oklch(0.60 0.16 145)" : s.cpd === "due-soon" ? "oklch(0.60 0.14 55)" : "oklch(0.55 0.20 25)";
+              const isEditing = editing === s.id;
+              return (
+                <div key={s.id} style={{ borderBottom: i < rows.length - 1 ? "1px solid var(--rc-border)" : "none", background: isEditing ? "var(--rc-surface)" : "var(--rc-bg)" }}>
+                  {isEditing ? (
+                    <div style={{ padding: "16px 20px", display: "flex", flexDirection: "column", gap: "14px" }}>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                        <div>
+                          <p style={{ fontSize: "13px", fontWeight: 600, color: "var(--rc-ink)", margin: 0 }}>{s.name}</p>
+                          <p style={{ fontSize: "11px", color: "var(--rc-faint)", margin: "2px 0 0", maxWidth: "none" }}>{s.role}</p>
+                        </div>
+                        <button onClick={() => setEditing(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--rc-faint)", fontSize: "18px", lineHeight: 1, padding: "0 4px" }}>×</button>
                       </div>
-                    </>
-                  ) : <span style={{ fontSize: "12.5px", color: "var(--rc-faint)" }}>—</span>}
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: "12px" }}>
+                        <div>
+                          <p style={{ fontSize: "10.5px", fontWeight: 600, color: "var(--rc-faint)", margin: "0 0 5px", textTransform: "uppercase", letterSpacing: "0.04em" }}>Required hrs</p>
+                          <input type="number" min="0" value={form.cpd_required} onChange={e => setForm(f => ({ ...f, cpd_required: e.target.value }))} style={inputSty} />
+                        </div>
+                        <div>
+                          <p style={{ fontSize: "10.5px", fontWeight: 600, color: "var(--rc-faint)", margin: "0 0 5px", textTransform: "uppercase", letterSpacing: "0.04em" }}>Completed hrs</p>
+                          <input type="number" min="0" value={form.cpd_completed} onChange={e => setForm(f => ({ ...f, cpd_completed: e.target.value }))} style={inputSty} />
+                        </div>
+                        <div>
+                          <p style={{ fontSize: "10.5px", fontWeight: 600, color: "var(--rc-faint)", margin: "0 0 5px", textTransform: "uppercase", letterSpacing: "0.04em" }}>Deadline</p>
+                          <input type="date" value={form.cpd_deadline} onChange={e => setForm(f => ({ ...f, cpd_deadline: e.target.value }))} style={{ ...inputSty, colorScheme: "light" }} />
+                        </div>
+                        <div>
+                          <p style={{ fontSize: "10.5px", fontWeight: 600, color: "var(--rc-faint)", margin: "0 0 5px", textTransform: "uppercase", letterSpacing: "0.04em" }}>Status</p>
+                          <select value={form.cpd} onChange={e => setForm(f => ({ ...f, cpd: e.target.value as StaffRow["cpd"] }))} style={{ ...inputSty }}>
+                            <option value="complete">Complete</option>
+                            <option value="due-soon">Due soon</option>
+                            <option value="overdue">Overdue</option>
+                            <option value="na">N/A</option>
+                          </select>
+                        </div>
+                      </div>
+                      <div style={{ display: "flex", gap: "8px" }}>
+                        <button onClick={() => saveEdit(s.id)} disabled={saving} style={{ fontSize: "12px", fontWeight: 600, color: "white", background: "var(--rc-primary)", border: "none", borderRadius: "6px", padding: "7px 16px", cursor: saving ? "not-allowed" : "pointer", opacity: saving ? 0.7 : 1, fontFamily: "var(--font-inter)" }}>{saving ? "Saving…" : "Save"}</button>
+                        <button onClick={() => setEditing(null)} style={{ fontSize: "12px", color: "var(--rc-faint)", background: "transparent", border: "1px solid var(--rc-border)", borderRadius: "6px", padding: "7px 14px", cursor: "pointer", fontFamily: "var(--font-inter)" }}>Cancel</button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div onClick={() => openEdit(s)} style={{ display: "grid", gridTemplateColumns: cols, alignItems: "center", cursor: "pointer", transition: "background 0.1s ease" }}
+                      onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.background = "var(--rc-surface)"}
+                      onMouseLeave={e => (e.currentTarget as HTMLDivElement).style.background = "var(--rc-bg)"}>
+                      <div style={{ padding: "13px 20px" }}>
+                        <p style={{ fontSize: "13px", fontWeight: 500, color: "var(--rc-ink)", margin: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.name}</p>
+                        <p style={{ fontSize: "11px", color: "var(--rc-faint)", margin: "2px 0 0", maxWidth: "none" }}>{s.role || "—"}</p>
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: "6px", padding: "0 20px" }}>
+                        {s.cpd === "complete" ? <><GreenDot /><span style={{ fontSize: "12px", color: "oklch(0.42 0.12 145)" }}>Complete</span></> :
+                         s.cpd === "due-soon" ? <><AmberDot /><span style={{ fontSize: "12px", color: "oklch(0.46 0.12 55)" }}>Due soon</span></> :
+                         s.cpd === "overdue" ? <><RedDot /><span style={{ fontSize: "12px", color: "oklch(0.46 0.18 25)" }}>Overdue</span></> :
+                         <span style={{ fontSize: "12px", color: "var(--rc-faint)" }}>N/A</span>}
+                      </div>
+                      <div style={{ padding: "0 20px", display: "flex", flexDirection: "column", gap: "5px" }}>
+                        {pct !== null ? (
+                          <>
+                            <div style={{ display: "flex", justifyContent: "space-between" }}>
+                              <span style={{ fontSize: "11.5px", color: "var(--rc-muted)" }}>{s.cpd_completed} / {s.cpd_required} hrs</span>
+                              <span style={{ fontSize: "11.5px", fontWeight: 600, color: barColor }}>{pct}%</span>
+                            </div>
+                            <div style={{ height: "3px", background: "var(--rc-border)", borderRadius: "100px", overflow: "hidden" }}>
+                              <div style={{ width: `${pct}%`, height: "100%", background: barColor, borderRadius: "100px" }} />
+                            </div>
+                          </>
+                        ) : <span style={{ fontSize: "12px", color: "var(--rc-faint)" }}>No hours set</span>}
+                      </div>
+                      <span style={{ fontSize: "12px", color: "var(--rc-faint)", padding: "0 20px" }}>{s.cpd_deadline || "—"}</span>
+                      <span style={{ fontSize: "11px", color: "var(--rc-faint)", padding: "0 20px" }}>Edit →</span>
+                    </div>
+                  )}
                 </div>
-                <span style={{ fontSize: "12.5px", color: "var(--rc-faint)", padding: "0 20px" }}>{s.cpd_deadline || "—"}</span>
-                <div style={{ display: "flex", alignItems: "center", gap: "6px", padding: "0 20px" }}>
-                  {s.cpd === "complete" ? <><GreenDot /><span style={{ fontSize: "12px", color: "oklch(0.42 0.12 145)" }}>Complete</span></> :
-                   s.cpd === "due-soon" ? <><AmberDot /><span style={{ fontSize: "12px", color: "oklch(0.46 0.12 55)" }}>Due soon</span></> :
-                   s.cpd === "overdue" ? <><RedDot /><span style={{ fontSize: "12px", color: "oklch(0.46 0.18 25)" }}>Overdue</span></> :
-                   <span style={{ fontSize: "12px", color: "var(--rc-faint)" }}>N/A</span>}
-                </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
-      </div>
       )}
     </div>
   );
@@ -5325,6 +5400,7 @@ function OnboardingPage({ onStaffAdded }: { onStaffAdded?: (s: StaffRow) => void
   const [nameInput, setNameInput] = useState("");
   const [roleInput, setRoleInput] = useState("");
   const [startInput, setStartInput] = useState("");
+  const [emailInput, setEmailInput] = useState("");
   const [addSaving, setAddSaving] = useState(false);
   const [addError, setAddError] = useState("");
 
@@ -5371,13 +5447,27 @@ function OnboardingPage({ onStaffAdded }: { onStaffAdded?: (s: StaffRow) => void
         cpd_status: "not-started",
         licence_expiry: "",
         licence_number: "",
-        email: "",
+        email: emailInput.trim(),
         phone: "",
         cpd_required: 0,
         cpd_completed: 0,
         cpd_deadline: "",
       }).select().single(),
     ]);
+    // If email provided and matches a RealComply account, send them a notification
+    if (!error && emailInput.trim() && orgOwnerId) {
+      fetch("/api/notify-staff", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: emailInput.trim(),
+          orgOwnerId,
+          type: "onboarding",
+          title: "You've been added to RealComply",
+          message: `${nameInput.trim()} has been onboarded. Your CPD and licence tracking is now active in RealComply. Log in to view your compliance status.`,
+        }),
+      }).catch(() => {});
+    }
     setAddSaving(false);
     if (error) { setAddError("Failed to save. Please try again."); return; }
     if (row) {
@@ -5391,7 +5481,7 @@ function OnboardingPage({ onStaffAdded }: { onStaffAdded?: (s: StaffRow) => void
         licence_number: "", cpd_required: 0, cpd_completed: 0, cpd_deadline: "",
       });
     }
-    setNameInput(""); setRoleInput(""); setStartInput(""); setAddError("");
+    setNameInput(""); setRoleInput(""); setStartInput(""); setEmailInput(""); setAddError("");
     setShowAdd(false);
   }
 
@@ -5478,6 +5568,10 @@ function OnboardingPage({ onStaffAdded }: { onStaffAdded?: (s: StaffRow) => void
               <div>
                 <p style={{ fontSize: "11.5px", fontWeight: 600, color: "var(--rc-faint)", margin: "0 0 6px", textTransform: "uppercase", letterSpacing: "0.04em" }}>Role <span style={{ fontWeight: 400, textTransform: "none" }}>(optional)</span></p>
                 <input value={roleInput} onChange={e => setRoleInput(e.target.value)} onKeyDown={e => { if (e.key === "Enter") submitAdd(); if (e.key === "Escape") setShowAdd(false); }} placeholder="e.g. Sales Agent" style={inputSty2} />
+              </div>
+              <div>
+                <p style={{ fontSize: "11.5px", fontWeight: 600, color: "var(--rc-faint)", margin: "0 0 6px", textTransform: "uppercase", letterSpacing: "0.04em" }}>Email <span style={{ fontWeight: 400, textTransform: "none" }}>(optional — links to their RealComply account)</span></p>
+                <input type="email" value={emailInput} onChange={e => setEmailInput(e.target.value)} onKeyDown={e => { if (e.key === "Enter") submitAdd(); if (e.key === "Escape") setShowAdd(false); }} placeholder="e.g. sarah@youragency.com.au" style={inputSty2} />
               </div>
               <div>
                 <p style={{ fontSize: "11.5px", fontWeight: 600, color: "var(--rc-faint)", margin: "0 0 6px", textTransform: "uppercase", letterSpacing: "0.04em" }}>Start date <span style={{ fontWeight: 400, textTransform: "none" }}>(optional)</span></p>
@@ -7497,6 +7591,86 @@ function MeetingDiaryPage({ staffRows, userEmail, userRole }: { staffRows: Staff
   );
 }
 
+type Notification = { id: string; type: string; title: string; message: string; read: boolean; created_at: string };
+
+function NotificationsPage({ userId, userEmail, onRead }: { userId: string | null; userEmail: string | null; onRead: () => void }) {
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!userId && !userEmail) { setLoading(false); return; }
+    const filter = userId && userEmail
+      ? `user_id.eq.${userId},recipient_email.eq.${userEmail}`
+      : userId ? `user_id.eq.${userId}` : `recipient_email.eq.${userEmail}`;
+    supabase.from("notifications").select("*").or(filter).order("created_at", { ascending: false })
+      .then(({ data }) => { if (data) setNotifications(data as Notification[]); setLoading(false); });
+  }, [userId, userEmail]);
+
+  async function markRead(id: string) {
+    await supabase.from("notifications").update({ read: true }).eq("id", id);
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+    onRead();
+  }
+
+  async function markAllRead() {
+    const unread = notifications.filter(n => !n.read).map(n => n.id);
+    if (!unread.length) return;
+    await supabase.from("notifications").update({ read: true }).in("id", unread);
+    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    onRead();
+  }
+
+  const unread = notifications.filter(n => !n.read).length;
+
+  const typeIcon: Record<string, string> = { onboarding: "👤", cpd_reminder: "📋", licence_reminder: "🪪", general: "🔔" };
+
+  return (
+    <div style={PAGE_WRAP}>
+      <div style={PAGE_HEADER}>
+        <div>
+          <h1 style={PAGE_H1}>Notifications</h1>
+          <p style={PAGE_SUB}>{unread > 0 ? `${unread} unread` : "All caught up"}</p>
+        </div>
+        {unread > 0 && (
+          <button onClick={markAllRead} style={{ fontSize: "12.5px", fontWeight: 500, color: "var(--rc-primary)", background: "transparent", border: "1px solid var(--rc-primary)", borderRadius: "8px", padding: "7px 14px", cursor: "pointer", fontFamily: "var(--font-inter)", flexShrink: 0 }}>
+            Mark all as read
+          </button>
+        )}
+      </div>
+      {loading ? (
+        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <span style={{ fontSize: "13px", color: "var(--rc-faint)" }}>Loading…</span>
+        </div>
+      ) : notifications.length === 0 ? (
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "12px", border: "1px dashed var(--rc-border)", borderRadius: "12px", background: "var(--rc-surface)" }}>
+          <svg width="32" height="32" viewBox="0 0 32 32" fill="none"><path d="M16 4a8 8 0 00-8 8v5l-2 4h20l-2-4v-5a8 8 0 00-8-8z" stroke="var(--rc-faint)" strokeWidth="1.5" strokeLinejoin="round" /><path d="M13 24a3 3 0 006 0" stroke="var(--rc-faint)" strokeWidth="1.5" strokeLinecap="round" /></svg>
+          <p style={{ fontSize: "13.5px", color: "var(--rc-faint)", maxWidth: "none", textAlign: "center" }}>No notifications yet.</p>
+        </div>
+      ) : (
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, border: "1px solid var(--rc-border)", borderRadius: "12px", overflow: "hidden", boxShadow: "var(--rc-shadow-sm)" }}>
+          <div style={{ flex: 1, overflowY: "auto" }}>
+            {notifications.map((n, i) => (
+              <div key={n.id} style={{ display: "flex", alignItems: "flex-start", gap: "14px", padding: "16px 20px", borderBottom: i < notifications.length - 1 ? "1px solid var(--rc-border)" : "none", background: n.read ? "var(--rc-bg)" : "oklch(0.97 0.03 280)", transition: "background 0.1s ease" }}>
+                <span style={{ fontSize: "20px", flexShrink: 0, marginTop: "1px" }}>{typeIcon[n.type] ?? "🔔"}</span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ fontSize: "13px", fontWeight: n.read ? 400 : 600, color: "var(--rc-ink)", margin: "0 0 3px" }}>{n.title}</p>
+                  <p style={{ fontSize: "12.5px", color: "var(--rc-muted)", margin: "0 0 6px", lineHeight: 1.5, maxWidth: "none" }}>{n.message}</p>
+                  <p style={{ fontSize: "11px", color: "var(--rc-faint)", margin: 0, maxWidth: "none" }}>{new Date(n.created_at).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</p>
+                </div>
+                {!n.read && (
+                  <button onClick={() => markRead(n.id)} style={{ fontSize: "11.5px", color: "var(--rc-primary)", background: "transparent", border: "none", cursor: "pointer", fontFamily: "var(--font-inter)", flexShrink: 0, padding: "2px 0", fontWeight: 500 }}>
+                    Mark read
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function SuspendedScreen({ userId }: { userId: string | null }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -7580,6 +7754,7 @@ function StaticSubPage({ label, agencyName, agencyAbn, userEmail, userId, orgOwn
     case "Complaints Register":     return <ComplaintsRegisterPage userRole={userRole} />;
     case "Meeting Diary":           return <MeetingDiaryPage staffRows={staffRows} userEmail={userEmail} userRole={userRole} />;
     case "Calendar":                return <CalendarModule orgOwnerId={orgOwnerId} userId={userId} />;
+    case "Notifications":           return <NotificationsPage userId={userId} userEmail={userEmail} onRead={() => {}} />;
     default:                        return null;
   }
 }
@@ -7604,6 +7779,7 @@ export default function DashboardPage() {
   const [agencyName, setAgencyName] = useState<string>("Your Agency");
   const [agencyAbn, setAgencyAbn] = useState<string>("");
   const [userRole, setUserRole] = useState<"owner" | "standard">("standard");
+  const [unreadCount, setUnreadCount] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
@@ -7625,6 +7801,14 @@ export default function DashboardPage() {
       // Check org subscription status
       const { data: orgData } = await supabase.from("organisations").select("status").eq("owner_user_id", effectiveOrgOwnerId).maybeSingle();
       setOrgStatus((orgData?.status as "active" | "suspended" | "cancelled") ?? "active");
+
+      // Fetch unread notification count for badge
+      const userEmail = data.session.user.email ?? "";
+      const { count } = await supabase.from("notifications")
+        .select("id", { count: "exact", head: true })
+        .eq("read", false)
+        .or(`user_id.eq.${uid},recipient_email.eq.${userEmail}`);
+      setUnreadCount(count ?? 0);
 
       // Determine role: owner has a subscriptions record; invited staff are standard by default
       const { data: sub } = await supabase.from("subscriptions").select("id").eq("user_id", uid).maybeSingle();
@@ -7734,6 +7918,7 @@ export default function DashboardPage() {
     { id: "trust", label: "Trust Accounting", icon: <TrustIcon />, type: "static", children: ["Account Reconciliation", "Monthly Reports", "Transaction Log", "AML Compliance", "Audit Reports"] },
     { id: "registers", label: "Registers", icon: <RegIcon />, type: "static", children: ["Gift Register", "Incident Register", "Risk Register", "Complaints Register"] },
     { id: "calendar", label: "Calendar", icon: <CalendarIcon />, type: "static", children: [] },
+    { id: "notifications", label: "Notifications", icon: <BellIcon />, type: "static", children: [] },
     { id: "meetings", label: "Meetings", icon: <MeetingsIcon />, type: "static", children: ["Meeting Diary"] },
     { id: "settings", label: "Settings", icon: <SettingsIcon />, type: "static", children: ["Account", "Billing", "Team & Invites"] },
   ];
@@ -7751,6 +7936,7 @@ export default function DashboardPage() {
     setActiveModule(id);
     if (id === "settings") setSelected({ type: "static", label: "Account" });
     else if (id === "calendar") setSelected({ type: "static", label: "Calendar" });
+    else if (id === "notifications") setSelected({ type: "static", label: "Notifications" });
     else setSelected(null);
     setSidebarOpen(false);
   }
@@ -7815,6 +8001,11 @@ export default function DashboardPage() {
               >
                 <span style={{ flexShrink: 0, color: "var(--rc-nav-icon)" }}>{m.icon}</span>
                 <span style={{ flex: 1, letterSpacing: "-0.01em" }}>{m.label}</span>
+                {m.id === "notifications" && unreadCount > 0 && (
+                  <span style={{ fontSize: "10px", fontWeight: 700, color: "white", background: "oklch(0.55 0.20 25)", borderRadius: "9999px", padding: "1px 6px", flexShrink: 0, minWidth: "18px", textAlign: "center" }}>
+                    {unreadCount > 99 ? "99+" : unreadCount}
+                  </span>
+                )}
                 <svg width="10" height="10" viewBox="0 0 14 14" fill="none" style={{ flexShrink: 0, color: "var(--rc-nav-label)" }}><path d="M5 3l4 4-4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
               </button>
             ))}
