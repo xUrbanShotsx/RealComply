@@ -7546,6 +7546,7 @@ export default function DashboardPage() {
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [orgOwnerId, setOrgOwnerId] = useState<string | null>(null);
+  const [orgStatus, setOrgStatus] = useState<"active" | "suspended" | "cancelled" | null>(null);
   const [agencyName, setAgencyName] = useState<string>("Your Agency");
   const [agencyAbn, setAgencyAbn] = useState<string>("");
   const [userRole, setUserRole] = useState<"owner" | "standard">("standard");
@@ -7566,6 +7567,10 @@ export default function DashboardPage() {
       const metaOrgOwnerId = data.session.user.user_metadata?.organisation_owner_id as string | undefined;
       const effectiveOrgOwnerId = metaOrgOwnerId ?? uid;
       setOrgOwnerId(effectiveOrgOwnerId);
+
+      // Check org subscription status
+      const { data: orgData } = await supabase.from("organisations").select("status").eq("owner_user_id", effectiveOrgOwnerId).maybeSingle();
+      setOrgStatus((orgData?.status as "active" | "suspended" | "cancelled") ?? "active");
 
       // Determine role: owner has a subscriptions record; invited staff are standard by default
       const { data: sub } = await supabase.from("subscriptions").select("id").eq("user_id", uid).maybeSingle();
@@ -7696,6 +7701,34 @@ export default function DashboardPage() {
     setSidebarOpen(false);
   }
   function goBack() { setActiveModule(null); setSelected(null); setSidebarOpen(false); }
+
+  if (orgStatus === "suspended" || orgStatus === "cancelled") {
+    return (
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100svh", background: "var(--rc-page)", padding: "24px" }}>
+        <div style={{ maxWidth: "480px", width: "100%", textAlign: "center" }}>
+          <div style={{ width: "64px", height: "64px", borderRadius: "16px", background: "oklch(0.97 0.02 25)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 24px", fontSize: "28px" }}>⚠️</div>
+          <h1 style={{ fontFamily: "var(--font-inter)", fontSize: "1.5rem", fontWeight: 600, color: "var(--rc-ink)", marginBottom: "12px", letterSpacing: "-0.02em" }}>Subscription payment failed</h1>
+          <p style={{ fontSize: "14px", color: "var(--rc-muted)", lineHeight: 1.7, marginBottom: "28px" }}>
+            Your access to RealComply has been suspended due to a failed payment. Your data is safely retained and will remain available for <strong>6 months</strong>. Update your payment method to restore access immediately.
+          </p>
+          <a
+            href="https://billing.stripe.com/p/login/test_28o4jC0He5Hq7XW000"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ display: "inline-block", padding: "12px 28px", background: "var(--rc-primary)", color: "white", borderRadius: "8px", fontWeight: 600, fontSize: "14px", textDecoration: "none", marginBottom: "16px" }}
+          >
+            Update payment method →
+          </a>
+          <p style={{ fontSize: "12px", color: "var(--rc-faint)" }}>
+            Already updated? It may take a few minutes to reflect.{" "}
+            <button onClick={() => window.location.reload()} style={{ background: "none", border: "none", color: "var(--rc-primary)", cursor: "pointer", fontSize: "12px", fontFamily: "var(--font-inter)", padding: 0 }}>
+              Refresh page
+            </button>
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <OrgContext.Provider value={orgOwnerId}>

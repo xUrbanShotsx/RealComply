@@ -52,12 +52,45 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  if (event.type === "invoice.payment_failed") {
+    const invoice = event.data.object as Stripe.Invoice;
+    const subId = typeof invoice.subscription === "string" ? invoice.subscription : (invoice.subscription as Stripe.Subscription | null)?.id;
+    if (subId) {
+      await supabaseAdmin.from("subscriptions").update({ status: "past_due" }).eq("stripe_subscription_id", subId);
+      const { data: sub } = await supabaseAdmin.from("subscriptions").select("user_id").eq("stripe_subscription_id", subId).maybeSingle();
+      if (sub?.user_id) {
+        await supabaseAdmin.from("organisations")
+          .update({ status: "suspended", suspended_at: new Date().toISOString() })
+          .eq("owner_user_id", sub.user_id)
+          .is("suspended_at", null);
+      }
+    }
+  }
+
+  if (event.type === "invoice.paid") {
+    const invoice = event.data.object as Stripe.Invoice;
+    const subId = typeof invoice.subscription === "string" ? invoice.subscription : (invoice.subscription as Stripe.Subscription | null)?.id;
+    if (subId) {
+      await supabaseAdmin.from("subscriptions").update({ status: "active" }).eq("stripe_subscription_id", subId);
+      const { data: sub } = await supabaseAdmin.from("subscriptions").select("user_id").eq("stripe_subscription_id", subId).maybeSingle();
+      if (sub?.user_id) {
+        await supabaseAdmin.from("organisations")
+          .update({ status: "active", suspended_at: null })
+          .eq("owner_user_id", sub.user_id);
+      }
+    }
+  }
+
   if (event.type === "customer.subscription.deleted") {
     const sub = event.data.object as Stripe.Subscription;
-    await supabaseAdmin
-      .from("subscriptions")
-      .update({ status: "cancelled" })
-      .eq("stripe_subscription_id", sub.id);
+    await supabaseAdmin.from("subscriptions").update({ status: "cancelled" }).eq("stripe_subscription_id", sub.id);
+    const { data: subRecord } = await supabaseAdmin.from("subscriptions").select("user_id").eq("stripe_subscription_id", sub.id).maybeSingle();
+    if (subRecord?.user_id) {
+      await supabaseAdmin.from("organisations")
+        .update({ status: "suspended", suspended_at: new Date().toISOString() })
+        .eq("owner_user_id", subRecord.user_id)
+        .is("suspended_at", null);
+    }
   }
 
   return NextResponse.json({ received: true });
