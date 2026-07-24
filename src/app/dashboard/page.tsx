@@ -7763,10 +7763,10 @@ export default function DashboardPage() {
         {activeModule && module && (
           <div key={`sub-${activeModule}`} className="sidebar-panel-enter" style={{ flex: 1, display: "flex", flexDirection: "column" }}>
             <div style={{ borderTop: "1px solid var(--rc-nav-border)", margin: "8px 8px 0", flexShrink: 0 }} />
-            <button onClick={() => module.children.length === 0 ? openModule(module.id) : setSelected(null)}
-              style={{ width: "calc(100% - 16px)", display: "flex", alignItems: "center", gap: "9px", padding: "10px 14px", border: "none", background: (!selected || module.children.length === 0) ? "var(--rc-nav-active-bg)" : "transparent", color: (!selected || module.children.length === 0) ? "white" : "var(--rc-nav-text)", borderRadius: "7px", margin: "8px 8px 0", fontSize: "13px", fontWeight: 600, letterSpacing: "-0.02em", cursor: "pointer", textAlign: "left", flexShrink: 0, fontFamily: "var(--font-inter)", transition: "background 0.12s ease, color 0.12s ease" }}
-              onMouseEnter={(e) => { if (selected && module.children.length > 0) { e.currentTarget.style.background = "var(--rc-nav-hover)"; e.currentTarget.style.color = "rgba(255,255,255,0.95)"; } }}
-              onMouseLeave={(e) => { if (selected && module.children.length > 0) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--rc-nav-text)"; } }}
+            <button onClick={() => (module.type === "static" && module.children.length === 0) ? openModule(module.id) : setSelected(null)}
+              style={{ width: "calc(100% - 16px)", display: "flex", alignItems: "center", gap: "9px", padding: "10px 14px", border: "none", background: (!selected || (module.type === "static" && module.children.length === 0)) ? "var(--rc-nav-active-bg)" : "transparent", color: (!selected || (module.type === "static" && module.children.length === 0)) ? "white" : "var(--rc-nav-text)", borderRadius: "7px", margin: "8px 8px 0", fontSize: "13px", fontWeight: 600, letterSpacing: "-0.02em", cursor: "pointer", textAlign: "left", flexShrink: 0, fontFamily: "var(--font-inter)", transition: "background 0.12s ease, color 0.12s ease" }}
+              onMouseEnter={(e) => { if (selected && !(module.type === "static" && module.children.length === 0)) { e.currentTarget.style.background = "var(--rc-nav-hover)"; e.currentTarget.style.color = "rgba(255,255,255,0.95)"; } }}
+              onMouseLeave={(e) => { if (selected && !(module.type === "static" && module.children.length === 0)) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--rc-nav-text)"; } }}
             >
               <span style={{ flexShrink: 0, color: !selected ? "rgba(255,255,255,0.75)" : "var(--rc-nav-icon)" }}>{iconMap[activeModule]}</span>
               <span>{module.label}</span>
