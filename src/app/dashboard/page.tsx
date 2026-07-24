@@ -8059,7 +8059,7 @@ export default function DashboardPage() {
     { id: "registers", label: "Registers", icon: <RegIcon />, type: "static", children: ["Gift Register", "Incident Register", "Risk Register", "Complaints Register"] },
     { id: "calendar", label: "Calendar", icon: <CalendarIcon />, type: "static", children: [] },
     { id: "notifications", label: "Notifications", icon: <BellIcon />, type: "static", children: [] },
-    { id: "meetings", label: "Meetings", icon: <MeetingsIcon />, type: "static", children: ["Past Meetings", "New Meeting"] },
+    { id: "meetings", label: "Meetings", icon: <MeetingsIcon />, type: "static", children: ["New Meeting"] },
     { id: "settings", label: "Settings", icon: <SettingsIcon />, type: "static", children: ["Account", "Billing", "Team & Invites"] },
   ];
 
@@ -8077,6 +8077,7 @@ export default function DashboardPage() {
     if (id === "settings") setSelected({ type: "static", label: "Account" });
     else if (id === "calendar") setSelected({ type: "static", label: "Calendar" });
     else if (id === "notifications") setSelected({ type: "static", label: "Notifications" });
+    else if (id === "meetings") setSelected({ type: "static", label: "Past Meetings" });
     else setSelected(null);
     setSidebarOpen(false);
   }
