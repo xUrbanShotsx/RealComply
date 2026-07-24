@@ -47,7 +47,7 @@ export default function Footer() {
               The compliance platform built for Australian real estate businesses. CPD, trust accounting, AML, audit readiness — one place.
             </p>
             <p style={{ fontSize: "12px", color: "var(--rc-faint)", marginTop: "20px" }}>
-              ABN 00 000 000 000 · Sydney, NSW
+              ABN 42 640 098 221 · Sydney, NSW
             </p>
           </div>
 
