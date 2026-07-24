@@ -7678,7 +7678,7 @@ export default function DashboardPage() {
     { id: "staff", label: "Staff", icon: <StaffIcon />, type: "static", children: ["Team Overview", "Licence Tracking", "CPD Records", "Onboarding"] },
     { id: "trust", label: "Trust Accounting", icon: <TrustIcon />, type: "static", children: ["Account Reconciliation", "Monthly Reports", "Transaction Log", "AML Compliance", "Audit Reports"] },
     { id: "registers", label: "Registers", icon: <RegIcon />, type: "static", children: ["Gift Register", "Incident Register", "Risk Register", "Complaints Register"] },
-    { id: "calendar", label: "Calendar", icon: <CalendarIcon />, type: "static", children: ["Calendar"] },
+    { id: "calendar", label: "Calendar", icon: <CalendarIcon />, type: "static", children: [] },
     { id: "meetings", label: "Meetings", icon: <MeetingsIcon />, type: "static", children: ["Meeting Diary"] },
     { id: "settings", label: "Settings", icon: <SettingsIcon />, type: "static", children: ["Account", "Billing", "Team & Invites"] },
   ];
