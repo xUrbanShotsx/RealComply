@@ -7431,7 +7431,7 @@ function ComplaintsRegisterPage({ userRole }: { userRole: "owner" | "standard" }
   );
 }
 
-// ─── Meeting Diary ────────────────────────────────────────────────────────────
+// ─── Meetings ────────────────────────────────────────────────────────────────
 type MeetingRow = {
   id: string;
   user_id: string;
@@ -7446,27 +7446,60 @@ type MeetingRow = {
   created_at: string;
 };
 
-function MeetingDiaryPage({ staffRows, userEmail, userRole }: { staffRows: StaffRow[]; userEmail: string | null; userRole: "owner" | "standard" }) {
+function MeetingCard({ r, userEmail, userRole, expanded, onToggle, onDelete }: { r: MeetingRow; userEmail: string | null; userRole: "owner" | "standard"; expanded: boolean; onToggle: () => void; onDelete: () => void }) {
+  const dateStr = r.meeting_date ? new Date(r.meeting_date + "T00:00:00").toLocaleDateString("en-AU", { weekday: "short", day: "numeric", month: "short", year: "numeric" }) : "—";
+  const visLabel = r.visible_to?.includes("all") ? "All staff" : `${r.visible_to?.length ?? 0} ${(r.visible_to?.length ?? 0) === 1 ? "person" : "people"}`;
+  const canDelete = userRole === "owner" || r.created_by === userEmail;
+  return (
+    <div style={{ background: "var(--rc-surface)", border: "1px solid var(--rc-border)", borderRadius: "12px", overflow: "hidden" }}>
+      <div onClick={onToggle} style={{ padding: "16px 20px", display: "flex", alignItems: "center", gap: "16px", cursor: "pointer" }}>
+        <div style={{ flexShrink: 0, textAlign: "center", background: "var(--rc-bg)", border: "1px solid var(--rc-border)", borderRadius: "8px", padding: "6px 10px", minWidth: "52px" }}>
+          <div style={{ fontSize: "11px", fontWeight: 700, color: "var(--rc-faint)", textTransform: "uppercase", letterSpacing: "0.05em" }}>{r.meeting_date ? new Date(r.meeting_date + "T00:00:00").toLocaleDateString("en-AU", { month: "short" }) : ""}</div>
+          <div style={{ fontSize: "20px", fontWeight: 700, color: "var(--rc-ink)", lineHeight: 1.1 }}>{r.meeting_date ? new Date(r.meeting_date + "T00:00:00").getDate() : "—"}</div>
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+            <span style={{ fontSize: "11.5px", fontWeight: 600, color: "var(--rc-primary)", background: "var(--rc-bg)", border: "1px solid var(--rc-border)", borderRadius: "6px", padding: "2px 9px" }}>{r.meeting_type}</span>
+            <span style={{ fontSize: "13.5px", fontWeight: 600, color: "var(--rc-ink)" }}>{r.title || dateStr}</span>
+          </div>
+          <div style={{ display: "flex", gap: "14px", marginTop: "5px", flexWrap: "wrap" }}>
+            {(r.attendees?.length ?? 0) > 0 && <span style={{ fontSize: "12px", color: "var(--rc-muted)" }}>👥 {r.attendees.join(", ")}</span>}
+            <span style={{ fontSize: "12px", color: "var(--rc-faint)" }}>👁 {visLabel}</span>
+          </div>
+        </div>
+        <span style={{ fontSize: "18px", color: "var(--rc-faint)", flexShrink: 0, transform: expanded ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>⌄</span>
+      </div>
+      {expanded && (
+        <div style={{ borderTop: "1px solid var(--rc-border)", padding: "20px", display: "flex", flexDirection: "column", gap: "16px" }}>
+          {r.notes && (
+            <div>
+              <p style={{ fontSize: "11.5px", fontWeight: 700, color: "var(--rc-faint)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "8px", maxWidth: "none" }}>Notes</p>
+              <p style={{ fontSize: "13.5px", color: "var(--rc-ink)", lineHeight: 1.7, whiteSpace: "pre-wrap", maxWidth: "none" }}>{r.notes}</p>
+            </div>
+          )}
+          {(r.bullet_points?.length ?? 0) > 0 && (
+            <div>
+              <p style={{ fontSize: "11.5px", fontWeight: 700, color: "var(--rc-faint)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "8px", maxWidth: "none" }}>Action Items / Key Points</p>
+              <ul style={{ margin: 0, paddingLeft: "18px", display: "flex", flexDirection: "column", gap: "6px" }}>
+                {r.bullet_points.map((bp, i) => <li key={i} style={{ fontSize: "13.5px", color: "var(--rc-ink)", lineHeight: 1.6 }}>{bp}</li>)}
+              </ul>
+            </div>
+          )}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: "4px" }}>
+            <span style={{ fontSize: "12px", color: "var(--rc-faint)" }}>Added by {r.created_by || "unknown"} · {new Date(r.created_at).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" })}</span>
+            {canDelete && <button onClick={onDelete} style={{ fontSize: "12px", color: "oklch(0.55 0.18 25)", background: "none", border: "none", cursor: "pointer", fontFamily: "var(--font-inter)", padding: 0 }}>Delete meeting</button>}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PastMeetingsPage({ userEmail, userRole }: { userEmail: string | null; userRole: "owner" | "standard" }) {
   const orgOwnerId = useContext(OrgContext);
   const [rows, setRows] = useState<MeetingRow[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showAdd, setShowAdd] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
   const [expanded, setExpanded] = useState<string | null>(null);
-
-  const today = new Date().toISOString().slice(0, 10);
-  const staffNames = staffRows.map(s => s.name);
-
-  const [form, setForm] = useState({
-    meeting_date: today,
-    meeting_type: "Staff Meeting",
-    title: "",
-    attendees: [] as string[],
-    notes: "",
-    bullet_points: [""] as string[],
-    visible_to: ["all"] as string[],
-  });
 
   useEffect(() => {
     if (!orgOwnerId) { setLoading(false); return; }
@@ -7478,11 +7511,58 @@ function MeetingDiaryPage({ staffRows, userEmail, userRole }: { staffRows: Staff
 
   const visibleRows = userRole === "owner"
     ? rows
-    : rows.filter(r =>
-        r.created_by === userEmail ||
-        r.visible_to?.includes("all") ||
-        r.visible_to?.includes(userEmail ?? "")
-      );
+    : rows.filter(r => r.created_by === userEmail || r.visible_to?.includes("all") || r.visible_to?.includes(userEmail ?? ""));
+
+  async function del(id: string) {
+    await supabase.from("meetings").delete().eq("id", id);
+    setRows(p => p.filter(r => r.id !== id));
+    if (expanded === id) setExpanded(null);
+  }
+
+  return (
+    <div style={PAGE_WRAP}>
+      <div style={PAGE_HEADER}>
+        <div>
+          <h1 style={PAGE_H1}>Past Meetings</h1>
+          <p style={PAGE_SUB}>All recorded meetings — click any entry to view notes and action items</p>
+        </div>
+      </div>
+      <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: "10px" }}>
+        {loading ? (
+          <p style={{ color: "var(--rc-faint)", fontSize: "13px" }}>Loading…</p>
+        ) : visibleRows.length === 0 ? (
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "200px", border: "1px dashed var(--rc-border)", borderRadius: "12px" }}>
+            <p style={{ fontSize: "14px", color: "var(--rc-faint)", maxWidth: "none", textAlign: "center" }}>No meetings recorded yet. Use Meeting Diary to add the first entry.</p>
+          </div>
+        ) : (
+          visibleRows.map(r => (
+            <MeetingCard
+              key={r.id}
+              r={r}
+              userEmail={userEmail}
+              userRole={userRole}
+              expanded={expanded === r.id}
+              onToggle={() => setExpanded(p => p === r.id ? null : r.id)}
+              onDelete={() => del(r.id)}
+            />
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
+
+function NewMeetingPage({ staffRows, userEmail, userRole }: { staffRows: StaffRow[]; userEmail: string | null; userRole: "owner" | "standard" }) {
+  const orgOwnerId = useContext(OrgContext);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [saved, setSaved] = useState(false);
+
+  const today = new Date().toISOString().slice(0, 10);
+  const staffNames = staffRows.map(s => s.name);
+
+  const blank = { meeting_date: today, meeting_type: "Staff Meeting", title: "", attendees: [] as string[], notes: "", bullet_points: [""] as string[], visible_to: ["all"] as string[] };
+  const [form, setForm] = useState(blank);
 
   function toggleAttendee(name: string) {
     setForm(p => ({ ...p, attendees: p.attendees.includes(name) ? p.attendees.filter(a => a !== name) : [...p.attendees, name] }));
@@ -7518,200 +7598,133 @@ function MeetingDiaryPage({ staffRows, userEmail, userRole }: { staffRows: Staff
       bullet_points: form.bullet_points.filter(b => b.trim()),
       visible_to: form.visible_to,
     };
-    const { data, error: err } = await supabase.from("meetings").insert(payload).select().single();
+    const { error: err } = await supabase.from("meetings").insert(payload);
     setSaving(false);
     if (err) { setError("Failed to save. Please try again."); return; }
-    if (data) setRows(p => [data as MeetingRow, ...p]);
-    setForm({ meeting_date: today, meeting_type: "Staff Meeting", title: "", attendees: [], notes: "", bullet_points: [""], visible_to: ["all"] });
-    setShowAdd(false);
-  }
-
-  async function del(id: string) {
-    await supabase.from("meetings").delete().eq("id", id);
-    setRows(p => p.filter(r => r.id !== id));
-    if (expanded === id) setExpanded(null);
+    setSaved(true);
   }
 
   const inp: React.CSSProperties = { fontSize: "13px", color: "var(--rc-ink)", background: "#fff", border: "1px solid var(--rc-border)", borderRadius: "6px", padding: "8px 12px", outline: "none", fontFamily: "var(--font-inter)", width: "100%", boxSizing: "border-box", transition: "border-color 0.15s" };
   const lbl: React.CSSProperties = { fontSize: "11.5px", fontWeight: 600, color: "var(--rc-faint)", marginBottom: "5px", display: "block", letterSpacing: "0.03em", textTransform: "uppercase" };
   const meetingTypes = ["Staff Meeting", "One-on-One", "Principal Meeting", "Department Meeting", "Training Session", "External Meeting"];
 
+  if (saved) {
+    return (
+      <div style={PAGE_WRAP}>
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "16px" }}>
+          <div style={{ width: "56px", height: "56px", borderRadius: "50%", background: "oklch(0.95 0.05 145)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "26px" }}>✓</div>
+          <p style={{ fontSize: "15px", fontWeight: 600, color: "var(--rc-ink)", margin: 0 }}>Meeting saved</p>
+          <p style={{ fontSize: "13.5px", color: "var(--rc-muted)", margin: 0 }}>View it in Past Meetings, or record another one.</p>
+          <button onClick={() => { setForm(blank); setSaved(false); }} style={{ fontSize: "13px", fontWeight: 600, color: "white", background: "var(--rc-primary)", border: "none", borderRadius: "6px", padding: "9px 20px", cursor: "pointer", fontFamily: "var(--font-inter)", marginTop: "4px" }}>
+            + Record another meeting
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div style={PAGE_WRAP}>
       <div style={PAGE_HEADER}>
         <div>
           <h1 style={PAGE_H1}>Meeting Diary</h1>
-          <p style={PAGE_SUB}>Record staff meetings, one-on-ones and training sessions — including attendees, notes and action items</p>
+          <p style={PAGE_SUB}>Record a meeting — attendees, notes and action items will be saved to Past Meetings</p>
         </div>
-        <button onClick={() => { setShowAdd(p => !p); setError(""); }} style={{ fontSize: "13px", fontWeight: 600, color: "white", background: "var(--rc-primary)", border: "none", borderRadius: "6px", padding: "8px 18px", cursor: "pointer", fontFamily: "var(--font-inter)", letterSpacing: "-0.01em" }}>
-          {showAdd ? "Cancel" : "+ Add Meeting"}
-        </button>
       </div>
 
-      {showAdd && (
-        <div style={{ background: "var(--rc-surface)", border: "1px solid var(--rc-border)", borderRadius: "12px", padding: "24px 28px", display: "flex", flexDirection: "column", gap: "20px", flexShrink: 0 }}>
-          <p style={{ fontSize: "13.5px", fontWeight: 700, color: "var(--rc-ink)", margin: 0 }}>New Meeting</p>
-
-          {/* Date / Type / Title */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 2fr", gap: "14px" }}>
-            <div><label style={lbl}>Date *</label><input type="date" value={form.meeting_date} onChange={e => setForm(p => ({ ...p, meeting_date: e.target.value }))} style={{ ...inp, colorScheme: "light" }} /></div>
-            <div>
-              <label style={lbl}>Meeting Type</label>
-              <select value={form.meeting_type} onChange={e => setForm(p => ({ ...p, meeting_type: e.target.value }))} style={{ ...inp, cursor: "pointer" }}>
-                {meetingTypes.map(o => <option key={o}>{o}</option>)}
-              </select>
-            </div>
-            <div><label style={lbl}>Title / Agenda (optional)</label><input placeholder="e.g. Monthly team meeting, Performance review — John" value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} style={inp} /></div>
-          </div>
-
-          {/* Attendees */}
-          {staffNames.length > 0 && (
-            <div>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px" }}>
-                <label style={{ ...lbl, margin: 0 }}>Attendees</label>
-                <button type="button" onClick={() => setForm(p => ({ ...p, attendees: p.attendees.length === staffNames.length ? [] : [...staffNames] }))} style={{ fontSize: "11.5px", color: "var(--rc-primary)", background: "none", border: "none", cursor: "pointer", fontFamily: "var(--font-inter)", fontWeight: 600, padding: 0 }}>
-                  {form.attendees.length === staffNames.length ? "Deselect all" : "Select all"}
-                </button>
-              </div>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-                {staffNames.map(name => {
-                  const on = form.attendees.includes(name);
-                  return (
-                    <button key={name} type="button" onClick={() => toggleAttendee(name)} style={{ fontSize: "12.5px", fontWeight: 500, color: on ? "white" : "var(--rc-ink)", background: on ? "var(--rc-primary)" : "var(--rc-bg)", border: `1px solid ${on ? "var(--rc-primary)" : "var(--rc-border)"}`, borderRadius: "9999px", padding: "5px 14px", cursor: "pointer", fontFamily: "var(--font-inter)", transition: "all 0.15s" }}>
-                      {on && <span style={{ marginRight: "5px" }}>✓</span>}{name}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Notes */}
+      <div style={{ background: "var(--rc-surface)", border: "1px solid var(--rc-border)", borderRadius: "12px", padding: "24px 28px", display: "flex", flexDirection: "column", gap: "20px" }}>
+        {/* Date / Type / Title */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 2fr", gap: "14px" }}>
+          <div><label style={lbl}>Date *</label><input type="date" value={form.meeting_date} onChange={e => setForm(p => ({ ...p, meeting_date: e.target.value }))} style={{ ...inp, colorScheme: "light" }} /></div>
           <div>
-            <label style={lbl}>Meeting Notes</label>
-            <textarea rows={4} placeholder="Record key discussion points, decisions made, or any important context from the meeting." value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} style={{ ...inp, resize: "vertical" }} />
+            <label style={lbl}>Meeting Type</label>
+            <select value={form.meeting_type} onChange={e => setForm(p => ({ ...p, meeting_type: e.target.value }))} style={{ ...inp, cursor: "pointer" }}>
+              {meetingTypes.map(o => <option key={o}>{o}</option>)}
+            </select>
           </div>
+          <div><label style={lbl}>Title / Agenda (optional)</label><input placeholder="e.g. Monthly team meeting, Performance review — John" value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} style={inp} /></div>
+        </div>
 
-          {/* Bullet points */}
+        {/* Attendees */}
+        {staffNames.length > 0 && (
           <div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px" }}>
-              <label style={{ ...lbl, margin: 0 }}>Action Items / Key Points</label>
-              <button type="button" onClick={addBullet} style={{ fontSize: "11.5px", color: "var(--rc-primary)", background: "none", border: "none", cursor: "pointer", fontFamily: "var(--font-inter)", fontWeight: 600, padding: 0 }}>+ Add point</button>
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-              {form.bullet_points.map((bp, i) => (
-                <div key={i} style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                  <span style={{ color: "var(--rc-muted)", fontSize: "16px", flexShrink: 0, width: "12px" }}>•</span>
-                  <input placeholder={`Point ${i + 1}`} value={bp} onChange={e => setBullet(i, e.target.value)} style={{ ...inp, flex: 1 }} />
-                  {form.bullet_points.length > 1 && (
-                    <button type="button" onClick={() => removeBullet(i)} style={{ fontSize: "18px", color: "var(--rc-faint)", background: "none", border: "none", cursor: "pointer", padding: "0 4px", lineHeight: 1, flexShrink: 0 }}>×</button>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Visibility */}
-          <div>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px" }}>
-              <label style={{ ...lbl, margin: 0 }}>Who can see these notes?</label>
+              <label style={{ ...lbl, margin: 0 }}>Attendees</label>
+              <button type="button" onClick={() => setForm(p => ({ ...p, attendees: p.attendees.length === staffNames.length ? [] : [...staffNames] }))} style={{ fontSize: "11.5px", color: "var(--rc-primary)", background: "none", border: "none", cursor: "pointer", fontFamily: "var(--font-inter)", fontWeight: 600, padding: 0 }}>
+                {form.attendees.length === staffNames.length ? "Deselect all" : "Select all"}
+              </button>
             </div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-              {/* All staff option */}
-              {(() => {
-                const on = form.visible_to.includes("all");
+              {staffNames.map(name => {
+                const on = form.attendees.includes(name);
                 return (
-                  <button type="button" onClick={() => toggleVisible("all")} style={{ fontSize: "12.5px", fontWeight: 600, color: on ? "white" : "var(--rc-ink)", background: on ? "oklch(0.42 0.12 145)" : "var(--rc-bg)", border: `1px solid ${on ? "oklch(0.42 0.12 145)" : "var(--rc-border)"}`, borderRadius: "9999px", padding: "5px 14px", cursor: "pointer", fontFamily: "var(--font-inter)", transition: "all 0.15s" }}>
-                    {on && <span style={{ marginRight: "5px" }}>✓</span>}All staff
-                  </button>
-                );
-              })()}
-              {/* Per-person options (emails) */}
-              {staffRows.map(s => {
-                const on = !form.visible_to.includes("all") && form.visible_to.includes(s.email);
-                const disabled = form.visible_to.includes("all");
-                return (
-                  <button key={s.email} type="button" onClick={() => !disabled && toggleVisible(s.email)} style={{ fontSize: "12.5px", fontWeight: 500, color: disabled ? "var(--rc-faint)" : on ? "white" : "var(--rc-ink)", background: on ? "var(--rc-primary)" : "var(--rc-bg)", border: `1px solid ${on ? "var(--rc-primary)" : "var(--rc-border)"}`, borderRadius: "9999px", padding: "5px 14px", cursor: disabled ? "default" : "pointer", fontFamily: "var(--font-inter)", transition: "all 0.15s", opacity: disabled ? 0.45 : 1 }}>
-                    {on && <span style={{ marginRight: "5px" }}>✓</span>}{s.name}
+                  <button key={name} type="button" onClick={() => toggleAttendee(name)} style={{ fontSize: "12.5px", fontWeight: 500, color: on ? "white" : "var(--rc-ink)", background: on ? "var(--rc-primary)" : "var(--rc-bg)", border: `1px solid ${on ? "var(--rc-primary)" : "var(--rc-border)"}`, borderRadius: "9999px", padding: "5px 14px", cursor: "pointer", fontFamily: "var(--font-inter)", transition: "all 0.15s" }}>
+                    {on && <span style={{ marginRight: "5px" }}>✓</span>}{name}
                   </button>
                 );
               })}
             </div>
-            <p style={{ fontSize: "11.5px", color: "var(--rc-faint)", marginTop: "8px", maxWidth: "none" }}>
-              {form.visible_to.includes("all") ? "All staff members will see this meeting." : form.visible_to.length === 0 ? "Only you (the creator) will see this meeting." : `Only the selected ${form.visible_to.length} ${form.visible_to.length === 1 ? "person" : "people"} will see this meeting.`}
-            </p>
           </div>
+        )}
 
-          {error && <p style={{ fontSize: "13px", color: "oklch(0.55 0.18 25)", margin: 0, maxWidth: "none" }}>{error}</p>}
-          <div style={{ display: "flex", justifyContent: "flex-end" }}>
-            <button onClick={save} disabled={saving} style={{ fontSize: "13px", fontWeight: 600, color: "white", background: "var(--rc-primary)", border: "none", borderRadius: "6px", padding: "8px 20px", cursor: saving ? "not-allowed" : "pointer", opacity: saving ? 0.7 : 1, fontFamily: "var(--font-inter)" }}>
-              {saving ? "Saving…" : "Save Meeting"}
-            </button>
-          </div>
+        {/* Notes */}
+        <div>
+          <label style={lbl}>Meeting Notes</label>
+          <textarea rows={4} placeholder="Record key discussion points, decisions made, or any important context from the meeting." value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} style={{ ...inp, resize: "vertical" }} />
         </div>
-      )}
 
-      <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: "10px" }}>
-        {loading ? (
-          <p style={{ color: "var(--rc-faint)", fontSize: "13px" }}>Loading…</p>
-        ) : visibleRows.length === 0 ? (
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "200px" }}>
-            <p style={{ fontSize: "14px", color: "var(--rc-faint)", maxWidth: "none", textAlign: "center" }}>No meetings recorded yet. Use the button above to add the first entry.</p>
+        {/* Bullet points */}
+        <div>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px" }}>
+            <label style={{ ...lbl, margin: 0 }}>Action Items / Key Points</label>
+            <button type="button" onClick={addBullet} style={{ fontSize: "11.5px", color: "var(--rc-primary)", background: "none", border: "none", cursor: "pointer", fontFamily: "var(--font-inter)", fontWeight: 600, padding: 0 }}>+ Add point</button>
           </div>
-        ) : (
-          visibleRows.map(r => {
-            const isOpen = expanded === r.id;
-            const dateStr = r.meeting_date ? new Date(r.meeting_date + "T00:00:00").toLocaleDateString("en-AU", { weekday: "short", day: "numeric", month: "short", year: "numeric" }) : "—";
-            const visLabel = r.visible_to?.includes("all") ? "All staff" : `${r.visible_to?.length ?? 0} ${(r.visible_to?.length ?? 0) === 1 ? "person" : "people"}`;
-            const canDelete = userRole === "owner" || r.created_by === userEmail;
-            return (
-              <div key={r.id} style={{ background: "var(--rc-surface)", border: "1px solid var(--rc-border)", borderRadius: "12px", overflow: "hidden" }}>
-                {/* Card header — always visible */}
-                <div onClick={() => setExpanded(p => p === r.id ? null : r.id)} style={{ padding: "16px 20px", display: "flex", alignItems: "center", gap: "16px", cursor: "pointer" }}>
-                  <div style={{ flexShrink: 0, textAlign: "center", background: "var(--rc-bg)", border: "1px solid var(--rc-border)", borderRadius: "8px", padding: "6px 10px", minWidth: "52px" }}>
-                    <div style={{ fontSize: "11px", fontWeight: 700, color: "var(--rc-faint)", textTransform: "uppercase", letterSpacing: "0.05em" }}>{r.meeting_date ? new Date(r.meeting_date + "T00:00:00").toLocaleDateString("en-AU", { month: "short" }) : ""}</div>
-                    <div style={{ fontSize: "20px", fontWeight: 700, color: "var(--rc-ink)", lineHeight: 1.1 }}>{r.meeting_date ? new Date(r.meeting_date + "T00:00:00").getDate() : "—"}</div>
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
-                      <span style={{ fontSize: "11.5px", fontWeight: 600, color: "var(--rc-primary)", background: "var(--rc-bg)", border: "1px solid var(--rc-border)", borderRadius: "6px", padding: "2px 9px" }}>{r.meeting_type}</span>
-                      <span style={{ fontSize: "13.5px", fontWeight: 600, color: "var(--rc-ink)" }}>{r.title || dateStr}</span>
-                    </div>
-                    <div style={{ display: "flex", gap: "14px", marginTop: "5px", flexWrap: "wrap" }}>
-                      {(r.attendees?.length ?? 0) > 0 && <span style={{ fontSize: "12px", color: "var(--rc-muted)" }}>👥 {r.attendees.join(", ")}</span>}
-                      <span style={{ fontSize: "12px", color: "var(--rc-faint)" }}>👁 {visLabel}</span>
-                    </div>
-                  </div>
-                  <span style={{ fontSize: "18px", color: "var(--rc-faint)", flexShrink: 0, transform: isOpen ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>⌄</span>
-                </div>
-
-                {/* Expanded details */}
-                {isOpen && (
-                  <div style={{ borderTop: "1px solid var(--rc-border)", padding: "20px 20px 20px 20px", display: "flex", flexDirection: "column", gap: "16px" }}>
-                    {r.notes && (
-                      <div>
-                        <p style={{ fontSize: "11.5px", fontWeight: 700, color: "var(--rc-faint)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "8px", maxWidth: "none" }}>Notes</p>
-                        <p style={{ fontSize: "13.5px", color: "var(--rc-ink)", lineHeight: 1.7, whiteSpace: "pre-wrap", maxWidth: "none" }}>{r.notes}</p>
-                      </div>
-                    )}
-                    {(r.bullet_points?.length ?? 0) > 0 && (
-                      <div>
-                        <p style={{ fontSize: "11.5px", fontWeight: 700, color: "var(--rc-faint)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "8px", maxWidth: "none" }}>Action Items / Key Points</p>
-                        <ul style={{ margin: 0, paddingLeft: "18px", display: "flex", flexDirection: "column", gap: "6px" }}>
-                          {r.bullet_points.map((bp, i) => <li key={i} style={{ fontSize: "13.5px", color: "var(--rc-ink)", lineHeight: 1.6 }}>{bp}</li>)}
-                        </ul>
-                      </div>
-                    )}
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: "4px" }}>
-                      <span style={{ fontSize: "12px", color: "var(--rc-faint)" }}>Added by {r.created_by || "unknown"} · {new Date(r.created_at).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" })}</span>
-                      {canDelete && <button onClick={() => del(r.id)} style={{ fontSize: "12px", color: "oklch(0.55 0.18 25)", background: "none", border: "none", cursor: "pointer", fontFamily: "var(--font-inter)", padding: 0 }}>Delete meeting</button>}
-                    </div>
-                  </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+            {form.bullet_points.map((bp, i) => (
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <span style={{ color: "var(--rc-muted)", fontSize: "16px", flexShrink: 0, width: "12px" }}>•</span>
+                <input placeholder={`Point ${i + 1}`} value={bp} onChange={e => setBullet(i, e.target.value)} style={{ ...inp, flex: 1 }} />
+                {form.bullet_points.length > 1 && (
+                  <button type="button" onClick={() => removeBullet(i)} style={{ fontSize: "18px", color: "var(--rc-faint)", background: "none", border: "none", cursor: "pointer", padding: "0 4px", lineHeight: 1, flexShrink: 0 }}>×</button>
                 )}
               </div>
-            );
-          })
-        )}
+            ))}
+          </div>
+        </div>
+
+        {/* Visibility */}
+        <div>
+          <label style={{ ...lbl, marginBottom: "10px" }}>Who can see these notes?</label>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+            {(() => {
+              const on = form.visible_to.includes("all");
+              return (
+                <button type="button" onClick={() => toggleVisible("all")} style={{ fontSize: "12.5px", fontWeight: 600, color: on ? "white" : "var(--rc-ink)", background: on ? "oklch(0.42 0.12 145)" : "var(--rc-bg)", border: `1px solid ${on ? "oklch(0.42 0.12 145)" : "var(--rc-border)"}`, borderRadius: "9999px", padding: "5px 14px", cursor: "pointer", fontFamily: "var(--font-inter)", transition: "all 0.15s" }}>
+                  {on && <span style={{ marginRight: "5px" }}>✓</span>}All staff
+                </button>
+              );
+            })()}
+            {staffRows.map(s => {
+              const on = !form.visible_to.includes("all") && form.visible_to.includes(s.email);
+              const disabled = form.visible_to.includes("all");
+              return (
+                <button key={s.email} type="button" onClick={() => !disabled && toggleVisible(s.email)} style={{ fontSize: "12.5px", fontWeight: 500, color: disabled ? "var(--rc-faint)" : on ? "white" : "var(--rc-ink)", background: on ? "var(--rc-primary)" : "var(--rc-bg)", border: `1px solid ${on ? "var(--rc-primary)" : "var(--rc-border)"}`, borderRadius: "9999px", padding: "5px 14px", cursor: disabled ? "default" : "pointer", fontFamily: "var(--font-inter)", transition: "all 0.15s", opacity: disabled ? 0.45 : 1 }}>
+                  {on && <span style={{ marginRight: "5px" }}>✓</span>}{s.name}
+                </button>
+              );
+            })}
+          </div>
+          <p style={{ fontSize: "11.5px", color: "var(--rc-faint)", marginTop: "8px", maxWidth: "none" }}>
+            {form.visible_to.includes("all") ? "All staff members will see this meeting." : form.visible_to.length === 0 ? "Only you (the creator) will see this meeting." : `Only the selected ${form.visible_to.length} ${form.visible_to.length === 1 ? "person" : "people"} will see this meeting.`}
+          </p>
+        </div>
+
+        {error && <p style={{ fontSize: "13px", color: "oklch(0.55 0.18 25)", margin: 0, maxWidth: "none" }}>{error}</p>}
+        <div style={{ display: "flex", justifyContent: "flex-end" }}>
+          <button onClick={save} disabled={saving} style={{ fontSize: "13px", fontWeight: 600, color: "white", background: "var(--rc-primary)", border: "none", borderRadius: "6px", padding: "8px 20px", cursor: saving ? "not-allowed" : "pointer", opacity: saving ? 0.7 : 1, fontFamily: "var(--font-inter)" }}>
+            {saving ? "Saving…" : "Save Meeting"}
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -7878,7 +7891,8 @@ function StaticSubPage({ label, agencyName, agencyAbn, userEmail, userId, orgOwn
     case "Incident Register":       return <IncidentRegisterPage />;
     case "Risk Register":           return <RiskRegisterPage />;
     case "Complaints Register":     return <ComplaintsRegisterPage userRole={userRole} />;
-    case "Meeting Diary":           return <MeetingDiaryPage staffRows={staffRows} userEmail={userEmail} userRole={userRole} />;
+    case "Past Meetings":           return <PastMeetingsPage userEmail={userEmail} userRole={userRole} />;
+    case "New Meeting":             return <NewMeetingPage staffRows={staffRows} userEmail={userEmail} userRole={userRole} />;
     case "Calendar":                return <CalendarModule orgOwnerId={orgOwnerId} userId={userId} />;
     case "Notifications":           return <NotificationsPage userId={userId} userEmail={userEmail} onRead={() => {}} />;
     default:                        return null;
@@ -8045,7 +8059,7 @@ export default function DashboardPage() {
     { id: "registers", label: "Registers", icon: <RegIcon />, type: "static", children: ["Gift Register", "Incident Register", "Risk Register", "Complaints Register"] },
     { id: "calendar", label: "Calendar", icon: <CalendarIcon />, type: "static", children: [] },
     { id: "notifications", label: "Notifications", icon: <BellIcon />, type: "static", children: [] },
-    { id: "meetings", label: "Meetings", icon: <MeetingsIcon />, type: "static", children: ["Meeting Diary"] },
+    { id: "meetings", label: "Meetings", icon: <MeetingsIcon />, type: "static", children: ["Past Meetings", "New Meeting"] },
     { id: "settings", label: "Settings", icon: <SettingsIcon />, type: "static", children: ["Account", "Billing", "Team & Invites"] },
   ];
 
