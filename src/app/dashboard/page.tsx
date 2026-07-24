@@ -5723,17 +5723,143 @@ function AccountReconciliationPage() {
 }
 
 function AuditReportsPage() {
+  const orgOwnerId = useContext(OrgContext);
+  const [reports, setReports] = useState<{ id: string; year: string; auditor: string; notes: string | null; file_url: string | null; file_name: string | null; uploaded_at: string }[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showAdd, setShowAdd] = useState(false);
+  const [yearInput, setYearInput] = useState("");
+  const [auditorInput, setAuditorInput] = useState("");
+  const [notesInput, setNotesInput] = useState("");
+  const [fileInput, setFileInput] = useState<File | null>(null);
+  const [saving, setSaving] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!orgOwnerId) { setLoading(false); return; }
+    supabase.from("audit_reports").select("*").eq("user_id", orgOwnerId).order("created_at", { ascending: false })
+      .then(({ data }) => { if (data) setReports(data); setLoading(false); });
+  }, [orgOwnerId]);
+
+  function resetModal() { setYearInput(""); setAuditorInput(""); setNotesInput(""); setFileInput(null); if (fileRef.current) fileRef.current.value = ""; setShowAdd(false); }
+
+  async function addReport() {
+    if (!yearInput.trim() || !orgOwnerId) return;
+    setSaving(true);
+    let fileUrl: string | null = null;
+    let fileName: string | null = null;
+    if (fileInput) {
+      const path = `audit-reports/${orgOwnerId}/${Date.now()}-${fileInput.name}`;
+      const { error: upErr } = await supabase.storage.from("policy-docs").upload(path, fileInput);
+      if (!upErr) {
+        const { data: urlData } = supabase.storage.from("policy-docs").getPublicUrl(path);
+        fileUrl = urlData.publicUrl;
+        fileName = fileInput.name;
+      }
+    }
+    const uploadedAt = new Date().toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" });
+    const { data, error } = await supabase.from("audit_reports").insert({
+      user_id: orgOwnerId, year: yearInput.trim(), auditor: auditorInput.trim() || null,
+      notes: notesInput.trim() || null, file_url: fileUrl, file_name: fileName, uploaded_at: uploadedAt,
+    }).select().single();
+    setSaving(false);
+    if (!error && data) { setReports(prev => [data, ...prev]); resetModal(); }
+  }
+
+  async function deleteReport(id: string) {
+    if (!window.confirm("Delete this audit report?")) return;
+    const { error } = await supabase.from("audit_reports").delete().eq("id", id);
+    if (!error) setReports(prev => prev.filter(r => r.id !== id));
+  }
+
+  const inputSty: React.CSSProperties = { fontSize: "13px", color: "var(--rc-ink)", background: "var(--rc-bg)", border: "1px solid var(--rc-border)", borderRadius: "8px", padding: "9px 12px", outline: "none", fontFamily: "var(--font-inter)", width: "100%", boxSizing: "border-box" };
+  const cols = "110px minmax(0,1fr) minmax(0,1fr) 110px 130px 36px";
+
   return (
     <div style={PAGE_WRAP}>
       <div style={PAGE_HEADER}>
         <div>
           <h1 style={PAGE_H1}>Audit Reports</h1>
-          <p style={PAGE_SUB}>Upload and store your annual trust account audit reports</p>
+          <p style={PAGE_SUB}>{reports.length} audit report{reports.length !== 1 ? "s" : ""} uploaded</p>
         </div>
+        <button onClick={() => setShowAdd(true)} style={{ padding: "8px 16px", borderRadius: "8px", background: "var(--rc-primary)", color: "white", border: "none", fontSize: "13px", fontWeight: 600, cursor: "pointer", fontFamily: "var(--font-inter)" }}>+ Upload report</button>
       </div>
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "10px" }}>
-        <p style={{ fontSize: "14px", color: "var(--rc-faint)", maxWidth: "none", textAlign: "center" }}>No audit reports yet. Upload your audit reports using the Upload Document section in Policies &amp; Procedures, or contact your auditor to obtain a copy.</p>
-      </div>
+
+      {showAdd && (
+        <div style={{ position: "fixed", inset: 0, background: "oklch(0 0 0 / 0.35)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={resetModal}>
+          <div style={{ background: "var(--rc-bg)", borderRadius: "16px", padding: "32px", width: "460px", boxShadow: "0 20px 60px oklch(0 0 0 / 0.18)", display: "flex", flexDirection: "column", gap: "16px" }} onClick={e => e.stopPropagation()}>
+            <h2 style={{ fontSize: "1rem", fontWeight: 700, color: "var(--rc-ink)", margin: 0 }}>Upload audit report</h2>
+            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+              <label style={{ fontSize: "12px", fontWeight: 500, color: "var(--rc-muted)" }}>Financial year <span style={{ color: "oklch(0.55 0.18 25)" }}>*</span></label>
+              <input value={yearInput} onChange={e => setYearInput(e.target.value)} placeholder="e.g. 2024–25" style={inputSty}
+                onFocus={e => (e.target.style.borderColor = "var(--rc-primary)")} onBlur={e => (e.target.style.borderColor = "var(--rc-border)")} />
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+              <label style={{ fontSize: "12px", fontWeight: 500, color: "var(--rc-muted)" }}>Auditor name (optional)</label>
+              <input value={auditorInput} onChange={e => setAuditorInput(e.target.value)} placeholder="e.g. Smith & Associates" style={inputSty}
+                onFocus={e => (e.target.style.borderColor = "var(--rc-primary)")} onBlur={e => (e.target.style.borderColor = "var(--rc-border)")} />
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+              <label style={{ fontSize: "12px", fontWeight: 500, color: "var(--rc-muted)" }}>Notes (optional)</label>
+              <textarea value={notesInput} onChange={e => setNotesInput(e.target.value)} placeholder="e.g. Unqualified opinion, no exceptions noted" rows={2}
+                style={{ ...inputSty, resize: "vertical", lineHeight: 1.5 }}
+                onFocus={e => (e.target.style.borderColor = "var(--rc-primary)")} onBlur={e => (e.target.style.borderColor = "var(--rc-border)")} />
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+              <label style={{ fontSize: "12px", fontWeight: 500, color: "var(--rc-muted)" }}>Attach report (optional)</label>
+              <input ref={fileRef} type="file" accept=".pdf,.doc,.docx,.xlsx" onChange={e => setFileInput(e.target.files?.[0] ?? null)}
+                style={{ fontSize: "12.5px", color: "var(--rc-muted)", fontFamily: "var(--font-inter)", cursor: "pointer" }} />
+              {fileInput && <p style={{ fontSize: "11.5px", color: "var(--rc-faint)", maxWidth: "none" }}>{fileInput.name}</p>}
+            </div>
+            <div style={{ display: "flex", gap: "10px", marginTop: "4px" }}>
+              <button onClick={resetModal} style={{ flex: 1, padding: "10px", borderRadius: "8px", background: "var(--rc-surface)", border: "1px solid var(--rc-border)", fontSize: "13px", fontWeight: 500, color: "var(--rc-muted)", cursor: "pointer", fontFamily: "var(--font-inter)" }}>Cancel</button>
+              <button onClick={addReport} disabled={saving || !yearInput.trim()} style={{ flex: 1, padding: "10px", borderRadius: "8px", background: "var(--rc-primary)", border: "none", fontSize: "13px", fontWeight: 600, color: "white", cursor: "pointer", fontFamily: "var(--font-inter)", opacity: saving || !yearInput.trim() ? 0.6 : 1 }}>
+                {saving ? "Saving…" : "Save report"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {loading ? (
+        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}><p style={{ fontSize: "14px", color: "var(--rc-faint)" }}>Loading…</p></div>
+      ) : reports.length === 0 ? (
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "12px", border: "1px dashed var(--rc-border)", borderRadius: "12px", background: "var(--rc-surface)" }}>
+          <svg width="32" height="32" viewBox="0 0 32 32" fill="none"><rect x="6" y="2" width="20" height="28" rx="3" stroke="var(--rc-faint)" strokeWidth="1.5"/><path d="M10 9h12M10 14h12M10 19h8" stroke="var(--rc-faint)" strokeWidth="1.5" strokeLinecap="round"/><path d="M20 24l2.5 2.5L26 23" stroke="var(--rc-faint)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          <p style={{ fontSize: "13.5px", color: "var(--rc-faint)", maxWidth: "none", textAlign: "center" }}>No audit reports yet.<br />Click "+ Upload report" to add your first.</p>
+        </div>
+      ) : (
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, border: "1px solid var(--rc-border)", borderRadius: "12px", overflow: "hidden", boxShadow: "var(--rc-shadow-sm)" }}>
+          <div style={{ display: "grid", gridTemplateColumns: cols, flexShrink: 0, background: "var(--rc-surface)", borderBottom: "1px solid var(--rc-border)" }}>
+            {["Year", "Auditor", "Notes", "Uploaded", "File", ""].map(h => (
+              <span key={h} style={{ fontSize: "11.5px", color: "var(--rc-faint)", padding: "10px 20px" }}>{h}</span>
+            ))}
+          </div>
+          <div style={{ flex: 1, overflowY: "auto" }}>
+            {reports.map((r, i) => (
+              <div key={r.id} style={{ display: "grid", gridTemplateColumns: cols, alignItems: "center", borderBottom: i < reports.length - 1 ? "1px solid var(--rc-border)" : "none", background: "var(--rc-bg)", transition: "background 0.1s ease" }}
+                onMouseEnter={e => (e.currentTarget.style.background = "var(--rc-surface)")} onMouseLeave={e => (e.currentTarget.style.background = "var(--rc-bg)")}>
+                <span style={{ fontSize: "13px", fontWeight: 600, color: "var(--rc-ink)", padding: "14px 20px" }}>{r.year}</span>
+                <span style={{ fontSize: "12.5px", color: "var(--rc-muted)", padding: "0 20px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.auditor ?? "—"}</span>
+                <span style={{ fontSize: "12px", color: "var(--rc-faint)", padding: "0 20px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.notes ?? "—"}</span>
+                <span style={{ fontSize: "12px", color: "var(--rc-faint)", padding: "0 20px" }}>{r.uploaded_at}</span>
+                <div style={{ padding: "0 20px" }}>
+                  {r.file_url ? (
+                    <a href={r.file_url} target="_blank" rel="noopener noreferrer" style={{ fontSize: "12px", fontWeight: 500, color: "var(--rc-primary)", textDecoration: "none", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", display: "block", maxWidth: "110px" }}>
+                      {r.file_name ?? "Download"}
+                    </a>
+                  ) : (
+                    <span style={{ fontSize: "12px", color: "var(--rc-faint)" }}>No file</span>
+                  )}
+                </div>
+                <div style={{ padding: "0 12px", display: "flex", justifyContent: "center" }}>
+                  <button onClick={() => deleteReport(r.id)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--rc-faint)", fontSize: "11px", fontFamily: "var(--font-inter)", transition: "color 0.1s ease", padding: "4px" }}
+                    onMouseEnter={e => (e.currentTarget.style.color = "oklch(0.50 0.18 25)")} onMouseLeave={e => (e.currentTarget.style.color = "var(--rc-faint)")}>✕</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
