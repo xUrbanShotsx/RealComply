@@ -10,9 +10,9 @@ const supabaseAdmin = createClient(
 );
 
 const PRICE_IDS: Record<string, string> = {
-  small:        "price_REPLACE_WITH_SMALL_ID",   // AUD $99/mo
-  medium:       "price_REPLACE_WITH_MEDIUM_ID",  // AUD $189/mo
-  large:        "price_REPLACE_WITH_LARGE_ID",   // AUD $349/mo
+  small:        "price_1TwX7iEGKrM2hd0S7yZn9l47",  // AUD $99/mo
+  medium:       "price_1TwX7xEGKrM2hd0SufHWLpTM",  // AUD $189/mo
+  large:        "price_1TwX8GEGKrM2hd0SwDKs3Q2a",  // AUD $349/mo
   // Legacy — keep until old subscribers are migrated
   essentials:   "price_1TvuRBEGKrM2hd0SlE7XjBmj",
   standard:     "price_1TvuRfEGKrM2hd0SolYypGz6",
