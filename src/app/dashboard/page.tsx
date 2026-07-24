@@ -6208,10 +6208,10 @@ function AccountSettingsPage({ agencyName, agencyAbn: agencyAbnProp, userEmail, 
         </div>
       </div>
 
-      <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: "28px", maxWidth: "640px" }}>
+      <div style={{ flex: 1, overflowY: "auto", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "28px", alignContent: "start" }}>
 
-        {/* Profile */}
-        <div>
+        {/* Profile — spans both columns */}
+        <div style={{ gridColumn: "1 / -1" }}>
           <p style={sectionLabel}>Profile</p>
           <div style={{ ...CARD, padding: "24px" }}>
             {/* Avatar row */}
@@ -6245,31 +6245,27 @@ function AccountSettingsPage({ agencyName, agencyAbn: agencyAbnProp, userEmail, 
             </div>
 
             {/* Editable fields */}
-            <form onSubmit={saveProfile} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
-                <div>
-                  <label style={LBL}>Display name</label>
-                  <input type="text" value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder="Your name" style={SETTINGS_INPUT}
-                    onFocus={(e) => (e.target.style.borderColor = "var(--rc-primary)")} onBlur={(e) => (e.target.style.borderColor = "var(--rc-border)")} />
-                </div>
-                <div>
-                  <label style={LBL}>Position / title</label>
-                  <input type="text" value={jobTitle} onChange={(e) => setJobTitle(e.target.value)} placeholder="e.g. Principal, PM" style={SETTINGS_INPUT}
-                    onFocus={(e) => (e.target.style.borderColor = "var(--rc-primary)")} onBlur={(e) => (e.target.style.borderColor = "var(--rc-border)")} />
-                </div>
+            <form onSubmit={saveProfile} style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: "14px" }}>
+              <div>
+                <label style={LBL}>Display name</label>
+                <input type="text" value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder="Your name" style={SETTINGS_INPUT}
+                  onFocus={(e) => (e.target.style.borderColor = "var(--rc-primary)")} onBlur={(e) => (e.target.style.borderColor = "var(--rc-border)")} />
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
-                <div>
-                  <label style={LBL}>Email</label>
-                  <input type="email" value={userEmail ?? ""} disabled style={{ ...SETTINGS_INPUT, background: "var(--rc-surface-2)", color: "var(--rc-faint)", cursor: "not-allowed" }} />
-                </div>
-                <div>
-                  <label style={LBL}>Phone</label>
-                  <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="04xx xxx xxx" style={SETTINGS_INPUT}
-                    onFocus={(e) => (e.target.style.borderColor = "var(--rc-primary)")} onBlur={(e) => (e.target.style.borderColor = "var(--rc-border)")} />
-                </div>
+              <div>
+                <label style={LBL}>Position / title</label>
+                <input type="text" value={jobTitle} onChange={(e) => setJobTitle(e.target.value)} placeholder="e.g. Principal, PM" style={SETTINGS_INPUT}
+                  onFocus={(e) => (e.target.style.borderColor = "var(--rc-primary)")} onBlur={(e) => (e.target.style.borderColor = "var(--rc-border)")} />
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+              <div>
+                <label style={LBL}>Email</label>
+                <input type="email" value={userEmail ?? ""} disabled style={{ ...SETTINGS_INPUT, background: "var(--rc-surface-2)", color: "var(--rc-faint)", cursor: "not-allowed" }} />
+              </div>
+              <div>
+                <label style={LBL}>Phone</label>
+                <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="04xx xxx xxx" style={SETTINGS_INPUT}
+                  onFocus={(e) => (e.target.style.borderColor = "var(--rc-primary)")} onBlur={(e) => (e.target.style.borderColor = "var(--rc-border)")} />
+              </div>
+              <div style={{ gridColumn: "1 / -1", display: "flex", alignItems: "center", gap: "12px" }}>
                 <button type="submit" disabled={profileSaving} style={{ ...SETTINGS_BTN, opacity: profileSaving ? 0.7 : 1, cursor: profileSaving ? "not-allowed" : "pointer" }}>
                   {profileSaving ? "Saving…" : "Save profile"}
                 </button>
