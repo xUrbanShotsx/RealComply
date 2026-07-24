@@ -54,7 +54,8 @@ export async function POST(req: NextRequest) {
 
   if (event.type === "invoice.payment_failed") {
     const invoice = event.data.object as Stripe.Invoice;
-    const subId = typeof invoice.subscription === "string" ? invoice.subscription : (invoice.subscription as Stripe.Subscription | null)?.id;
+    const parentSub = invoice.parent?.subscription_details?.subscription;
+    const subId = typeof parentSub === "string" ? parentSub : parentSub?.id;
     if (subId) {
       await supabaseAdmin.from("subscriptions").update({ status: "past_due" }).eq("stripe_subscription_id", subId);
       const { data: sub } = await supabaseAdmin.from("subscriptions").select("user_id").eq("stripe_subscription_id", subId).maybeSingle();
@@ -69,7 +70,8 @@ export async function POST(req: NextRequest) {
 
   if (event.type === "invoice.paid") {
     const invoice = event.data.object as Stripe.Invoice;
-    const subId = typeof invoice.subscription === "string" ? invoice.subscription : (invoice.subscription as Stripe.Subscription | null)?.id;
+    const parentSub = invoice.parent?.subscription_details?.subscription;
+    const subId = typeof parentSub === "string" ? parentSub : parentSub?.id;
     if (subId) {
       await supabaseAdmin.from("subscriptions").update({ status: "active" }).eq("stripe_subscription_id", subId);
       const { data: sub } = await supabaseAdmin.from("subscriptions").select("user_id").eq("stripe_subscription_id", subId).maybeSingle();
