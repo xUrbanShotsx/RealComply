@@ -7563,9 +7563,19 @@ function NewMeetingPage({ staffRows, userEmail, userRole }: { staffRows: StaffRo
 
   const blank = { meeting_date: today, meeting_type: "Staff Meeting", title: "", attendees: [] as string[], notes: "", bullet_points: [""] as string[], visible_to: ["all"] as string[] };
   const [form, setForm] = useState(blank);
+  const [attendeeInput, setAttendeeInput] = useState("");
 
   function toggleAttendee(name: string) {
     setForm(p => ({ ...p, attendees: p.attendees.includes(name) ? p.attendees.filter(a => a !== name) : [...p.attendees, name] }));
+  }
+  function addAttendeeFromInput() {
+    const name = attendeeInput.trim();
+    if (!name || form.attendees.includes(name)) { setAttendeeInput(""); return; }
+    setForm(p => ({ ...p, attendees: [...p.attendees, name] }));
+    setAttendeeInput("");
+  }
+  function removeAttendee(name: string) {
+    setForm(p => ({ ...p, attendees: p.attendees.filter(a => a !== name) }));
   }
   function toggleVisible(val: string) {
     if (val === "all") {
@@ -7646,15 +7656,18 @@ function NewMeetingPage({ staffRows, userEmail, userRole }: { staffRows: StaffRo
         </div>
 
         {/* Attendees */}
-        {staffNames.length > 0 && (
-          <div>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px" }}>
-              <label style={{ ...lbl, margin: 0 }}>Attendees</label>
-              <button type="button" onClick={() => setForm(p => ({ ...p, attendees: p.attendees.length === staffNames.length ? [] : [...staffNames] }))} style={{ fontSize: "11.5px", color: "var(--rc-primary)", background: "none", border: "none", cursor: "pointer", fontFamily: "var(--font-inter)", fontWeight: 600, padding: 0 }}>
-                {form.attendees.length === staffNames.length ? "Deselect all" : "Select all"}
+        <div>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px" }}>
+            <label style={{ ...lbl, margin: 0 }}>Who was at this meeting?</label>
+            {staffNames.length > 0 && (
+              <button type="button" onClick={() => setForm(p => ({ ...p, attendees: p.attendees.length >= staffNames.length && staffNames.every(n => p.attendees.includes(n)) ? p.attendees.filter(a => !staffNames.includes(a)) : [...new Set([...p.attendees, ...staffNames])] }))} style={{ fontSize: "11.5px", color: "var(--rc-primary)", background: "none", border: "none", cursor: "pointer", fontFamily: "var(--font-inter)", fontWeight: 600, padding: 0 }}>
+                {staffNames.every(n => form.attendees.includes(n)) ? "Deselect all staff" : "Select all staff"}
               </button>
-            </div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+            )}
+          </div>
+          {/* Staff pills */}
+          {staffNames.length > 0 && (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginBottom: "12px" }}>
               {staffNames.map(name => {
                 const on = form.attendees.includes(name);
                 return (
@@ -7664,8 +7677,31 @@ function NewMeetingPage({ staffRows, userEmail, userRole }: { staffRows: StaffRo
                 );
               })}
             </div>
+          )}
+          {/* Manual entry */}
+          <div style={{ display: "flex", gap: "8px" }}>
+            <input
+              placeholder="Add attendee name (e.g. external guest, client)"
+              value={attendeeInput}
+              onChange={e => setAttendeeInput(e.target.value)}
+              onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); addAttendeeFromInput(); } }}
+              style={{ ...inp, flex: 1 }}
+            />
+            <button type="button" onClick={addAttendeeFromInput} style={{ fontSize: "13px", fontWeight: 600, color: "white", background: "var(--rc-primary)", border: "none", borderRadius: "6px", padding: "8px 16px", cursor: "pointer", fontFamily: "var(--font-inter)", flexShrink: 0 }}>Add</button>
           </div>
-        )}
+          {/* Selected attendees summary */}
+          {form.attendees.length > 0 && (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginTop: "10px" }}>
+              {form.attendees.map(name => (
+                <span key={name} style={{ display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "12.5px", fontWeight: 500, color: "var(--rc-ink)", background: "var(--rc-bg)", border: "1px solid var(--rc-border)", borderRadius: "9999px", padding: "4px 10px 4px 14px" }}>
+                  {name}
+                  <button type="button" onClick={() => removeAttendee(name)} style={{ fontSize: "14px", color: "var(--rc-faint)", background: "none", border: "none", cursor: "pointer", padding: 0, lineHeight: 1, display: "flex", alignItems: "center" }}>×</button>
+                </span>
+              ))}
+            </div>
+          )}
+          {form.attendees.length === 0 && <p style={{ fontSize: "11.5px", color: "var(--rc-faint)", marginTop: "8px", maxWidth: "none" }}>No attendees added yet.</p>}
+        </div>
 
         {/* Notes */}
         <div>
