@@ -7915,7 +7915,7 @@ export default function DashboardPage() {
     { id: "sales", label: "Residential Sales", icon: <SalesIcon />, type: "properties", properties: salesProps },
     { id: "management", label: "Residential Management", icon: <MgmtIcon />, type: "properties", properties: mgmtProps },
     { id: "staff", label: "Staff", icon: <StaffIcon />, type: "static", children: ["Team Overview", "Licence Tracking", "CPD Records", "Onboarding"] },
-    { id: "trust", label: "Trust Accounting", icon: <TrustIcon />, type: "static", children: ["Account Reconciliation", "Monthly Reports", "Transaction Log", "AML Compliance", "Audit Reports"] },
+    { id: "trust", label: "Trust Accounting", icon: <TrustIcon />, type: "static", children: ["Account Reconciliation", "Monthly Reports", "Transaction Log", "Audit Reports"] },
     { id: "registers", label: "Registers", icon: <RegIcon />, type: "static", children: ["Gift Register", "Incident Register", "Risk Register", "Complaints Register"] },
     { id: "calendar", label: "Calendar", icon: <CalendarIcon />, type: "static", children: [] },
     { id: "notifications", label: "Notifications", icon: <BellIcon />, type: "static", children: [] },
