@@ -10,8 +10,12 @@ const supabaseAdmin = createClient(
 );
 
 const PRICE_IDS: Record<string, string> = {
-  essentials: "price_1TvuRBEGKrM2hd0SlE7XjBmj",
-  standard: "price_1TvuRfEGKrM2hd0SolYypGz6",
+  small:        "price_REPLACE_WITH_SMALL_ID",   // AUD $99/mo
+  medium:       "price_REPLACE_WITH_MEDIUM_ID",  // AUD $189/mo
+  large:        "price_REPLACE_WITH_LARGE_ID",   // AUD $349/mo
+  // Legacy — keep until old subscribers are migrated
+  essentials:   "price_1TvuRBEGKrM2hd0SlE7XjBmj",
+  standard:     "price_1TvuRfEGKrM2hd0SolYypGz6",
   professional: "price_1TvuSBEGKrM2hd0S6GjA3zJT",
 };
 
@@ -45,6 +49,7 @@ export async function POST(req: NextRequest) {
     payment_method_types: ["card"],
     customer_email: email,
     line_items: [{ price: priceId, quantity: 1 }],
+    subscription_data: { trial_period_days: 14 },
     metadata: { email, agency, abn: abn ?? "", plan },
     success_url: `${baseUrl}/signup/success?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${baseUrl}/signup`,

@@ -9,27 +9,27 @@ import { supabase } from "@/lib/supabase";
 
 const plans = [
   {
-    id: "essentials",
-    name: "Essentials",
-    price: 129,
+    id: "small",
+    name: "Small",
+    price: 99,
     description: "For single-office agencies getting compliance under control.",
-    features: ["Up to 20 team members", "CPD & licence tracking", "Trust account checklists", "Policies & procedures library", "Email reminders & alerts", "Audit export (PDF)"],
+    features: ["Up to 20 team members", "10 GB storage", "CPD & licence tracking", "Trust account checklists", "Policies & procedures library", "Full audit readiness suite", "Legislative update alerts", "Priority support"],
     highlight: false,
   },
   {
-    id: "standard",
-    name: "Standard",
-    price: 249,
+    id: "medium",
+    name: "Medium",
+    price: 189,
     description: "For growing offices with complex compliance requirements.",
-    features: ["Up to 60 team members", "Everything in Essentials", "AML compliance per property", "Full audit readiness suite", "Legislative update alerts", "Priority support", "Dedicated onboarding session"],
+    features: ["Up to 60 team members", "40 GB storage", "CPD & licence tracking", "Trust account checklists", "Policies & procedures library", "Full audit readiness suite", "Legislative update alerts", "Priority support"],
     highlight: true,
   },
   {
-    id: "professional",
-    name: "Professional",
-    price: 549,
+    id: "large",
+    name: "Large",
+    price: 349,
     description: "For large offices and multi-branch operations.",
-    features: ["Up to 120 team members", "Everything in Standard", "Multi-office dashboard", "Custom policy templates", "Compliance reporting suite", "Dedicated account manager", "SLA-backed support"],
+    features: ["Up to 120 team members", "100 GB storage", "CPD & licence tracking", "Trust account checklists", "Policies & procedures library", "Full audit readiness suite", "Legislative update alerts", "Priority support"],
     highlight: false,
   },
 ];
@@ -45,7 +45,7 @@ export default function SignUpPage() {
   const [password, setPassword] = useState("");
 
   // Step 2
-  const [selectedPlan, setSelectedPlan] = useState("standard");
+  const [selectedPlan, setSelectedPlan] = useState("medium");
 
   // Step 3 disclosure
   const [acknowledged, setAcknowledged] = useState(false);
@@ -394,7 +394,7 @@ export default function SignUpPage() {
                     ← Back
                   </button>
                   <button type="submit" disabled={loading || !acknowledged} style={{ padding: "13px 32px", background: "var(--rc-primary)", color: "white", borderRadius: "8px", fontWeight: 700, fontSize: "15px", border: "none", cursor: loading || !acknowledged ? "not-allowed" : "pointer", opacity: loading || !acknowledged ? 0.45 : 1, fontFamily: "var(--font-inter)", transition: "opacity 0.15s ease" }}>
-                    {loading ? "Redirecting to Stripe…" : `Pay $${plan.price}/mo →`}
+                    {loading ? "Redirecting to Stripe…" : `Start 14-day free trial →`}
                   </button>
                 </div>
               </form>
