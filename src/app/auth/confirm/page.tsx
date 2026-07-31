@@ -43,8 +43,7 @@ export default function AuthConfirmPage() {
         return;
       }
       setStatus("success");
-      // For signup confirmations redirect to dashboard; password recovery goes to reset
-      setTimeout(() => router.replace(type === "recovery" ? "/reset-password" : "/dashboard"), 1500);
+      setTimeout(() => router.replace(type === "recovery" ? "/reset-password" : "/signin"), 1500);
     });
   }, [router]);
 
@@ -61,7 +60,7 @@ export default function AuthConfirmPage() {
           <>
             <div style={{ width: "56px", height: "56px", borderRadius: "50%", background: "#f0fdf4", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px", fontSize: "26px" }}>✓</div>
             <h1 style={{ fontSize: "1.25rem", fontWeight: 600, color: "#0f172a", marginBottom: "8px" }}>Email confirmed!</h1>
-            <p style={{ fontSize: "14px", color: "#64748b", margin: 0 }}>Taking you to your dashboard…</p>
+            <p style={{ fontSize: "14px", color: "#64748b", margin: 0 }}>Email verified — taking you to sign in…</p>
           </>
         )}
         {status === "error" && (
