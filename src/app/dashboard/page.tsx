@@ -2376,10 +2376,10 @@ const onboardingItems: OBItemConfig[] = [
 
 // --- Sub-page components ---
 
-const PAGE_WRAP: React.CSSProperties = { flex: 1, display: "flex", flexDirection: "column", height: "100vh", overflow: "hidden", padding: "36px 48px", gap: "24px" };
-const PAGE_HEADER: React.CSSProperties = { display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0, paddingBottom: "24px", borderBottom: "1px solid var(--rc-border)" };
-const PAGE_H1: React.CSSProperties = { fontSize: "1.3rem", fontWeight: 600, color: "var(--rc-ink)", letterSpacing: "-0.04em", lineHeight: 1.2 };
-const PAGE_SUB: React.CSSProperties = { fontSize: "13.5px", color: "var(--rc-faint)", maxWidth: "none", marginTop: "4px", lineHeight: 1.5 };
+const PAGE_WRAP: React.CSSProperties = { flex: 1, display: "flex", flexDirection: "column", height: "calc(100vh - 56px)", overflow: "hidden", padding: "28px 36px", gap: "20px" };
+const PAGE_HEADER: React.CSSProperties = { display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0, paddingBottom: "20px", borderBottom: "1px solid var(--rc-border)" };
+const PAGE_H1: React.CSSProperties = { fontSize: "1.2rem", fontWeight: 600, color: "#111827", letterSpacing: "-0.03em", lineHeight: 1.2 };
+const PAGE_SUB: React.CSSProperties = { fontSize: "13px", color: "#6b7280", maxWidth: "none", marginTop: "3px", lineHeight: 1.5 };
 const BTN_PRIMARY: React.CSSProperties = { fontSize: "13px", fontWeight: 600, color: "white", background: "var(--rc-primary)", border: "none", borderRadius: "6px", padding: "9px 18px", cursor: "pointer", fontFamily: "var(--font-inter)", letterSpacing: "-0.01em" };
 const BTN_GHOST: React.CSSProperties = { fontSize: "13px", fontWeight: 500, color: "var(--rc-faint)", background: "transparent", border: "none", cursor: "pointer", fontFamily: "var(--font-inter)", padding: 0 };
 const INP: React.CSSProperties = { fontSize: "13px", color: "var(--rc-ink)", background: "var(--rc-surface)", border: "1px solid var(--rc-border)", borderRadius: "6px", padding: "8px 12px", outline: "none", fontFamily: "var(--font-inter)", width: "100%", boxSizing: "border-box" };
@@ -8125,6 +8125,17 @@ export default function DashboardPage() {
     );
   }
 
+  // Breadcrumb label for top bar
+  const breadcrumb = (() => {
+    if (!activeModule) return "Dashboard";
+    if (selected?.type === "static") return selected.label;
+    if (selected?.type === "property") return selected.address;
+    return module?.label ?? activeModule;
+  })();
+
+  // User initials for avatar
+  const initials = (agencyName ?? "").split(" ").slice(0, 2).map(w => w[0]).join("").toUpperCase() || "RC";
+
   return (
     <OrgContext.Provider value={orgOwnerId}>
       <div style={{ display: "flex", minHeight: "100svh", background: "var(--rc-page)" }}>
@@ -8134,122 +8145,169 @@ export default function DashboardPage() {
         <button className="rc-hamburger" onClick={() => setSidebarOpen(v => !v)} aria-label="Open menu">
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"/></svg>
         </button>
-        <img src="/dashboardtitle.png" alt="RealComply" style={{ height: "30px", width: "auto", objectFit: "contain", filter: "brightness(0) invert(1)" }} />
+        <img src="/dashboardtitle.png" alt="RealComply" style={{ height: "28px", width: "auto", objectFit: "contain" }} />
       </div>
 
       {/* Sidebar overlay (mobile) */}
       {sidebarOpen && <div className="rc-overlay" onClick={() => setSidebarOpen(false)} />}
 
       {/* Sidebar */}
-      <aside className={`rc-sidebar${sidebarOpen ? " rc-sidebar-open" : ""}`} style={{ width: "240px", flexShrink: 0, background: "var(--rc-nav)", display: "flex", flexDirection: "column", position: "fixed", top: 0, left: 0, bottom: 0, overflowY: "auto", zIndex: 10 }}>
-        {/* Logo — white strip so dark logo stays visible */}
-        <div style={{ padding: "16px 20px", flexShrink: 0, background: "#ffffff", borderBottom: "1px solid #e8eaf0", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <img src="/dashboardtitle.png" alt="RealComply" style={{ height: "44px", width: "auto", objectFit: "contain", maxWidth: "180px" }} />
-          <button className="rc-sidebar-close" onClick={() => setSidebarOpen(false)} aria-label="Close menu">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="#64748d" strokeWidth="1.6" strokeLinecap="round"/></svg>
+      <aside className={`rc-sidebar${sidebarOpen ? " rc-sidebar-open" : ""}`} style={{ width: "240px", flexShrink: 0, background: "#fff", borderRight: "1px solid #e5e7eb", display: "flex", flexDirection: "column", position: "fixed", top: 0, left: 0, bottom: 0, overflowY: "auto", zIndex: 10 }}>
+
+        {/* Logo */}
+        <div style={{ height: "60px", padding: "0 20px", flexShrink: 0, borderBottom: "1px solid #f3f4f6", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <img src="/dashboardtitle.png" alt="RealComply" style={{ height: "38px", width: "auto", objectFit: "contain", maxWidth: "160px" }} />
+          <button className="rc-sidebar-close" onClick={() => setSidebarOpen(false)} aria-label="Close menu" style={{ background: "none", border: "none", cursor: "pointer", padding: "4px", borderRadius: "6px", color: "#9ca3af", display: "none" }}>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/></svg>
           </button>
         </div>
 
-        {/* Overview — always visible */}
-        <div style={{ padding: "8px 8px 0", flexShrink: 0 }}>
+        {/* Nav */}
+        <div style={{ flex: 1, padding: "10px 10px 0", overflowY: "auto" }}>
+
+          {/* Overview */}
           <button
             onClick={goBack}
-            style={{ width: "100%", display: "flex", alignItems: "center", gap: "9px", padding: "8px 12px", borderRadius: "7px", border: "none", background: !activeModule ? "var(--rc-nav-active-bg)" : "transparent", color: !activeModule ? "white" : "var(--rc-nav-text)", fontSize: "13px", fontWeight: !activeModule ? 600 : 400, cursor: "pointer", textAlign: "left", fontFamily: "var(--font-inter)", transition: "background 0.12s ease, color 0.12s ease" }}
-            onMouseEnter={(e) => { if (activeModule) { e.currentTarget.style.background = "var(--rc-nav-hover)"; e.currentTarget.style.color = "rgba(255,255,255,0.95)"; } }}
-            onMouseLeave={(e) => { if (activeModule) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--rc-nav-text)"; } }}
+            style={{ width: "100%", display: "flex", alignItems: "center", gap: "9px", padding: "7px 10px", borderRadius: "7px", border: "none", background: !activeModule ? "#111827" : "transparent", color: !activeModule ? "#fff" : "#374151", fontSize: "13.5px", fontWeight: !activeModule ? 600 : 400, cursor: "pointer", textAlign: "left", fontFamily: "var(--font-inter)", transition: "background 0.12s, color 0.12s", letterSpacing: "-0.01em" }}
+            onMouseEnter={(e) => { if (activeModule) e.currentTarget.style.background = "#f3f4f6"; }}
+            onMouseLeave={(e) => { if (activeModule) e.currentTarget.style.background = "transparent"; }}
           >
-            <span style={{ flexShrink: 0, color: !activeModule ? "rgba(255,255,255,0.75)" : "var(--rc-nav-icon)" }}>
-              <svg width="15" height="15" viewBox="0 0 18 18" fill="none"><path d="M2 9L9 2l7 7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /><path d="M4 7v8a1 1 0 001 1h3v-4h2v4h3a1 1 0 001-1V7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            <span style={{ flexShrink: 0, color: !activeModule ? "rgba(255,255,255,0.7)" : "#9ca3af" }}>
+              <svg width="15" height="15" viewBox="0 0 18 18" fill="none"><path d="M2 9L9 2l7 7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/><path d="M4 7v8a1 1 0 001 1h3v-4h2v4h3a1 1 0 001-1V7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
             </span>
-            <span style={{ flex: 1, letterSpacing: "-0.01em" }}>Overview</span>
+            Dashboard
           </button>
+
+          {/* Section label */}
+          <p style={{ fontSize: "10.5px", fontWeight: 700, color: "#9ca3af", letterSpacing: "0.08em", textTransform: "uppercase", margin: "16px 0 6px 10px", maxWidth: "none" }}>Compliance</p>
+
+          {!activeModule && (
+            <nav key="module-list" className="sidebar-panel-enter">
+              {modules.map((m) => (
+                <button key={m.id} onClick={() => openModule(m.id)}
+                  style={{ width: "100%", display: "flex", alignItems: "center", gap: "9px", padding: "7px 10px", borderRadius: "7px", border: "none", background: "transparent", color: "#374151", fontSize: "13.5px", fontWeight: 400, cursor: "pointer", textAlign: "left", marginBottom: "1px", fontFamily: "var(--font-inter)", transition: "background 0.1s, color 0.1s", letterSpacing: "-0.01em" }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "#f3f4f6"; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
+                >
+                  <span style={{ flexShrink: 0, color: "#9ca3af" }}>{m.icon}</span>
+                  <span style={{ flex: 1 }}>{m.label}</span>
+                  {m.id === "notifications" && unreadCount > 0 && (
+                    <span style={{ fontSize: "10px", fontWeight: 700, color: "#fff", background: "#ef4444", borderRadius: "9999px", padding: "1px 6px", flexShrink: 0, minWidth: "18px", textAlign: "center" }}>
+                      {unreadCount > 99 ? "99+" : unreadCount}
+                    </span>
+                  )}
+                  <svg width="10" height="10" viewBox="0 0 14 14" fill="none" style={{ flexShrink: 0, color: "#d1d5db" }}><path d="M5 3l4 4-4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                </button>
+              ))}
+            </nav>
+          )}
+
+          {activeModule && module && (
+            <div key={`sub-${activeModule}`} className="sidebar-panel-enter">
+              {/* Module header */}
+              <button
+                onClick={() => (module.type === "static" && module.children.length === 0) ? openModule(module.id) : setSelected(null)}
+                style={{ width: "100%", display: "flex", alignItems: "center", gap: "9px", padding: "7px 10px", borderRadius: "7px", border: "none", background: (!selected || (module.type === "static" && module.children.length === 0)) ? "#111827" : "transparent", color: (!selected || (module.type === "static" && module.children.length === 0)) ? "#fff" : "#374151", fontSize: "13.5px", fontWeight: 600, cursor: "pointer", textAlign: "left", fontFamily: "var(--font-inter)", transition: "background 0.12s, color 0.12s", letterSpacing: "-0.01em", marginBottom: "2px" }}
+                onMouseEnter={(e) => { if (selected && !(module.type === "static" && module.children.length === 0)) e.currentTarget.style.background = "#f3f4f6"; }}
+                onMouseLeave={(e) => { if (selected && !(module.type === "static" && module.children.length === 0)) e.currentTarget.style.background = "transparent"; }}
+              >
+                <span style={{ flexShrink: 0, color: (!selected || (module.type === "static" && module.children.length === 0)) ? "rgba(255,255,255,0.65)" : "#9ca3af" }}>{iconMap[activeModule]}</span>
+                <span>{module.label}</span>
+              </button>
+
+              <nav style={{ paddingLeft: "4px" }}>
+                {module.type === "properties" && module.properties.map((prop) => {
+                  const isActive = selected?.type === "property" && selected.id === prop.id;
+                  return (
+                    <button key={prop.id} onClick={() => { setSelected({ type: "property", section: module.id as "sales" | "management", id: prop.id, address: prop.address }); setSidebarOpen(false); }}
+                      style={{ width: "100%", display: "flex", alignItems: "flex-start", gap: "8px", padding: "6px 10px 6px 14px", border: "none", background: isActive ? "#111827" : "transparent", color: isActive ? "#fff" : "#374151", fontSize: "13px", fontWeight: isActive ? 500 : 400, cursor: "pointer", textAlign: "left", borderRadius: "7px", marginBottom: "1px", transition: "background 0.1s, color 0.1s", fontFamily: "var(--font-inter)", lineHeight: 1.4 }}
+                      onMouseEnter={(e) => { if (!isActive) (e.currentTarget as HTMLButtonElement).style.background = "#f3f4f6"; }}
+                      onMouseLeave={(e) => { if (!isActive) (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
+                    >
+                      <span style={{ flexShrink: 0, marginTop: "5px", color: isActive ? "rgba(255,255,255,0.5)" : "#d1d5db", fontSize: "7px" }}>●</span>
+                      {prop.address}
+                    </button>
+                  );
+                })}
+                {module.type === "static" && module.children.map((child) => {
+                  const isActive = selected?.type === "static" && selected.label === child;
+                  return (
+                    <button key={child} onClick={() => { setSelected({ type: "static", label: child }); setSidebarOpen(false); }}
+                      style={{ width: "100%", display: "flex", alignItems: "center", gap: "8px", padding: "6px 10px 6px 14px", border: "none", background: isActive ? "#111827" : "transparent", color: isActive ? "#fff" : "#374151", fontSize: "13px", fontWeight: isActive ? 500 : 400, cursor: "pointer", textAlign: "left", borderRadius: "7px", marginBottom: "1px", transition: "background 0.1s, color 0.1s", fontFamily: "var(--font-inter)", letterSpacing: "-0.01em" }}
+                      onMouseEnter={(e) => { if (!isActive) (e.currentTarget as HTMLButtonElement).style.background = "#f3f4f6"; }}
+                      onMouseLeave={(e) => { if (!isActive) (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
+                    >
+                      <span style={{ flexShrink: 0, color: isActive ? "rgba(255,255,255,0.5)" : "#d1d5db", fontSize: "7px" }}>●</span>
+                      {child}
+                    </button>
+                  );
+                })}
+              </nav>
+            </div>
+          )}
         </div>
 
-        {!activeModule && (
-          <nav key="module-list" className="sidebar-panel-enter" style={{ flex: 1, padding: "2px 8px 10px" }}>
-            <div style={{ padding: "14px 12px 6px" }}>
-              <p style={{ fontSize: "10px", fontWeight: 700, color: "var(--rc-nav-label)", letterSpacing: "0.09em", textTransform: "uppercase", margin: 0, maxWidth: "none" }}>Modules</p>
+        {/* Bottom: agency info + sign out */}
+        <div style={{ padding: "10px", borderTop: "1px solid #f3f4f6", flexShrink: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px", padding: "8px 10px", borderRadius: "8px" }}>
+            <div style={{ width: "30px", height: "30px", borderRadius: "50%", background: "#111827", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <span style={{ fontSize: "11px", fontWeight: 700, color: "#fff" }}>{initials}</span>
             </div>
-            {modules.map((m) => (
-              <button key={m.id} onClick={() => openModule(m.id)}
-                style={{ width: "100%", display: "flex", alignItems: "center", gap: "9px", padding: "8px 12px", borderRadius: "7px", border: "none", background: "transparent", color: "var(--rc-nav-text)", fontSize: "13px", fontWeight: 400, cursor: "pointer", textAlign: "left", marginBottom: "1px", fontFamily: "var(--font-inter)", transition: "background 0.12s ease, color 0.12s ease" }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "var(--rc-nav-hover)"; (e.currentTarget as HTMLButtonElement).style.color = "rgba(255,255,255,0.95)"; }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; (e.currentTarget as HTMLButtonElement).style.color = "var(--rc-nav-text)"; }}
-              >
-                <span style={{ flexShrink: 0, color: "var(--rc-nav-icon)" }}>{m.icon}</span>
-                <span style={{ flex: 1, letterSpacing: "-0.01em" }}>{m.label}</span>
-                {m.id === "notifications" && unreadCount > 0 && (
-                  <span style={{ fontSize: "10px", fontWeight: 700, color: "white", background: "oklch(0.55 0.20 25)", borderRadius: "9999px", padding: "1px 6px", flexShrink: 0, minWidth: "18px", textAlign: "center" }}>
-                    {unreadCount > 99 ? "99+" : unreadCount}
-                  </span>
-                )}
-                <svg width="10" height="10" viewBox="0 0 14 14" fill="none" style={{ flexShrink: 0, color: "var(--rc-nav-label)" }}><path d="M5 3l4 4-4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
-              </button>
-            ))}
-          </nav>
-        )}
-
-        {activeModule && module && (
-          <div key={`sub-${activeModule}`} className="sidebar-panel-enter" style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-            <div style={{ borderTop: "1px solid var(--rc-nav-border)", margin: "8px 8px 0", flexShrink: 0 }} />
-            <button onClick={() => (module.type === "static" && module.children.length === 0) ? openModule(module.id) : setSelected(null)}
-              style={{ width: "calc(100% - 16px)", display: "flex", alignItems: "center", gap: "9px", padding: "10px 14px", border: "none", background: (!selected || (module.type === "static" && module.children.length === 0)) ? "var(--rc-nav-active-bg)" : "transparent", color: (!selected || (module.type === "static" && module.children.length === 0)) ? "white" : "var(--rc-nav-text)", borderRadius: "7px", margin: "8px 8px 0", fontSize: "13px", fontWeight: 600, letterSpacing: "-0.02em", cursor: "pointer", textAlign: "left", flexShrink: 0, fontFamily: "var(--font-inter)", transition: "background 0.12s ease, color 0.12s ease" }}
-              onMouseEnter={(e) => { if (selected && !(module.type === "static" && module.children.length === 0)) { e.currentTarget.style.background = "var(--rc-nav-hover)"; e.currentTarget.style.color = "rgba(255,255,255,0.95)"; } }}
-              onMouseLeave={(e) => { if (selected && !(module.type === "static" && module.children.length === 0)) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--rc-nav-text)"; } }}
-            >
-              <span style={{ flexShrink: 0, color: !selected ? "rgba(255,255,255,0.75)" : "var(--rc-nav-icon)" }}>{iconMap[activeModule]}</span>
-              <span>{module.label}</span>
-            </button>
-            <nav style={{ flex: 1, padding: "4px 8px 12px" }}>
-              {module.type === "properties" && module.properties.map((prop) => {
-                const isActive = selected?.type === "property" && selected.id === prop.id;
-                return (
-                  <button key={prop.id} onClick={() => { setSelected({ type: "property", section: module.id as "sales" | "management", id: prop.id, address: prop.address }); setSidebarOpen(false); }}
-                    style={{ width: "100%", display: "flex", alignItems: "flex-start", gap: "8px", padding: "7px 12px", border: "none", background: isActive ? "var(--rc-nav-active-bg)" : "transparent", color: isActive ? "white" : "var(--rc-nav-text)", fontSize: "12.5px", fontWeight: isActive ? 500 : 400, cursor: "pointer", textAlign: "left", borderRadius: "7px", marginBottom: "1px", transition: "background 0.1s ease, color 0.1s ease", fontFamily: "var(--font-inter)", lineHeight: 1.4 }}
-                    onMouseEnter={(e) => { if (!isActive) { (e.currentTarget as HTMLButtonElement).style.background = "var(--rc-nav-hover)"; (e.currentTarget as HTMLButtonElement).style.color = "rgba(255,255,255,0.95)"; } }}
-                    onMouseLeave={(e) => { if (!isActive) { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; (e.currentTarget as HTMLButtonElement).style.color = "var(--rc-nav-text)"; } }}
-                  >
-                    <span style={{ flexShrink: 0, marginTop: "4px", color: isActive ? "rgba(255,255,255,0.60)" : "var(--rc-nav-icon)", fontSize: "7px" }}>●</span>
-                    {prop.address}
-                  </button>
-                );
-              })}
-              {module.type === "static" && module.children.map((child) => {
-                const isActive = selected?.type === "static" && selected.label === child;
-                return (
-                  <button key={child} onClick={() => { setSelected({ type: "static", label: child }); setSidebarOpen(false); }}
-                    style={{ width: "100%", display: "block", padding: "7px 12px", border: "none", background: isActive ? "var(--rc-nav-active-bg)" : "transparent", color: isActive ? "white" : "var(--rc-nav-text)", fontSize: "13px", fontWeight: isActive ? 500 : 400, cursor: "pointer", textAlign: "left", borderRadius: "7px", marginBottom: "1px", transition: "background 0.1s ease, color 0.1s ease", fontFamily: "var(--font-inter)", letterSpacing: "-0.01em" }}
-                    onMouseEnter={(e) => { if (!isActive) { (e.currentTarget as HTMLButtonElement).style.background = "var(--rc-nav-hover)"; (e.currentTarget as HTMLButtonElement).style.color = "rgba(255,255,255,0.95)"; } }}
-                    onMouseLeave={(e) => { if (!isActive) { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; (e.currentTarget as HTMLButtonElement).style.color = "var(--rc-nav-text)"; } }}
-                  >
-                    {child}
-                  </button>
-                );
-              })}
-            </nav>
-          </div>
-        )}
-
-        {/* Bottom: agency + sign out */}
-        <div style={{ padding: "8px 8px 14px", borderTop: "1px solid var(--rc-nav-border)", flexShrink: 0 }}>
-          <div style={{ padding: "8px 12px 6px" }}>
-            <p style={{ fontSize: "10px", fontWeight: 700, color: "var(--rc-nav-label)", maxWidth: "none", letterSpacing: "0.08em", textTransform: "uppercase" }}>Agency</p>
-            <p style={{ fontSize: "12.5px", color: "rgba(255,255,255,0.82)", maxWidth: "none", marginTop: "3px", fontWeight: 500, lineHeight: 1.3, letterSpacing: "-0.01em" }}>{agencyName}</p>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p style={{ fontSize: "12.5px", fontWeight: 600, color: "#111827", maxWidth: "none", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", letterSpacing: "-0.01em" }}>{agencyName}</p>
+              <p style={{ fontSize: "11px", color: "#9ca3af", maxWidth: "none", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{userEmail ?? ""}</p>
+            </div>
           </div>
           <button
             onClick={async () => { await supabase.auth.signOut(); window.location.href = "/signin"; }}
-            style={{ display: "flex", alignItems: "center", gap: "8px", padding: "8px 12px", borderRadius: "7px", fontSize: "13px", fontWeight: 400, color: "var(--rc-nav-icon)", background: "transparent", border: "none", cursor: "pointer", fontFamily: "var(--font-inter)", width: "100%", textAlign: "left", transition: "color 0.12s, background 0.12s" }}
-            onMouseEnter={(e) => { e.currentTarget.style.color = "rgba(255,255,255,0.90)"; e.currentTarget.style.background = "var(--rc-nav-hover)"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.color = "var(--rc-nav-icon)"; e.currentTarget.style.background = "transparent"; }}
+            style={{ display: "flex", alignItems: "center", gap: "8px", padding: "7px 10px", borderRadius: "7px", fontSize: "13px", fontWeight: 400, color: "#6b7280", background: "transparent", border: "none", cursor: "pointer", fontFamily: "var(--font-inter)", width: "100%", textAlign: "left", transition: "color 0.12s, background 0.12s", letterSpacing: "-0.01em" }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = "#f3f4f6"; e.currentTarget.style.color = "#111827"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#6b7280"; }}
           >
-            <svg width="14" height="14" viewBox="0 0 18 18" fill="none"><path d="M7 3H4a1 1 0 00-1 1v10a1 1 0 001 1h3M12 13l4-4-4-4M16 9H7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            <svg width="14" height="14" viewBox="0 0 18 18" fill="none"><path d="M7 3H4a1 1 0 00-1 1v10a1 1 0 001 1h3M12 13l4-4-4-4M16 9H7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
             Sign out
           </button>
         </div>
       </aside>
 
       {/* Main */}
-      <div className="rc-main" style={{ flex: 1, marginLeft: "240px", display: "flex", minHeight: "100svh" }}>
+      <div className="rc-main" style={{ flex: 1, marginLeft: "240px", display: "flex", flexDirection: "column", minHeight: "100svh" }}>
+
+        {/* Top bar */}
+        <header style={{ height: "56px", background: "#fff", borderBottom: "1px solid #e5e7eb", display: "flex", alignItems: "center", padding: "0 28px", gap: "16px", flexShrink: 0, position: "sticky", top: 0, zIndex: 5 }}>
+          {/* Breadcrumb */}
+          <div style={{ display: "flex", alignItems: "center", gap: "6px", flex: 1, minWidth: 0 }}>
+            <span style={{ fontSize: "13px", color: "#9ca3af", fontWeight: 500, letterSpacing: "-0.01em" }}>RealComply</span>
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4 2l4 4-4 4" stroke="#d1d5db" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            <span style={{ fontSize: "13px", color: "#111827", fontWeight: 600, letterSpacing: "-0.01em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{breadcrumb}</span>
+          </div>
+          {/* Right actions */}
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
+            {/* Search */}
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: "8px", padding: "6px 12px", width: "200px" }}>
+              <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="5" stroke="#9ca3af" strokeWidth="1.5"/><path d="M11 11l3 3" stroke="#9ca3af" strokeWidth="1.5" strokeLinecap="round"/></svg>
+              <span style={{ fontSize: "13px", color: "#9ca3af" }}>Search…</span>
+            </div>
+            {/* Notifications bell */}
+            <button
+              onClick={() => { openModule("notifications"); }}
+              style={{ position: "relative", width: "34px", height: "34px", borderRadius: "8px", background: "transparent", border: "1px solid #e5e7eb", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#374151", transition: "background 0.1s" }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = "#f3f4f6"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+            >
+              <svg width="15" height="15" viewBox="0 0 18 18" fill="none"><path d="M9 2a5 5 0 00-5 5v4l-1.5 2h13L14 11V7a5 5 0 00-5-5z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/><path d="M7 15a2 2 0 004 0" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+              {unreadCount > 0 && (
+                <span style={{ position: "absolute", top: "4px", right: "4px", width: "8px", height: "8px", borderRadius: "50%", background: "#ef4444", border: "1.5px solid #fff" }} />
+              )}
+            </button>
+            {/* User avatar */}
+            <div style={{ width: "32px", height: "32px", borderRadius: "50%", background: "#111827", display: "flex", alignItems: "center", justifyContent: "center", cursor: "default", flexShrink: 0 }}>
+              <span style={{ fontSize: "11px", fontWeight: 700, color: "#fff" }}>{initials}</span>
+            </div>
+          </div>
+        </header>
+
+        {/* Content */}
         <div
           key={`${activeModule ?? "home"}__${selected?.type === "property" ? selected.id : selected?.label ?? "overview"}`}
           className="main-panel-enter"
@@ -8294,26 +8352,27 @@ export default function DashboardPage() {
       /* ── Mobile layout ── */
       .rc-mobile-header { display: none; }
       .rc-overlay { display: none; }
-      .rc-sidebar-close { display: none; }
+      .rc-sidebar-close { display: none !important; }
 
       @media (max-width: 768px) {
+        .rc-sidebar-close { display: flex !important; }
         /* Mobile top bar */
         .rc-mobile-header {
           display: flex;
           position: fixed;
           top: 0; left: 0; right: 0;
           height: 54px;
-          background: var(--rc-nav);
+          background: #fff;
           align-items: center;
           padding: 0 16px;
           gap: 14px;
           z-index: 40;
-          border-bottom: 1px solid var(--rc-nav-border);
+          border-bottom: 1px solid #e5e7eb;
         }
         .rc-hamburger {
           background: none;
           border: none;
-          color: rgba(255,255,255,0.78);
+          color: #374151;
           cursor: pointer;
           padding: 7px;
           border-radius: 6px;
