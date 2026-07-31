@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/utils/supabase/client";
+import { supabase } from "@/lib/supabase";
 
 export default function AuthConfirmPage() {
   const router = useRouter();
@@ -13,7 +13,6 @@ export default function AuthConfirmPage() {
     const hash = window.location.hash.substring(1);
     if (!hash) {
       // Try PKCE flow — Supabase will have already exchanged the code automatically
-      const supabase = createClient();
       supabase.auth.getSession().then(({ data }) => {
         if (data.session) {
           setStatus("success");
@@ -37,7 +36,6 @@ export default function AuthConfirmPage() {
       return;
     }
 
-    const supabase = createClient();
     supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken }).then(({ error }) => {
       if (error) {
         setStatus("error");
