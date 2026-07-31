@@ -83,7 +83,10 @@ export default function SignUpPage() {
     const { error: authError } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { agency_name: agency, abn, plan: selectedPlan } },
+      options: {
+        data: { agency_name: agency, abn, plan: selectedPlan },
+        emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://realcomply.com.au"}/auth/confirm`,
+      },
     });
     if (authError) {
       setError(authError.message);
