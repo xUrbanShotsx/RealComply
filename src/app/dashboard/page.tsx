@@ -2169,7 +2169,7 @@ function DashboardHome({ onNavigate, agencyName, staffRows, salesProps, mgmtProp
             items.push({ label: `${s.name}`, sub: "CPD due soon", severity: "medium", module: "staff" })
           );
           policies.filter(p => p.status === "review-due").forEach(p =>
-            items.push({ label: p.title, sub: "Policy review due", severity: "medium", module: "policies" })
+            items.push({ label: p.name, sub: "Policy review due", severity: "medium", module: "policies" })
           );
           moduleOverview.forEach(m => {
             const { score } = computeModuleData(m.id, staffRows, salesProps, mgmtProps, policies);
