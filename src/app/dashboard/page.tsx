@@ -1751,6 +1751,50 @@ function ComplianceChart({ currentScore }: { currentScore: number }) {
 
 
 
+// --- Upgrade Button ---
+function UpgradeButton({ userId }: { userId: string | null }) {
+  const [loading, setLoading] = useState(false);
+
+  async function handleUpgrade() {
+    if (!userId || loading) return;
+    setLoading(true);
+    try {
+      const res = await fetch("/api/create-portal-session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId }),
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        alert(data.error ?? "Could not open billing portal. Please try again.");
+        setLoading(false);
+      }
+    } catch {
+      alert("Something went wrong. Please try again.");
+      setLoading(false);
+    }
+  }
+
+  return (
+    <button
+      onClick={handleUpgrade}
+      disabled={loading}
+      style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", padding: "8px", borderRadius: "7px", background: loading ? "#374151" : "#111827", color: "#fff", fontSize: "12.5px", fontWeight: 600, border: "none", cursor: loading ? "default" : "pointer", fontFamily: "var(--font-inter)", width: "100%", letterSpacing: "-0.01em", transition: "background 0.12s" }}
+      onMouseEnter={(e) => { if (!loading) e.currentTarget.style.background = "#1f2937"; }}
+      onMouseLeave={(e) => { if (!loading) e.currentTarget.style.background = "#111827"; }}
+    >
+      {loading ? (
+        <>
+          <div style={{ width: "12px", height: "12px", border: "1.5px solid rgba(255,255,255,0.3)", borderTopColor: "#fff", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
+          Opening…
+        </>
+      ) : "Upgrade"}
+    </button>
+  );
+}
+
 // --- AI Assistant Panel ---
 type AiMsg = { role: "user" | "assistant"; text: string };
 
@@ -8535,12 +8579,7 @@ export default function DashboardPage() {
             </div>
             <p style={{ fontSize: "10.5px", color: "#6b7280", margin: 0, maxWidth: "none" }}>Upgrade for unlimited use</p>
           </div>
-          <Link href="/pricing" style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "8px", borderRadius: "7px", background: "#111827", color: "#fff", fontSize: "12.5px", fontWeight: 600, textDecoration: "none", fontFamily: "var(--font-inter)", textAlign: "center", letterSpacing: "-0.01em", transition: "background 0.12s" }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = "#1f2937"; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = "#111827"; }}
-          >
-            Upgrade
-          </Link>
+          <UpgradeButton userId={userId} />
           {/* User row */}
           <button
             onClick={async () => { await supabase.auth.signOut(); window.location.href = "/signin"; }}
