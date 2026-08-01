@@ -2038,159 +2038,156 @@ function DashboardHome({ onNavigate, agencyName, staffRows, salesProps, mgmtProp
   ];
 
   return (
-    <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "32px 40px 32px", gap: "28px", overflowY: "auto" }}>
+    <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "calc(100vh - 56px)", overflow: "hidden", padding: "20px 28px", gap: "14px" }}>
 
       {/* Welcome header */}
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
         <div>
-          <h1 style={{ fontSize: "1.5rem", fontWeight: 700, color: "#111827", letterSpacing: "-0.04em", lineHeight: 1.2, margin: 0 }}>
+          <h1 style={{ fontSize: "1.25rem", fontWeight: 700, color: "#111827", letterSpacing: "-0.04em", lineHeight: 1.2, margin: 0 }}>
             Welcome Back, {agencyName || "there"}!
           </h1>
-          <p style={{ fontSize: "13.5px", color: "#6b7280", maxWidth: "none", marginTop: "6px" }}>
+          <p style={{ fontSize: "13px", color: "#6b7280", maxWidth: "none", marginTop: "3px" }}>
             Your compliance platform for Australian real estate.
           </p>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: "10px", flexShrink: 0, marginTop: "2px" }}>
-          <span style={{ fontSize: "13px", color: "#6b7280", display: "flex", alignItems: "center", gap: "6px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px", flexShrink: 0 }}>
+          <span style={{ fontSize: "12.5px", color: "#6b7280", display: "flex", alignItems: "center", gap: "6px" }}>
             <CalendarIcon />
             {today}
           </span>
           <button
             onClick={() => onNavigate("sales")}
-            style={{ display: "flex", alignItems: "center", gap: "7px", padding: "8px 16px", background: "#111827", color: "#fff", border: "none", borderRadius: "8px", fontSize: "13px", fontWeight: 600, cursor: "pointer", fontFamily: "var(--font-inter)", letterSpacing: "-0.01em", transition: "background 0.15s", whiteSpace: "nowrap" }}
+            style={{ display: "flex", alignItems: "center", gap: "7px", padding: "7px 14px", background: "#111827", color: "#fff", border: "none", borderRadius: "8px", fontSize: "12.5px", fontWeight: 600, cursor: "pointer", fontFamily: "var(--font-inter)", letterSpacing: "-0.01em", transition: "background 0.15s", whiteSpace: "nowrap" }}
             onMouseEnter={(e) => { e.currentTarget.style.background = "#1f2937"; }}
             onMouseLeave={(e) => { e.currentTarget.style.background = "#111827"; }}
           >
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>
+            <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>
             Add Property
           </button>
         </div>
       </div>
 
       {/* Stat tiles */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "14px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px", flexShrink: 0 }}>
         {tiles.map(({ label, value, unit, trend, warn, icon }) => (
-          <div key={label} style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: "12px", padding: "20px 22px 18px", display: "flex", flexDirection: "column", gap: "10px", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
+          <div key={label} style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: "10px", padding: "14px 18px", display: "flex", flexDirection: "column", gap: "8px", boxShadow: "0 1px 2px rgba(0,0,0,0.04)" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <span style={{ fontSize: "12.5px", color: "#6b7280", fontWeight: 500 }}>{label}</span>
+              <span style={{ fontSize: "12px", color: "#6b7280", fontWeight: 500 }}>{label}</span>
               <span style={{ color: "#9ca3af" }}>{icon}</span>
             </div>
-            <p style={{ fontSize: "2rem", fontWeight: 700, color: "#111827", letterSpacing: "-0.05em", lineHeight: 1, margin: 0, maxWidth: "none" }}>
-              {value}<span style={{ fontSize: "1rem", fontWeight: 500, color: "#9ca3af", letterSpacing: "0" }}>{unit}</span>
+            <p style={{ fontSize: "1.6rem", fontWeight: 700, color: "#111827", letterSpacing: "-0.05em", lineHeight: 1, margin: 0, maxWidth: "none" }}>
+              {value}<span style={{ fontSize: "0.9rem", fontWeight: 500, color: "#9ca3af", letterSpacing: "0" }}>{unit}</span>
             </p>
-            <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
               {warn ? (
-                <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M6 10l-4-7h8l-4 7z" fill="#f59e0b"/></svg>
+                <svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M6 10l-4-7h8l-4 7z" fill="#f59e0b"/></svg>
               ) : (
-                <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2 8l4-5 4 5" fill="#22c55e"/></svg>
+                <svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M2 8l4-5 4 5" fill="#22c55e"/></svg>
               )}
-              <span style={{ fontSize: "11.5px", color: warn ? "#d97706" : "#16a34a", fontWeight: 500 }}>{trend}</span>
+              <span style={{ fontSize: "11px", color: warn ? "#d97706" : "#16a34a", fontWeight: 500 }}>{trend}</span>
             </div>
           </div>
         ))}
       </div>
 
-      {/* Active Modules table */}
-      <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: "12px", overflow: "hidden", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "18px 22px 14px" }}>
-          <h2 style={{ fontSize: "14px", fontWeight: 600, color: "#111827", letterSpacing: "-0.02em", margin: 0 }}>Compliance Modules</h2>
-          <button onClick={() => onNavigate("policies")} style={{ fontSize: "12.5px", color: "var(--rc-primary)", fontWeight: 600, background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: "var(--font-inter)" }}>View All</button>
-        </div>
-        <table className="s-table">
-          <thead>
-            <tr>
-              <th>Module</th>
-              <th>Trigger</th>
-              <th>Score</th>
-              <th>Status</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {moduleOverview.map((m) => {
-              const { score, detail } = computeModuleData(m.id, staffRows, salesProps, mgmtProps, policies);
-              const isActive = score >= 85;
-              const isWarn = score >= 65 && score < 85;
-              const statusLabel = isActive ? "Active" : isWarn ? "Attention" : "Review";
-              const statusColor = isActive ? "#166534" : isWarn ? "#92400e" : "#991b1b";
-              const statusBg = isActive ? "#f0fdf4" : isWarn ? "#fffbeb" : "#fef2f2";
-              const trackColor = isActive ? "#22c55e" : isWarn ? "#f59e0b" : "#ef4444";
-              return (
-                <tr key={m.id}>
-                  <td>
-                    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                      <div style={{ width: "28px", height: "28px", borderRadius: "6px", background: "var(--rc-primary-subtle)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--rc-primary)", flexShrink: 0 }}>
-                        {m.icon}
-                      </div>
-                      <p style={{ fontSize: "13px", fontWeight: 600, color: "#111827", margin: 0, maxWidth: "none" }}>{m.label}</p>
-                    </div>
-                  </td>
-                  <td><span style={{ fontSize: "12.5px", color: "#6b7280" }}>{detail}</span></td>
-                  <td>
-                    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                      <div style={{ width: "80px", height: "4px", background: "#f3f4f6", borderRadius: "100px", overflow: "hidden" }}>
-                        <div style={{ width: `${score}%`, height: "100%", background: trackColor, borderRadius: "100px" }} />
-                      </div>
-                      <span style={{ fontSize: "12.5px", fontWeight: 600, color: "#374151", minWidth: "36px" }}>{score}%</span>
-                    </div>
-                  </td>
-                  <td>
-                    <span style={{ fontSize: "11.5px", fontWeight: 600, color: statusColor, background: statusBg, padding: "3px 10px", borderRadius: "100px" }}>
-                      {statusLabel}
-                    </span>
-                  </td>
-                  <td>
-                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                      <button onClick={() => onNavigate(m.id)} style={{ fontSize: "12px", color: "var(--rc-primary)", fontWeight: 600, background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: "var(--font-inter)" }}>View</button>
-                      <span style={{ color: "#e5e7eb", fontSize: "14px" }}>|</span>
-                      <button onClick={() => onNavigate(m.id)} style={{ fontSize: "12px", color: "#6b7280", background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: "var(--font-inter)" }}>Manage</button>
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+      {/* Bottom: modules table + quick access */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 280px", gap: "14px", flex: 1, minHeight: 0 }}>
 
-      {/* Quick access module cards */}
-      <div>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "14px" }}>
-          <h2 style={{ fontSize: "14px", fontWeight: 600, color: "#111827", letterSpacing: "-0.02em", margin: 0 }}>Quick Access</h2>
-          <div style={{ display: "flex", gap: "6px" }}>
-            {(["‹", "›"] as const).map((ch, i) => (
-              <button key={i} style={{ width: "28px", height: "28px", borderRadius: "6px", border: "1px solid #e5e7eb", background: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#6b7280", fontSize: "14px", fontFamily: "system-ui" }}>{ch}</button>
-            ))}
+        {/* Compliance Modules table */}
+        <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: "10px", overflow: "hidden", boxShadow: "0 1px 2px rgba(0,0,0,0.04)", display: "flex", flexDirection: "column", minHeight: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 18px 12px", flexShrink: 0 }}>
+            <h2 style={{ fontSize: "13.5px", fontWeight: 600, color: "#111827", letterSpacing: "-0.02em", margin: 0 }}>Compliance Modules</h2>
+            <button onClick={() => onNavigate("policies")} style={{ fontSize: "12px", color: "var(--rc-primary)", fontWeight: 600, background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: "var(--font-inter)" }}>View All</button>
+          </div>
+          <div style={{ overflowY: "auto", flex: 1 }}>
+            <table className="s-table" style={{ width: "100%" }}>
+              <thead>
+                <tr>
+                  <th>Module</th>
+                  <th>Detail</th>
+                  <th>Score</th>
+                  <th>Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {moduleOverview.map((m) => {
+                  const { score, detail } = computeModuleData(m.id, staffRows, salesProps, mgmtProps, policies);
+                  const isActive = score >= 85;
+                  const isWarn = score >= 65 && score < 85;
+                  const statusLabel = isActive ? "Active" : isWarn ? "Attention" : "Review";
+                  const statusColor = isActive ? "#166534" : isWarn ? "#92400e" : "#991b1b";
+                  const statusBg = isActive ? "#f0fdf4" : isWarn ? "#fffbeb" : "#fef2f2";
+                  const trackColor = isActive ? "#22c55e" : isWarn ? "#f59e0b" : "#ef4444";
+                  return (
+                    <tr key={m.id}>
+                      <td>
+                        <div style={{ display: "flex", alignItems: "center", gap: "9px" }}>
+                          <div style={{ width: "26px", height: "26px", borderRadius: "6px", background: "var(--rc-primary-subtle)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--rc-primary)", flexShrink: 0 }}>
+                            {m.icon}
+                          </div>
+                          <p style={{ fontSize: "12.5px", fontWeight: 600, color: "#111827", margin: 0, maxWidth: "none" }}>{m.label}</p>
+                        </div>
+                      </td>
+                      <td><span style={{ fontSize: "12px", color: "#6b7280" }}>{detail}</span></td>
+                      <td>
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                          <div style={{ width: "64px", height: "3px", background: "#f3f4f6", borderRadius: "100px", overflow: "hidden" }}>
+                            <div style={{ width: `${score}%`, height: "100%", background: trackColor, borderRadius: "100px" }} />
+                          </div>
+                          <span style={{ fontSize: "12px", fontWeight: 600, color: "#374151" }}>{score}%</span>
+                        </div>
+                      </td>
+                      <td>
+                        <span style={{ fontSize: "11px", fontWeight: 600, color: statusColor, background: statusBg, padding: "2px 9px", borderRadius: "100px" }}>
+                          {statusLabel}
+                        </span>
+                      </td>
+                      <td>
+                        <button onClick={() => onNavigate(m.id)} style={{ fontSize: "12px", color: "var(--rc-primary)", fontWeight: 600, background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: "var(--font-inter)" }}>Open</button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "14px" }}>
-          {moduleOverview.slice(0, 4).map((m) => {
-            const { score } = computeModuleData(m.id, staffRows, salesProps, mgmtProps, policies);
-            const badge = score >= 85 ? { label: "Active", color: "#166534", bg: "#f0fdf4" } : score >= 65 ? { label: "Attention", color: "#92400e", bg: "#fffbeb" } : { label: "Review", color: "#991b1b", bg: "#fef2f2" };
-            return (
-              <button
-                key={m.id}
-                onClick={() => onNavigate(m.id)}
-                style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: "12px", padding: "0 0 18px", textAlign: "left", cursor: "pointer", fontFamily: "var(--font-inter)", display: "flex", flexDirection: "column", gap: "0", boxShadow: "0 1px 3px rgba(0,0,0,0.04)", transition: "box-shadow 0.15s, border-color 0.15s", overflow: "hidden" }}
-                onMouseEnter={(e) => { e.currentTarget.style.boxShadow = "0 4px 16px rgba(0,0,0,0.08)"; e.currentTarget.style.borderColor = "#d1d5db"; }}
-                onMouseLeave={(e) => { e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.04)"; e.currentTarget.style.borderColor = "#e5e7eb"; }}
-              >
-                <div style={{ width: "100%", height: "88px", background: "linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "14px" }}>
-                  <div style={{ color: "var(--rc-primary)", opacity: 0.7, transform: "scale(1.8)" }}>{m.icon}</div>
-                </div>
-                <div style={{ padding: "0 18px", display: "flex", flexDirection: "column", gap: "10px" }}>
-                  <span style={{ fontSize: "11px", fontWeight: 600, color: badge.color, background: badge.bg, padding: "2px 9px", borderRadius: "100px", alignSelf: "flex-start" }}>{badge.label}</span>
-                  <div>
-                    <p style={{ fontSize: "13px", fontWeight: 600, color: "#111827", margin: 0, maxWidth: "none", letterSpacing: "-0.02em" }}>{m.label}</p>
-                    <p style={{ fontSize: "11.5px", color: "#9ca3af", margin: "3px 0 0", maxWidth: "none" }}>View · Manage</p>
-                  </div>
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      </div>
 
+        {/* Quick Access — compact vertical list */}
+        <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: "10px", overflow: "hidden", boxShadow: "0 1px 2px rgba(0,0,0,0.04)", display: "flex", flexDirection: "column", minHeight: 0 }}>
+          <div style={{ padding: "14px 18px 12px", borderBottom: "1px solid #f3f4f6", flexShrink: 0 }}>
+            <h2 style={{ fontSize: "13.5px", fontWeight: 600, color: "#111827", letterSpacing: "-0.02em", margin: 0 }}>Quick Access</h2>
+          </div>
+          <div style={{ overflowY: "auto", flex: 1, padding: "8px" }}>
+            {moduleOverview.map((m) => {
+              const { score } = computeModuleData(m.id, staffRows, salesProps, mgmtProps, policies);
+              const isActive = score >= 85;
+              const isWarn = score >= 65 && score < 85;
+              const badge = isActive ? { label: "Active", color: "#166534", bg: "#f0fdf4" } : isWarn ? { label: "Attention", color: "#92400e", bg: "#fffbeb" } : { label: "Review", color: "#991b1b", bg: "#fef2f2" };
+              return (
+                <button
+                  key={m.id}
+                  onClick={() => onNavigate(m.id)}
+                  style={{ width: "100%", display: "flex", alignItems: "center", gap: "10px", padding: "9px 10px", borderRadius: "8px", border: "none", background: "transparent", cursor: "pointer", textAlign: "left", fontFamily: "var(--font-inter)", transition: "background 0.1s", marginBottom: "2px" }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = "#f9fafb"; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+                >
+                  <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "var(--rc-primary-subtle)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--rc-primary)", flexShrink: 0 }}>
+                    {m.icon}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontSize: "12.5px", fontWeight: 600, color: "#111827", margin: 0, maxWidth: "none", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.label}</p>
+                    <span style={{ fontSize: "10.5px", fontWeight: 600, color: badge.color, background: badge.bg, padding: "1px 7px", borderRadius: "100px" }}>{badge.label}</span>
+                  </div>
+                  <svg width="12" height="12" viewBox="0 0 14 14" fill="none" style={{ flexShrink: 0, color: "#d1d5db" }}><path d="M5 3l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+      </div>
     </div>
   );
 }
