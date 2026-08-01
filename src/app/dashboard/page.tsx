@@ -2368,7 +2368,7 @@ function ModuleOverview({ moduleId, onSelectProperty, salesProps, mgmtProps, onA
                   onMouseEnter={(e) => { e.currentTarget.style.opacity = "0.85"; }}
                   onMouseLeave={(e) => { e.currentTarget.style.opacity = "1"; }}
                 >
-                  Open →
+                  Open
                 </button>
               </div>
             );
@@ -2921,7 +2921,7 @@ function AllPoliciesPage({ policies, onPolicyUpdated, onPolicyDeleted }: { polic
                   {p.status === "review-due" ? (
                     <button onClick={e => { e.stopPropagation(); markReviewed(p); }} style={{ fontSize: "12px", fontWeight: 500, color: "var(--rc-faint)", background: "transparent", border: "none", padding: 0, cursor: "pointer", fontFamily: "var(--font-inter)", transition: "color 0.1s ease" }}
                       onMouseEnter={e => (e.currentTarget.style.color = "var(--rc-ink)")} onMouseLeave={e => (e.currentTarget.style.color = "var(--rc-faint)")}>
-                      Mark reviewed →
+                      Mark reviewed
                     </button>
                   ) : (
                     <span style={{ fontSize: "12px", color: "var(--rc-faint)" }}>—</span>
@@ -4456,7 +4456,7 @@ function PolicyTemplatesPage({ onPolicySaved, savedNames, agencyName, agencyAbn 
                     onClick={() => startTemplate(t)}
                     style={{ fontSize: "12.5px", fontWeight: 600, color: "white", background: "var(--rc-primary-light)", border: "none", padding: "6px 14px", borderRadius: "7px", cursor: "pointer", fontFamily: "var(--font-inter)" }}
                   >
-                    {isSaved ? "Recreate" : "Create →"}
+                    {isSaved ? "Recreate" : "Create"}
                   </button>
                 </div>
               </div>
@@ -4525,7 +4525,7 @@ function PolicyTemplatesPage({ onPolicySaved, savedNames, agencyName, agencyAbn 
                 onClick={nextStep}
                 style={{ fontSize: "13px", fontWeight: 600, color: "white", background: currentAnswer.trim() ? "var(--rc-primary)" : "var(--rc-border)", border: "none", borderRadius: "8px", padding: "10px 22px", cursor: currentAnswer.trim() ? "pointer" : "default", fontFamily: "var(--font-inter)", transition: "background 0.15s ease" }}
               >
-                {step < total - 1 ? "Next →" : "Review policy →"}
+                {step < total - 1 ? "Next" : "Review policy"}
               </button>
             </div>
           </div>
@@ -4657,7 +4657,7 @@ function ReviewSchedulePage({ policies, onPolicyUpdated, onPolicyDeleted }: { po
                     <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end", alignItems: "center" }}>
                       <button onClick={e => { e.stopPropagation(); markReviewed(p); }} style={{ fontSize: "12px", fontWeight: 500, color: "var(--rc-faint)", background: "transparent", border: "none", padding: 0, cursor: "pointer", fontFamily: "var(--font-inter)", transition: "color 0.1s ease" }}
                         onMouseEnter={e => (e.currentTarget.style.color = "var(--rc-ink)")} onMouseLeave={e => (e.currentTarget.style.color = "var(--rc-faint)")}>
-                        Mark reviewed →
+                        Mark reviewed
                       </button>
                     </div>
                   </div>
@@ -5526,7 +5526,7 @@ function CPDRecordsPage({ staffRows }: { staffRows: StaffRow[] }) {
                         ) : <span style={{ fontSize: "12px", color: "var(--rc-faint)" }}>No hours set</span>}
                       </div>
                       <span style={{ fontSize: "12px", color: "var(--rc-faint)", padding: "0 20px" }}>{s.cpd_deadline || "—"}</span>
-                      <span style={{ fontSize: "11px", color: "var(--rc-faint)", padding: "0 20px" }}>Edit →</span>
+                      <span style={{ fontSize: "11px", color: "var(--rc-faint)", padding: "0 20px" }}>Edit</span>
                     </div>
                   )}
                 </div>
@@ -5867,7 +5867,7 @@ function OnboardingPage({ onStaffAdded }: { onStaffAdded?: (s: StaffRow) => void
                     onMouseEnter={e => { e.currentTarget.style.color = "var(--rc-ink)"; }}
                     onMouseLeave={e => { e.currentTarget.style.color = "var(--rc-faint)"; }}
                   >
-                    View checklist →
+                    View checklist
                   </button>
                 </div>
               );
@@ -6936,7 +6936,7 @@ function BillingSettingsPage({ userId }: { userId: string | null }) {
                     Update your card, download past invoices, or cancel your subscription through the secure Stripe portal.
                   </p>
                   <button onClick={openPortal} disabled={portalLoading} style={{ ...SETTINGS_BTN, marginLeft: "24px", flexShrink: 0, opacity: portalLoading ? 0.7 : 1, cursor: portalLoading ? "not-allowed" : "pointer" }}>
-                    {portalLoading ? "Opening…" : "Manage billing →"}
+                    {portalLoading ? "Opening…" : "Manage billing"}
                   </button>
                 </div>
               </div>
@@ -6965,7 +6965,7 @@ function BillingSettingsPage({ userId }: { userId: string | null }) {
         ) : (
           <div style={{ ...CARD, padding: "32px 24px", textAlign: "center" }}>
             <p style={{ fontSize: "15px", color: "var(--rc-muted)", marginBottom: "16px", maxWidth: "none" }}>No active subscription found.</p>
-            <a href="/signup" style={{ ...SETTINGS_BTN, display: "inline-block", textDecoration: "none" }}>Choose a plan →</a>
+            <a href="/signup" style={{ ...SETTINGS_BTN, display: "inline-block", textDecoration: "none" }}>Choose a plan</a>
           </div>
         )}
       </div>
@@ -8210,7 +8210,7 @@ function SuspendedScreen({ userId }: { userId: string | null }) {
           disabled={loading}
           style={{ display: "inline-block", padding: "12px 28px", background: "var(--rc-primary)", color: "white", borderRadius: "8px", fontWeight: 600, fontSize: "14px", border: "none", cursor: loading ? "not-allowed" : "pointer", opacity: loading ? 0.6 : 1, fontFamily: "var(--font-inter)", marginBottom: "16px" }}
         >
-          {loading ? "Opening billing portal…" : "Update payment method →"}
+          {loading ? "Opening billing portal…" : "Update payment method"}
         </button>
         <p style={{ fontSize: "12px", color: "var(--rc-faint)" }}>
           Already updated? It may take a few minutes to reflect.{" "}
