@@ -2154,38 +2154,82 @@ function DashboardHome({ onNavigate, agencyName, staffRows, salesProps, mgmtProp
           </div>
         </div>
 
-        {/* Quick Access — compact vertical list */}
-        <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: "10px", overflow: "hidden", boxShadow: "0 1px 2px rgba(0,0,0,0.04)", display: "flex", flexDirection: "column", minHeight: 0 }}>
-          <div style={{ padding: "14px 18px 12px", borderBottom: "1px solid #f3f4f6", flexShrink: 0 }}>
-            <h2 style={{ fontSize: "13.5px", fontWeight: 600, color: "#111827", letterSpacing: "-0.02em", margin: 0 }}>Quick Access</h2>
-          </div>
-          <div style={{ overflowY: "auto", flex: 1, padding: "8px" }}>
-            {moduleOverview.map((m) => {
-              const { score } = computeModuleData(m.id, staffRows, salesProps, mgmtProps, policies);
-              const isActive = score >= 85;
-              const isWarn = score >= 65 && score < 85;
-              const badge = isActive ? { label: "Active", color: "#166534", bg: "#f0fdf4" } : isWarn ? { label: "Attention", color: "#92400e", bg: "#fffbeb" } : { label: "Review", color: "#991b1b", bg: "#fef2f2" };
-              return (
-                <button
-                  key={m.id}
-                  onClick={() => onNavigate(m.id)}
-                  style={{ width: "100%", display: "flex", alignItems: "center", gap: "10px", padding: "9px 10px", borderRadius: "8px", border: "none", background: "transparent", cursor: "pointer", textAlign: "left", fontFamily: "var(--font-inter)", transition: "background 0.1s", marginBottom: "2px" }}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = "#f9fafb"; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
-                >
-                  <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "var(--rc-primary-subtle)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--rc-primary)", flexShrink: 0 }}>
-                    {m.icon}
+        {/* Needs Attention */}
+        {(() => {
+          type ActionItem = { label: string; sub: string; severity: "high" | "medium" | "low"; module: string };
+          const items: ActionItem[] = [];
+
+          staffRows.filter(s => s.licence === "renewal-due").forEach(s =>
+            items.push({ label: `${s.name}`, sub: "Licence renewal due", severity: "high", module: "staff" })
+          );
+          staffRows.filter(s => s.cpd === "overdue").forEach(s =>
+            items.push({ label: `${s.name}`, sub: "CPD hours overdue", severity: "high", module: "staff" })
+          );
+          staffRows.filter(s => s.cpd === "due-soon").forEach(s =>
+            items.push({ label: `${s.name}`, sub: "CPD due soon", severity: "medium", module: "staff" })
+          );
+          policies.filter(p => p.status === "review-due").forEach(p =>
+            items.push({ label: p.title, sub: "Policy review due", severity: "medium", module: "policies" })
+          );
+          moduleOverview.forEach(m => {
+            const { score } = computeModuleData(m.id, staffRows, salesProps, mgmtProps, policies);
+            if (score < 65) items.push({ label: m.label, sub: `Score ${score}% — needs work`, severity: "high", module: m.id });
+            else if (score < 85) items.push({ label: m.label, sub: `Score ${score}% — review recommended`, severity: "low", module: m.id });
+          });
+
+          const severityOrder = { high: 0, medium: 1, low: 2 };
+          const sorted = items.sort((a, b) => severityOrder[a.severity] - severityOrder[b.severity]);
+
+          const dot = (sev: ActionItem["severity"]) => ({
+            high:   { bg: "#fef2f2", dot: "#ef4444", text: "#991b1b" },
+            medium: { bg: "#fffbeb", dot: "#f59e0b", text: "#92400e" },
+            low:    { bg: "#f0fdf4", dot: "#22c55e", text: "#166534" },
+          }[sev]);
+
+          return (
+            <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: "10px", overflow: "hidden", boxShadow: "0 1px 2px rgba(0,0,0,0.04)", display: "flex", flexDirection: "column", minHeight: 0 }}>
+              <div style={{ padding: "14px 18px 12px", borderBottom: "1px solid #f3f4f6", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <h2 style={{ fontSize: "13.5px", fontWeight: 600, color: "#111827", letterSpacing: "-0.02em", margin: 0 }}>Needs Attention</h2>
+                {sorted.length > 0 && (
+                  <span style={{ fontSize: "11px", fontWeight: 700, color: "#fff", background: sorted.some(i => i.severity === "high") ? "#ef4444" : "#f59e0b", borderRadius: "100px", padding: "1px 8px" }}>
+                    {sorted.length}
+                  </span>
+                )}
+              </div>
+              <div style={{ overflowY: "auto", flex: 1, padding: "8px" }}>
+                {sorted.length === 0 ? (
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", gap: "10px", padding: "24px 16px" }}>
+                    <div style={{ width: "40px", height: "40px", borderRadius: "50%", background: "#f0fdf4", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M4 10l4 4 8-8" stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                    </div>
+                    <p style={{ fontSize: "13px", fontWeight: 600, color: "#111827", margin: 0, textAlign: "center", maxWidth: "none" }}>All clear</p>
+                    <p style={{ fontSize: "12px", color: "#9ca3af", margin: 0, textAlign: "center", maxWidth: "none" }}>No compliance issues detected across your agency.</p>
                   </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ fontSize: "12.5px", fontWeight: 600, color: "#111827", margin: 0, maxWidth: "none", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.label}</p>
-                    <span style={{ fontSize: "10.5px", fontWeight: 600, color: badge.color, background: badge.bg, padding: "1px 7px", borderRadius: "100px" }}>{badge.label}</span>
-                  </div>
-                  <svg width="12" height="12" viewBox="0 0 14 14" fill="none" style={{ flexShrink: 0, color: "#d1d5db" }}><path d="M5 3l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                </button>
-              );
-            })}
-          </div>
-        </div>
+                ) : sorted.map((item, i) => {
+                  const c = dot(item.severity);
+                  return (
+                    <button
+                      key={i}
+                      onClick={() => onNavigate(item.module)}
+                      style={{ width: "100%", display: "flex", alignItems: "flex-start", gap: "10px", padding: "9px 10px", borderRadius: "8px", border: "none", background: "transparent", cursor: "pointer", textAlign: "left", fontFamily: "var(--font-inter)", transition: "background 0.1s", marginBottom: "2px" }}
+                      onMouseEnter={(e) => { e.currentTarget.style.background = "#f9fafb"; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+                    >
+                      <div style={{ width: "28px", height: "28px", borderRadius: "7px", background: c.bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: "1px" }}>
+                        <div style={{ width: "7px", height: "7px", borderRadius: "50%", background: c.dot }} />
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <p style={{ fontSize: "12.5px", fontWeight: 600, color: "#111827", margin: 0, maxWidth: "none", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.label}</p>
+                        <p style={{ fontSize: "11.5px", color: "#6b7280", margin: "1px 0 0", maxWidth: "none" }}>{item.sub}</p>
+                      </div>
+                      <svg width="11" height="11" viewBox="0 0 14 14" fill="none" style={{ flexShrink: 0, color: "#d1d5db", marginTop: "4px" }}><path d="M5 3l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })()}
 
       </div>
     </div>
