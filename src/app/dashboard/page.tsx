@@ -5080,6 +5080,7 @@ function _renderDocContent_unused(doc: { title: string; category: string; date: 
 
 function StaffFilePage({ staffRow, onBack, agencyName }: { staffRow: StaffRow; onBack: () => void; agencyName: string }) {
   const s = staffRow;
+  const orgOwnerId = useContext(OrgContext);
   const licNum = s.licence_number;
   const initials = s.name.split(" ").map(n => n[0]).join("").slice(0, 2);
   const licOk = s.licence === "current" || s.licence === "exempt";
@@ -5123,11 +5124,12 @@ function StaffFilePage({ staffRow, onBack, agencyName }: { staffRow: StaffRow; o
     if (file.type !== "application/pdf") { setUploadError("Only PDF files are supported."); return; }
     setUploading(true);
     setUploadError(null);
-    const path = `${s.name.replace(/ /g, "_")}/${Date.now()}_${file.name}`;
+    const path = `${orgOwnerId}/${s.name.replace(/ /g, "_")}/${Date.now()}_${file.name}`;
     const { error: storageErr } = await supabase.storage.from("documents").upload(path, file);
     if (storageErr) { setUploadError(storageErr.message); setUploading(false); return; }
     const today = new Date().toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" });
     const { error: dbErr } = await supabase.from("documents").insert({
+      user_id: orgOwnerId,
       staff_name: s.name,
       title: file.name.replace(/\.pdf$/i, ""),
       category: "Document",
