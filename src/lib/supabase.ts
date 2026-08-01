@@ -7,6 +7,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export type Document = {
   id: string;
+  user_id: string;
   staff_name: string;
   title: string;
   category: string;

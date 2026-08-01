@@ -5097,14 +5097,16 @@ function StaffFilePage({ staffRow, onBack, agencyName }: { staffRow: StaffRow; o
 
   const fetchDocs = useCallback(async () => {
     setDocsLoading(true);
-    const { data } = await supabase
+    const query = supabase
       .from("documents")
       .select("*")
       .eq("staff_name", s.name)
       .order("created_at", { ascending: false });
+    if (orgOwnerId) query.eq("user_id", orgOwnerId);
+    const { data } = await query;
     setDocs(data ?? []);
     setDocsLoading(false);
-  }, [s.name]);
+  }, [s.name, orgOwnerId]);
 
   useEffect(() => { fetchDocs(); }, [fetchDocs]);
 
