@@ -1751,6 +1751,164 @@ function ComplianceChart({ currentScore }: { currentScore: number }) {
 
 
 
+// --- AI Assistant Panel ---
+type AiMsg = { role: "user" | "assistant"; text: string };
+
+const AI_QUICK_ACTIONS = [
+  { icon: "📋", label: "Check compliance status" },
+  { icon: "🎓", label: "Review CPD deadlines" },
+  { icon: "🏦", label: "Trust accounting help" },
+];
+
+const AI_CANNED: { match: string[]; reply: string }[] = [
+  { match: ["cpd", "training", "deadline", "hours"], reply: "CPD requirements vary by state. In NSW, licensees need 12 hours per year (4 must be core topics). Check the Staff module to see each team member's completion status and upcoming deadlines." },
+  { match: ["trust", "accounting", "funds", "money"], reply: "Trust accounting in Australian real estate requires strict separation of client funds. Key obligations include daily reconciliation, monthly audits, and annual external audits. Check the Trust Accounting module for your current status." },
+  { match: ["licence", "license", "renewal", "expiry"], reply: "Real estate licences must be renewed before expiry — a lapsed licence means you cannot legally trade. Check the Staff module to see which team members have renewals coming up." },
+  { match: ["aml", "anti-money", "laundering", "identity"], reply: "Under Australian AML/CTF laws, real estate agents must verify the identity of buyers and sellers. Ensure you're collecting and storing ID verification records for each transaction in the Sales module." },
+  { match: ["policy", "policies", "procedure"], reply: "Your agency's policies should be reviewed at least annually. Use the Policies & Procedures module to track review dates and flag any policies that are overdue for update." },
+  { match: ["score", "compliance"], reply: "Your compliance score is calculated across all modules — policies, staff licences, CPD completion, and property checklists. Focus on modules with the lowest scores first to improve your overall standing." },
+  { match: ["sale", "contract", "vendor", "section 32"], reply: "For residential sales compliance, ensure you have a signed agency agreement, completed vendor disclosure, verified AML identity, and a properly prepared Section 32 / Vendor Statement before listing." },
+  { match: ["management", "tenant", "rental", "bond", "condition"], reply: "For property management compliance, each new tenancy needs a signed management agreement, completed condition report, bond lodgement, and entry condition report. Check the Residential Management module." },
+];
+
+function getAiReply(input: string): string {
+  const lower = input.toLowerCase();
+  for (const { match, reply } of AI_CANNED) {
+    if (match.some(k => lower.includes(k))) return reply;
+  }
+  return "That's a great compliance question! For detailed guidance specific to your state and agency type, I recommend checking the relevant module in your dashboard or consulting your state's real estate regulator. Is there a specific area I can help clarify?";
+}
+
+function AiAssistantPanel({ onClose, agencyName }: { onClose: () => void; agencyName: string }) {
+  const [phase, setPhase] = useState<"loading" | "welcome" | "chat">("loading");
+  const [messages, setMessages] = useState<AiMsg[]>([]);
+  const [input, setInput] = useState("");
+  const [thinking, setThinking] = useState(false);
+  const msgEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const t = setTimeout(() => setPhase("welcome"), 1400);
+    return () => clearTimeout(t);
+  }, []);
+
+  useEffect(() => {
+    msgEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, thinking]);
+
+  function sendMessage(text: string) {
+    if (!text.trim()) return;
+    const userMsg: AiMsg = { role: "user", text: text.trim() };
+    setMessages(prev => [...prev, userMsg]);
+    setInput("");
+    setPhase("chat");
+    setThinking(true);
+    setTimeout(() => {
+      setThinking(false);
+      setMessages(prev => [...prev, { role: "assistant", text: getAiReply(text) }]);
+    }, 900 + Math.random() * 600);
+  }
+
+  return (
+    <div style={{ position: "fixed", top: "56px", right: "16px", bottom: "16px", width: "320px", background: "#fff", border: "1px solid #e5e7eb", borderRadius: "14px", boxShadow: "0 8px 40px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06)", display: "flex", flexDirection: "column", zIndex: 20, overflow: "hidden", animation: "aiPanelIn 0.22s cubic-bezier(0.16,1,0.3,1) both" }}>
+
+      {/* Header */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 16px", borderBottom: "1px solid #f3f4f6", flexShrink: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <div style={{ width: "22px", height: "22px", borderRadius: "6px", background: "#111827", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <svg width="11" height="11" viewBox="0 0 16 16" fill="none"><path d="M8 1l1.8 4.2L14 7l-4.2 1.8L8 13l-1.8-4.2L2 7l4.2-1.8L8 1z" fill="white"/></svg>
+          </div>
+          <span style={{ fontSize: "13px", fontWeight: 600, color: "#111827", letterSpacing: "-0.01em" }}>RealComply Assistant</span>
+        </div>
+        <button onClick={onClose} style={{ width: "24px", height: "24px", borderRadius: "6px", border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#9ca3af", transition: "background 0.1s" }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = "#f3f4f6"; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+        >
+          <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M2 2l10 10M12 2L2 12" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/></svg>
+        </button>
+      </div>
+
+      {/* Body */}
+      <div style={{ flex: 1, overflowY: "auto", padding: "16px" }}>
+        {phase === "loading" && (
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%" }}>
+            <div style={{ width: "40px", height: "40px", border: "3px solid #f3f4f6", borderTopColor: "#533afd", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
+          </div>
+        )}
+
+        {phase === "welcome" && (
+          <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+            <div>
+              <h3 style={{ fontSize: "15px", fontWeight: 700, color: "#111827", letterSpacing: "-0.03em", margin: "0 0 6px" }}>Hey there! 👋</h3>
+              <p style={{ fontSize: "13px", color: "#6b7280", lineHeight: 1.6, margin: 0, maxWidth: "none" }}>
+                Ask me anything about compliance requirements, CPD deadlines, trust accounting, or how to improve your compliance score.
+              </p>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+              {AI_QUICK_ACTIONS.map(({ icon, label }) => (
+                <button key={label} onClick={() => sendMessage(label)}
+                  style={{ display: "flex", alignItems: "center", gap: "10px", padding: "10px 12px", background: "#f9fafb", border: "1px solid #f3f4f6", borderRadius: "9px", cursor: "pointer", fontFamily: "var(--font-inter)", textAlign: "left", transition: "background 0.1s, border-color 0.1s", width: "100%" }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = "#f3f4f6"; e.currentTarget.style.borderColor = "#e5e7eb"; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = "#f9fafb"; e.currentTarget.style.borderColor = "#f3f4f6"; }}
+                >
+                  <span style={{ fontSize: "16px" }}>{icon}</span>
+                  <span style={{ fontSize: "12.5px", color: "#374151", fontWeight: 500 }}>{label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {phase === "chat" && (
+          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+            {messages.map((m, i) => (
+              <div key={i} style={{ display: "flex", flexDirection: "column", gap: "4px", alignItems: m.role === "user" ? "flex-end" : "flex-start" }}>
+                <div style={{ maxWidth: "85%", padding: "10px 13px", borderRadius: m.role === "user" ? "12px 12px 4px 12px" : "12px 12px 12px 4px", background: m.role === "user" ? "#111827" : "#f3f4f6", color: m.role === "user" ? "#fff" : "#374151", fontSize: "13px", lineHeight: 1.55 }}>
+                  {m.text}
+                </div>
+              </div>
+            ))}
+            {thinking && (
+              <div style={{ display: "flex", alignItems: "center", gap: "6px", padding: "10px 13px", background: "#f3f4f6", borderRadius: "12px 12px 12px 4px", alignSelf: "flex-start" }}>
+                {[0, 1, 2].map(i => (
+                  <div key={i} style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#9ca3af", animation: `bounce 1.2s ease-in-out ${i * 0.2}s infinite` }} />
+                ))}
+              </div>
+            )}
+            <div ref={msgEndRef} />
+          </div>
+        )}
+      </div>
+
+      {/* Input */}
+      <div style={{ padding: "12px 14px", borderTop: "1px solid #f3f4f6", flexShrink: 0, display: "flex", gap: "8px", alignItems: "flex-end" }}>
+        <textarea
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(input); } }}
+          placeholder="Ask anything about compliance…"
+          rows={1}
+          style={{ flex: 1, padding: "9px 12px", background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: "9px", fontSize: "13px", color: "#111827", fontFamily: "var(--font-inter)", resize: "none", outline: "none", lineHeight: 1.5, transition: "border-color 0.15s" }}
+          onFocus={(e) => { e.currentTarget.style.borderColor = "var(--rc-primary)"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(83,58,253,0.10)"; }}
+          onBlur={(e) => { e.currentTarget.style.borderColor = "#e5e7eb"; e.currentTarget.style.boxShadow = "none"; }}
+        />
+        <button
+          onClick={() => sendMessage(input)}
+          disabled={!input.trim()}
+          style={{ width: "34px", height: "34px", borderRadius: "9px", background: input.trim() ? "#111827" : "#f3f4f6", border: "none", cursor: input.trim() ? "pointer" : "default", display: "flex", alignItems: "center", justifyContent: "center", color: input.trim() ? "#fff" : "#9ca3af", flexShrink: 0, transition: "background 0.12s" }}
+        >
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M14 8H2M9 3l5 5-5 5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
+        </button>
+      </div>
+
+      <style>{`
+        @keyframes aiPanelIn { from { opacity: 0; transform: translateY(10px) scale(0.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        @keyframes bounce { 0%, 80%, 100% { transform: translateY(0); } 40% { transform: translateY(-5px); } }
+        @keyframes spin { to { transform: rotate(360deg); } }
+      `}</style>
+    </div>
+  );
+}
+
 function DashboardHome({ onNavigate, agencyName, staffRows, salesProps, mgmtProps, policies }: {
   onNavigate: (id: string) => void;
   agencyName: string;
@@ -8074,6 +8232,7 @@ export default function DashboardPage() {
   const [userRole, setUserRole] = useState<"owner" | "standard">("standard");
   const [unreadCount, setUnreadCount] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [aiPanelOpen, setAiPanelOpen] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data }) => {
@@ -8420,12 +8579,12 @@ export default function DashboardPage() {
               <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="5" stroke="#9ca3af" strokeWidth="1.5"/><path d="M11 11l3 3" stroke="#9ca3af" strokeWidth="1.5" strokeLinecap="round"/></svg>
               <span style={{ fontSize: "13px", color: "#9ca3af" }}>Search for something…</span>
             </div>
-            {/* Ask AI / Support button */}
+            {/* Ask AI button */}
             <button
-              onClick={() => openModule("notifications")}
-              style={{ display: "flex", alignItems: "center", gap: "6px", padding: "7px 14px", background: "#111827", color: "#fff", border: "none", borderRadius: "8px", fontSize: "12.5px", fontWeight: 600, cursor: "pointer", fontFamily: "var(--font-inter)", letterSpacing: "-0.01em", transition: "background 0.12s", flexShrink: 0 }}
+              onClick={() => setAiPanelOpen(v => !v)}
+              style={{ display: "flex", alignItems: "center", gap: "6px", padding: "7px 14px", background: aiPanelOpen ? "#374151" : "#111827", color: "#fff", border: "none", borderRadius: "8px", fontSize: "12.5px", fontWeight: 600, cursor: "pointer", fontFamily: "var(--font-inter)", letterSpacing: "-0.01em", transition: "background 0.12s", flexShrink: 0 }}
               onMouseEnter={(e) => { e.currentTarget.style.background = "#1f2937"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = "#111827"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = aiPanelOpen ? "#374151" : "#111827"; }}
             >
               <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 1l1.8 4.2L14 7l-4.2 1.8L8 13l-1.8-4.2L2 7l4.2-1.8L8 1z" fill="currentColor"/></svg>
               Ask AI
@@ -8470,6 +8629,10 @@ export default function DashboardPage() {
         )}
         </div>
       </div>
+
+      {/* AI Assistant Panel */}
+      {aiPanelOpen && <AiAssistantPanel onClose={() => setAiPanelOpen(false)} agencyName={agencyName} />}
+
     </div>
 
     <style>{`
