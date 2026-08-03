@@ -8322,6 +8322,7 @@ export default function DashboardPage() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [aiPanelOpen, setAiPanelOpen] = useState(false);
+  const [sidebarMode, setSidebarMode] = useState<"compliance" | "crm">("compliance");
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data }) => {
@@ -8528,45 +8529,71 @@ export default function DashboardPage() {
         </div>
 
         {/* Nav */}
-        <div style={{ flex: 1, padding: "10px 10px 0", overflowY: "auto" }}>
+        <div style={{ flex: 1, padding: "12px 10px 0", overflowY: "auto" }}>
 
-          {/* Overview */}
-          <button
-            onClick={goBack}
-            style={{ width: "100%", display: "flex", alignItems: "center", gap: "9px", padding: "7px 10px", borderRadius: "7px", border: "none", background: !activeModule ? "#111827" : "transparent", color: !activeModule ? "#fff" : "#374151", fontSize: "13.5px", fontWeight: !activeModule ? 600 : 400, cursor: "pointer", textAlign: "left", fontFamily: "var(--font-inter)", transition: "background 0.12s, color 0.12s", letterSpacing: "-0.01em" }}
-            onMouseEnter={(e) => { if (activeModule) e.currentTarget.style.background = "#f3f4f6"; }}
-            onMouseLeave={(e) => { if (activeModule) e.currentTarget.style.background = "transparent"; }}
-          >
-            <span style={{ flexShrink: 0, color: !activeModule ? "rgba(255,255,255,0.7)" : "#9ca3af" }}>
-              <svg width="15" height="15" viewBox="0 0 18 18" fill="none"><path d="M2 9L9 2l7 7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/><path d="M4 7v8a1 1 0 001 1h3v-4h2v4h3a1 1 0 001-1V7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
-            </span>
-            Dashboard
-          </button>
+          {/* Mode toggle */}
+          <div style={{ display: "flex", background: "#1f2937", borderRadius: "9px", padding: "3px", marginBottom: "12px" }}>
+            {(["compliance", "crm"] as const).map((mode) => (
+              <button
+                key={mode}
+                onClick={() => { setSidebarMode(mode); if (mode === "crm") goBack(); }}
+                style={{ flex: 1, padding: "6px 0", borderRadius: "6px", border: "none", cursor: "pointer", fontFamily: "var(--font-inter)", fontSize: "13px", fontWeight: 600, letterSpacing: "-0.01em", transition: "background 0.15s, color 0.15s", background: sidebarMode === mode ? "#fff" : "transparent", color: sidebarMode === mode ? "#111827" : "rgba(255,255,255,0.5)" }}
+              >
+                {mode === "compliance" ? "Compliance" : "CRM"}
+              </button>
+            ))}
+          </div>
 
-          {/* Section label */}
-          <p style={{ fontSize: "10.5px", fontWeight: 700, color: "#9ca3af", letterSpacing: "0.08em", textTransform: "uppercase", margin: "16px 0 6px 10px", maxWidth: "none" }}>Compliance</p>
+          {sidebarMode === "compliance" && (
+            <>
+              {/* Overview */}
+              <button
+                onClick={goBack}
+                style={{ width: "100%", display: "flex", alignItems: "center", gap: "9px", padding: "7px 10px", borderRadius: "7px", border: "none", background: !activeModule ? "#111827" : "transparent", color: !activeModule ? "#fff" : "#374151", fontSize: "13.5px", fontWeight: !activeModule ? 600 : 400, cursor: "pointer", textAlign: "left", fontFamily: "var(--font-inter)", transition: "background 0.12s, color 0.12s", letterSpacing: "-0.01em" }}
+                onMouseEnter={(e) => { if (activeModule) e.currentTarget.style.background = "#f3f4f6"; }}
+                onMouseLeave={(e) => { if (activeModule) e.currentTarget.style.background = "transparent"; }}
+              >
+                <span style={{ flexShrink: 0, color: !activeModule ? "rgba(255,255,255,0.7)" : "#9ca3af" }}>
+                  <svg width="15" height="15" viewBox="0 0 18 18" fill="none"><path d="M2 9L9 2l7 7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/><path d="M4 7v8a1 1 0 001 1h3v-4h2v4h3a1 1 0 001-1V7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                </span>
+                Compliance
+              </button>
 
-          {!activeModule && (
-            <nav key="module-list" className="sidebar-panel-enter">
-              {modules.map((m) => (
-                <button key={m.id} onClick={() => openModule(m.id)}
-                  style={{ width: "100%", display: "flex", alignItems: "center", gap: "9px", padding: "7px 10px", borderRadius: "7px", border: "none", background: "transparent", color: "#374151", fontSize: "13.5px", fontWeight: 400, cursor: "pointer", textAlign: "left", marginBottom: "1px", fontFamily: "var(--font-inter)", transition: "background 0.1s, color 0.1s", letterSpacing: "-0.01em" }}
-                  onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "#f3f4f6"; }}
-                  onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
-                >
-                  <span style={{ flexShrink: 0, color: "#9ca3af" }}>{m.icon}</span>
-                  <span style={{ flex: 1 }}>{m.label}</span>
-                  {m.id === "notifications" && unreadCount > 0 && (
-                    <span style={{ fontSize: "10px", fontWeight: 700, color: "#fff", background: "#ef4444", borderRadius: "9999px", padding: "1px 6px", flexShrink: 0, minWidth: "18px", textAlign: "center" }}>
-                      {unreadCount > 99 ? "99+" : unreadCount}
-                    </span>
-                  )}
-                </button>
-              ))}
-            </nav>
+              <p style={{ fontSize: "10.5px", fontWeight: 700, color: "#9ca3af", letterSpacing: "0.08em", textTransform: "uppercase", margin: "14px 0 6px 10px", maxWidth: "none" }}>Modules</p>
+
+              {!activeModule && (
+                <nav key="module-list" className="sidebar-panel-enter">
+                  {modules.map((m) => (
+                    <button key={m.id} onClick={() => openModule(m.id)}
+                      style={{ width: "100%", display: "flex", alignItems: "center", gap: "9px", padding: "7px 10px", borderRadius: "7px", border: "none", background: "transparent", color: "#374151", fontSize: "13.5px", fontWeight: 400, cursor: "pointer", textAlign: "left", marginBottom: "1px", fontFamily: "var(--font-inter)", transition: "background 0.1s, color 0.1s", letterSpacing: "-0.01em" }}
+                      onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "#f3f4f6"; }}
+                      onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
+                    >
+                      <span style={{ flexShrink: 0, color: "#9ca3af" }}>{m.icon}</span>
+                      <span style={{ flex: 1 }}>{m.label}</span>
+                      {m.id === "notifications" && unreadCount > 0 && (
+                        <span style={{ fontSize: "10px", fontWeight: 700, color: "#fff", background: "#ef4444", borderRadius: "9999px", padding: "1px 6px", flexShrink: 0, minWidth: "18px", textAlign: "center" }}>
+                          {unreadCount > 99 ? "99+" : unreadCount}
+                        </span>
+                      )}
+                    </button>
+                  ))}
+                </nav>
+              )}
+            </>
           )}
 
-          {activeModule && module && (
+          {sidebarMode === "crm" && (
+            <div style={{ padding: "32px 12px", display: "flex", flexDirection: "column", alignItems: "center", gap: "10px" }}>
+              <div style={{ width: "40px", height: "40px", borderRadius: "10px", background: "#f3f4f6", display: "flex", alignItems: "center", justifyContent: "center", color: "#9ca3af" }}>
+                <svg width="18" height="18" viewBox="0 0 20 20" fill="none"><rect x="2" y="5" width="16" height="12" rx="2" stroke="currentColor" strokeWidth="1.5"/><path d="M2 8h16" stroke="currentColor" strokeWidth="1.5"/><circle cx="6" cy="12" r="1" fill="currentColor"/><path d="M9 12h5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg>
+              </div>
+              <p style={{ fontSize: "12.5px", fontWeight: 600, color: "#374151", margin: 0, textAlign: "center", maxWidth: "none" }}>CRM Coming Soon</p>
+              <p style={{ fontSize: "11.5px", color: "#9ca3af", margin: 0, textAlign: "center", maxWidth: "none", lineHeight: 1.5 }}>Modules will appear here once available.</p>
+            </div>
+          )}
+
+          {sidebarMode === "compliance" && activeModule && module && (
             <div key={`sub-${activeModule}`} className="sidebar-panel-enter">
               {/* Module header */}
               <button
