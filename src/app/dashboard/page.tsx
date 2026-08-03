@@ -8323,6 +8323,7 @@ export default function DashboardPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [aiPanelOpen, setAiPanelOpen] = useState(false);
   const [sidebarMode, setSidebarMode] = useState<"compliance" | "crm">("compliance");
+  const [crmModule, setCrmModule] = useState<string | null>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data }) => {
@@ -8536,7 +8537,7 @@ export default function DashboardPage() {
             {(["compliance", "crm"] as const).map((mode) => (
               <button
                 key={mode}
-                onClick={() => { setSidebarMode(mode); if (mode === "crm") goBack(); }}
+                onClick={() => { setSidebarMode(mode); if (mode === "crm") goBack(); else setCrmModule(null); }}
                 style={{ flex: 1, padding: "6px 0", borderRadius: "6px", border: "none", cursor: "pointer", fontFamily: "var(--font-inter)", fontSize: "13px", fontWeight: 600, letterSpacing: "-0.01em", transition: "background 0.15s, color 0.15s", background: sidebarMode === mode ? "#fff" : "transparent", color: sidebarMode === mode ? "#111827" : "rgba(255,255,255,0.5)" }}
               >
                 {mode === "compliance" ? "Compliance" : "CRM"}
@@ -8584,13 +8585,39 @@ export default function DashboardPage() {
           )}
 
           {sidebarMode === "crm" && (
-            <div style={{ padding: "32px 12px", display: "flex", flexDirection: "column", alignItems: "center", gap: "10px" }}>
-              <div style={{ width: "40px", height: "40px", borderRadius: "10px", background: "#f3f4f6", display: "flex", alignItems: "center", justifyContent: "center", color: "#9ca3af" }}>
-                <svg width="18" height="18" viewBox="0 0 20 20" fill="none"><rect x="2" y="5" width="16" height="12" rx="2" stroke="currentColor" strokeWidth="1.5"/><path d="M2 8h16" stroke="currentColor" strokeWidth="1.5"/><circle cx="6" cy="12" r="1" fill="currentColor"/><path d="M9 12h5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg>
-              </div>
-              <p style={{ fontSize: "12.5px", fontWeight: 600, color: "#374151", margin: 0, textAlign: "center", maxWidth: "none" }}>CRM Coming Soon</p>
-              <p style={{ fontSize: "11.5px", color: "#9ca3af", margin: 0, textAlign: "center", maxWidth: "none", lineHeight: 1.5 }}>Modules will appear here once available.</p>
-            </div>
+            <>
+              {/* CRM home */}
+              <button
+                onClick={() => { setCrmModule(null); setSidebarOpen(false); }}
+                style={{ width: "100%", display: "flex", alignItems: "center", gap: "9px", padding: "7px 10px", borderRadius: "7px", border: "none", background: !crmModule ? "#111827" : "transparent", color: !crmModule ? "#fff" : "#374151", fontSize: "13.5px", fontWeight: !crmModule ? 600 : 400, cursor: "pointer", textAlign: "left", fontFamily: "var(--font-inter)", transition: "background 0.12s, color 0.12s", letterSpacing: "-0.01em" }}
+                onMouseEnter={(e) => { if (crmModule) e.currentTarget.style.background = "#f3f4f6"; }}
+                onMouseLeave={(e) => { if (crmModule) e.currentTarget.style.background = "transparent"; }}
+              >
+                <span style={{ flexShrink: 0, color: !crmModule ? "rgba(255,255,255,0.7)" : "#9ca3af" }}>
+                  <svg width="15" height="15" viewBox="0 0 18 18" fill="none"><path d="M2 9L9 2l7 7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/><path d="M4 7v8a1 1 0 001 1h3v-4h2v4h3a1 1 0 001-1V7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                </span>
+                CRM
+              </button>
+              <p style={{ fontSize: "10.5px", fontWeight: 700, color: "#9ca3af", letterSpacing: "0.08em", textTransform: "uppercase", margin: "14px 0 6px 10px", maxWidth: "none" }}>Modules</p>
+              <nav className="sidebar-panel-enter">
+                {([
+                  { id: "contacts",   label: "Contacts",   icon: <svg width="15" height="15" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="6" r="3" stroke="currentColor" strokeWidth="1.5"/><path d="M2 16c0-3.314 3.134-6 7-6s7 2.686 7 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg> },
+                  { id: "appraisals", label: "Appraisals", icon: <svg width="15" height="15" viewBox="0 0 18 18" fill="none"><path d="M2 14V6l7-4 7 4v8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><rect x="6" y="9" width="6" height="5" rx="1" stroke="currentColor" strokeWidth="1.4"/></svg> },
+                  { id: "listings",   label: "Listings",   icon: <svg width="15" height="15" viewBox="0 0 18 18" fill="none"><rect x="2" y="2" width="14" height="14" rx="2" stroke="currentColor" strokeWidth="1.5"/><path d="M5 6h8M5 9h6M5 12h4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg> },
+                  { id: "marketing",  label: "Marketing",  icon: <svg width="15" height="15" viewBox="0 0 18 18" fill="none"><path d="M3 11V7l10-4v12L3 11z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/><path d="M3 11v3l2-1" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg> },
+                  { id: "team",       label: "Team",       icon: <svg width="15" height="15" viewBox="0 0 18 18" fill="none"><circle cx="6" cy="6" r="2.5" stroke="currentColor" strokeWidth="1.4"/><circle cx="12" cy="6" r="2.5" stroke="currentColor" strokeWidth="1.4"/><path d="M1 15c0-2.485 2.239-4.5 5-4.5s5 2.015 5 4.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/><path d="M12 10.5c2.761 0 5 2.015 5 4.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg> },
+                ] as { id: string; label: string; icon: React.ReactNode }[]).map((m) => (
+                  <button key={m.id} onClick={() => { setCrmModule(m.id); setSidebarOpen(false); }}
+                    style={{ width: "100%", display: "flex", alignItems: "center", gap: "9px", padding: "7px 10px", borderRadius: "7px", border: "none", background: crmModule === m.id ? "#111827" : "transparent", color: crmModule === m.id ? "#fff" : "#374151", fontSize: "13.5px", fontWeight: crmModule === m.id ? 600 : 400, cursor: "pointer", textAlign: "left", marginBottom: "1px", fontFamily: "var(--font-inter)", transition: "background 0.1s, color 0.1s", letterSpacing: "-0.01em" }}
+                    onMouseEnter={(e) => { if (crmModule !== m.id) (e.currentTarget as HTMLButtonElement).style.background = "#f3f4f6"; }}
+                    onMouseLeave={(e) => { if (crmModule !== m.id) (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
+                  >
+                    <span style={{ flexShrink: 0, color: crmModule === m.id ? "rgba(255,255,255,0.7)" : "#9ca3af" }}>{m.icon}</span>
+                    {m.label}
+                  </button>
+                ))}
+              </nav>
+            </>
           )}
 
           {sidebarMode === "compliance" && activeModule && module && (
@@ -8725,7 +8752,19 @@ export default function DashboardPage() {
           className="main-panel-enter"
           style={{ flex: 1, display: "flex" }}
         >
-        {selected?.type === "property" ? (
+        {sidebarMode === "crm" && crmModule ? (
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "16px", padding: "40px" }}>
+            <div style={{ width: "52px", height: "52px", borderRadius: "14px", background: "#f3f4f6", display: "flex", alignItems: "center", justifyContent: "center", color: "#9ca3af" }}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="3" stroke="currentColor" strokeWidth="1.5"/><path d="M8 12h8M8 8h8M8 16h5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>
+            </div>
+            <div style={{ textAlign: "center" }}>
+              <p style={{ fontSize: "15px", fontWeight: 700, color: "#111827", margin: "0 0 6px", letterSpacing: "-0.02em" }}>{crmModule.charAt(0).toUpperCase() + crmModule.slice(1)} — Coming Soon</p>
+              <p style={{ fontSize: "13.5px", color: "#9ca3af", margin: 0, maxWidth: "320px", lineHeight: 1.6 }}>This module is being built. Check back soon.</p>
+            </div>
+          </div>
+        ) : sidebarMode === "crm" ? (
+          <DashboardHome onNavigate={openModule} agencyName={agencyName} staffRows={staffRows} salesProps={salesProps} mgmtProps={mgmtProps} policies={policies} />
+        ) : selected?.type === "property" ? (
           selected.section === "sales" ? (
             <SalesPropertyChecklist key={selected.id} propertyId={selected.id} address={selected.address} onRemove={() => handleRemoveProperty(selected.id, "sales")} />
           ) : (
