@@ -9584,6 +9584,841 @@ Warm regards,
   );
 }
 
+// ─── CrmUnderOfferPage ───────────────────────────────────────────────────────
+
+const SEED_UNDER_OFFER: Array<{
+  id: string; address: string; suburb: string; buyer: string; vendor: string;
+  agent: string; price: string; financeDate: string; buildingDate: string;
+  pestDate: string; settlementDate: string; offerDate: string;
+  financeCleared: boolean; buildingCleared: boolean; pestCleared: boolean;
+}> = [
+  { id: "uo1", address: "14 Wentworth Ave", suburb: "Wollongong", buyer: "James & Claire Nguyen", vendor: "Robert & Susan Park", agent: "Sarah Mitchell", price: "$1,250,000", financeDate: "2026-08-08", buildingDate: "2026-08-10", pestDate: "2026-08-10", settlementDate: "2026-09-05", offerDate: "2026-07-28", financeCleared: false, buildingCleared: true, pestCleared: true },
+  { id: "uo2", address: "3 Illawarra Rd", suburb: "Figtree", buyer: "Michael Chen", vendor: "Anne & David Walsh", agent: "Tom Briggs", price: "$895,000", financeDate: "2026-08-06", buildingDate: "2026-08-07", pestDate: "2026-08-07", settlementDate: "2026-08-28", offerDate: "2026-07-25", financeCleared: true, buildingCleared: true, pestCleared: false },
+  { id: "uo3", address: "22 Surf Parade", suburb: "Thirroul", buyer: "Lisa Turner", vendor: "Greg Hollis", agent: "Sarah Mitchell", price: "$1,580,000", financeDate: "2026-08-12", buildingDate: "2026-08-15", pestDate: "2026-08-15", settlementDate: "2026-09-12", offerDate: "2026-07-30", financeCleared: false, buildingCleared: false, pestCleared: false },
+];
+
+function daysUntil(dateStr: string): number {
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  const target = new Date(dateStr);
+  return Math.round((target.getTime() - now.getTime()) / 86400000);
+}
+
+function CountdownChip({ date, label, cleared }: { date: string; label: string; cleared: boolean }) {
+  if (cleared) return <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", padding: "2px 8px", background: "#dcfce7", color: "#16a34a", borderRadius: "20px", fontSize: "11px", fontWeight: 600 }}><svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#16a34a" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>{label} Clear</span>;
+  const days = daysUntil(date);
+  const urgent = days <= 2;
+  const bg = urgent ? "#fef2f2" : days <= 5 ? "#fefce8" : "#f0f9ff";
+  const col = urgent ? "#dc2626" : days <= 5 ? "#ca8a04" : "#0284c7";
+  return <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", padding: "2px 8px", background: bg, color: col, borderRadius: "20px", fontSize: "11px", fontWeight: 600 }}>{urgent && <svg width="9" height="9" viewBox="0 0 12 12" fill="none"><path d="M6 1l5 9H1L6 1z" stroke={col} strokeWidth="1.2" strokeLinejoin="round"/></svg>}{label}: {days < 0 ? "Overdue" : days === 0 ? "Today" : `${days}d`}</span>;
+}
+
+function CrmUnderOfferPage({ staffRows }: { staffRows: StaffRow[] }) {
+  const [items, setItems] = React.useState(SEED_UNDER_OFFER);
+  const [selectedId, setSelectedId] = React.useState<string | null>(null);
+  const selected = items.find(i => i.id === selectedId) ?? null;
+
+  const kpis = [
+    { label: "Under Offer", value: String(items.length), sub: "active contracts", color: "#6366f1" },
+    { label: "Finance Pending", value: String(items.filter(i => !i.financeCleared).length), sub: "awaiting clearance", color: "#f59e0b" },
+    { label: "Settling This Month", value: String(items.filter(i => { const d = new Date(i.settlementDate); return d.getMonth() === new Date().getMonth() && d.getFullYear() === new Date().getFullYear(); }).length), sub: "settlements due", color: "#10b981" },
+    { label: "Total Value", value: `$${(items.length * 1.24).toFixed(1)}M`, sub: "under offer", color: "#3b82f6" },
+  ];
+
+  return (
+    <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "calc(100vh - 56px)", overflow: "hidden", padding: "20px 28px", gap: "14px" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+        <div>
+          <h1 style={{ fontSize: "1.1rem", fontWeight: 700, color: "#111827", letterSpacing: "-0.03em", margin: 0 }}>Under Offer</h1>
+          <p style={{ fontSize: "12.5px", color: "#9ca3af", margin: "3px 0 0" }}>Listings · Contract tracking & condition monitoring</p>
+        </div>
+        <button style={{ display: "flex", alignItems: "center", gap: "7px", padding: "7px 14px", background: "#111827", color: "#fff", border: "none", borderRadius: "8px", fontSize: "12.5px", fontWeight: 600, cursor: "pointer" }}>
+          <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>
+          Add Contract
+        </button>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px", flexShrink: 0 }}>
+        {kpis.map(k => <CrmKpiTile key={k.label} label={k.label} value={k.value} sub={k.sub} color={k.color} />)}
+      </div>
+      <AiAutomationPanel automations={[
+        { title: "Finance Deadline Monitor", description: "Alert agents 48h before finance expiry and auto-remind buyers' solicitors", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 1v7l4 2" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/><circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.3"/></svg> },
+        { title: "Vendor Update Digest", description: "Auto-send a daily status email to the seller while the property is under offer", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M2 4l6 5 6-5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/><rect x="1" y="3" width="14" height="10" rx="2" stroke="currentColor" strokeWidth="1.3"/></svg> },
+        { title: "Backup Buyer Alert", description: "Instantly notify registered backup buyers if a deal falls through", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><circle cx="6" cy="5" r="3" stroke="currentColor" strokeWidth="1.3"/><path d="M1 13c0-2.761 2.239-5 5-5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg> },
+      ]} />
+      <div style={{ flex: 1, overflow: "auto", display: "flex", gap: "16px" }}>
+        {/* Cards */}
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "10px" }}>
+          {items.map(item => {
+            const allClear = item.financeCleared && item.buildingCleared && item.pestCleared;
+            const daysToSettlement = daysUntil(item.settlementDate);
+            return (
+              <div key={item.id} onClick={() => setSelectedId(selectedId === item.id ? null : item.id)}
+                style={{ background: "#fff", border: `1.5px solid ${selectedId === item.id ? "#6366f1" : "#e5e7eb"}`, borderRadius: "12px", padding: "16px 20px", cursor: "pointer", transition: "border-color 0.15s" }}>
+                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "10px" }}>
+                  <div>
+                    <div style={{ fontWeight: 700, fontSize: "14px", color: "#111827" }}>{item.address}</div>
+                    <div style={{ fontSize: "12px", color: "#6b7280", marginTop: "2px" }}>{item.suburb} · {item.agent} · <strong style={{ color: "#111827" }}>{item.price}</strong></div>
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "4px" }}>
+                    <span style={{ padding: "2px 10px", borderRadius: "20px", fontSize: "11px", fontWeight: 700, background: allClear ? "#dcfce7" : "#fef3c7", color: allClear ? "#16a34a" : "#92400e" }}>{allClear ? "All Conditions Clear" : "Conditions Pending"}</span>
+                    <span style={{ fontSize: "11px", color: daysToSettlement < 14 ? "#dc2626" : "#6b7280" }}>Settlement: {daysToSettlement < 0 ? "Overdue" : `${daysToSettlement}d`} · {new Date(item.settlementDate).toLocaleDateString("en-AU", { day: "numeric", month: "short" })}</span>
+                  </div>
+                </div>
+                <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+                  <CountdownChip date={item.financeDate} label="Finance" cleared={item.financeCleared} />
+                  <CountdownChip date={item.buildingDate} label="Building" cleared={item.buildingCleared} />
+                  <CountdownChip date={item.pestDate} label="Pest" cleared={item.pestCleared} />
+                </div>
+                {selectedId === item.id && (
+                  <div style={{ marginTop: "14px", paddingTop: "14px", borderTop: "1px solid #f3f4f6" }}>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", fontSize: "12px" }}>
+                      <div><span style={{ color: "#9ca3af" }}>Buyer:</span> <strong>{item.buyer}</strong></div>
+                      <div><span style={{ color: "#9ca3af" }}>Vendor:</span> <strong>{item.vendor}</strong></div>
+                      <div><span style={{ color: "#9ca3af" }}>Offer date:</span> <strong>{new Date(item.offerDate).toLocaleDateString("en-AU")}</strong></div>
+                      <div><span style={{ color: "#9ca3af" }}>Settlement:</span> <strong>{new Date(item.settlementDate).toLocaleDateString("en-AU")}</strong></div>
+                    </div>
+                    <div style={{ display: "flex", gap: "8px", marginTop: "12px" }}>
+                      {!item.financeCleared && <button onClick={(e) => { e.stopPropagation(); setItems(prev => prev.map(i => i.id === item.id ? { ...i, financeCleared: true } : i)); }} style={{ padding: "5px 12px", background: "#f0fdf4", color: "#16a34a", border: "1px solid #86efac", borderRadius: "6px", fontSize: "12px", fontWeight: 600, cursor: "pointer" }}>Mark Finance Clear</button>}
+                      {!item.buildingCleared && <button onClick={(e) => { e.stopPropagation(); setItems(prev => prev.map(i => i.id === item.id ? { ...i, buildingCleared: true } : i)); }} style={{ padding: "5px 12px", background: "#f0fdf4", color: "#16a34a", border: "1px solid #86efac", borderRadius: "6px", fontSize: "12px", fontWeight: 600, cursor: "pointer" }}>Mark B&P Clear</button>}
+                      <button onClick={(e) => e.stopPropagation()} style={{ padding: "5px 12px", background: "#f5f3ff", color: "#6d28d9", border: "1px solid #c4b5fd", borderRadius: "6px", fontSize: "12px", fontWeight: 600, cursor: "pointer" }}>Send Vendor Update</button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── CrmSoldLeasedPage ─────────────────────────────────────────────────────────
+
+const SEED_SOLD: Array<{ id: string; address: string; suburb: string; type: "sale" | "rental"; price: string; soldDate: string; buyer: string; vendor: string; agent: string; daysOnMarket: number; notified: boolean }> = [
+  { id: "sl1", address: "14 Wentworth Ave", suburb: "Wollongong", type: "sale", price: "$1,250,000", soldDate: "2026-07-15", buyer: "James Nguyen", vendor: "Robert Park", agent: "Sarah Mitchell", daysOnMarket: 18, notified: false },
+  { id: "sl2", address: "7 Blue Haven Cres", suburb: "Keiraville", type: "sale", price: "$980,000", soldDate: "2026-07-20", buyer: "Emma Carter", vendor: "David Walsh", agent: "Tom Briggs", daysOnMarket: 22, notified: true },
+  { id: "sl3", address: "3 Illawarra Rd", suburb: "Figtree", type: "rental", price: "$620/wk", soldDate: "2026-07-28", buyer: "Michael Chen", vendor: "Anne Walsh", agent: "Tom Briggs", daysOnMarket: 8, notified: false },
+  { id: "sl4", address: "90 Corrimal St", suburb: "Corrimal", type: "sale", price: "$745,000", soldDate: "2026-07-10", buyer: "Sophie Lee", vendor: "Tom & Jan Mills", agent: "Sarah Mitchell", daysOnMarket: 35, notified: true },
+];
+
+function CrmSoldLeasedPage({ staffRows }: { staffRows: StaffRow[] }) {
+  const [items, setItems] = React.useState(SEED_SOLD);
+  const [filter, setFilter] = React.useState<"all" | "sale" | "rental">("all");
+  const [notifyingId, setNotifyingId] = React.useState<string | null>(null);
+  const visible = items.filter(i => filter === "all" || i.type === filter);
+
+  async function handleNotify(id: string) {
+    setNotifyingId(id);
+    await new Promise(r => setTimeout(r, 1400));
+    setItems(prev => prev.map(i => i.id === id ? { ...i, notified: true } : i));
+    setNotifyingId(null);
+  }
+
+  const totalSaleVol = items.filter(i => i.type === "sale").reduce((sum, i) => sum + parseFloat(i.price.replace(/[$,]/g, "")) / 1e6, 0);
+
+  return (
+    <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "calc(100vh - 56px)", overflow: "hidden", padding: "20px 28px", gap: "14px" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+        <div>
+          <h1 style={{ fontSize: "1.1rem", fontWeight: 700, color: "#111827", letterSpacing: "-0.03em", margin: 0 }}>Sold / Leased</h1>
+          <p style={{ fontSize: "12.5px", color: "#9ca3af", margin: "3px 0 0" }}>Listings · Results & neighbour prospecting triggers</p>
+        </div>
+        <div style={{ display: "flex", gap: "6px" }}>
+          {(["all", "sale", "rental"] as const).map(f => (
+            <button key={f} onClick={() => setFilter(f)} style={{ padding: "5px 12px", background: filter === f ? "#111827" : "#f9fafb", color: filter === f ? "#fff" : "#374151", border: "1px solid", borderColor: filter === f ? "#111827" : "#e5e7eb", borderRadius: "6px", fontSize: "12px", fontWeight: 600, cursor: "pointer", textTransform: "capitalize" }}>{f === "all" ? "All" : f === "sale" ? "Sales" : "Leased"}</button>
+          ))}
+        </div>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px", flexShrink: 0 }}>
+        <CrmKpiTile label="Total Results" value={String(items.length)} sub="this month" color="#10b981" />
+        <CrmKpiTile label="Sales Volume" value={`$${totalSaleVol.toFixed(2)}M`} sub="settled" color="#3b82f6" />
+        <CrmKpiTile label="Avg Days on Market" value={String(Math.round(items.reduce((s, i) => s + i.daysOnMarket, 0) / items.length))} sub="days" color="#6366f1" />
+        <CrmKpiTile label="Neighbour Alerts" value={String(items.filter(i => !i.notified).length)} sub="to send" color="#f59e0b" />
+      </div>
+      <AiAutomationPanel automations={[
+        { title: "Nearby Owner Notification", description: "When a property sells, AI identifies owners within 500m and queues appraisal outreach", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 2l5 5H3l5-5z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/><rect x="5" y="7" width="6" height="7" rx="1" stroke="currentColor" strokeWidth="1.3"/></svg> },
+        { title: "Buyer Re-engagement", description: "Alert registered buyers who missed out to similar properties when they come to market", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><circle cx="6" cy="5" r="3" stroke="currentColor" strokeWidth="1.3"/><path d="M1 13c0-2.761 2.239-5 5-5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg> },
+        { title: "Testimonial Request", description: "Auto-send a review request to the vendor 7 days after settlement", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 1l2 5h5l-4 3 1.5 5L8 11l-4.5 3L5 9 1 6h5L8 1z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/></svg> },
+      ]} insight={{ title: "Neighbour notification (preview)", body: "After connecting AI, every settled sale automatically triggers an outreach queue for neighbouring owners — turning each result into new appraisal opportunities." }} />
+      <div style={{ flex: 1, overflow: "auto" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
+          <thead>
+            <tr style={{ borderBottom: "1px solid #e5e7eb" }}>
+              {["Address", "Type", "Result", "Date", "Days on Mkt", "Agent", "Neighbour Alert"].map(h => (
+                <th key={h} style={{ textAlign: "left", padding: "8px 12px", fontSize: "11px", fontWeight: 600, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.04em" }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {visible.map(item => (
+              <tr key={item.id} style={{ borderBottom: "1px solid #f3f4f6" }}>
+                <td style={{ padding: "10px 12px" }}>
+                  <div style={{ fontWeight: 600, color: "#111827" }}>{item.address}</div>
+                  <div style={{ fontSize: "11.5px", color: "#9ca3af" }}>{item.suburb}</div>
+                </td>
+                <td style={{ padding: "10px 12px" }}>
+                  <span style={{ padding: "2px 8px", borderRadius: "20px", fontSize: "11px", fontWeight: 600, background: item.type === "sale" ? "#eff6ff" : "#f0fdf4", color: item.type === "sale" ? "#1d4ed8" : "#15803d" }}>{item.type === "sale" ? "Sale" : "Leased"}</span>
+                </td>
+                <td style={{ padding: "10px 12px", fontWeight: 700, color: "#111827" }}>{item.price}</td>
+                <td style={{ padding: "10px 12px", color: "#374151" }}>{new Date(item.soldDate).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" })}</td>
+                <td style={{ padding: "10px 12px", color: "#374151" }}>{item.daysOnMarket} days</td>
+                <td style={{ padding: "10px 12px", color: "#374151" }}>{item.agent}</td>
+                <td style={{ padding: "10px 12px" }}>
+                  {item.notified ? (
+                    <span style={{ fontSize: "11.5px", color: "#16a34a", fontWeight: 600 }}>✓ Sent</span>
+                  ) : (
+                    <button disabled={notifyingId === item.id} onClick={() => handleNotify(item.id)} style={{ padding: "4px 10px", background: notifyingId === item.id ? "#f3f4f6" : "#fefce8", color: notifyingId === item.id ? "#9ca3af" : "#92400e", border: "1px solid", borderColor: notifyingId === item.id ? "#e5e7eb" : "#fde68a", borderRadius: "6px", fontSize: "11.5px", fontWeight: 600, cursor: "pointer" }}>
+                      {notifyingId === item.id ? "Sending…" : "Notify Neighbours"}
+                    </button>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+// ─── CrmMarketingPage ─────────────────────────────────────────────────────────
+
+type MarketingCampaign = { id: string; name: string; type: "email" | "social" | "letterbox"; listing: string; sent: number; opened: number; clicked: number; status: "draft" | "active" | "completed"; date: string };
+
+const SEED_CAMPAIGNS: MarketingCampaign[] = [
+  { id: "mc1", name: "Just Listed — 14 Wentworth Ave", type: "email", listing: "14 Wentworth Ave", sent: 342, opened: 198, clicked: 47, status: "completed", date: "2026-07-18" },
+  { id: "mc2", name: "Open Home Reminder — Thirroul", type: "email", listing: "22 Surf Parade", sent: 180, opened: 94, clicked: 22, status: "completed", date: "2026-07-26" },
+  { id: "mc3", name: "Instagram Post — 90 Corrimal St", type: "social", listing: "90 Corrimal St", sent: 1, opened: 412, clicked: 38, status: "completed", date: "2026-07-10" },
+  { id: "mc4", name: "Just Listed — 3 Illawarra Rd", type: "email", listing: "3 Illawarra Rd", sent: 0, opened: 0, clicked: 0, status: "draft", date: "2026-08-04" },
+  { id: "mc5", name: "Buyer Database Blast — Keiraville", type: "email", listing: "Multiple", sent: 620, opened: 314, clicked: 89, status: "active", date: "2026-08-02" },
+];
+
+const EMAIL_TEMPLATES = [
+  { id: "et1", name: "Just Listed", opens: "68%", clicks: "24%", lastUsed: "2026-07-18", category: "Listings" },
+  { id: "et2", name: "Open Home Invitation", opens: "54%", clicks: "18%", lastUsed: "2026-07-26", category: "Listings" },
+  { id: "et3", name: "Price Reduction", opens: "71%", clicks: "31%", lastUsed: "2026-06-14", category: "Listings" },
+  { id: "et4", name: "Just Sold", opens: "82%", clicks: "12%", lastUsed: "2026-07-22", category: "Results" },
+  { id: "et5", name: "Market Update — Monthly", opens: "44%", clicks: "9%", lastUsed: "2026-07-01", category: "Nurture" },
+  { id: "et6", name: "Landlord Quarterly Report", opens: "61%", clicks: "15%", lastUsed: "2026-07-01", category: "PM" },
+];
+
+function CrmMarketingPage({ submodule, staffRows }: { submodule: string | null; staffRows: StaffRow[] }) {
+  const sub = submodule ?? "Campaigns";
+
+  if (sub === "Email Templates") {
+    return (
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "calc(100vh - 56px)", overflow: "hidden", padding: "20px 28px", gap: "14px" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+          <div>
+            <h1 style={{ fontSize: "1.1rem", fontWeight: 700, color: "#111827", letterSpacing: "-0.03em", margin: 0 }}>Email Templates</h1>
+            <p style={{ fontSize: "12.5px", color: "#9ca3af", margin: "3px 0 0" }}>Marketing · Reusable email designs & performance tracking</p>
+          </div>
+          <button style={{ display: "flex", alignItems: "center", gap: "7px", padding: "7px 14px", background: "#111827", color: "#fff", border: "none", borderRadius: "8px", fontSize: "12.5px", fontWeight: 600, cursor: "pointer" }}>
+            <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>
+            New Template
+          </button>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px", flexShrink: 0 }}>
+          <CrmKpiTile label="Templates" value={String(EMAIL_TEMPLATES.length)} sub="in library" color="#6366f1" />
+          <CrmKpiTile label="Avg Open Rate" value="63%" sub="above industry avg" color="#10b981" />
+          <CrmKpiTile label="Avg Click Rate" value="18%" sub="industry: 2.6%" color="#3b82f6" />
+          <CrmKpiTile label="Top Performer" value="Just Sold" sub="82% open rate" color="#f59e0b" />
+        </div>
+        <AiAutomationPanel automations={[
+          { title: "Template Performance Scoring", description: "Rank templates by open and click rates and surface top performers", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M2 12l4-4 3 2 5-6" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg> },
+          { title: "Subject Line Optimiser", description: "AI suggests alternative subject lines predicted to improve open rates", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 1l1.5 3.5L13 6l-3.5 1.5L8 11l-1.5-3.5L3 6l3.5-1.5L8 1z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/></svg> },
+        ]} />
+        <div style={{ flex: 1, overflow: "auto" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px" }}>
+            {EMAIL_TEMPLATES.map(t => (
+              <div key={t.id} style={{ background: "#fff", border: "1.5px solid #e5e7eb", borderRadius: "12px", padding: "16px 18px" }}>
+                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "10px" }}>
+                  <div>
+                    <div style={{ fontWeight: 700, fontSize: "13.5px", color: "#111827" }}>{t.name}</div>
+                    <span style={{ display: "inline-block", marginTop: "4px", padding: "1px 7px", background: "#f3f4f6", borderRadius: "4px", fontSize: "10.5px", color: "#6b7280", fontWeight: 600 }}>{t.category}</span>
+                  </div>
+                  <button style={{ padding: "4px 10px", background: "#f5f3ff", color: "#6d28d9", border: "1px solid #ede9fe", borderRadius: "6px", fontSize: "11px", fontWeight: 600, cursor: "pointer" }}>Use</button>
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px", marginBottom: "8px" }}>
+                  <div style={{ background: "#f9fafb", borderRadius: "6px", padding: "6px 10px" }}>
+                    <div style={{ fontSize: "15px", fontWeight: 700, color: "#111827" }}>{t.opens}</div>
+                    <div style={{ fontSize: "10.5px", color: "#9ca3af" }}>Open rate</div>
+                  </div>
+                  <div style={{ background: "#f9fafb", borderRadius: "6px", padding: "6px 10px" }}>
+                    <div style={{ fontSize: "15px", fontWeight: 700, color: "#111827" }}>{t.clicks}</div>
+                    <div style={{ fontSize: "10.5px", color: "#9ca3af" }}>Click rate</div>
+                  </div>
+                </div>
+                <div style={{ fontSize: "11px", color: "#9ca3af" }}>Last used {new Date(t.lastUsed).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" })}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (sub === "Social Media") {
+    const posts = [
+      { id: "sp1", caption: "🏡 Just listed! 14 Wentworth Ave, Wollongong — 4 bed, 2 bath, ocean breezes and a garden made for entertaining. Offers close Friday. Link in bio.", image: "🏠", likes: 142, reach: 2840, status: "published", date: "2026-07-18" },
+      { id: "sp2", caption: "✅ SOLD! Congratulations to our buyers on 7 Blue Haven Cres, Keiraville — another incredible result for our clients. If you're thinking of selling, let's talk.", image: "🎉", likes: 287, reach: 5120, status: "published", date: "2026-07-22" },
+      { id: "sp3", caption: "Open Home this Saturday! 22 Surf Parade, Thirroul — 5 bed coastal home with uninterrupted sea views. 10–10:45am. Don't miss this one!", image: "🌊", likes: 0, reach: 0, status: "scheduled", date: "2026-08-06" },
+      { id: "sp4", caption: "Market Update — Wollongong median prices up 4.2% this quarter. Thinking now might be the right time? DM us for a free appraisal.", image: "📊", likes: 0, reach: 0, status: "draft", date: "2026-08-05" },
+    ];
+    return (
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "calc(100vh - 56px)", overflow: "hidden", padding: "20px 28px", gap: "14px" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+          <div>
+            <h1 style={{ fontSize: "1.1rem", fontWeight: 700, color: "#111827", letterSpacing: "-0.03em", margin: 0 }}>Social Media</h1>
+            <p style={{ fontSize: "12.5px", color: "#9ca3af", margin: "3px 0 0" }}>Marketing · Post queue, scheduling & engagement</p>
+          </div>
+          <button style={{ display: "flex", alignItems: "center", gap: "7px", padding: "7px 14px", background: "#111827", color: "#fff", border: "none", borderRadius: "8px", fontSize: "12.5px", fontWeight: 600, cursor: "pointer" }}>Create Post</button>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px", flexShrink: 0 }}>
+          <CrmKpiTile label="Total Reach" value="7,960" sub="this month" color="#6366f1" />
+          <CrmKpiTile label="Avg Engagement" value="5.8%" sub="vs 1.2% industry" color="#10b981" />
+          <CrmKpiTile label="Posts Published" value="2" sub="this month" color="#3b82f6" />
+          <CrmKpiTile label="Scheduled" value="1" sub="upcoming" color="#f59e0b" />
+        </div>
+        <div style={{ flex: 1, overflow: "auto", display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "12px", alignContent: "start" }}>
+          {posts.map(p => {
+            const statusStyles: Record<string, { bg: string; color: string }> = { published: { bg: "#dcfce7", color: "#16a34a" }, scheduled: { bg: "#eff6ff", color: "#1d4ed8" }, draft: { bg: "#f3f4f6", color: "#6b7280" } };
+            const ss = statusStyles[p.status];
+            return (
+              <div key={p.id} style={{ background: "#fff", border: "1.5px solid #e5e7eb", borderRadius: "12px", padding: "16px 18px", display: "flex", flexDirection: "column", gap: "10px" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <span style={{ fontSize: "24px" }}>{p.image}</span>
+                  <span style={{ padding: "2px 8px", borderRadius: "20px", fontSize: "11px", fontWeight: 600, ...ss, textTransform: "capitalize" }}>{p.status}</span>
+                </div>
+                <p style={{ fontSize: "12.5px", color: "#374151", lineHeight: 1.5, margin: 0 }}>{p.caption}</p>
+                {p.status === "published" && (
+                  <div style={{ display: "flex", gap: "12px" }}>
+                    <div style={{ background: "#f9fafb", borderRadius: "6px", padding: "5px 10px", textAlign: "center" }}>
+                      <div style={{ fontWeight: 700, fontSize: "14px", color: "#111827" }}>{p.likes}</div>
+                      <div style={{ fontSize: "10.5px", color: "#9ca3af" }}>Likes</div>
+                    </div>
+                    <div style={{ background: "#f9fafb", borderRadius: "6px", padding: "5px 10px", textAlign: "center" }}>
+                      <div style={{ fontWeight: 700, fontSize: "14px", color: "#111827" }}>{p.reach.toLocaleString()}</div>
+                      <div style={{ fontSize: "10.5px", color: "#9ca3af" }}>Reach</div>
+                    </div>
+                  </div>
+                )}
+                <div style={{ fontSize: "11px", color: "#9ca3af" }}>{p.status === "scheduled" ? `Scheduled for ${new Date(p.date).toLocaleDateString("en-AU", { day: "numeric", month: "short" })}` : `Posted ${new Date(p.date).toLocaleDateString("en-AU", { day: "numeric", month: "short" })}`}</div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  if (sub === "Analytics") {
+    const channels = [
+      { name: "REA.com.au", enquiries: 48, appraisals: 12, listed: 5, spend: "$4,200" },
+      { name: "Domain", enquiries: 31, appraisals: 7, listed: 3, spend: "$2,800" },
+      { name: "Facebook / Instagram", enquiries: 24, appraisals: 4, listed: 1, spend: "$1,400" },
+      { name: "Email Database", enquiries: 18, appraisals: 6, listed: 4, spend: "$0" },
+      { name: "Letterbox Drop", enquiries: 9, appraisals: 3, listed: 2, spend: "$380" },
+      { name: "Referral", enquiries: 14, appraisals: 8, listed: 6, spend: "$0" },
+    ];
+    return (
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "calc(100vh - 56px)", overflow: "hidden", padding: "20px 28px", gap: "14px" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+          <div>
+            <h1 style={{ fontSize: "1.1rem", fontWeight: 700, color: "#111827", letterSpacing: "-0.03em", margin: 0 }}>Marketing Analytics</h1>
+            <p style={{ fontSize: "12.5px", color: "#9ca3af", margin: "3px 0 0" }}>Marketing · Channel attribution & budget performance</p>
+          </div>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px", flexShrink: 0 }}>
+          <CrmKpiTile label="Total Enquiries" value="144" sub="this month" color="#6366f1" />
+          <CrmKpiTile label="Cost Per Appraisal" value="$473" sub="blended avg" color="#f59e0b" />
+          <CrmKpiTile label="Best Channel" value="Referral" sub="highest conversion" color="#10b981" />
+          <CrmKpiTile label="Total Ad Spend" value="$8,780" sub="this month" color="#3b82f6" />
+        </div>
+        <AiAutomationPanel automations={[
+          { title: "Channel Attribution", description: "AI traces each closed deal back to the marketing touchpoint that started it", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M2 12l4-4 3 2 5-6" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg> },
+          { title: "Budget Optimisation", description: "Recommend shifting ad spend toward channels generating most appraisals", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.3"/><path d="M8 5v3l2 2" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg> },
+        ]} />
+        <div style={{ flex: 1, overflow: "auto" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
+            <thead>
+              <tr style={{ borderBottom: "1px solid #e5e7eb" }}>
+                {["Channel", "Enquiries", "Appraisals", "Listed", "Conv. Rate", "Ad Spend", "Cost/Listing"].map(h => (
+                  <th key={h} style={{ textAlign: "left", padding: "8px 12px", fontSize: "11px", fontWeight: 600, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.04em" }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {channels.map(ch => (
+                <tr key={ch.name} style={{ borderBottom: "1px solid #f3f4f6" }}>
+                  <td style={{ padding: "10px 12px", fontWeight: 600, color: "#111827" }}>{ch.name}</td>
+                  <td style={{ padding: "10px 12px", color: "#374151" }}>{ch.enquiries}</td>
+                  <td style={{ padding: "10px 12px", color: "#374151" }}>{ch.appraisals}</td>
+                  <td style={{ padding: "10px 12px", color: "#374151" }}>{ch.listed}</td>
+                  <td style={{ padding: "10px 12px" }}>
+                    <span style={{ fontWeight: 600, color: ch.listed / ch.enquiries > 0.1 ? "#16a34a" : "#374151" }}>{Math.round((ch.listed / ch.enquiries) * 100)}%</span>
+                  </td>
+                  <td style={{ padding: "10px 12px", color: "#374151" }}>{ch.spend}</td>
+                  <td style={{ padding: "10px 12px", color: "#374151" }}>{ch.spend === "$0" ? "—" : `$${Math.round(parseInt(ch.spend.replace(/[$,]/g, "")) / (ch.listed || 1)).toLocaleString()}`}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  }
+
+  // Default: Campaigns
+  const [campaigns, setCampaigns] = React.useState(SEED_CAMPAIGNS);
+  return (
+    <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "calc(100vh - 56px)", overflow: "hidden", padding: "20px 28px", gap: "14px" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+        <div>
+          <h1 style={{ fontSize: "1.1rem", fontWeight: 700, color: "#111827", letterSpacing: "-0.03em", margin: 0 }}>Campaigns</h1>
+          <p style={{ fontSize: "12.5px", color: "#9ca3af", margin: "3px 0 0" }}>Marketing · Email & social campaign management</p>
+        </div>
+        <button style={{ display: "flex", alignItems: "center", gap: "7px", padding: "7px 14px", background: "#111827", color: "#fff", border: "none", borderRadius: "8px", fontSize: "12.5px", fontWeight: 600, cursor: "pointer" }}>
+          <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>
+          New Campaign
+        </button>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px", flexShrink: 0 }}>
+        <CrmKpiTile label="Active" value={String(campaigns.filter(c => c.status === "active").length)} sub="running now" color="#10b981" />
+        <CrmKpiTile label="Total Sent" value={campaigns.reduce((s, c) => s + c.sent, 0).toLocaleString()} sub="emails this month" color="#6366f1" />
+        <CrmKpiTile label="Avg Open Rate" value="55%" sub="last 30 days" color="#3b82f6" />
+        <CrmKpiTile label="Avg Click Rate" value="17%" sub="last 30 days" color="#f59e0b" />
+      </div>
+      <AiAutomationPanel automations={[
+        { title: "AI Content Generation", description: "Draft property email copy, subject lines, and social captions automatically", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 1l1.5 3.5L13 6l-3.5 1.5L8 11l-1.5-3.5L3 6l3.5-1.5L8 1z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/></svg> },
+        { title: "Optimal Send Time", description: "Predict the best send time per contact based on past open behaviour", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 1v7l4 2" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/><circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.3"/></svg> },
+        { title: "Audience Segmentation", description: "Suggest the right contact segment for each new listing campaign", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.3"/><path d="M8 8l5-5M8 8V1M8 8l5 5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg> },
+      ]} />
+      <div style={{ flex: 1, overflow: "auto" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
+          <thead>
+            <tr style={{ borderBottom: "1px solid #e5e7eb" }}>
+              {["Campaign", "Type", "Listing", "Sent", "Opens", "Clicks", "Status", ""].map(h => (
+                <th key={h} style={{ textAlign: "left", padding: "8px 12px", fontSize: "11px", fontWeight: 600, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.04em" }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {campaigns.map(c => {
+              const openRate = c.sent > 0 ? Math.round((c.opened / c.sent) * 100) : 0;
+              const clickRate = c.sent > 0 ? Math.round((c.clicked / c.sent) * 100) : 0;
+              const statusColor: Record<string, { bg: string; color: string }> = { draft: { bg: "#f3f4f6", color: "#6b7280" }, active: { bg: "#dcfce7", color: "#16a34a" }, completed: { bg: "#eff6ff", color: "#1d4ed8" } };
+              const sc = statusColor[c.status];
+              return (
+                <tr key={c.id} style={{ borderBottom: "1px solid #f3f4f6" }}>
+                  <td style={{ padding: "10px 12px" }}>
+                    <div style={{ fontWeight: 600, color: "#111827", maxWidth: "200px" }}>{c.name}</div>
+                    <div style={{ fontSize: "11px", color: "#9ca3af" }}>{new Date(c.date).toLocaleDateString("en-AU", { day: "numeric", month: "short" })}</div>
+                  </td>
+                  <td style={{ padding: "10px 12px" }}><span style={{ padding: "2px 8px", borderRadius: "20px", fontSize: "11px", fontWeight: 600, background: c.type === "email" ? "#eff6ff" : c.type === "social" ? "#fdf4ff" : "#fefce8", color: c.type === "email" ? "#1d4ed8" : c.type === "social" ? "#7e22ce" : "#92400e", textTransform: "capitalize" }}>{c.type}</span></td>
+                  <td style={{ padding: "10px 12px", color: "#374151", fontSize: "12px" }}>{c.listing}</td>
+                  <td style={{ padding: "10px 12px", color: "#374151" }}>{c.sent > 0 ? c.sent.toLocaleString() : "—"}</td>
+                  <td style={{ padding: "10px 12px", color: "#374151" }}>{c.sent > 0 ? `${c.opened} (${openRate}%)` : "—"}</td>
+                  <td style={{ padding: "10px 12px", color: "#374151" }}>{c.sent > 0 ? `${c.clicked} (${clickRate}%)` : "—"}</td>
+                  <td style={{ padding: "10px 12px" }}><span style={{ padding: "2px 8px", borderRadius: "20px", fontSize: "11px", fontWeight: 600, ...sc, textTransform: "capitalize" }}>{c.status}</span></td>
+                  <td style={{ padding: "10px 12px" }}><button style={{ padding: "4px 10px", background: "#f5f3ff", color: "#6d28d9", border: "1px solid #ede9fe", borderRadius: "6px", fontSize: "11.5px", fontWeight: 600, cursor: "pointer" }}>View</button></td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+// ─── CrmTeamPage ───────────────────────────────────────────────────────────────
+
+type TeamLead = { id: string; name: string; email: string; source: string; suburb: string; budget: string; assignedTo: string; assignedAt: string; score: number; status: "new" | "contacted" | "qualified" | "appraisal" | "lost" };
+
+const SEED_LEADS: TeamLead[] = [
+  { id: "tl1", name: "Daniel Russo", email: "d.russo@email.com", source: "REA.com.au", suburb: "Wollongong", budget: "$900k–$1.1M", assignedTo: "Sarah Mitchell", assignedAt: "2026-08-04", score: 9, status: "new" },
+  { id: "tl2", name: "Kylie & Matt Turner", email: "k.turner@email.com", source: "Domain", suburb: "Thirroul", budget: "$1.4M–$1.7M", assignedTo: "Tom Briggs", assignedAt: "2026-08-03", score: 7, status: "contacted" },
+  { id: "tl3", name: "Priya Sharma", email: "priya.s@email.com", source: "Referral", suburb: "Keiraville", budget: "$750k–$900k", assignedTo: "Sarah Mitchell", assignedAt: "2026-08-02", score: 8, status: "qualified" },
+  { id: "tl4", name: "Chris & Anna Wong", email: "c.wong@email.com", source: "Facebook", suburb: "Figtree", budget: "$850k–$1M", assignedTo: "Tom Briggs", assignedAt: "2026-08-01", score: 5, status: "contacted" },
+  { id: "tl5", name: "Ben Hartley", email: "ben.h@email.com", source: "REA.com.au", suburb: "Corrimal", budget: "$600k–$750k", assignedTo: "Sarah Mitchell", assignedAt: "2026-07-30", score: 6, status: "appraisal" },
+];
+
+function ScoreDot({ score }: { score: number }) {
+  const color = score >= 8 ? "#16a34a" : score >= 6 ? "#f59e0b" : "#dc2626";
+  return <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", fontWeight: 700, color }}><span style={{ width: "8px", height: "8px", borderRadius: "50%", background: color, display: "inline-block" }} />{score}/10</span>;
+}
+
+function CrmTeamPage({ submodule, staffRows }: { submodule: string | null; staffRows: StaffRow[] }) {
+  const sub = submodule ?? "Overview";
+
+  const agents = staffRows.length > 0 ? staffRows.slice(0, 4).map((s, i) => ({
+    name: s.name, role: s.role,
+    listings: [5, 3, 7, 2][i] ?? 2,
+    appraisals: [12, 8, 15, 4][i] ?? 4,
+    sales: [4, 2, 6, 1][i] ?? 1,
+    revenue: ["$62,000", "$28,000", "$94,000", "$14,000"][i] ?? "$14,000",
+    target: ["$80,000", "$40,000", "$80,000", "$20,000"][i] ?? "$20,000",
+    pacing: [77, 70, 117, 70][i] ?? 70,
+  })) : [
+    { name: "Sarah Mitchell", role: "Sales Agent", listings: 5, appraisals: 12, sales: 4, revenue: "$62,000", target: "$80,000", pacing: 77 },
+    { name: "Tom Briggs", role: "Sales Agent", listings: 3, appraisals: 8, sales: 2, revenue: "$28,000", target: "$40,000", pacing: 70 },
+    { name: "Emma Clarke", role: "Property Manager", listings: 7, appraisals: 4, sales: 0, revenue: "$14,000", target: "$15,000", pacing: 93 },
+  ];
+
+  if (sub === "Leads") {
+    const [leads, setLeads] = React.useState(SEED_LEADS);
+    const statusColors: Record<string, { bg: string; color: string }> = {
+      new: { bg: "#eff6ff", color: "#1d4ed8" }, contacted: { bg: "#fefce8", color: "#92400e" },
+      qualified: { bg: "#f0fdf4", color: "#16a34a" }, appraisal: { bg: "#fdf4ff", color: "#7e22ce" }, lost: { bg: "#fef2f2", color: "#dc2626" },
+    };
+    return (
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "calc(100vh - 56px)", overflow: "hidden", padding: "20px 28px", gap: "14px" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+          <div>
+            <h1 style={{ fontSize: "1.1rem", fontWeight: 700, color: "#111827", letterSpacing: "-0.03em", margin: 0 }}>Leads</h1>
+            <p style={{ fontSize: "12.5px", color: "#9ca3af", margin: "3px 0 0" }}>Team · Inbound lead pipeline & assignment</p>
+          </div>
+          <button style={{ display: "flex", alignItems: "center", gap: "7px", padding: "7px 14px", background: "#111827", color: "#fff", border: "none", borderRadius: "8px", fontSize: "12.5px", fontWeight: 600, cursor: "pointer" }}>Add Lead</button>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px", flexShrink: 0 }}>
+          <CrmKpiTile label="New Leads" value={String(leads.filter(l => l.status === "new").length)} sub="this week" color="#6366f1" />
+          <CrmKpiTile label="Avg Score" value={String(Math.round(leads.reduce((s, l) => s + l.score, 0) / leads.length)) + "/10"} sub="AI lead score" color="#10b981" />
+          <CrmKpiTile label="In Appraisal" value={String(leads.filter(l => l.status === "appraisal").length)} sub="progressed" color="#f59e0b" />
+          <CrmKpiTile label="Response Time" value="38 min" sub="avg first response" color="#3b82f6" />
+        </div>
+        <AiAutomationPanel automations={[
+          { title: "Lead Scoring", description: "AI scores each lead 1–10 based on enquiry intent, property match, and response speed", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 1l1.5 3.5L13 6l-3.5 1.5L8 11l-1.5-3.5L3 6l3.5-1.5L8 1z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/></svg> },
+          { title: "Response Time Monitor", description: "Alert managers if a lead hasn't been contacted within 1 hour of enquiry", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 1v7l4 2" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/><circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.3"/></svg> },
+          { title: "Auto-Assignment", description: "Route new leads to the best-matched agent based on suburb and budget", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg> },
+        ]} />
+        <div style={{ flex: 1, overflow: "auto" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
+            <thead>
+              <tr style={{ borderBottom: "1px solid #e5e7eb" }}>
+                {["Lead", "Source", "Suburb", "Budget", "AI Score", "Assigned To", "Status", ""].map(h => (
+                  <th key={h} style={{ textAlign: "left", padding: "8px 12px", fontSize: "11px", fontWeight: 600, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.04em" }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {leads.map(l => {
+                const sc = statusColors[l.status];
+                return (
+                  <tr key={l.id} style={{ borderBottom: "1px solid #f3f4f6" }}>
+                    <td style={{ padding: "10px 12px" }}>
+                      <div style={{ fontWeight: 600, color: "#111827" }}>{l.name}</div>
+                      <div style={{ fontSize: "11px", color: "#9ca3af" }}>{l.email}</div>
+                    </td>
+                    <td style={{ padding: "10px 12px", color: "#374151", fontSize: "12px" }}>{l.source}</td>
+                    <td style={{ padding: "10px 12px", color: "#374151" }}>{l.suburb}</td>
+                    <td style={{ padding: "10px 12px", color: "#374151", fontSize: "12px" }}>{l.budget}</td>
+                    <td style={{ padding: "10px 12px" }}><ScoreDot score={l.score} /></td>
+                    <td style={{ padding: "10px 12px", color: "#374151" }}>{l.assignedTo}</td>
+                    <td style={{ padding: "10px 12px" }}><span style={{ padding: "2px 8px", borderRadius: "20px", fontSize: "11px", fontWeight: 600, ...sc, textTransform: "capitalize" }}>{l.status}</span></td>
+                    <td style={{ padding: "10px 12px" }}>
+                      {l.status !== "lost" && l.status !== "appraisal" && (
+                        <button onClick={() => setLeads(prev => prev.map(x => x.id === l.id ? { ...x, status: (["new", "contacted", "qualified", "appraisal"] as const)[["new", "contacted", "qualified"].indexOf(l.status) + 1] ?? x.status } : x))}
+                          style={{ padding: "4px 10px", background: "#f5f3ff", color: "#6d28d9", border: "1px solid #ede9fe", borderRadius: "6px", fontSize: "11.5px", fontWeight: 600, cursor: "pointer" }}>Advance</button>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  }
+
+  if (sub === "Performance") {
+    return (
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "calc(100vh - 56px)", overflow: "hidden", padding: "20px 28px", gap: "14px" }}>
+        <div style={{ flexShrink: 0 }}>
+          <h1 style={{ fontSize: "1.1rem", fontWeight: 700, color: "#111827", letterSpacing: "-0.03em", margin: 0 }}>Performance</h1>
+          <p style={{ fontSize: "12.5px", color: "#9ca3af", margin: "3px 0 0" }}>Team · Individual agent metrics & target pacing</p>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px", flexShrink: 0 }}>
+          <CrmKpiTile label="Team Revenue" value="$104K" sub="this month" color="#10b981" />
+          <CrmKpiTile label="Total Listings" value="15" sub="active across team" color="#6366f1" />
+          <CrmKpiTile label="Avg Days on Mkt" value="24" sub="days" color="#3b82f6" />
+          <CrmKpiTile label="Top Agent" value="Emma C." sub="117% of target" color="#f59e0b" />
+        </div>
+        <div style={{ flex: 1, overflow: "auto", display: "flex", flexDirection: "column", gap: "12px" }}>
+          {agents.map(a => (
+            <div key={a.name} style={{ background: "#fff", border: "1.5px solid #e5e7eb", borderRadius: "12px", padding: "16px 20px" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "12px" }}>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: "14px", color: "#111827" }}>{a.name}</div>
+                  <div style={{ fontSize: "12px", color: "#9ca3af" }}>{a.role}</div>
+                </div>
+                <div style={{ textAlign: "right" }}>
+                  <div style={{ fontWeight: 700, fontSize: "16px", color: "#111827" }}>{a.revenue}</div>
+                  <div style={{ fontSize: "11.5px", color: a.pacing >= 100 ? "#16a34a" : a.pacing >= 70 ? "#f59e0b" : "#dc2626" }}>Target: {a.target} · {a.pacing}% pacing</div>
+                </div>
+              </div>
+              <div style={{ height: "6px", background: "#f3f4f6", borderRadius: "3px", marginBottom: "12px" }}>
+                <div style={{ height: "100%", width: `${Math.min(a.pacing, 100)}%`, background: a.pacing >= 100 ? "#10b981" : a.pacing >= 70 ? "#f59e0b" : "#ef4444", borderRadius: "3px", transition: "width 0.4s ease" }} />
+              </div>
+              <div style={{ display: "flex", gap: "16px" }}>
+                {[{ label: "Active Listings", val: a.listings }, { label: "Appraisals", val: a.appraisals }, { label: "Sales", val: a.sales }].map(m => (
+                  <div key={m.label} style={{ background: "#f9fafb", borderRadius: "8px", padding: "8px 14px", textAlign: "center" }}>
+                    <div style={{ fontWeight: 700, fontSize: "18px", color: "#111827" }}>{m.val}</div>
+                    <div style={{ fontSize: "11px", color: "#9ca3af" }}>{m.label}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (sub === "Activity Log") {
+    const activities = [
+      { id: "a1", agent: "Sarah Mitchell", type: "call", detail: "Called James Nguyen re: finance clearance", time: "10:42 am", date: "Today" },
+      { id: "a2", agent: "Tom Briggs", type: "email", detail: "Sent open home confirmation to 14 buyers (22 Surf Parade)", time: "9:15 am", date: "Today" },
+      { id: "a3", agent: "Sarah Mitchell", type: "appraisal", detail: "Appraisal completed — 47 Crown St, Wollongong ($1.1M–$1.3M)", time: "Yesterday, 2:30 pm", date: "Yesterday" },
+      { id: "a4", agent: "Tom Briggs", type: "call", detail: "Follow-up call to Greg Hollis (22 Surf Parade) re: offer", time: "Yesterday, 11:00 am", date: "Yesterday" },
+      { id: "a5", agent: "Emma Clarke", type: "email", detail: "Lease renewal offer sent to tenant at 3 Illawarra Rd", time: "Yesterday, 9:45 am", date: "Yesterday" },
+      { id: "a6", agent: "Sarah Mitchell", type: "note", detail: "Added note: vendor considering offers below $1.25M", time: "2 days ago, 4:10 pm", date: "2 days ago" },
+      { id: "a7", agent: "Tom Briggs", type: "sms", detail: "SMS sent to 6 buyers about price reduction at 90 Corrimal St", time: "2 days ago, 2:00 pm", date: "2 days ago" },
+    ];
+    const typeIcon: Record<string, { icon: React.ReactNode; color: string; bg: string }> = {
+      call: { icon: <svg width="11" height="11" viewBox="0 0 16 16" fill="none"><path d="M4 2h3l1 3-2 1a8 8 0 004 4l1-2 3 1v3c0 1-1 2-2 2C7 14 2 9 2 4a2 2 0 012-2z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/></svg>, color: "#16a34a", bg: "#dcfce7" },
+      email: { icon: <svg width="11" height="11" viewBox="0 0 16 16" fill="none"><path d="M2 4l6 5 6-5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/><rect x="1" y="3" width="14" height="10" rx="2" stroke="currentColor" strokeWidth="1.3"/></svg>, color: "#1d4ed8", bg: "#eff6ff" },
+      appraisal: { icon: <svg width="11" height="11" viewBox="0 0 16 16" fill="none"><path d="M8 2l5 5H3l5-5z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/><rect x="5" y="7" width="6" height="7" rx="1" stroke="currentColor" strokeWidth="1.3"/></svg>, color: "#7e22ce", bg: "#fdf4ff" },
+      sms: { icon: <svg width="11" height="11" viewBox="0 0 16 16" fill="none"><path d="M2 2h12a1 1 0 011 1v7a1 1 0 01-1 1H5l-3 3V3a1 1 0 011-1z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/></svg>, color: "#f59e0b", bg: "#fefce8" },
+      note: { icon: <svg width="11" height="11" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" strokeWidth="1.3"/><path d="M5 6h6M5 9h4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg>, color: "#6b7280", bg: "#f3f4f6" },
+    };
+    return (
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "calc(100vh - 56px)", overflow: "hidden", padding: "20px 28px", gap: "14px" }}>
+        <div style={{ flexShrink: 0 }}>
+          <h1 style={{ fontSize: "1.1rem", fontWeight: 700, color: "#111827", letterSpacing: "-0.03em", margin: 0 }}>Activity Log</h1>
+          <p style={{ fontSize: "12.5px", color: "#9ca3af", margin: "3px 0 0" }}>Team · All agent activity across calls, emails & appraisals</p>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px", flexShrink: 0 }}>
+          <CrmKpiTile label="Activities Today" value="7" sub="across all agents" color="#6366f1" />
+          <CrmKpiTile label="Calls This Week" value="24" sub="logged" color="#10b981" />
+          <CrmKpiTile label="Emails Sent" value="138" sub="this week" color="#3b82f6" />
+          <CrmKpiTile label="Top Performer" value="Sarah M." sub="most activity" color="#f59e0b" />
+        </div>
+        <div style={{ flex: 1, overflow: "auto", display: "flex", flexDirection: "column", gap: "1px" }}>
+          {activities.map(a => {
+            const ti = typeIcon[a.type] ?? typeIcon.note;
+            return (
+              <div key={a.id} style={{ display: "flex", gap: "12px", padding: "12px 0", borderBottom: "1px solid #f3f4f6", alignItems: "flex-start" }}>
+                <div style={{ width: "28px", height: "28px", borderRadius: "8px", background: ti.bg, color: ti.color, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: "2px" }}>{ti.icon}</div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: "13px", color: "#111827", fontWeight: 500 }}>{a.detail}</div>
+                  <div style={{ fontSize: "11.5px", color: "#9ca3af", marginTop: "3px" }}><strong style={{ color: "#6b7280" }}>{a.agent}</strong> · {a.time}</div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  // Overview (default)
+  return (
+    <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "calc(100vh - 56px)", overflow: "hidden", padding: "20px 28px", gap: "14px" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+        <div>
+          <h1 style={{ fontSize: "1.1rem", fontWeight: 700, color: "#111827", letterSpacing: "-0.03em", margin: 0 }}>Team Overview</h1>
+          <p style={{ fontSize: "12.5px", color: "#9ca3af", margin: "3px 0 0" }}>Team · Performance snapshot & lead load balancing</p>
+        </div>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px", flexShrink: 0 }}>
+        <CrmKpiTile label="Team Members" value={String(agents.length)} sub="active agents" color="#6366f1" />
+        <CrmKpiTile label="Total Revenue" value="$104K" sub="this month" color="#10b981" />
+        <CrmKpiTile label="Active Listings" value="15" sub="across team" color="#3b82f6" />
+        <CrmKpiTile label="On Target" value={String(agents.filter(a => a.pacing >= 70).length) + "/" + String(agents.length)} sub="agents pacing" color="#f59e0b" />
+      </div>
+      <AiAutomationPanel automations={[
+        { title: "Performance Alerts", description: "Notify managers when an agent's listings or appraisals fall below target", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 2l6 12H2L8 2z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/></svg> },
+        { title: "Lead Load Balancing", description: "Auto-assign new leads based on each agent's current workload and speciality", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><circle cx="5" cy="5" r="3" stroke="currentColor" strokeWidth="1.2"/><circle cx="11" cy="11" r="3" stroke="currentColor" strokeWidth="1.2"/></svg> },
+        { title: "Monthly Report", description: "Auto-generate team performance report at the end of each month", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" strokeWidth="1.3"/><path d="M5 8h6M5 11h4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg> },
+      ]} />
+      <div style={{ flex: 1, overflow: "auto", display: "flex", flexDirection: "column", gap: "10px" }}>
+        {agents.map(a => (
+          <div key={a.name} style={{ background: "#fff", border: "1.5px solid #e5e7eb", borderRadius: "12px", padding: "14px 18px", display: "flex", alignItems: "center", gap: "16px" }}>
+            <div style={{ width: "36px", height: "36px", borderRadius: "50%", background: "#f3f4f6", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: "13px", color: "#374151", flexShrink: 0 }}>{a.name.split(" ").map(n => n[0]).join("").slice(0, 2)}</div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontWeight: 700, fontSize: "13.5px", color: "#111827" }}>{a.name}</div>
+              <div style={{ fontSize: "11.5px", color: "#9ca3af" }}>{a.role}</div>
+            </div>
+            <div style={{ display: "flex", gap: "20px", alignItems: "center" }}>
+              {[{ label: "Listings", val: a.listings }, { label: "Appraisals", val: a.appraisals }, { label: "Sales", val: a.sales }].map(m => (
+                <div key={m.label} style={{ textAlign: "center" }}>
+                  <div style={{ fontWeight: 700, fontSize: "16px", color: "#111827" }}>{m.val}</div>
+                  <div style={{ fontSize: "10.5px", color: "#9ca3af" }}>{m.label}</div>
+                </div>
+              ))}
+              <div style={{ textAlign: "right" }}>
+                <div style={{ fontWeight: 700, fontSize: "14px", color: "#111827" }}>{a.revenue}</div>
+                <div style={{ fontSize: "11px", color: a.pacing >= 100 ? "#16a34a" : a.pacing >= 70 ? "#f59e0b" : "#dc2626" }}>{a.pacing}% of target</div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── AiChatPanel ──────────────────────────────────────────────────────────────
+
+type AiChatMsg = { id: string; role: "user" | "assistant"; text: string; timestamp: Date; action?: { type: "navigate"; moduleId: string; submodule?: string; label: string } };
+
+const AI_QUICK_PROMPTS = [
+  "Who should I call today?",
+  "What streets are hot to letterbox?",
+  "Create a new listing",
+  "Book an appraisal",
+  "Show me my top buyers",
+  "What's under offer?",
+];
+
+function buildAiResponse(msg: string, context: { crmListings: CrmListing[]; staffRows: StaffRow[] }): { text: string; action?: AiChatMsg["action"] } {
+  const m = msg.toLowerCase().trim();
+
+  if (m.includes("create") && (m.includes("listing") || m.includes("property"))) {
+    return { text: "Sure — to add a new listing I'll need a few details. Head to **Active Listings** and click **Add Listing**, or give me the address and I'll help you fill it in. What's the property address?", action: { type: "navigate", moduleId: "listings", submodule: "Active Listings", label: "Go to Active Listings" } };
+  }
+  if (m.includes("who should") && (m.includes("call") || m.includes("contact"))) {
+    return { text: "Based on your pipeline today, I'd prioritise:\n\n**1. James Nguyen** — Finance condition clears in 4 days on 14 Wentworth Ave. Confirm clearance.\n**2. Greg Hollis** — Vendor at 22 Surf Parade. Still 3 conditions pending, follow up on timeline.\n**3. Priya Sharma** — Hot lead (score 8/10), in the qualified stage and ready for an appraisal booking.\n\nWant me to open any of their records?", action: { type: "navigate", moduleId: "contacts", label: "Open Contacts" } };
+  }
+  if ((m.includes("street") || m.includes("suburb") || m.includes("area")) && (m.includes("letterbox") || m.includes("letter drop") || m.includes("prospect") || m.includes("hot"))) {
+    return { text: "Based on recent sales data in your prospecting map, the hottest streets to letterbox right now are:\n\n**1. Wentworth Ave, Wollongong** — 3 sales in 90 days, avg hold time 8 years → high turnover signal.\n**2. Surf Parade, Thirroul** — 2 sales, median $1.58M. Neighbours not yet contacted.\n**3. Corrimal St, Corrimal** — 4 nearby owners, 0 contacted. Budget to market is strong.\n\nHead to Prospecting to generate a letter drop for any of these.", action: { type: "navigate", moduleId: "prospecting", label: "Open Prospecting Map" } };
+  }
+  if (m.includes("appraisal") && (m.includes("book") || m.includes("schedule") || m.includes("add") || m.includes("new"))) {
+    return { text: "To book an appraisal, I'll need the owner's name, address and a preferred time. Head to the Appraisals kanban to create one, or tell me the details here (address, owner name, date & time) and I'll draft the record for you.", action: { type: "navigate", moduleId: "appraisals", label: "Open Appraisals" } };
+  }
+  if (m.includes("under offer") || (m.includes("contract") && m.includes("pending"))) {
+    return { text: `You currently have ${SEED_UNDER_OFFER.length} properties under offer. Finance is still pending on 2 of them — James Nguyen's finance clears in 4 days and Lisa Turner's clears in 8 days. Want me to open the Under Offer page?`, action: { type: "navigate", moduleId: "listings", submodule: "Under Offer", label: "Open Under Offer" } };
+  }
+  if (m.includes("buyer") && (m.includes("top") || m.includes("best") || m.includes("hot") || m.includes("show"))) {
+    return { text: "Your top buyers right now:\n\n**Daniel Russo** — Budget $900k–$1.1M, Wollongong, AI score 9/10. New lead, hasn't been contacted yet.\n**Priya Sharma** — Budget $750k–$900k, Keiraville, score 8/10. Qualified — ready for an appraisal.\n**Kylie & Matt Turner** — Budget $1.4M–$1.7M, Thirroul, score 7/10. Contacted.\n\nWant to see the full buyer list?", action: { type: "navigate", moduleId: "contacts", label: "Open Buyers" } };
+  }
+  if (m.includes("campaign") || m.includes("email blast") || m.includes("marketing")) {
+    return { text: "You have 1 active campaign (Buyer Database Blast — Keiraville, 620 sent, 51% open rate) and 1 draft ready to send (Just Listed — 3 Illawarra Rd). Want me to open the Campaigns page?", action: { type: "navigate", moduleId: "marketing", submodule: "Campaigns", label: "Open Campaigns" } };
+  }
+  if (m.includes("team") || m.includes("agent") || (m.includes("performance") && m.includes("who"))) {
+    return { text: "Team this month: Sarah Mitchell is at 77% of target ($62K/$80K), Tom Briggs at 70% ($28K/$40K), Emma Clarke leading at 93% pacing. Top performer by conversion: Emma. Do you want the full performance breakdown?", action: { type: "navigate", moduleId: "team", submodule: "Performance", label: "Open Team Performance" } };
+  }
+  if (m.includes("sold") || m.includes("result") || m.includes("settled")) {
+    return { text: `You have ${SEED_SOLD.length} recent results this month. ${SEED_SOLD.filter(s => !s.notified).length} properties haven't had neighbour notification letters sent yet — that's ${SEED_SOLD.filter(s => !s.notified).length} prospecting opportunity waiting. Head to Sold/Leased to send them.`, action: { type: "navigate", moduleId: "listings", submodule: "Sold / Leased", label: "Open Sold / Leased" } };
+  }
+  if (m.includes("hello") || m.includes("hi") || m.includes("hey") || m.includes("help")) {
+    return { text: "G'day! I'm your RealComply AI assistant. I can help you:\n\n• **Navigate** — \"open appraisals\", \"show me under offer\"\n• **Prospect** — \"what streets are hot to letterbox?\"\n• **Prioritise** — \"who should I call today?\"\n• **Create** — \"add a new listing\", \"book an appraisal\"\n• **Analyse** — \"how's the team tracking?\", \"what campaigns are active?\"\n\nWhat do you need?" };
+  }
+
+  return { text: "I can help with that. Could you give me a bit more detail? For example, you can ask me to:\n• \"Who should I call today?\"\n• \"What streets are hot to letterbox?\"\n• \"Create a new listing\"\n• \"Book an appraisal at [address]\"\n• \"How's the team performing?\"" };
+}
+
+function AiChatPanel({ open, onClose, crmListings, staffRows, onNavigate }: {
+  open: boolean;
+  onClose: () => void;
+  crmListings: CrmListing[];
+  staffRows: StaffRow[];
+  onNavigate: (moduleId: string, submodule?: string) => void;
+}) {
+  const [msgs, setMsgs] = React.useState<AiChatMsg[]>([
+    { id: "init", role: "assistant", text: "G'day! I'm your AI assistant. Ask me who to call, what streets to letterbox, or tell me to create a listing — I'll navigate the CRM for you.", timestamp: new Date() },
+  ]);
+  const [input, setInput] = React.useState("");
+  const [typing, setTyping] = React.useState(false);
+  const bottomRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [msgs, typing]);
+
+  async function send(text?: string) {
+    const q = (text ?? input).trim();
+    if (!q) return;
+    setInput("");
+    const userMsg: AiChatMsg = { id: Date.now() + "u", role: "user", text: q, timestamp: new Date() };
+    setMsgs(prev => [...prev, userMsg]);
+    setTyping(true);
+    await new Promise(r => setTimeout(r, 900 + Math.random() * 600));
+    const { text: reply, action } = buildAiResponse(q, { crmListings, staffRows });
+    setTyping(false);
+    setMsgs(prev => [...prev, { id: Date.now() + "a", role: "assistant", text: reply, timestamp: new Date(), action }]);
+  }
+
+  function renderText(t: string) {
+    return t.split("\n").map((line, i) => {
+      const parts = line.split(/\*\*(.*?)\*\*/g);
+      return <React.Fragment key={i}>{parts.map((p, j) => j % 2 === 1 ? <strong key={j}>{p}</strong> : p)}{i < t.split("\n").length - 1 && <br />}</React.Fragment>;
+    });
+  }
+
+  if (!open) return null;
+
+  return (
+    <div style={{ position: "fixed", bottom: "0", right: "0", width: "380px", height: "580px", background: "#fff", border: "1px solid #e5e7eb", borderRadius: "16px 16px 0 0", boxShadow: "0 -4px 32px rgba(0,0,0,0.12)", display: "flex", flexDirection: "column", zIndex: 200, fontFamily: "var(--font-inter)" }}>
+      {/* Header */}
+      <div style={{ padding: "14px 18px", borderBottom: "1px solid #f3f4f6", display: "flex", alignItems: "center", gap: "10px", flexShrink: 0 }}>
+        <div style={{ width: "32px", height: "32px", borderRadius: "50%", background: "linear-gradient(135deg, #6366f1, #8b5cf6)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 1l1.5 3.5L13 6l-3.5 1.5L8 11l-1.5-3.5L3 6l3.5-1.5L8 1z" stroke="#fff" strokeWidth="1.4" strokeLinejoin="round"/></svg>
+        </div>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontWeight: 700, fontSize: "13.5px", color: "#111827" }}>RealComply AI</div>
+          <div style={{ fontSize: "11px", color: "#9ca3af" }}>Navigate, prospect & create</div>
+        </div>
+        <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "#9ca3af", padding: "4px", display: "flex" }}>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/></svg>
+        </button>
+      </div>
+      {/* Messages */}
+      <div style={{ flex: 1, overflow: "auto", padding: "14px 16px", display: "flex", flexDirection: "column", gap: "10px" }}>
+        {msgs.map(m => (
+          <div key={m.id} style={{ display: "flex", flexDirection: "column", alignItems: m.role === "user" ? "flex-end" : "flex-start", gap: "6px" }}>
+            <div style={{ maxWidth: "88%", padding: "10px 13px", borderRadius: m.role === "user" ? "16px 16px 4px 16px" : "16px 16px 16px 4px", background: m.role === "user" ? "#111827" : "#f9fafb", color: m.role === "user" ? "#fff" : "#111827", fontSize: "13px", lineHeight: 1.55 }}>
+              {renderText(m.text)}
+            </div>
+            {m.action && (
+              <button onClick={() => onNavigate(m.action!.moduleId, m.action!.submodule)} style={{ padding: "5px 12px", background: "#f5f3ff", color: "#6d28d9", border: "1px solid #ede9fe", borderRadius: "8px", fontSize: "12px", fontWeight: 600, cursor: "pointer" }}>
+                {m.action.label} →
+              </button>
+            )}
+          </div>
+        ))}
+        {typing && (
+          <div style={{ display: "flex", alignItems: "center", gap: "5px", padding: "10px 13px", background: "#f9fafb", borderRadius: "16px 16px 16px 4px", width: "fit-content" }}>
+            {[0, 1, 2].map(i => <span key={i} style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#9ca3af", display: "inline-block", animation: `pulse 1.2s ${i * 0.2}s infinite` }} />)}
+          </div>
+        )}
+        <div ref={bottomRef} />
+      </div>
+      {/* Quick prompts */}
+      <div style={{ padding: "8px 14px", borderTop: "1px solid #f3f4f6", display: "flex", gap: "6px", flexWrap: "wrap", flexShrink: 0 }}>
+        {AI_QUICK_PROMPTS.slice(0, 3).map(p => (
+          <button key={p} onClick={() => send(p)} style={{ padding: "4px 10px", background: "#f3f4f6", color: "#374151", border: "none", borderRadius: "20px", fontSize: "11.5px", fontWeight: 500, cursor: "pointer", whiteSpace: "nowrap" }}>{p}</button>
+        ))}
+      </div>
+      {/* Input */}
+      <div style={{ padding: "10px 14px", borderTop: "1px solid #f3f4f6", display: "flex", gap: "8px", flexShrink: 0 }}>
+        <input
+          value={input}
+          onChange={e => setInput(e.target.value)}
+          onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
+          placeholder="Ask anything…"
+          style={{ flex: 1, border: "1.5px solid #e5e7eb", borderRadius: "10px", padding: "8px 12px", fontSize: "13px", outline: "none", fontFamily: "var(--font-inter)" }}
+        />
+        <button onClick={() => send()} style={{ width: "36px", height: "36px", background: "#111827", border: "none", borderRadius: "10px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="#fff" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
+        </button>
+      </div>
+      <style>{`@keyframes pulse { 0%,80%,100%{opacity:.3} 40%{opacity:1} }`}</style>
+    </div>
+  );
+}
+
 // ─── CrmSubPage (router) ──────────────────────────────────────────────────────
 
 function CrmSubPage({ moduleId, submodule, crmListings, onAddListing, staffRows, agencyName }: {
@@ -10033,12 +10868,19 @@ function CrmSubPage({ moduleId, submodule, crmListings, onAddListing, staffRows,
   };
 
   // Route functional pages
-  if (moduleId === "contacts") return <CrmContactsPage staffRows={staffRows} />;
+  if (moduleId === "contacts") {
+    const contactTypeMap: Record<string, CrmContact["type"]> = { "Buyers": "buyer", "Sellers": "seller", "Landlords": "landlord", "Tenants": "tenant", "Prospects": "prospect" };
+    return <CrmContactsPage staffRows={staffRows} filterType={submodule ? contactTypeMap[submodule] : undefined} />;
+  }
   if (moduleId === "appraisals") return <CrmAppraisalKanbanPage staffRows={staffRows} />;
   if (moduleId === "prospecting") return <CrmProspectingPage staffRows={staffRows} />;
   if (moduleId === "listings" && (submodule === "Active Listings" || submodule === null)) {
     return <CrmActiveListingsPage listings={crmListings} onAddListing={onAddListing} staffRows={staffRows} />;
   }
+  if (moduleId === "listings" && submodule === "Under Offer") return <CrmUnderOfferPage staffRows={staffRows} />;
+  if (moduleId === "listings" && submodule === "Sold / Leased") return <CrmSoldLeasedPage staffRows={staffRows} />;
+  if (moduleId === "marketing") return <CrmMarketingPage submodule={submodule} staffRows={staffRows} />;
+  if (moduleId === "team") return <CrmTeamPage submodule={submodule} staffRows={staffRows} />;
 
   const sub = submodule ?? Object.keys(configs[moduleId] ?? {})[0] ?? "";
   const cfg = configs[moduleId]?.[sub];
@@ -10253,6 +11095,7 @@ export default function DashboardPage() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [aiPanelOpen, setAiPanelOpen] = useState(false);
+  const [aiChatOpen, setAiChatOpen] = useState(false);
   const [sidebarMode, setSidebarMode] = useState<"compliance" | "crm">("compliance");
   const [crmModule, setCrmModule] = useState<string | null>(null);
   const [crmSelected, setCrmSelected] = useState<string | null>(null);
@@ -10761,6 +11604,33 @@ export default function DashboardPage() {
 
       {/* AI Assistant Panel */}
       {aiPanelOpen && <AiAssistantPanel onClose={() => setAiPanelOpen(false)} agencyName={agencyName} />}
+
+      {/* AI Chat Panel */}
+      <AiChatPanel
+        open={aiChatOpen}
+        onClose={() => setAiChatOpen(false)}
+        crmListings={crmListings}
+        staffRows={staffRows}
+        onNavigate={(moduleId, sub) => {
+          setSidebarMode("crm");
+          setCrmModule(moduleId);
+          setCrmSelected(sub ?? null);
+          setAiChatOpen(false);
+        }}
+      />
+
+      {/* AI Chat Floating Button */}
+      {!aiChatOpen && (
+        <button
+          onClick={() => setAiChatOpen(true)}
+          title="Ask AI"
+          style={{ position: "fixed", bottom: "24px", right: "24px", width: "52px", height: "52px", borderRadius: "50%", background: "linear-gradient(135deg, #6366f1, #8b5cf6)", border: "none", cursor: "pointer", boxShadow: "0 4px 20px rgba(99,102,241,0.45)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 199, transition: "transform 0.15s" }}
+          onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.08)"; }}
+          onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; }}
+        >
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 2l2 5.5 5.5 2-5.5 2L12 17l-2-5.5-5.5-2 5.5-2L12 2z" stroke="#fff" strokeWidth="1.6" strokeLinejoin="round"/><path d="M19 18l1 2.5 2.5 1-2.5 1L19 25" stroke="#fff" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
+        </button>
+      )}
 
     </div>
 
