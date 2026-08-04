@@ -9159,7 +9159,7 @@ function PortalPublishModal({ listing, onClose }: { listing: CrmListing; onClose
     { id: "rent", name: "rent.com.au", desc: "Rental-focused audience", logo: "🔑", types: ["rental"] as const },
     { id: "homely", name: "homely.com.au", desc: "Growing audience, neighbourhood focus", logo: "🏡", types: ["sale", "rental"] as const },
     { id: "allhomes", name: "allhomes.com.au", desc: "ACT & regional coverage", logo: "📍", types: ["sale", "rental"] as const },
-  ].filter(p => p.types.includes(listing.type));
+  ].filter(p => p.types.some(t => t === listing.type));
 
   const PORTAL_STATUS: Record<string, { label: string; color: string; bg: string; border: string }> = {
     idle:    { label: "Not published", color: "#6b7280", bg: "#f9fafb",  border: "#e5e7eb" },
