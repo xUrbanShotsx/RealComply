@@ -9306,10 +9306,8 @@ export default function DashboardPage() {
           className="main-panel-enter"
           style={{ flex: 1, display: "flex" }}
         >
-        {sidebarMode === "crm" && (crmModule || true) ? (
+        {sidebarMode === "crm" ? (
           <CrmSubPage moduleId={crmModule} submodule={crmSelected} />
-        ) : sidebarMode === "crm" ? (
-          <DashboardHome onNavigate={openModule} agencyName={agencyName} staffRows={staffRows} salesProps={salesProps} mgmtProps={mgmtProps} policies={policies} />
         ) : selected?.type === "property" ? (
           selected.section === "sales" ? (
             <SalesPropertyChecklist key={selected.id} propertyId={selected.id} address={selected.address} onRemove={() => handleRemoveProperty(selected.id, "sales")} />
