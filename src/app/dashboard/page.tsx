@@ -8384,12 +8384,33 @@ function daysAgo(dateStr: string): number {
   return Math.floor((Date.now() - d.getTime()) / 86_400_000);
 }
 
-function CrmKpiTile({ label, value, sub, color = "#111827" }: { label: string; value: string; sub: string; color?: string }) {
+function CrmKpiTile({ label, value, sub, color = "#111827", trend, spark }: {
+  label: string; value: string; sub: string; color?: string;
+  trend?: { dir: "up" | "down"; pct: string };
+  spark?: number[];
+}) {
+  const pts = spark ?? [2, 3, 2, 5, 4, 6, 5, 7, 6, 8];
+  const max = Math.max(...pts), min = Math.min(...pts), W = 52, H = 24;
+  const path = pts.map((v, i) => `${(i / (pts.length - 1)) * W},${H - ((v - min) / (max - min || 1)) * H}`).join(" L ");
+  const trendColor = trend?.dir === "up" ? "#16a34a" : "#dc2626";
   return (
-    <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: "10px", padding: "16px 20px", display: "flex", flexDirection: "column", gap: "6px" }}>
-      <span style={{ fontSize: "12px", color: "#6b7280", fontWeight: 500 }}>{label}</span>
-      <p style={{ fontSize: "1.6rem", fontWeight: 700, color, letterSpacing: "-0.04em", margin: 0, lineHeight: 1 }}>{value}</p>
-      <span style={{ fontSize: "11.5px", color: "#9ca3af" }}>{sub}</span>
+    <div style={{ background: "#fff", border: "1.5px solid #e5e7eb", borderRadius: "12px", padding: "15px 18px", display: "flex", flexDirection: "column", gap: "6px", position: "relative", overflow: "hidden" }}>
+      <div style={{ position: "absolute", top: 0, left: 0, bottom: 0, width: "3.5px", background: color, borderRadius: "12px 0 0 12px" }} />
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <span style={{ fontSize: "11px", color: "#6b7280", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</span>
+        {trend && <span style={{ fontSize: "10.5px", fontWeight: 700, color: trendColor, background: trendColor + "18", padding: "1px 6px", borderRadius: "6px" }}>{trend.dir === "up" ? "↑" : "↓"} {trend.pct}</span>}
+      </div>
+      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: "8px" }}>
+        <div>
+          <p style={{ fontSize: "1.7rem", fontWeight: 800, color, letterSpacing: "-0.05em", margin: 0, lineHeight: 1 }}>{value}</p>
+          <span style={{ fontSize: "11px", color: "#9ca3af", marginTop: "4px", display: "block" }}>{sub}</span>
+        </div>
+        <svg width={W} height={H} style={{ flexShrink: 0, opacity: 0.55 }}>
+          <defs><linearGradient id={`sg-${label.replace(/\s/g,"")}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={color} stopOpacity="0.35"/><stop offset="100%" stopColor={color} stopOpacity="0"/></linearGradient></defs>
+          <path d={`M ${path} L ${W},${H} L 0,${H} Z`} fill={`url(#sg-${label.replace(/\s/g,"")})`}/>
+          <polyline points={path.replace(/ L /g, " ")} fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      </div>
     </div>
   );
 }
@@ -8476,6 +8497,14 @@ const BLANK_LISTING: Omit<CrmListing, "id" | "status" | "complianceSynced"> = {
   availableDate: "", leaseTerm: "", bond: "", petsAllowed: "", furnished: "",
 };
 
+const DEMO_LISTINGS: CrmListing[] = [
+  { id: "dl1", address: "22 Surf Parade", suburb: "Thirroul", owner: "Greg Hollis", price: "$1,580,000", displayPrice: "Offers Over $1,550,000", type: "sale", propertyType: "House", bedrooms: "5", bathrooms: "3", carSpaces: "2", landSize: "620", agent: "Sarah Mitchell", listedDate: "2026-07-14", status: "active", complianceSynced: true, portalStatus: { rea: "live", domain: "live" } },
+  { id: "dl2", address: "14 Wentworth Ave", suburb: "Wollongong", owner: "Robert & Susan Park", price: "$1,250,000", displayPrice: "Guide $1,200,000–$1,280,000", type: "sale", propertyType: "Townhouse", bedrooms: "4", bathrooms: "2", carSpaces: "2", landSize: "380", agent: "Tom Briggs", listedDate: "2026-07-18", status: "active", complianceSynced: true, portalStatus: { rea: "live", domain: "pending" } },
+  { id: "dl3", address: "7 Blue Haven Cres", suburb: "Keiraville", owner: "Anne & David Walsh", price: "$980,000", displayPrice: "$960,000–$1,010,000", type: "sale", propertyType: "House", bedrooms: "3", bathrooms: "2", carSpaces: "1", landSize: "510", agent: "Sarah Mitchell", listedDate: "2026-07-22", status: "active", complianceSynced: false, portalStatus: { rea: "live", domain: "idle" } },
+  { id: "dl4", address: "3 Illawarra Rd", suburb: "Figtree", owner: "Anne Walsh", price: "$620", displayPrice: "$620 per week", type: "rental", propertyType: "Unit / Apartment", bedrooms: "2", bathrooms: "1", carSpaces: "1", landSize: "", agent: "Tom Briggs", listedDate: "2026-07-28", status: "active", complianceSynced: true, portalStatus: { rea: "live", domain: "live" } },
+  { id: "dl5", address: "90 Corrimal St", suburb: "Corrimal", owner: "Tom & Jan Mills", price: "$745,000", displayPrice: "Auction 16 Aug", type: "sale", propertyType: "House", bedrooms: "3", bathrooms: "1", carSpaces: "2", landSize: "480", agent: "Sarah Mitchell", listedDate: "2026-07-10", status: "active", complianceSynced: true, portalStatus: { rea: "live", domain: "live" } },
+];
+
 function CrmActiveListingsPage({
   listings, onAddListing, staffRows,
 }: {
@@ -8489,8 +8518,22 @@ function CrmActiveListingsPage({
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [publishingListing, setPublishingListing] = useState<CrmListing | null>(null);
+  const [viewMode, setViewMode] = useState<"cards" | "list">("cards");
+  const [typeFilter, setTypeFilter] = useState<"all" | "sale" | "rental">("all");
+  const [search, setSearch] = useState("");
+  const [sortBy, setSortBy] = useState<"date" | "price" | "days">("date");
 
-  const active = listings.filter(l => l.status === "active");
+  const allListings = [...DEMO_LISTINGS, ...listings.filter(l => l.status === "active")];
+  const active = allListings.filter(l => {
+    if (typeFilter !== "all" && l.type !== typeFilter) return false;
+    if (search && !l.address.toLowerCase().includes(search.toLowerCase()) && !l.suburb.toLowerCase().includes(search.toLowerCase())) return false;
+    return true;
+  }).sort((a, b) => {
+    if (sortBy === "days") return daysAgo(a.listedDate) - daysAgo(b.listedDate);
+    if (sortBy === "price") return b.price.replace(/[^0-9]/g, "").localeCompare(a.price.replace(/[^0-9]/g, ""));
+    return new Date(b.listedDate).getTime() - new Date(a.listedDate).getTime();
+  });
+
   const isSale = form.type === "sale";
 
   function setType(t: "sale" | "rental") {
@@ -8523,100 +8566,177 @@ function CrmActiveListingsPage({
     </div>
   );
 
+  const portalDot = (st?: "idle" | "pending" | "live") => {
+    const c = st === "live" ? "#22c55e" : st === "pending" ? "#f59e0b" : "#e5e7eb";
+    return <span style={{ width: "7px", height: "7px", borderRadius: "50%", background: c, display: "inline-block" }} />;
+  };
+
+  const cardGrads = ["linear-gradient(135deg,#6366f1,#8b5cf6)", "linear-gradient(135deg,#0ea5e9,#6366f1)", "linear-gradient(135deg,#10b981,#0ea5e9)", "linear-gradient(135deg,#f59e0b,#ef4444)", "linear-gradient(135deg,#ec4899,#8b5cf6)"];
+
   return (
     <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "calc(100vh - 56px)", overflow: "hidden", padding: "20px 28px", gap: "14px" }}>
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
         <div>
           <h1 style={{ fontSize: "1.1rem", fontWeight: 700, color: "#111827", letterSpacing: "-0.03em", margin: 0 }}>Active Listings</h1>
-          <p style={{ fontSize: "12.5px", color: "#9ca3af", margin: "3px 0 0" }}>Listings</p>
+          <p style={{ fontSize: "12.5px", color: "#9ca3af", margin: "3px 0 0" }}>{active.length} showing · {allListings.length} total on market</p>
         </div>
-        <button onClick={() => setShowModal(true)}
-          style={{ display: "flex", alignItems: "center", gap: "7px", padding: "7px 14px", background: "#111827", color: "#fff", border: "none", borderRadius: "8px", fontSize: "12.5px", fontWeight: 600, cursor: "pointer", fontFamily: "var(--font-inter)" }}
-          onMouseEnter={(e) => { e.currentTarget.style.background = "#1f2937"; }}
-          onMouseLeave={(e) => { e.currentTarget.style.background = "#111827"; }}>
-          <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>
-          Add Listing
-        </button>
+        <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+          {/* View toggle */}
+          <div style={{ display: "flex", background: "#f3f4f6", borderRadius: "8px", padding: "3px", gap: "2px" }}>
+            {(["cards", "list"] as const).map(v => (
+              <button key={v} onClick={() => setViewMode(v)} style={{ padding: "5px 10px", borderRadius: "6px", border: "none", cursor: "pointer", fontSize: "12px", fontWeight: 600, background: viewMode === v ? "#fff" : "transparent", color: viewMode === v ? "#111827" : "#9ca3af", boxShadow: viewMode === v ? "0 1px 3px rgba(0,0,0,0.08)" : "none" }}>
+                {v === "cards" ? <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="6" height="6" rx="1" stroke="currentColor" strokeWidth="1.5"/><rect x="9" y="1" width="6" height="6" rx="1" stroke="currentColor" strokeWidth="1.5"/><rect x="1" y="9" width="6" height="6" rx="1" stroke="currentColor" strokeWidth="1.5"/><rect x="9" y="9" width="6" height="6" rx="1" stroke="currentColor" strokeWidth="1.5"/></svg> : <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M2 4h12M2 8h12M2 12h12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>}
+              </button>
+            ))}
+          </div>
+          <button onClick={() => setShowModal(true)}
+            style={{ display: "flex", alignItems: "center", gap: "7px", padding: "7px 14px", background: "#111827", color: "#fff", border: "none", borderRadius: "8px", fontSize: "12.5px", fontWeight: 600, cursor: "pointer", fontFamily: "var(--font-inter)" }}>
+            <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>
+            Add Listing
+          </button>
+        </div>
       </div>
 
       {/* KPIs */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px", flexShrink: 0 }}>
-        <CrmKpiTile label="Active Listings" value={String(active.length)} sub="On market now" />
-        <CrmKpiTile label="For Sale" value={String(active.filter(l => l.type === "sale").length)} sub="Residential sales" />
-        <CrmKpiTile label="For Rent" value={String(active.filter(l => l.type === "rental").length)} sub="Rental listings" />
-        <CrmKpiTile label="Compliance Synced" value={String(active.filter(l => l.complianceSynced).length)} sub={`of ${active.length} listings`} />
+        <CrmKpiTile label="Active Listings" value={String(allListings.length)} sub="On market now" color="#6366f1" trend={{ dir: "up", pct: "3" }} spark={[3,4,4,5,5,5,6,5,7,6]} />
+        <CrmKpiTile label="For Sale" value={String(allListings.filter(l => l.type === "sale").length)} sub="Residential sales" color="#10b981" trend={{ dir: "up", pct: "8%" }} spark={[2,3,2,4,3,5,4,5,6,5]} />
+        <CrmKpiTile label="For Rent" value={String(allListings.filter(l => l.type === "rental").length)} sub="Rental listings" color="#3b82f6" spark={[1,2,1,2,2,1,2,1,1,2]} />
+        <CrmKpiTile label="Portals Live" value={String(allListings.filter(l => l.portalStatus?.rea === "live").length)} sub="Published on REA" color="#f59e0b" trend={{ dir: "up", pct: "12%" }} spark={[1,2,2,3,3,4,3,4,4,5]} />
+      </div>
+
+      {/* Filter bar */}
+      <div style={{ display: "flex", gap: "8px", alignItems: "center", flexShrink: 0, flexWrap: "wrap" }}>
+        {(["all", "sale", "rental"] as const).map(f => (
+          <button key={f} onClick={() => setTypeFilter(f)} style={{ padding: "5px 12px", borderRadius: "20px", border: "1.5px solid", fontSize: "12px", fontWeight: 600, cursor: "pointer", background: typeFilter === f ? "#111827" : "#fff", color: typeFilter === f ? "#fff" : "#6b7280", borderColor: typeFilter === f ? "#111827" : "#e5e7eb" }}>{f === "all" ? "All" : f === "sale" ? "For Sale" : "For Rent"}</button>
+        ))}
+        <div style={{ position: "relative", flex: 1, maxWidth: "280px" }}>
+          <svg style={{ position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)", color: "#9ca3af" }} width="13" height="13" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="5" stroke="currentColor" strokeWidth="1.5"/><path d="M11 11l3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search address or suburb…" style={{ width: "100%", padding: "6px 10px 6px 30px", border: "1.5px solid #e5e7eb", borderRadius: "20px", fontSize: "12.5px", fontFamily: "var(--font-inter)", outline: "none", boxSizing: "border-box" }} />
+        </div>
+        <select value={sortBy} onChange={e => setSortBy(e.target.value as typeof sortBy)} style={{ padding: "6px 10px", border: "1.5px solid #e5e7eb", borderRadius: "8px", fontSize: "12.5px", fontFamily: "var(--font-inter)", color: "#374151", background: "#fff", outline: "none", cursor: "pointer" }}>
+          <option value="date">Sort: Date Listed</option>
+          <option value="days">Sort: Days on Market</option>
+          <option value="price">Sort: Price</option>
+        </select>
       </div>
 
       {/* AI Panel */}
       <AiAutomationPanel
         automations={[
-          { title: "Match to Buyers", description: "Auto-match new listings to registered buyers by suburb, price, and bedrooms", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><circle cx="6" cy="5" r="3" stroke="currentColor" strokeWidth="1.3"/><path d="M1 13c0-2.761 2.239-5 5-5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/><circle cx="12" cy="11" r="3" stroke="currentColor" strokeWidth="1.3"/><path d="M10 11h4M12 9v4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg> },
-          { title: "Generate Campaign", description: "AI drafts property marketing email and social post on listing creation", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M2 10V6l9-4v12L2 10z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/></svg> },
-          { title: "Price Insights", description: "Compare listing price to recent sales in the same suburb", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M2 12l4-4 3 2 5-6" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg> },
+          { title: "Buyer Match Alert", description: "Auto-match new listings to registered buyers by suburb, price, and bedrooms — instant notification", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><circle cx="6" cy="5" r="3" stroke="currentColor" strokeWidth="1.3"/><path d="M1 13c0-2.761 2.239-5 5-5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/><circle cx="12" cy="11" r="3" stroke="currentColor" strokeWidth="1.3"/><path d="M10 11h4M12 9v4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg> },
+          { title: "Auto Campaign", description: "AI drafts property marketing email + social post the moment a listing is created", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M2 10V6l9-4v12L2 10z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/></svg> },
+          { title: "Price Intelligence", description: "Compare each listing price to recent comparable sales; flag overpriced properties", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M2 12l4-4 3 2 5-6" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg> },
         ]}
-        insight={{ title: "Compliance sync active", body: "New sale listings are automatically added to Compliance → Residential Sales when synced. Rental listings sync to Residential Management." }}
+        insight={{ title: "Compliance sync", body: "New sale listings auto-create a Residential Sales record in Compliance. Rentals sync to Residential Management." }}
       />
 
-      {/* Listings table */}
-      <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: "10px", overflow: "hidden", flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
-          <thead>
-            <tr style={{ borderBottom: "1px solid #f3f4f6" }}>
-              {["Property", "Type", "Price", "Owner", "Agent", "Listed", "Days", "Compliance", ""].map(h => (
-                <th key={h} style={{ padding: "10px 14px", textAlign: "left", fontSize: "11px", fontWeight: 600, color: "#6b7280", letterSpacing: "0.04em", textTransform: "uppercase" }}>{h}</th>
-              ))}
-            </tr>
-          </thead>
-        </table>
-        {active.length === 0 ? (
-          <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "8px", padding: "40px" }}>
-            <div style={{ width: "36px", height: "36px", borderRadius: "9px", background: "#f3f4f6", display: "flex", alignItems: "center", justifyContent: "center", color: "#9ca3af" }}>
-              <svg width="16" height="16" viewBox="0 0 18 18" fill="none"><rect x="2" y="2" width="14" height="14" rx="2" stroke="currentColor" strokeWidth="1.4"/><path d="M5 6h8M5 9h6M5 12h4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>
-            </div>
-            <p style={{ fontSize: "13px", fontWeight: 600, color: "#374151", margin: 0 }}>No active listings</p>
-            <p style={{ fontSize: "12px", color: "#9ca3af", margin: 0 }}>Click "Add Listing" to create your first.</p>
+      {/* Listings content */}
+      <div style={{ flex: 1, overflow: "auto", minHeight: 0 }}>
+        {viewMode === "cards" ? (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "14px" }}>
+            {active.map((l, idx) => {
+              const days = daysAgo(l.listedDate);
+              const domPct = Math.min((days / 60) * 100, 100);
+              const domColor = days > 45 ? "#dc2626" : days > 25 ? "#f59e0b" : "#10b981";
+              return (
+                <div key={l.id} style={{ background: "#fff", border: "1.5px solid #e5e7eb", borderRadius: "14px", overflow: "hidden", display: "flex", flexDirection: "column" }}>
+                  {/* Property card header */}
+                  <div style={{ height: "80px", background: cardGrads[idx % cardGrads.length], position: "relative", display: "flex", alignItems: "flex-end", padding: "10px 14px" }}>
+                    <span style={{ padding: "2px 8px", background: "rgba(255,255,255,0.25)", backdropFilter: "blur(4px)", borderRadius: "6px", fontSize: "11px", fontWeight: 700, color: "#fff", textTransform: "uppercase" as const }}>{l.type === "sale" ? "For Sale" : "For Rent"}</span>
+                    <span style={{ marginLeft: "auto", fontSize: "11px", color: "rgba(255,255,255,0.8)", fontWeight: 500 }}>{l.propertyType}</span>
+                  </div>
+                  <div style={{ padding: "14px 16px", flex: 1, display: "flex", flexDirection: "column", gap: "8px" }}>
+                    <div>
+                      <div style={{ fontWeight: 700, fontSize: "14px", color: "#111827", lineHeight: 1.2 }}>{l.address}</div>
+                      <div style={{ fontSize: "12px", color: "#9ca3af", marginTop: "2px" }}>{l.suburb}</div>
+                    </div>
+                    <div style={{ fontSize: "20px", fontWeight: 800, color: "#111827", letterSpacing: "-0.04em" }}>{l.price}</div>
+                    <div style={{ fontSize: "11px", color: "#9ca3af", fontStyle: "italic" }}>{l.displayPrice}</div>
+                    {/* Beds/baths/cars */}
+                    <div style={{ display: "flex", gap: "12px" }}>
+                      {l.bedrooms && <span style={{ fontSize: "12px", color: "#374151", display: "flex", alignItems: "center", gap: "4px" }}><svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M1 11V7a2 2 0 012-2h10a2 2 0 012 2v4" stroke="#6b7280" strokeWidth="1.3" strokeLinecap="round"/><path d="M1 11h14M4 5V3" stroke="#6b7280" strokeWidth="1.3" strokeLinecap="round"/></svg>{l.bedrooms} bed</span>}
+                      {l.bathrooms && <span style={{ fontSize: "12px", color: "#374151", display: "flex", alignItems: "center", gap: "4px" }}><svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M3 10V4a2 2 0 014 0" stroke="#6b7280" strokeWidth="1.3" strokeLinecap="round"/><path d="M1 10h14v1a3 3 0 01-3 3H4a3 3 0 01-3-3v-1z" stroke="#6b7280" strokeWidth="1.3"/></svg>{l.bathrooms} bath</span>}
+                      {l.carSpaces && <span style={{ fontSize: "12px", color: "#374151", display: "flex", alignItems: "center", gap: "4px" }}><svg width="12" height="12" viewBox="0 0 16 16" fill="none"><rect x="1" y="6" width="14" height="7" rx="2" stroke="#6b7280" strokeWidth="1.3"/><path d="M4 6l1.5-3h5L12 6" stroke="#6b7280" strokeWidth="1.3" strokeLinejoin="round"/><circle cx="4.5" cy="11" r="1" fill="#6b7280"/><circle cx="11.5" cy="11" r="1" fill="#6b7280"/></svg>{l.carSpaces} car</span>}
+                    </div>
+                    {/* Days on market bar */}
+                    <div>
+                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", color: "#9ca3af", marginBottom: "4px" }}>
+                        <span>Days on market</span>
+                        <span style={{ fontWeight: 600, color: domColor }}>{days}d</span>
+                      </div>
+                      <div style={{ height: "4px", background: "#f3f4f6", borderRadius: "2px" }}>
+                        <div style={{ height: "100%", width: `${domPct}%`, background: domColor, borderRadius: "2px", transition: "width 0.4s" }} />
+                      </div>
+                    </div>
+                    {/* Agent + portal dots */}
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingTop: "6px", borderTop: "1px solid #f3f4f6" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                        <div style={{ width: "22px", height: "22px", borderRadius: "50%", background: "#f3f4f6", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "10px", fontWeight: 700, color: "#374151" }}>{(l.agent ?? "?").split(" ").map(n => n[0]).join("").slice(0, 2)}</div>
+                        <span style={{ fontSize: "11.5px", color: "#6b7280" }}>{l.agent || "Unassigned"}</span>
+                      </div>
+                      <div style={{ display: "flex", gap: "4px", alignItems: "center" }}>
+                        <span style={{ fontSize: "10px", color: "#9ca3af" }}>REA</span>{portalDot(l.portalStatus?.rea as "idle"|"pending"|"live")}
+                        <span style={{ fontSize: "10px", color: "#9ca3af", marginLeft: "3px" }}>DOM</span>{portalDot(l.portalStatus?.domain as "idle"|"pending"|"live")}
+                      </div>
+                    </div>
+                    {/* Actions */}
+                    <div style={{ display: "flex", gap: "8px" }}>
+                      <button onClick={() => setPublishingListing(l)} style={{ flex: 1, padding: "7px 0", background: "#f5f3ff", color: "#6d28d9", border: "1px solid #ede9fe", borderRadius: "8px", fontSize: "12px", fontWeight: 700, cursor: "pointer" }}>Publish →</button>
+                      <button style={{ padding: "7px 12px", background: "#f9fafb", color: "#374151", border: "1px solid #e5e7eb", borderRadius: "8px", fontSize: "12px", cursor: "pointer" }}>
+                        <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><circle cx="4" cy="8" r="1.5" fill="currentColor"/><circle cx="8" cy="8" r="1.5" fill="currentColor"/><circle cx="12" cy="8" r="1.5" fill="currentColor"/></svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+            {active.length === 0 && (
+              <div style={{ gridColumn: "1/-1", textAlign: "center", padding: "60px 20px", color: "#9ca3af" }}>
+                <div style={{ fontSize: "32px", marginBottom: "12px" }}>🏠</div>
+                <div style={{ fontSize: "14px", fontWeight: 600, color: "#374151" }}>No listings match your filter</div>
+                <div style={{ fontSize: "12px" }}>Try clearing your search or changing the type filter.</div>
+              </div>
+            )}
           </div>
         ) : (
-          <div style={{ overflowY: "auto", flex: 1 }}>
+          /* List view */
+          <div style={{ background: "#fff", border: "1.5px solid #e5e7eb", borderRadius: "12px", overflow: "hidden" }}>
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <thead>
+                <tr style={{ borderBottom: "1px solid #f3f4f6" }}>
+                  {["Property", "Type", "Price", "Owner", "Agent", "DOM", "Portals", "Compliance", ""].map(h => (
+                    <th key={h} style={{ padding: "10px 14px", textAlign: "left", fontSize: "11px", fontWeight: 600, color: "#9ca3af", letterSpacing: "0.04em", textTransform: "uppercase" as const }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
               <tbody>
-                {active.map(l => (
-                  <tr key={l.id} style={{ borderBottom: "1px solid #f9fafb" }}
-                    onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "#fafafa"; }}
-                    onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}>
-                    <td style={{ padding: "11px 14px" }}>
-                      <p style={{ fontSize: "13px", fontWeight: 600, color: "#111827", margin: 0, maxWidth: "none" }}>{l.address}</p>
-                      {l.suburb && <p style={{ fontSize: "11.5px", color: "#9ca3af", margin: "2px 0 0", maxWidth: "none" }}>{l.suburb}</p>}
-                    </td>
-                    <td style={{ padding: "11px 14px" }}>
-                      <span style={{ fontSize: "11.5px", fontWeight: 600, color: l.type === "sale" ? "#166534" : "#1e40af", background: l.type === "sale" ? "#f0fdf4" : "#eff6ff", padding: "2px 8px", borderRadius: "100px" }}>
-                        {l.type === "sale" ? "For Sale" : "For Rent"}
-                      </span>
-                    </td>
-                    <td style={{ padding: "11px 14px", fontSize: "13px", color: "#374151", fontWeight: 500 }}>{l.price || "—"}</td>
-                    <td style={{ padding: "11px 14px", fontSize: "13px", color: "#6b7280" }}>{l.owner || "—"}</td>
-                    <td style={{ padding: "11px 14px", fontSize: "13px", color: "#6b7280" }}>{l.agent || "—"}</td>
-                    <td style={{ padding: "11px 14px", fontSize: "12.5px", color: "#6b7280" }}>{l.listedDate}</td>
-                    <td style={{ padding: "11px 14px", fontSize: "13px", color: "#374151", fontWeight: 600 }}>{daysAgo(l.listedDate)}d</td>
-                    <td style={{ padding: "11px 14px" }}>
-                      {l.complianceSynced ? (
-                        <span style={{ display: "flex", alignItems: "center", gap: "5px", fontSize: "11.5px", color: "#166534" }}>
-                          <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M2 7l4 4 6-6" stroke="#22c55e" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                          Synced
-                        </span>
-                      ) : (
-                        <span style={{ fontSize: "11.5px", color: "#9ca3af" }}>Not synced</span>
-                      )}
-                    </td>
-                    <td style={{ padding: "11px 14px" }}>
-                      <button onClick={() => setPublishingListing(l)}
-                        style={{ fontSize: "12px", fontWeight: 600, color: "#6366f1", background: "#f0f0ff", border: "1px solid #c7d2fe", borderRadius: "6px", padding: "4px 10px", cursor: "pointer", fontFamily: "var(--font-inter)", whiteSpace: "nowrap" as const }}>
-                        Publish →
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                {active.map(l => {
+                  const days = daysAgo(l.listedDate);
+                  const domColor = days > 45 ? "#dc2626" : days > 25 ? "#f59e0b" : "#10b981";
+                  return (
+                    <tr key={l.id} style={{ borderBottom: "1px solid #f9fafb" }} onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "#f9fafb"; }} onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = ""; }}>
+                      <td style={{ padding: "11px 14px" }}>
+                        <div style={{ fontSize: "13px", fontWeight: 600, color: "#111827" }}>{l.address}</div>
+                        <div style={{ fontSize: "11.5px", color: "#9ca3af" }}>{l.suburb} · {l.propertyType}</div>
+                      </td>
+                      <td style={{ padding: "11px 14px" }}><span style={{ fontSize: "11px", fontWeight: 700, color: l.type === "sale" ? "#16a34a" : "#1d4ed8", background: l.type === "sale" ? "#f0fdf4" : "#eff6ff", padding: "2px 8px", borderRadius: "20px" }}>{l.type === "sale" ? "Sale" : "Rental"}</span></td>
+                      <td style={{ padding: "11px 14px", fontWeight: 700, color: "#111827" }}>{l.price}</td>
+                      <td style={{ padding: "11px 14px", fontSize: "12.5px", color: "#6b7280" }}>{l.owner || "—"}</td>
+                      <td style={{ padding: "11px 14px", fontSize: "12.5px", color: "#6b7280" }}>{l.agent || "—"}</td>
+                      <td style={{ padding: "11px 14px" }}><span style={{ fontWeight: 700, color: domColor, fontSize: "13px" }}>{days}d</span></td>
+                      <td style={{ padding: "11px 14px" }}>
+                        <div style={{ display: "flex", gap: "4px", alignItems: "center" }}>
+                          <span style={{ fontSize: "10px", color: "#9ca3af" }}>REA</span>{portalDot(l.portalStatus?.rea as "idle"|"pending"|"live")}
+                          <span style={{ fontSize: "10px", color: "#9ca3af", marginLeft: "4px" }}>DOM</span>{portalDot(l.portalStatus?.domain as "idle"|"pending"|"live")}
+                        </div>
+                      </td>
+                      <td style={{ padding: "11px 14px" }}>{l.complianceSynced ? <span style={{ fontSize: "11px", color: "#16a34a", fontWeight: 600 }}>✓ Synced</span> : <span style={{ fontSize: "11px", color: "#9ca3af" }}>—</span>}</td>
+                      <td style={{ padding: "11px 14px" }}><button onClick={() => setPublishingListing(l)} style={{ fontSize: "12px", fontWeight: 600, color: "#6d28d9", background: "#f5f3ff", border: "1px solid #ede9fe", borderRadius: "6px", padding: "4px 10px", cursor: "pointer" }}>Publish →</button></td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -8756,13 +8876,28 @@ function CrmActiveListingsPage({
 
 // ─── CRM Contacts Page ────────────────────────────────────────────────────────
 
+const DEMO_CONTACTS: CrmContact[] = [
+  { id: "dc1", name: "Daniel Russo", email: "d.russo@email.com", phone: "0412 345 678", type: "buyer", suburb: "Wollongong", source: "REA Enquiry", tag: "hot", notes: "Pre-approved to $1.1M. Very motivated, wants 4 bed.", addedAt: "2026-07-28", budgetMin: "$900,000", budgetMax: "$1,100,000", preferredSuburbs: "Wollongong, Thirroul, Figtree", preApproved: true, beds: "4" },
+  { id: "dc2", name: "Kylie & Matt Turner", email: "k.turner@email.com", phone: "0423 456 789", type: "buyer", suburb: "Thirroul", source: "Domain Enquiry", tag: "warm", notes: "Flexible on bedrooms if the view is right. Have existing property to sell.", addedAt: "2026-07-20", budgetMin: "$1,400,000", budgetMax: "$1,700,000", preferredSuburbs: "Thirroul, Austinmer, Bulli", preApproved: false, beds: "4" },
+  { id: "dc3", name: "Robert & Susan Park", email: "r.park@email.com", phone: "0434 567 890", type: "seller", suburb: "Wollongong", source: "Referral", tag: "hot", notes: "Vendor of 14 Wentworth Ave. Very motivated to sell by September.", addedAt: "2026-07-01", budgetMin: "", budgetMax: "", preferredSuburbs: "", preApproved: false, beds: "" },
+  { id: "dc4", name: "Anne Walsh", email: "anne.walsh@email.com", phone: "0445 678 901", type: "landlord", suburb: "Figtree", source: "Cold Call", tag: "warm", notes: "Owner of 3 Illawarra Rd. Looking to expand portfolio.", addedAt: "2026-06-15", budgetMin: "", budgetMax: "", preferredSuburbs: "", preApproved: false, beds: "" },
+  { id: "dc5", name: "Priya Sharma", email: "priya.s@email.com", phone: "0456 789 012", type: "buyer", suburb: "Keiraville", source: "Referral", tag: "hot", notes: "Highly qualified. Cash buyer. Needs 3 bed min, Keiraville preferred.", addedAt: "2026-07-30", budgetMin: "$750,000", budgetMax: "$900,000", preferredSuburbs: "Keiraville, Gwynneville, Wollongong", preApproved: true, beds: "3" },
+  { id: "dc6", name: "Michael Chen", email: "m.chen@email.com", phone: "0467 890 123", type: "tenant", suburb: "Figtree", source: "REA Enquiry", tag: "", notes: "Tenant at 3 Illawarra Rd. Lease up for renewal in Oct. Good payer.", addedAt: "2026-05-01", budgetMin: "", budgetMax: "", preferredSuburbs: "", preApproved: false, beds: "" },
+  { id: "dc7", name: "Greg Hollis", email: "g.hollis@email.com", phone: "0478 901 234", type: "seller", suburb: "Thirroul", source: "Walk-in", tag: "warm", notes: "Owner of 22 Surf Parade. Wants to sell before Christmas. Has offers.", addedAt: "2026-07-10", budgetMin: "", budgetMax: "", preferredSuburbs: "", preApproved: false, beds: "" },
+  { id: "dc8", name: "Sophie & James Lee", email: "s.lee@email.com", phone: "0489 012 345", type: "prospect", suburb: "Corrimal", source: "Social Media", tag: "cold", notes: "Enquired about 90 Corrimal St. Vague interest, not ready to act.", addedAt: "2026-07-25", budgetMin: "$650,000", budgetMax: "$780,000", preferredSuburbs: "Corrimal, Towradgi", preApproved: false, beds: "3" },
+];
+
+const CONTACT_SCORES: Record<string, number> = { dc1: 9, dc2: 7, dc3: 9, dc4: 6, dc5: 9, dc6: 5, dc7: 7, dc8: 3 };
+const CONTACT_LAST: Record<string, string> = { dc1: "Today", dc2: "3 days ago", dc3: "1 day ago", dc4: "6 days ago", dc5: "Today", dc6: "14 days ago", dc7: "2 days ago", dc8: "8 days ago" };
+const CONTACT_NEXT_ACTION: Record<string, string> = { dc1: "Call — finance check", dc2: "Email — price update", dc3: "Appraisal — Friday 2pm", dc4: "Call — renewal offer", dc5: "Appraisal — schedule", dc6: "Lease renewal", dc7: "Offer meeting", dc8: "Nurture email" };
+
 const BLANK_CONTACT: Omit<CrmContact, "id" | "addedAt"> = {
   name: "", email: "", phone: "", type: "prospect", suburb: "", source: "",
   tag: "", notes: "", budgetMin: "", budgetMax: "", preferredSuburbs: "", preApproved: false, beds: "",
 };
 
 function CrmContactsPage({ staffRows, filterType }: { staffRows: StaffRow[]; filterType?: CrmContact["type"] }) {
-  const [contacts, setContacts] = useState<CrmContact[]>([]);
+  const [contacts, setContacts] = useState<CrmContact[]>(DEMO_CONTACTS);
   const [filter, setFilter] = useState<"all" | CrmContact["type"]>(filterType ?? "all");
   const [search, setSearch] = useState("");
   const [showModal, setShowModal] = useState(false);
@@ -8829,56 +8964,89 @@ function CrmContactsPage({ staffRows, filterType }: { staffRows: StaffRow[]; fil
         </button>
       </div>
 
-      {/* Type filter pills */}
-      <div style={{ display: "flex", gap: "8px", flexShrink: 0, flexWrap: "wrap" }}>
-        {([["all", "All"], ["buyer", "Buyers"], ["seller", "Sellers"], ["landlord", "Landlords"], ["tenant", "Tenants"], ["prospect", "Prospects"]] as const).map(([val, label]) => (
-          <button key={val} onClick={() => setFilter(val as "all" | CrmContact["type"])}
-            style={{ padding: "5px 14px", borderRadius: "100px", border: "1px solid", fontSize: "12.5px", fontWeight: 600, cursor: "pointer", fontFamily: "var(--font-inter)", transition: "all 0.12s",
-              background: filter === val ? "#111827" : "#fff", color: filter === val ? "#fff" : "#6b7280", borderColor: filter === val ? "#111827" : "#e5e7eb" }}>
-            {label} {counts[val === "all" ? "all" : val] ? `(${counts[val === "all" ? "all" : val]})` : "(0)"}
-          </button>
-        ))}
+      {/* KPI tiles */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px", flexShrink: 0 }}>
+        <CrmKpiTile label="Total Contacts" value={String(contacts.length)} sub="in database" color="#6366f1" trend={{ dir: "up", pct: "6%" }} spark={[4,5,5,6,6,7,7,7,8,8]} />
+        <CrmKpiTile label="Hot Leads" value={String(contacts.filter(c => c.tag === "hot").length)} sub="urgent follow-up" color="#dc2626" trend={{ dir: "up", pct: "2" }} spark={[1,1,2,2,3,2,3,3,3,3]} />
+        <CrmKpiTile label="Buyers" value={String(contacts.filter(c => c.type === "buyer").length)} sub="registered buyers" color="#2563eb" spark={[2,2,2,3,3,3,3,3,3,3]} />
+        <CrmKpiTile label="Pre-approved" value={String(contacts.filter(c => c.preApproved).length)} sub="finance confirmed" color="#10b981" spark={[1,1,1,2,2,2,2,2,2,2]} />
       </div>
 
-      {/* Search */}
-      <div style={{ flexShrink: 0, position: "relative" }}>
-        <svg style={{ position: "absolute", left: "11px", top: "50%", transform: "translateY(-50%)", color: "#9ca3af", pointerEvents: "none" }} width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="5" stroke="currentColor" strokeWidth="1.5"/><path d="M11 11l3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
-        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by name, email, or suburb…"
-          style={{ width: "100%", padding: "8px 12px 8px 32px", border: "1px solid #e5e7eb", borderRadius: "8px", fontSize: "13px", fontFamily: "var(--font-inter)", color: "#111827", outline: "none", boxSizing: "border-box" as const }} />
+      {/* Type filter pills */}
+      <div style={{ display: "flex", gap: "8px", flexShrink: 0, flexWrap: "wrap", alignItems: "center" }}>
+        {([["all", "All"], ["buyer", "Buyers"], ["seller", "Sellers"], ["landlord", "Landlords"], ["tenant", "Tenants"], ["prospect", "Prospects"]] as const).map(([val, label]) => (
+          <button key={val} onClick={() => setFilter(val as "all" | CrmContact["type"])}
+            style={{ padding: "5px 14px", borderRadius: "100px", border: "1.5px solid", fontSize: "12px", fontWeight: 600, cursor: "pointer", fontFamily: "var(--font-inter)",
+              background: filter === val ? "#111827" : "#fff", color: filter === val ? "#fff" : "#6b7280", borderColor: filter === val ? "#111827" : "#e5e7eb" }}>
+            {label} <span style={{ opacity: 0.7 }}>({counts[val === "all" ? "all" : val] ?? 0})</span>
+          </button>
+        ))}
+        <div style={{ position: "relative", marginLeft: "auto" }}>
+          <svg style={{ position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)", color: "#9ca3af", pointerEvents: "none" }} width="13" height="13" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="5" stroke="currentColor" strokeWidth="1.5"/><path d="M11 11l3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search contacts…"
+            style={{ padding: "7px 12px 7px 30px", border: "1.5px solid #e5e7eb", borderRadius: "20px", fontSize: "12.5px", fontFamily: "var(--font-inter)", color: "#111827", outline: "none", width: "200px" }} />
+        </div>
       </div>
 
       {/* Table */}
-      <div style={{ flex: 1, overflow: "auto", background: "#fff", border: "1px solid #e5e7eb", borderRadius: "12px" }}>
+      <div style={{ flex: 1, overflow: "auto", background: "#fff", border: "1.5px solid #e5e7eb", borderRadius: "12px" }}>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
-            <tr style={{ borderBottom: "1px solid #f3f4f6" }}>
-              {["Name", "Type", "Email", "Phone", "Suburb", "Source", "Tag", "Added"].map(h => (
-                <th key={h} style={{ padding: "10px 14px", fontSize: "11px", fontWeight: 700, color: "#9ca3af", textAlign: "left", letterSpacing: "0.04em", textTransform: "uppercase" as const, whiteSpace: "nowrap" as const }}>{h}</th>
+            <tr style={{ borderBottom: "1px solid #f3f4f6", background: "#fafafa" }}>
+              {["Contact", "Type", "Phone", "Suburb", "Tag", "AI Score", "Last Contact", "Next Action", ""].map(h => (
+                <th key={h} style={{ padding: "9px 14px", fontSize: "10.5px", fontWeight: 700, color: "#9ca3af", textAlign: "left", letterSpacing: "0.05em", textTransform: "uppercase" as const, whiteSpace: "nowrap" as const }}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {filtered.length === 0 ? (
-              <tr><td colSpan={8} style={{ padding: "48px", textAlign: "center" as const, color: "#9ca3af", fontSize: "13px" }}>
+              <tr><td colSpan={9} style={{ padding: "48px", textAlign: "center" as const, color: "#9ca3af", fontSize: "13px" }}>
                 {contacts.length === 0 ? "No contacts yet — add your first contact to get started." : "No contacts match your search or filter."}
               </td></tr>
-            ) : filtered.map(c => (
-              <tr key={c.id} onClick={() => openEdit(c)} style={{ borderBottom: "1px solid #f9fafb", cursor: "pointer" }}
-                onMouseEnter={e => (e.currentTarget.style.background = "#f9fafb")} onMouseLeave={e => (e.currentTarget.style.background = "")}>
-                <td style={{ padding: "10px 14px", fontSize: "13px", fontWeight: 600, color: "#111827", whiteSpace: "nowrap" as const }}>{c.name}</td>
-                <td style={{ padding: "10px 14px" }}>
-                  <span style={{ fontSize: "11px", fontWeight: 700, padding: "2px 8px", borderRadius: "4px", textTransform: "capitalize" as const, background: TYPE_COLORS[c.type] + "18", color: TYPE_COLORS[c.type] }}>{c.type}</span>
-                </td>
-                <td style={{ padding: "10px 14px", fontSize: "12.5px", color: "#374151" }}>{c.email || "—"}</td>
-                <td style={{ padding: "10px 14px", fontSize: "12.5px", color: "#374151", whiteSpace: "nowrap" as const }}>{c.phone || "—"}</td>
-                <td style={{ padding: "10px 14px", fontSize: "12.5px", color: "#374151" }}>{c.suburb || "—"}</td>
-                <td style={{ padding: "10px 14px", fontSize: "12.5px", color: "#374151" }}>{c.source || "—"}</td>
-                <td style={{ padding: "10px 14px" }}>
-                  {c.tag ? <span style={{ fontSize: "11px", fontWeight: 700, padding: "2px 8px", borderRadius: "4px", textTransform: "capitalize" as const, ...TAG_STYLE[c.tag] }}>{c.tag}</span> : <span style={{ color: "#d1d5db" }}>—</span>}
-                </td>
-                <td style={{ padding: "10px 14px", fontSize: "12px", color: "#9ca3af", whiteSpace: "nowrap" as const }}>{c.addedAt}</td>
-              </tr>
-            ))}
+            ) : filtered.map(c => {
+              const score = CONTACT_SCORES[c.id] ?? 5;
+              const lastContact = CONTACT_LAST[c.id] ?? "Unknown";
+              const nextAction = CONTACT_NEXT_ACTION[c.id] ?? "—";
+              const scoreColor = score >= 8 ? "#16a34a" : score >= 6 ? "#f59e0b" : "#dc2626";
+              const lastUrgent = lastContact === "Today" ? false : lastContact.includes("day") && parseInt(lastContact) > 7;
+              return (
+                <tr key={c.id} onClick={() => openEdit(c)} style={{ borderBottom: "1px solid #f9fafb", cursor: "pointer" }}
+                  onMouseEnter={e => (e.currentTarget.style.background = "#f9fafb")} onMouseLeave={e => (e.currentTarget.style.background = "")}>
+                  <td style={{ padding: "11px 14px" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                      <div style={{ width: "32px", height: "32px", borderRadius: "50%", background: TYPE_COLORS[c.type] + "20", color: TYPE_COLORS[c.type], display: "flex", alignItems: "center", justifyContent: "center", fontSize: "11px", fontWeight: 800, flexShrink: 0 }}>
+                        {c.name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase()}
+                      </div>
+                      <div>
+                        <div style={{ fontSize: "13px", fontWeight: 600, color: "#111827" }}>{c.name}</div>
+                        <div style={{ fontSize: "11px", color: "#9ca3af" }}>{c.email || "—"}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td style={{ padding: "11px 14px" }}>
+                    <span style={{ fontSize: "11px", fontWeight: 700, padding: "3px 9px", borderRadius: "20px", textTransform: "capitalize" as const, background: TYPE_COLORS[c.type] + "18", color: TYPE_COLORS[c.type] }}>{c.type}</span>
+                  </td>
+                  <td style={{ padding: "11px 14px", fontSize: "12.5px", color: "#374151", whiteSpace: "nowrap" as const }}>{c.phone || "—"}</td>
+                  <td style={{ padding: "11px 14px", fontSize: "12.5px", color: "#374151" }}>{c.suburb || "—"}</td>
+                  <td style={{ padding: "11px 14px" }}>
+                    {c.tag ? <span style={{ fontSize: "11px", fontWeight: 700, padding: "2px 9px", borderRadius: "20px", textTransform: "capitalize" as const, ...TAG_STYLE[c.tag] }}>{c.tag}</span> : <span style={{ color: "#d1d5db", fontSize: "12px" }}>—</span>}
+                  </td>
+                  <td style={{ padding: "11px 14px" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                      <div style={{ width: "7px", height: "7px", borderRadius: "50%", background: scoreColor, flexShrink: 0 }} />
+                      <span style={{ fontSize: "13px", fontWeight: 700, color: scoreColor }}>{score}<span style={{ fontWeight: 400, color: "#9ca3af", fontSize: "11px" }}>/10</span></span>
+                    </div>
+                  </td>
+                  <td style={{ padding: "11px 14px" }}>
+                    <span style={{ fontSize: "12px", color: lastUrgent ? "#dc2626" : "#374151", fontWeight: lastUrgent ? 600 : 400 }}>{lastContact}</span>
+                  </td>
+                  <td style={{ padding: "11px 14px", fontSize: "12px", color: "#374151", maxWidth: "180px" }}>{nextAction}</td>
+                  <td style={{ padding: "11px 14px" }}>
+                    <button onClick={e => { e.stopPropagation(); openEdit(c); }} style={{ padding: "4px 10px", background: "#f5f3ff", color: "#6d28d9", border: "1px solid #ede9fe", borderRadius: "6px", fontSize: "11.5px", fontWeight: 600, cursor: "pointer" }}>Edit</button>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
@@ -8966,8 +9134,16 @@ const BLANK_APPRAISAL: Omit<CrmAppraisal, "id"> = {
   priceFrom: "", priceTo: "", notes: "", stage: "enquired", followUpDate: "",
 };
 
+const DEMO_APPRAISALS: CrmAppraisal[] = [
+  { id: "da1", address: "47 Crown St", suburb: "Wollongong", ownerName: "Chris & Anna Wong", ownerPhone: "0412 111 222", agent: "Sarah Mitchell", date: "2026-08-06", time: "10:00", priceFrom: "$1,100,000", priceTo: "$1,300,000", notes: "Owners motivated. Kids moving out. Want to downsize coastal.", stage: "enquired", followUpDate: "2026-08-05" },
+  { id: "da2", address: "12 Panorama Dr", suburb: "Mount Ousley", ownerName: "Peter & Sandra Liu", ownerPhone: "0423 222 333", agent: "Tom Briggs", date: "2026-08-04", time: "2:30", priceFrom: "$850,000", priceTo: "$950,000", notes: "Referred by Jane Carter. Recently renovated bathroom.", stage: "booked", followUpDate: "2026-08-04" },
+  { id: "da3", address: "5 Harbour View Rd", suburb: "Bulli", ownerName: "Marcus Taylor", ownerPhone: "0434 333 444", agent: "Sarah Mitchell", date: "2026-07-30", time: "11:00", priceFrom: "$1,500,000", priceTo: "$1,700,000", notes: "Ocean-front. Owner not ready yet. Follow up in 3 months.", stage: "completed", followUpDate: "2026-10-01" },
+  { id: "da4", address: "21 Banksia Blvd", suburb: "Keiraville", ownerName: "Helen & Roy Abbott", ownerPhone: "0445 444 555", agent: "Tom Briggs", date: "2026-07-22", time: "9:30", priceFrom: "$920,000", priceTo: "$1,000,000", notes: "Listed on REA same week. Agents should use as a case study!", stage: "listed", followUpDate: "" },
+  { id: "da5", address: "8 Pacific Hwy", suburb: "Coledale", ownerName: "Dave Nguyen", ownerPhone: "0456 555 666", agent: "Sarah Mitchell", date: "2026-08-08", time: "3:00", priceFrom: "$1,200,000", priceTo: "$1,350,000", notes: "First meeting. Agent to take comps pack.", stage: "enquired", followUpDate: "2026-08-07" },
+];
+
 function CrmAppraisalKanbanPage({ staffRows, initialStage }: { staffRows: StaffRow[]; initialStage?: CrmAppraisal["stage"] }) {
-  const [appraisals, setAppraisals] = useState<CrmAppraisal[]>([]);
+  const [appraisals, setAppraisals] = useState<CrmAppraisal[]>(DEMO_APPRAISALS);
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState<Omit<CrmAppraisal, "id">>(BLANK_APPRAISAL);
   const [err, setErr] = useState<string | null>(null);
@@ -9031,12 +9207,24 @@ function CrmAppraisalKanbanPage({ staffRows, initialStage }: { staffRows: StaffR
 
       {/* KPIs */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "10px", flexShrink: 0 }}>
-        {STAGES.map(s => (
-          <div key={s.key} style={{ background: "#fff", border: `1px solid ${s.border}`, borderRadius: "10px", padding: "12px 16px", borderTop: `3px solid ${s.color}` }}>
-            <div style={{ fontSize: "22px", fontWeight: 700, color: s.color, letterSpacing: "-0.04em" }}>{counts[s.key]}</div>
-            <div style={{ fontSize: "12px", color: "#9ca3af", marginTop: "2px" }}>{s.label}</div>
-          </div>
-        ))}
+        {STAGES.map(s => {
+          const stageAppraisals = appraisals.filter(a => a.stage === s.key);
+          const totalVal = stageAppraisals.reduce((sum, a) => {
+            const mid = a.priceTo ? (parseFloat(a.priceFrom.replace(/[^0-9]/g,"")) + parseFloat(a.priceTo.replace(/[^0-9]/g,""))) / 2 : parseFloat(a.priceFrom.replace(/[^0-9]/g,""));
+            return sum + (isNaN(mid) ? 0 : mid);
+          }, 0);
+          return (
+            <div key={s.key} style={{ background: "#fff", border: `1.5px solid ${s.border}`, borderRadius: "12px", padding: "14px 16px", borderTop: `3.5px solid ${s.color}` }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "6px" }}>
+                <span style={{ fontSize: "11px", fontWeight: 700, color: s.color, textTransform: "uppercase", letterSpacing: "0.05em" }}>{s.label}</span>
+                <span style={{ fontSize: "18px", fontWeight: 800, color: s.color }}>{stageAppraisals.length}</span>
+              </div>
+              <div style={{ fontSize: "12px", color: "#9ca3af" }}>
+                {totalVal > 0 ? `Est. $${(totalVal / 1e6).toFixed(2)}M` : "No estimates"}
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       {/* AI Automation */}
@@ -9066,31 +9254,51 @@ function CrmAppraisalKanbanPage({ staffRows, initialStage }: { staffRows: StaffR
                   <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", color: "#d1d5db", fontSize: "12px", padding: "20px", textAlign: "center" as const, minHeight: "80px" }}>
                     No appraisals
                   </div>
-                ) : cards.map(a => (
-                  <div key={a.id} style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: "9px", padding: "12px 14px" }}
-                    onMouseEnter={e => (e.currentTarget.style.borderColor = "#d1d5db")}
-                    onMouseLeave={e => (e.currentTarget.style.borderColor = "#e5e7eb")}>
-                    <div style={{ fontSize: "13px", fontWeight: 600, color: "#111827", marginBottom: "3px", lineHeight: 1.3 }}>{a.address}</div>
-                    <div style={{ fontSize: "11.5px", color: "#6b7280", marginBottom: "6px" }}>{a.suburb}</div>
-                    <div style={{ fontSize: "12px", color: "#374151", marginBottom: "2px" }}>{a.ownerName}</div>
-                    {a.ownerPhone && <div style={{ fontSize: "11.5px", color: "#9ca3af", marginBottom: "4px" }}>{a.ownerPhone}</div>}
-                    {(a.priceFrom || a.priceTo) && (
-                      <div style={{ fontSize: "11.5px", color: "#374151", marginBottom: "4px", fontWeight: 500 }}>
-                        {a.priceFrom}{a.priceTo ? ` – ${a.priceTo}` : ""}
-                      </div>
-                    )}
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: "10px", paddingTop: "8px", borderTop: "1px solid #f3f4f6" }}>
-                      <span style={{ fontSize: "11px", color: "#9ca3af" }}>{a.agent || "Unassigned"}</span>
-                      {!isLast && (
-                        <button onClick={() => advance(a.id)}
-                          style={{ fontSize: "11px", fontWeight: 600, color: STAGES[si + 1].color, background: STAGES[si + 1].bg, border: `1px solid ${STAGES[si + 1].border}`, borderRadius: "6px", padding: "3px 8px", cursor: "pointer", fontFamily: "var(--font-inter)" }}>
-                          {STAGES[si + 1].label} →
-                        </button>
+                ) : cards.map(a => {
+                  const followUpDays = a.followUpDate ? daysUntil(a.followUpDate) : null;
+                  const followUpUrgent = followUpDays !== null && followUpDays <= 1;
+                  return (
+                    <div key={a.id} style={{ background: "#fff", border: `1.5px solid ${followUpUrgent ? "#fca5a5" : "#e5e7eb"}`, borderRadius: "10px", padding: "13px 15px" }}
+                      onMouseEnter={e => (e.currentTarget.style.borderColor = followUpUrgent ? "#ef4444" : "#d1d5db")}
+                      onMouseLeave={e => (e.currentTarget.style.borderColor = followUpUrgent ? "#fca5a5" : "#e5e7eb")}>
+                      {followUpUrgent && <div style={{ fontSize: "10.5px", fontWeight: 700, color: "#dc2626", background: "#fef2f2", borderRadius: "6px", padding: "2px 8px", marginBottom: "8px", display: "inline-flex", alignItems: "center", gap: "4px" }}><svg width="9" height="9" viewBox="0 0 12 12" fill="none"><path d="M6 1l5 9H1L6 1z" stroke="#dc2626" strokeWidth="1.2"/></svg>Follow-up {followUpDays === 0 ? "due today" : "overdue"}</div>}
+                      <div style={{ fontSize: "13px", fontWeight: 700, color: "#111827", lineHeight: 1.25, marginBottom: "2px" }}>{a.address}</div>
+                      <div style={{ fontSize: "11.5px", color: "#6b7280", marginBottom: "8px" }}>{a.suburb}</div>
+                      {(a.priceFrom || a.priceTo) && (
+                        <div style={{ background: s.bg, border: `1px solid ${s.border}`, borderRadius: "6px", padding: "5px 10px", marginBottom: "8px" }}>
+                          <div style={{ fontSize: "13px", fontWeight: 700, color: s.color }}>{a.priceFrom}{a.priceTo ? ` – ${a.priceTo}` : ""}</div>
+                          <div style={{ fontSize: "10.5px", color: "#9ca3af" }}>Estimated value</div>
+                        </div>
                       )}
-                      {isLast && <span style={{ fontSize: "11px", fontWeight: 600, color: s.color }}>✓ Listed</span>}
+                      <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "6px" }}>
+                        <div style={{ width: "20px", height: "20px", borderRadius: "50%", background: "#f3f4f6", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "9px", fontWeight: 700, color: "#374151" }}>{(a.ownerName ?? "?").split(" ").map((n: string) => n[0]).join("").slice(0, 2)}</div>
+                        <div>
+                          <div style={{ fontSize: "12px", fontWeight: 600, color: "#374151" }}>{a.ownerName}</div>
+                          {a.ownerPhone && <div style={{ fontSize: "11px", color: "#9ca3af" }}>{a.ownerPhone}</div>}
+                        </div>
+                      </div>
+                      {a.date && (
+                        <div style={{ fontSize: "11px", color: "#9ca3af", marginBottom: "8px" }}>
+                          <svg width="10" height="10" viewBox="0 0 14 14" fill="none" style={{ verticalAlign: "middle", marginRight: "4px" }}><rect x="1" y="2" width="12" height="11" rx="2" stroke="currentColor" strokeWidth="1.2"/><path d="M1 6h12M5 1v2M9 1v2" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg>
+                          {new Date(a.date).toLocaleDateString("en-AU", { day: "numeric", month: "short" })} at {a.time}
+                        </div>
+                      )}
+                      <div style={{ paddingTop: "8px", borderTop: "1px solid #f3f4f6", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                        <span style={{ fontSize: "11px", color: "#9ca3af" }}>{a.agent || "Unassigned"}</span>
+                        <div style={{ display: "flex", gap: "6px" }}>
+                          <button onClick={() => {}} style={{ fontSize: "11px", fontWeight: 600, color: "#6b7280", background: "#f3f4f6", border: "none", borderRadius: "5px", padding: "3px 8px", cursor: "pointer" }}>☎</button>
+                          {!isLast && (
+                            <button onClick={() => advance(a.id)}
+                              style={{ fontSize: "11px", fontWeight: 600, color: STAGES[si + 1].color, background: STAGES[si + 1].bg, border: `1px solid ${STAGES[si + 1].border}`, borderRadius: "6px", padding: "3px 8px", cursor: "pointer", fontFamily: "var(--font-inter)", whiteSpace: "nowrap" as const }}>
+                              {STAGES[si + 1].label} →
+                            </button>
+                          )}
+                          {isLast && <span style={{ fontSize: "11px", fontWeight: 600, color: s.color }}>✓ Listed</span>}
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           );
@@ -9273,12 +9481,16 @@ function PortalPublishModal({ listing, onClose }: { listing: CrmListing; onClose
 // ─── CRM Prospecting Page ─────────────────────────────────────────────────────
 
 const SEED_PROSPECTS: ProspectProperty[] = [
-  { id: "pp1", address: "14 Cliff Rd",   suburb: "Wollongong", soldPrice: "$1,250,000", soldDate: "2026-07-15", beds: "4", sqm: "620", ownerName: "", ownerPhone: "", status: "not-contacted", agent: "", daysAgo: 20 },
-  { id: "pp2", address: "8 Beach St",    suburb: "Wollongong", soldPrice: "$890,000",   soldDate: "2026-07-22", beds: "3", sqm: "480", ownerName: "", ownerPhone: "", status: "not-contacted", agent: "", daysAgo: 13 },
-  { id: "pp3", address: "22 Crown St",   suburb: "Wollongong", soldPrice: "$1,100,000", soldDate: "2026-07-28", beds: "4", sqm: "550", ownerName: "", ownerPhone: "", status: "contacted",     agent: "", daysAgo: 7  },
-  { id: "pp4", address: "5 Marine Dr",   suburb: "Thirroul",   soldPrice: "$1,420,000", soldDate: "2026-07-01", beds: "5", sqm: "720", ownerName: "", ownerPhone: "", status: "appraisal-booked", agent: "", daysAgo: 34 },
-  { id: "pp5", address: "31 Harbour St", suburb: "Wollongong", soldPrice: "$650,000",   soldDate: "2026-06-18", beds: "2", sqm: "390", ownerName: "", ownerPhone: "", status: "listed",       agent: "", daysAgo: 47 },
+  { id: "pp1", address: "14 Cliff Rd",   suburb: "Wollongong", soldPrice: "$1,250,000", soldDate: "2026-07-15", beds: "4", sqm: "620", ownerName: "Mark & Jenny Ellis",  ownerPhone: "0412 111 000", status: "not-contacted", agent: "Sarah Mitchell", daysAgo: 20 },
+  { id: "pp2", address: "8 Beach St",    suburb: "Wollongong", soldPrice: "$890,000",   soldDate: "2026-07-22", beds: "3", sqm: "480", ownerName: "David Sutton",        ownerPhone: "0423 222 000", status: "not-contacted", agent: "Tom Briggs", daysAgo: 13 },
+  { id: "pp3", address: "22 Crown St",   suburb: "Wollongong", soldPrice: "$1,100,000", soldDate: "2026-07-28", beds: "4", sqm: "550", ownerName: "Rebecca Tran",        ownerPhone: "0434 333 000", status: "contacted",     agent: "Sarah Mitchell", daysAgo: 7  },
+  { id: "pp4", address: "5 Marine Dr",   suburb: "Thirroul",   soldPrice: "$1,420,000", soldDate: "2026-07-01", beds: "5", sqm: "720", ownerName: "Paul & Claire Hughes",ownerPhone: "0445 444 000", status: "appraisal-booked", agent: "Tom Briggs", daysAgo: 34 },
+  { id: "pp5", address: "31 Harbour St", suburb: "Wollongong", soldPrice: "$650,000",   soldDate: "2026-06-18", beds: "2", sqm: "390", ownerName: "Fiona Kim",           ownerPhone: "0456 555 000", status: "listed",       agent: "Sarah Mitchell", daysAgo: 47 },
+  { id: "pp6", address: "17 Ocean View", suburb: "Bulli",      soldPrice: "$1,580,000", soldDate: "2026-07-30", beds: "5", sqm: "780", ownerName: "James Westbrook",     ownerPhone: "0467 666 000", status: "not-contacted", agent: "Sarah Mitchell", daysAgo: 5 },
+  { id: "pp7", address: "9 Pine Ave",    suburb: "Corrimal",   soldPrice: "$740,000",   soldDate: "2026-07-18", beds: "3", sqm: "460", ownerName: "Linda Patel",         ownerPhone: "0478 777 000", status: "not-contacted", agent: "Tom Briggs", daysAgo: 17 },
 ];
+
+const PROSPECT_HEAT: Record<string, number> = { pp1: 9, pp2: 8, pp3: 7, pp4: 6, pp5: 5, pp6: 10, pp7: 7 };
 
 const PROSPECT_STATUS: Record<string, { label: string; color: string; bg: string; next?: string }> = {
   "not-contacted":    { label: "Not Contacted",     color: "#6b7280", bg: "#f9fafb",   next: "contacted" },
@@ -9381,16 +9593,13 @@ Warm regards,
       {/* KPIs */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "10px", flexShrink: 0 }}>
         {[
-          { label: "In Radius",         value: counts.total,           color: "#111827" },
-          { label: "Not Contacted",      value: counts.notContacted,    color: "#ef4444" },
-          { label: "Contacted",          value: counts.contacted,       color: "#d97706" },
-          { label: "Appraisal Booked",   value: counts.appraisalBooked, color: "#2563eb" },
-          { label: "Converted to Listing", value: counts.listed,         color: "#16a34a" },
+          { label: "In Radius",         value: counts.total,           color: "#111827",  spark: [3,4,4,5,5,6,6,7,7,7] },
+          { label: "Not Contacted",      value: counts.notContacted,    color: "#ef4444",  spark: [3,3,3,2,3,3,4,3,3,4] },
+          { label: "Contacted",          value: counts.contacted,       color: "#d97706",  spark: [1,1,1,1,1,2,1,1,2,1] },
+          { label: "Appraisal Booked",   value: counts.appraisalBooked, color: "#2563eb",  spark: [0,0,1,0,1,0,1,1,1,1] },
+          { label: "Converted to Listing", value: counts.listed,         color: "#16a34a", spark: [0,1,0,1,1,1,1,1,1,1] },
         ].map(k => (
-          <div key={k.label} style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: "10px", padding: "12px 14px" }}>
-            <div style={{ fontSize: "20px", fontWeight: 700, color: k.color, letterSpacing: "-0.04em" }}>{k.value}</div>
-            <div style={{ fontSize: "11px", color: "#9ca3af", marginTop: "2px", lineHeight: 1.3 }}>{k.label}</div>
-          </div>
+          <CrmKpiTile key={k.label} label={k.label} value={String(k.value)} sub="" color={k.color} spark={k.spark} />
         ))}
       </div>
 
@@ -9469,7 +9678,7 @@ Warm regards,
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr style={{ borderBottom: "1px solid #f3f4f6" }}>
-                {["Address", "Suburb", "Sold Price", "Days Since", "Beds", "Status", ""].map(h => (
+                {["Address", "Owner", "Sold Price", "Days Since", "Beds", "Heat", "Status", ""].map(h => (
                   <th key={h} style={{ padding: "10px 14px", fontSize: "11px", fontWeight: 700, color: "#9ca3af", textAlign: "left" as const, letterSpacing: "0.04em", textTransform: "uppercase" as const, whiteSpace: "nowrap" as const }}>{h}</th>
                 ))}
               </tr>
@@ -9484,15 +9693,28 @@ Warm regards,
                   <tr key={p.id} style={{ borderBottom: "1px solid #f9fafb" }}
                     onMouseEnter={e => (e.currentTarget.style.background = "#f9fafb")}
                     onMouseLeave={e => (e.currentTarget.style.background = "")}>
-                    <td style={{ padding: "10px 14px", fontSize: "13px", fontWeight: 600, color: "#111827" }}>{p.address}</td>
-                    <td style={{ padding: "10px 14px", fontSize: "12.5px", color: "#374151" }}>{p.suburb}</td>
-                    <td style={{ padding: "10px 14px", fontSize: "13px", fontWeight: 600, color: "#111827", fontVariantNumeric: "tabular-nums" }}>{p.soldPrice}</td>
-                    <td style={{ padding: "10px 14px", fontSize: "12px", color: p.daysAgo < 14 ? "#dc2626" : p.daysAgo < 30 ? "#d97706" : "#6b7280" }}>
+                    <td style={{ padding: "10px 14px" }}>
+                      <div style={{ fontSize: "13px", fontWeight: 600, color: "#111827" }}>{p.address}</div>
+                      <div style={{ fontSize: "11px", color: "#9ca3af" }}>{p.suburb}</div>
+                    </td>
+                    <td style={{ padding: "10px 14px" }}>
+                      <div style={{ fontSize: "12.5px", color: "#374151" }}>{p.ownerName || "—"}</div>
+                      {p.ownerPhone && <div style={{ fontSize: "11px", color: "#9ca3af" }}>{p.ownerPhone}</div>}
+                    </td>
+                    <td style={{ padding: "10px 14px", fontSize: "13px", fontWeight: 700, color: "#111827", fontVariantNumeric: "tabular-nums" }}>{p.soldPrice}</td>
+                    <td style={{ padding: "10px 14px", fontSize: "12px", color: p.daysAgo < 14 ? "#dc2626" : p.daysAgo < 30 ? "#d97706" : "#6b7280", fontWeight: p.daysAgo < 14 ? 600 : 400 }}>
                       {p.daysAgo === 0 ? "Today" : `${p.daysAgo}d ago`}
                     </td>
                     <td style={{ padding: "10px 14px", fontSize: "12.5px", color: "#374151" }}>{p.beds ? `${p.beds} bed` : "—"}</td>
                     <td style={{ padding: "10px 14px" }}>
-                      <span style={{ fontSize: "11px", fontWeight: 700, padding: "2px 8px", borderRadius: "4px", background: sc.bg, color: sc.color, whiteSpace: "nowrap" as const }}>{sc.label}</span>
+                      {(() => {
+                        const heat = PROSPECT_HEAT[p.id] ?? 5;
+                        const hc = heat >= 9 ? "#dc2626" : heat >= 7 ? "#f59e0b" : "#6b7280";
+                        return <span style={{ fontSize: "13px", fontWeight: 800, color: hc }}>{heat}<span style={{ fontWeight: 400, color: "#9ca3af", fontSize: "11px" }}>/10</span></span>;
+                      })()}
+                    </td>
+                    <td style={{ padding: "10px 14px" }}>
+                      <span style={{ fontSize: "11px", fontWeight: 700, padding: "2px 8px", borderRadius: "20px", background: sc.bg, color: sc.color, whiteSpace: "nowrap" as const }}>{sc.label}</span>
                     </td>
                     <td style={{ padding: "10px 14px" }}>
                       <div style={{ display: "flex", gap: "6px", justifyContent: "flex-end" }}>
@@ -9915,56 +10137,83 @@ function CrmMarketingPage({ submodule, staffRows }: { submodule: string | null; 
 
   if (sub === "Analytics") {
     const channels = [
-      { name: "REA.com.au", enquiries: 48, appraisals: 12, listed: 5, spend: "$4,200" },
-      { name: "Domain", enquiries: 31, appraisals: 7, listed: 3, spend: "$2,800" },
-      { name: "Facebook / Instagram", enquiries: 24, appraisals: 4, listed: 1, spend: "$1,400" },
-      { name: "Email Database", enquiries: 18, appraisals: 6, listed: 4, spend: "$0" },
-      { name: "Letterbox Drop", enquiries: 9, appraisals: 3, listed: 2, spend: "$380" },
-      { name: "Referral", enquiries: 14, appraisals: 8, listed: 6, spend: "$0" },
+      { name: "REA.com.au", enquiries: 48, appraisals: 12, listed: 5, spend: 4200, color: "#e2231a" },
+      { name: "Domain", enquiries: 31, appraisals: 7, listed: 3, spend: 2800, color: "#1a72b8" },
+      { name: "Facebook / Insta", enquiries: 24, appraisals: 4, listed: 1, spend: 1400, color: "#1877f2" },
+      { name: "Email Database", enquiries: 18, appraisals: 6, listed: 4, spend: 0, color: "#10b981" },
+      { name: "Letterbox Drop", enquiries: 9, appraisals: 3, listed: 2, spend: 380, color: "#f59e0b" },
+      { name: "Referral", enquiries: 14, appraisals: 8, listed: 6, spend: 0, color: "#8b5cf6" },
     ];
+    const maxEnq = Math.max(...channels.map(c => c.enquiries));
     return (
       <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "calc(100vh - 56px)", overflow: "hidden", padding: "20px 28px", gap: "14px" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
           <div>
             <h1 style={{ fontSize: "1.1rem", fontWeight: 700, color: "#111827", letterSpacing: "-0.03em", margin: 0 }}>Marketing Analytics</h1>
-            <p style={{ fontSize: "12.5px", color: "#9ca3af", margin: "3px 0 0" }}>Marketing · Channel attribution & budget performance</p>
+            <p style={{ fontSize: "12.5px", color: "#9ca3af", margin: "3px 0 0" }}>Channel attribution · ROI · Budget allocation</p>
           </div>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px", flexShrink: 0 }}>
-          <CrmKpiTile label="Total Enquiries" value="144" sub="this month" color="#6366f1" />
-          <CrmKpiTile label="Cost Per Appraisal" value="$473" sub="blended avg" color="#f59e0b" />
-          <CrmKpiTile label="Best Channel" value="Referral" sub="highest conversion" color="#10b981" />
-          <CrmKpiTile label="Total Ad Spend" value="$8,780" sub="this month" color="#3b82f6" />
+          <CrmKpiTile label="Total Enquiries" value="144" sub="this month" color="#6366f1" trend={{ dir: "up", pct: "18%" }} spark={[6,7,8,9,9,10,12,11,13,12]} />
+          <CrmKpiTile label="Cost/Appraisal" value="$473" sub="blended avg" color="#f59e0b" trend={{ dir: "down", pct: "8%" }} spark={[7,6,7,6,5,6,5,5,5,4]} />
+          <CrmKpiTile label="Best Channel" value="Referral" sub="42.8% conv rate" color="#10b981" spark={[3,4,4,5,5,6,6,7,7,8]} />
+          <CrmKpiTile label="Total Ad Spend" value="$8,780" sub="this month" color="#3b82f6" spark={[6,6,7,7,8,8,9,9,9,9]} />
         </div>
-        <AiAutomationPanel automations={[
-          { title: "Channel Attribution", description: "AI traces each closed deal back to the marketing touchpoint that started it", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M2 12l4-4 3 2 5-6" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg> },
-          { title: "Budget Optimisation", description: "Recommend shifting ad spend toward channels generating most appraisals", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.3"/><path d="M8 5v3l2 2" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg> },
-        ]} />
-        <div style={{ flex: 1, overflow: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
-            <thead>
-              <tr style={{ borderBottom: "1px solid #e5e7eb" }}>
-                {["Channel", "Enquiries", "Appraisals", "Listed", "Conv. Rate", "Ad Spend", "Cost/Listing"].map(h => (
-                  <th key={h} style={{ textAlign: "left", padding: "8px 12px", fontSize: "11px", fontWeight: 600, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.04em" }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
+        <div style={{ flex: 1, overflow: "auto", display: "flex", flexDirection: "column", gap: "14px" }}>
+          {/* Bar chart */}
+          <div style={{ background: "#fff", border: "1.5px solid #e5e7eb", borderRadius: "12px", padding: "20px 22px" }}>
+            <div style={{ fontSize: "13px", fontWeight: 700, color: "#111827", marginBottom: "16px" }}>Enquiries by Channel</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
               {channels.map(ch => (
-                <tr key={ch.name} style={{ borderBottom: "1px solid #f3f4f6" }}>
-                  <td style={{ padding: "10px 12px", fontWeight: 600, color: "#111827" }}>{ch.name}</td>
-                  <td style={{ padding: "10px 12px", color: "#374151" }}>{ch.enquiries}</td>
-                  <td style={{ padding: "10px 12px", color: "#374151" }}>{ch.appraisals}</td>
-                  <td style={{ padding: "10px 12px", color: "#374151" }}>{ch.listed}</td>
-                  <td style={{ padding: "10px 12px" }}>
-                    <span style={{ fontWeight: 600, color: ch.listed / ch.enquiries > 0.1 ? "#16a34a" : "#374151" }}>{Math.round((ch.listed / ch.enquiries) * 100)}%</span>
-                  </td>
-                  <td style={{ padding: "10px 12px", color: "#374151" }}>{ch.spend}</td>
-                  <td style={{ padding: "10px 12px", color: "#374151" }}>{ch.spend === "$0" ? "—" : `$${Math.round(parseInt(ch.spend.replace(/[$,]/g, "")) / (ch.listed || 1)).toLocaleString()}`}</td>
-                </tr>
+                <div key={ch.name} style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                  <div style={{ width: "130px", fontSize: "12px", color: "#374151", fontWeight: 500, flexShrink: 0 }}>{ch.name}</div>
+                  <div style={{ flex: 1, height: "22px", background: "#f3f4f6", borderRadius: "4px", overflow: "hidden" }}>
+                    <div style={{ height: "100%", width: `${(ch.enquiries / maxEnq) * 100}%`, background: ch.color, borderRadius: "4px", transition: "width 0.6s ease", display: "flex", alignItems: "center", paddingLeft: "8px" }}>
+                      <span style={{ fontSize: "11px", fontWeight: 700, color: "#fff" }}>{ch.enquiries}</span>
+                    </div>
+                  </div>
+                  <div style={{ width: "60px", fontSize: "12px", color: "#9ca3af", textAlign: "right", flexShrink: 0 }}>→ {ch.listed} listed</div>
+                  <div style={{ width: "55px", fontSize: "12px", fontWeight: 700, textAlign: "right", flexShrink: 0, color: ch.listed / ch.enquiries > 0.25 ? "#16a34a" : ch.listed / ch.enquiries > 0.1 ? "#f59e0b" : "#6b7280" }}>{Math.round((ch.listed / ch.enquiries) * 100)}%</div>
+                </div>
               ))}
-            </tbody>
-          </table>
+            </div>
+            <div style={{ display: "flex", gap: "16px", marginTop: "14px", paddingTop: "14px", borderTop: "1px solid #f3f4f6", fontSize: "11px", color: "#9ca3af" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "4px" }}><div style={{ width: "12px", height: "8px", background: "#16a34a", borderRadius: "2px" }} />≥25% conv.</div>
+              <div style={{ display: "flex", alignItems: "center", gap: "4px" }}><div style={{ width: "12px", height: "8px", background: "#f59e0b", borderRadius: "2px" }} />10–25%</div>
+              <div style={{ display: "flex", alignItems: "center", gap: "4px" }}><div style={{ width: "12px", height: "8px", background: "#6b7280", borderRadius: "2px" }} />&lt;10%</div>
+            </div>
+          </div>
+          <div style={{ background: "#fff", border: "1.5px solid #e5e7eb", borderRadius: "12px", overflow: "hidden" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
+              <thead>
+                <tr style={{ borderBottom: "1px solid #f3f4f6", background: "#fafafa" }}>
+                  {["Channel", "Enquiries", "Appraisals", "Listed", "Conv. Rate", "Ad Spend", "Cost/Listing"].map(h => (
+                    <th key={h} style={{ textAlign: "left", padding: "9px 14px", fontSize: "10.5px", fontWeight: 700, color: "#9ca3af", textTransform: "uppercase" as const, letterSpacing: "0.05em" }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {channels.map(ch => (
+                  <tr key={ch.name} style={{ borderBottom: "1px solid #f9fafb" }}>
+                    <td style={{ padding: "10px 14px" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        <div style={{ width: "10px", height: "10px", borderRadius: "50%", background: ch.color, flexShrink: 0 }} />
+                        <span style={{ fontWeight: 600, color: "#111827" }}>{ch.name}</span>
+                      </div>
+                    </td>
+                    <td style={{ padding: "10px 14px", color: "#374151" }}>{ch.enquiries}</td>
+                    <td style={{ padding: "10px 14px", color: "#374151" }}>{ch.appraisals}</td>
+                    <td style={{ padding: "10px 14px", color: "#374151" }}>{ch.listed}</td>
+                    <td style={{ padding: "10px 14px" }}>
+                      <span style={{ fontWeight: 700, color: ch.listed / ch.enquiries > 0.25 ? "#16a34a" : ch.listed / ch.enquiries > 0.1 ? "#f59e0b" : "#6b7280" }}>{Math.round((ch.listed / ch.enquiries) * 100)}%</span>
+                    </td>
+                    <td style={{ padding: "10px 14px", color: "#374151" }}>{ch.spend > 0 ? `$${ch.spend.toLocaleString()}` : <span style={{ color: "#16a34a", fontWeight: 600 }}>Free</span>}</td>
+                    <td style={{ padding: "10px 14px", color: "#374151" }}>{ch.spend > 0 ? `$${Math.round(ch.spend / (ch.listed || 1)).toLocaleString()}` : <span style={{ color: "#16a34a" }}>—</span>}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     );
@@ -9985,22 +10234,22 @@ function CrmMarketingPage({ submodule, staffRows }: { submodule: string | null; 
         </button>
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px", flexShrink: 0 }}>
-        <CrmKpiTile label="Active" value={String(campaigns.filter(c => c.status === "active").length)} sub="running now" color="#10b981" />
-        <CrmKpiTile label="Total Sent" value={campaigns.reduce((s, c) => s + c.sent, 0).toLocaleString()} sub="emails this month" color="#6366f1" />
-        <CrmKpiTile label="Avg Open Rate" value="55%" sub="last 30 days" color="#3b82f6" />
-        <CrmKpiTile label="Avg Click Rate" value="17%" sub="last 30 days" color="#f59e0b" />
+        <CrmKpiTile label="Active" value={String(campaigns.filter(c => c.status === "active").length)} sub="running now" color="#10b981" spark={[1,1,2,2,2,3,3,3,4,4]} />
+        <CrmKpiTile label="Total Sent" value={campaigns.reduce((s, c) => s + c.sent, 0).toLocaleString()} sub="emails this month" color="#6366f1" trend={{ dir: "up", pct: "22%" }} spark={[4,5,5,6,7,7,8,9,9,10]} />
+        <CrmKpiTile label="Avg Open Rate" value="55%" sub="last 30 days" color="#3b82f6" trend={{ dir: "up", pct: "5%" }} spark={[5,5,6,5,6,7,6,7,7,8]} />
+        <CrmKpiTile label="Avg Click Rate" value="17%" sub="last 30 days" color="#f59e0b" trend={{ dir: "up", pct: "3%" }} spark={[4,4,4,5,5,5,5,6,6,6]} />
       </div>
       <AiAutomationPanel automations={[
         { title: "AI Content Generation", description: "Draft property email copy, subject lines, and social captions automatically", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 1l1.5 3.5L13 6l-3.5 1.5L8 11l-1.5-3.5L3 6l3.5-1.5L8 1z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/></svg> },
         { title: "Optimal Send Time", description: "Predict the best send time per contact based on past open behaviour", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 1v7l4 2" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/><circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.3"/></svg> },
         { title: "Audience Segmentation", description: "Suggest the right contact segment for each new listing campaign", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.3"/><path d="M8 8l5-5M8 8V1M8 8l5 5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg> },
       ]} />
-      <div style={{ flex: 1, overflow: "auto" }}>
+      <div style={{ flex: 1, overflow: "auto", background: "#fff", border: "1.5px solid #e5e7eb", borderRadius: "12px" }}>
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
           <thead>
-            <tr style={{ borderBottom: "1px solid #e5e7eb" }}>
-              {["Campaign", "Type", "Listing", "Sent", "Opens", "Clicks", "Status", ""].map(h => (
-                <th key={h} style={{ textAlign: "left", padding: "8px 12px", fontSize: "11px", fontWeight: 600, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.04em" }}>{h}</th>
+            <tr style={{ borderBottom: "1px solid #f3f4f6", background: "#fafafa" }}>
+              {["Campaign", "Type", "Listing", "Sent", "Open Rate", "Click Rate", "Status", ""].map(h => (
+                <th key={h} style={{ textAlign: "left", padding: "9px 14px", fontSize: "10.5px", fontWeight: 700, color: "#9ca3af", textTransform: "uppercase" as const, letterSpacing: "0.05em" }}>{h}</th>
               ))}
             </tr>
           </thead>
@@ -10011,18 +10260,36 @@ function CrmMarketingPage({ submodule, staffRows }: { submodule: string | null; 
               const statusColor: Record<string, { bg: string; color: string }> = { draft: { bg: "#f3f4f6", color: "#6b7280" }, active: { bg: "#dcfce7", color: "#16a34a" }, completed: { bg: "#eff6ff", color: "#1d4ed8" } };
               const sc = statusColor[c.status];
               return (
-                <tr key={c.id} style={{ borderBottom: "1px solid #f3f4f6" }}>
-                  <td style={{ padding: "10px 12px" }}>
+                <tr key={c.id} style={{ borderBottom: "1px solid #f9fafb" }}>
+                  <td style={{ padding: "11px 14px" }}>
                     <div style={{ fontWeight: 600, color: "#111827", maxWidth: "200px" }}>{c.name}</div>
                     <div style={{ fontSize: "11px", color: "#9ca3af" }}>{new Date(c.date).toLocaleDateString("en-AU", { day: "numeric", month: "short" })}</div>
                   </td>
-                  <td style={{ padding: "10px 12px" }}><span style={{ padding: "2px 8px", borderRadius: "20px", fontSize: "11px", fontWeight: 600, background: c.type === "email" ? "#eff6ff" : c.type === "social" ? "#fdf4ff" : "#fefce8", color: c.type === "email" ? "#1d4ed8" : c.type === "social" ? "#7e22ce" : "#92400e", textTransform: "capitalize" }}>{c.type}</span></td>
-                  <td style={{ padding: "10px 12px", color: "#374151", fontSize: "12px" }}>{c.listing}</td>
-                  <td style={{ padding: "10px 12px", color: "#374151" }}>{c.sent > 0 ? c.sent.toLocaleString() : "—"}</td>
-                  <td style={{ padding: "10px 12px", color: "#374151" }}>{c.sent > 0 ? `${c.opened} (${openRate}%)` : "—"}</td>
-                  <td style={{ padding: "10px 12px", color: "#374151" }}>{c.sent > 0 ? `${c.clicked} (${clickRate}%)` : "—"}</td>
-                  <td style={{ padding: "10px 12px" }}><span style={{ padding: "2px 8px", borderRadius: "20px", fontSize: "11px", fontWeight: 600, ...sc, textTransform: "capitalize" }}>{c.status}</span></td>
-                  <td style={{ padding: "10px 12px" }}><button style={{ padding: "4px 10px", background: "#f5f3ff", color: "#6d28d9", border: "1px solid #ede9fe", borderRadius: "6px", fontSize: "11.5px", fontWeight: 600, cursor: "pointer" }}>View</button></td>
+                  <td style={{ padding: "11px 14px" }}><span style={{ padding: "2px 8px", borderRadius: "20px", fontSize: "11px", fontWeight: 600, background: c.type === "email" ? "#eff6ff" : c.type === "social" ? "#fdf4ff" : "#fefce8", color: c.type === "email" ? "#1d4ed8" : c.type === "social" ? "#7e22ce" : "#92400e", textTransform: "capitalize" as const }}>{c.type}</span></td>
+                  <td style={{ padding: "11px 14px", color: "#374151", fontSize: "12px" }}>{c.listing}</td>
+                  <td style={{ padding: "11px 14px", color: "#374151" }}>{c.sent > 0 ? c.sent.toLocaleString() : "—"}</td>
+                  <td style={{ padding: "11px 14px", minWidth: "120px" }}>
+                    {c.sent > 0 ? (
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        <div style={{ flex: 1, height: "6px", background: "#f3f4f6", borderRadius: "3px" }}>
+                          <div style={{ height: "100%", width: `${openRate}%`, background: openRate >= 50 ? "#10b981" : openRate >= 30 ? "#3b82f6" : "#f59e0b", borderRadius: "3px" }} />
+                        </div>
+                        <span style={{ fontSize: "12px", fontWeight: 700, color: openRate >= 50 ? "#16a34a" : openRate >= 30 ? "#1d4ed8" : "#92400e", minWidth: "32px" }}>{openRate}%</span>
+                      </div>
+                    ) : <span style={{ color: "#d1d5db" }}>—</span>}
+                  </td>
+                  <td style={{ padding: "11px 14px", minWidth: "100px" }}>
+                    {c.sent > 0 ? (
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        <div style={{ flex: 1, height: "6px", background: "#f3f4f6", borderRadius: "3px" }}>
+                          <div style={{ height: "100%", width: `${clickRate}%`, background: "#6366f1", borderRadius: "3px" }} />
+                        </div>
+                        <span style={{ fontSize: "12px", fontWeight: 700, color: "#6366f1", minWidth: "28px" }}>{clickRate}%</span>
+                      </div>
+                    ) : <span style={{ color: "#d1d5db" }}>—</span>}
+                  </td>
+                  <td style={{ padding: "11px 14px" }}><span style={{ padding: "2px 8px", borderRadius: "20px", fontSize: "11px", fontWeight: 600, ...sc, textTransform: "capitalize" as const }}>{c.status}</span></td>
+                  <td style={{ padding: "11px 14px" }}><button style={{ padding: "4px 10px", background: "#f5f3ff", color: "#6d28d9", border: "1px solid #ede9fe", borderRadius: "6px", fontSize: "11.5px", fontWeight: 600, cursor: "pointer" }}>View</button></td>
                 </tr>
               );
             })}
@@ -10225,47 +10492,68 @@ function CrmTeamPage({ submodule, staffRows }: { submodule: string | null; staff
   }
 
   // Overview (default)
+  const sortedAgents = [...agents].sort((a, b) => parseFloat(a.revenue.replace(/[$K,]/g, "")) > parseFloat(b.revenue.replace(/[$K,]/g, "")) ? -1 : 1);
+  const medalColors = ["#f59e0b", "#9ca3af", "#b45309"];
+  const medalLabels = ["🥇", "🥈", "🥉"];
   return (
     <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "calc(100vh - 56px)", overflow: "hidden", padding: "20px 28px", gap: "14px" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
         <div>
           <h1 style={{ fontSize: "1.1rem", fontWeight: 700, color: "#111827", letterSpacing: "-0.03em", margin: 0 }}>Team Overview</h1>
-          <p style={{ fontSize: "12.5px", color: "#9ca3af", margin: "3px 0 0" }}>Team · Performance snapshot & lead load balancing</p>
+          <p style={{ fontSize: "12.5px", color: "#9ca3af", margin: "3px 0 0" }}>Team · Commission leaderboard & performance snapshot</p>
         </div>
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px", flexShrink: 0 }}>
-        <CrmKpiTile label="Team Members" value={String(agents.length)} sub="active agents" color="#6366f1" />
-        <CrmKpiTile label="Total Revenue" value="$104K" sub="this month" color="#10b981" />
-        <CrmKpiTile label="Active Listings" value="15" sub="across team" color="#3b82f6" />
-        <CrmKpiTile label="On Target" value={String(agents.filter(a => a.pacing >= 70).length) + "/" + String(agents.length)} sub="agents pacing" color="#f59e0b" />
+        <CrmKpiTile label="Team Members" value={String(agents.length)} sub="active agents" color="#6366f1" spark={[2,2,3,3,3,3,3,3,3,3]} />
+        <CrmKpiTile label="Total Revenue" value="$104K" sub="this month" color="#10b981" trend={{ dir: "up", pct: "14%" }} spark={[5,6,6,7,7,8,8,9,10,10]} />
+        <CrmKpiTile label="Active Listings" value="15" sub="across team" color="#3b82f6" spark={[8,9,10,11,12,13,14,15,15,15]} />
+        <CrmKpiTile label="On Target" value={String(agents.filter(a => a.pacing >= 70).length) + "/" + String(agents.length)} sub="agents pacing" color="#f59e0b" spark={[2,2,2,3,3,3,3,3,3,3]} />
       </div>
       <AiAutomationPanel automations={[
         { title: "Performance Alerts", description: "Notify managers when an agent's listings or appraisals fall below target", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 2l6 12H2L8 2z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/></svg> },
         { title: "Lead Load Balancing", description: "Auto-assign new leads based on each agent's current workload and speciality", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><circle cx="5" cy="5" r="3" stroke="currentColor" strokeWidth="1.2"/><circle cx="11" cy="11" r="3" stroke="currentColor" strokeWidth="1.2"/></svg> },
         { title: "Monthly Report", description: "Auto-generate team performance report at the end of each month", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" strokeWidth="1.3"/><path d="M5 8h6M5 11h4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg> },
       ]} />
-      <div style={{ flex: 1, overflow: "auto", display: "flex", flexDirection: "column", gap: "10px" }}>
-        {agents.map(a => (
-          <div key={a.name} style={{ background: "#fff", border: "1.5px solid #e5e7eb", borderRadius: "12px", padding: "14px 18px", display: "flex", alignItems: "center", gap: "16px" }}>
-            <div style={{ width: "36px", height: "36px", borderRadius: "50%", background: "#f3f4f6", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: "13px", color: "#374151", flexShrink: 0 }}>{a.name.split(" ").map(n => n[0]).join("").slice(0, 2)}</div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: 700, fontSize: "13.5px", color: "#111827" }}>{a.name}</div>
-              <div style={{ fontSize: "11.5px", color: "#9ca3af" }}>{a.role}</div>
-            </div>
-            <div style={{ display: "flex", gap: "20px", alignItems: "center" }}>
-              {[{ label: "Listings", val: a.listings }, { label: "Appraisals", val: a.appraisals }, { label: "Sales", val: a.sales }].map(m => (
-                <div key={m.label} style={{ textAlign: "center" }}>
-                  <div style={{ fontWeight: 700, fontSize: "16px", color: "#111827" }}>{m.val}</div>
-                  <div style={{ fontSize: "10.5px", color: "#9ca3af" }}>{m.label}</div>
-                </div>
-              ))}
-              <div style={{ textAlign: "right" }}>
-                <div style={{ fontWeight: 700, fontSize: "14px", color: "#111827" }}>{a.revenue}</div>
-                <div style={{ fontSize: "11px", color: a.pacing >= 100 ? "#16a34a" : a.pacing >= 70 ? "#f59e0b" : "#dc2626" }}>{a.pacing}% of target</div>
-              </div>
-            </div>
+      {/* Commission Leaderboard */}
+      <div style={{ flex: 1, overflow: "auto", display: "flex", flexDirection: "column", gap: "12px" }}>
+        <div style={{ background: "#fff", border: "1.5px solid #e5e7eb", borderRadius: "12px", overflow: "hidden" }}>
+          <div style={{ padding: "14px 18px 10px", borderBottom: "1px solid #f3f4f6", display: "flex", alignItems: "center", gap: "8px" }}>
+            <span style={{ fontSize: "13px", fontWeight: 700, color: "#111827" }}>Commission Leaderboard</span>
+            <span style={{ fontSize: "11px", color: "#9ca3af", background: "#f3f4f6", padding: "1px 8px", borderRadius: "20px" }}>August 2026</span>
           </div>
-        ))}
+          {sortedAgents.map((a, i) => {
+            const maxRev = parseFloat(sortedAgents[0].revenue.replace(/[$K,]/g, "")) || 1;
+            const rev = parseFloat(a.revenue.replace(/[$K,]/g, ""));
+            const pct = Math.round((rev / maxRev) * 100);
+            const medal = medalLabels[i] ?? null;
+            const accentColor = i === 0 ? "#f59e0b" : i === 1 ? "#9ca3af" : i === 2 ? "#b45309" : "#6366f1";
+            return (
+              <div key={a.name} style={{ display: "flex", alignItems: "center", gap: "14px", padding: "14px 18px", borderBottom: i < sortedAgents.length - 1 ? "1px solid #f9fafb" : "none", background: i === 0 ? "linear-gradient(90deg, #fffbeb 0%, #fff 60%)" : "transparent" }}>
+                <div style={{ width: "28px", textAlign: "center", fontSize: "16px", flexShrink: 0 }}>{medal ?? <span style={{ fontSize: "12px", fontWeight: 700, color: "#d1d5db" }}>#{i + 1}</span>}</div>
+                <div style={{ width: "36px", height: "36px", borderRadius: "50%", background: `${accentColor}20`, border: `2px solid ${accentColor}40`, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: "12px", color: accentColor, flexShrink: 0 }}>{a.name.split(" ").map((n: string) => n[0]).join("").slice(0, 2)}</div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 700, fontSize: "13px", color: "#111827" }}>{a.name}</div>
+                  <div style={{ fontSize: "11px", color: "#9ca3af" }}>{a.role}</div>
+                  <div style={{ marginTop: "6px", height: "5px", background: "#f3f4f6", borderRadius: "3px" }}>
+                    <div style={{ height: "100%", width: `${pct}%`, background: accentColor, borderRadius: "3px" }} />
+                  </div>
+                </div>
+                <div style={{ display: "flex", gap: "20px", alignItems: "center" }}>
+                  {[{ label: "Sales", val: a.sales }, { label: "Listings", val: a.listings }, { label: "Appraisals", val: a.appraisals }].map(m => (
+                    <div key={m.label} style={{ textAlign: "center" }}>
+                      <div style={{ fontWeight: 700, fontSize: "15px", color: "#111827" }}>{m.val}</div>
+                      <div style={{ fontSize: "10px", color: "#9ca3af" }}>{m.label}</div>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ textAlign: "right", minWidth: "80px" }}>
+                  <div style={{ fontWeight: 800, fontSize: "15px", color: i === 0 ? "#b45309" : "#111827" }}>{a.revenue}</div>
+                  <div style={{ fontSize: "11px", color: a.pacing >= 100 ? "#16a34a" : a.pacing >= 70 ? "#f59e0b" : "#dc2626", fontWeight: 600 }}>{a.pacing}% of target</div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
