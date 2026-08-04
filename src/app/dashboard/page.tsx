@@ -11987,6 +11987,8 @@ export default function DashboardPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [aiPanelOpen, setAiPanelOpen] = useState(false);
   const [aiChatOpen, setAiChatOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [settingsTab, setSettingsTab] = useState<"Account" | "Billing" | "Team & Invites">("Account");
   const [sidebarMode, setSidebarMode] = useState<"compliance" | "crm">("compliance");
   const [crmModule, setCrmModule] = useState<string | null>(null);
   const [crmSelected, setCrmSelected] = useState<string | null>(null);
@@ -12142,27 +12144,19 @@ export default function DashboardPage() {
     { id: "staff", label: "Staff", icon: <StaffIcon />, type: "static", children: ["Team Overview", "Licence Tracking", "CPD Records", "Onboarding"] },
     { id: "trust", label: "Trust Accounting", icon: <TrustIcon />, type: "static", children: ["Account Reconciliation", "Monthly Reports", "Transaction Log", "Audit Reports"] },
     { id: "registers", label: "Registers", icon: <RegIcon />, type: "static", children: ["Gift Register", "Incident Register", "Risk Register", "Complaints Register"] },
-    { id: "calendar", label: "Calendar", icon: <CalendarIcon />, type: "static", children: [] },
     { id: "notifications", label: "Notifications", icon: <BellIcon />, type: "static", children: [] },
-    { id: "meetings", label: "Meetings", icon: <MeetingsIcon />, type: "static", children: ["New Meeting"] },
-    { id: "settings", label: "Settings", icon: <SettingsIcon />, type: "static", children: ["Account", "Billing", "Team & Invites"] },
   ];
 
-  // Standard users cannot access Trust Accounting; Settings limited to Account sub-module only
+  // Standard users cannot access Trust Accounting
   const modules = userRole === "owner"
     ? allModules
-    : allModules
-        .filter(m => m.id !== "trust")
-        .map(m => m.id === "settings" ? { ...m, children: ["Account"] } : m);
+    : allModules.filter(m => m.id !== "trust");
 
   const module = modules.find((m) => m.id === activeModule) ?? null;
 
   function openModule(id: string) {
     setActiveModule(id);
-    if (id === "settings") setSelected({ type: "static", label: "Account" });
-    else if (id === "calendar") setSelected({ type: "static", label: "Calendar" });
-    else if (id === "notifications") setSelected({ type: "static", label: "Notifications" });
-    else if (id === "meetings") setSelected({ type: "static", label: "Past Meetings" });
+    if (id === "notifications") setSelected({ type: "static", label: "Notifications" });
     else setSelected(null);
     setSidebarOpen(false);
   }
@@ -12274,6 +12268,8 @@ export default function DashboardPage() {
               { id: "marketing",  label: "Marketing",  icon: <svg width="15" height="15" viewBox="0 0 18 18" fill="none"><path d="M3 11V7l10-4v12L3 11z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/><path d="M3 11v3l2-1" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>,   children: ["Campaigns", "Email Templates", "Social Media", "Analytics"] },
               { id: "team",        label: "Team",        icon: <svg width="15" height="15" viewBox="0 0 18 18" fill="none"><circle cx="6" cy="6" r="2.5" stroke="currentColor" strokeWidth="1.4"/><circle cx="12" cy="6" r="2.5" stroke="currentColor" strokeWidth="1.4"/><path d="M1 15c0-2.485 2.239-4.5 5-4.5s5 2.015 5 4.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/><path d="M12 10.5c2.761 0 5 2.015 5 4.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>,   children: ["Overview", "Performance", "Leads", "Activity Log"] },
               { id: "prospecting", label: "Prospecting", icon: <svg width="15" height="15" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="8" r="3" stroke="currentColor" strokeWidth="1.4"/><path d="M9 1v2M9 13v2M1 8h2M13 8h2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/><path d="M9 11c-3 0-6 1.5-6 4h12c0-2.5-3-4-6-4z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/></svg>, children: ["Map View", "Radius Prospecting", "Who's Next", "Letter Drop", "Sequences", "Withdrawn & Expired"] },
+              { id: "calendar",    label: "Calendar",    icon: <svg width="15" height="15" viewBox="0 0 18 18" fill="none"><rect x="2" y="3" width="14" height="13" rx="2" stroke="currentColor" strokeWidth="1.5"/><path d="M2 7h14" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/><path d="M6 1v3M12 1v3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/><path d="M5 11h2M9 11h2M5 14h2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>, children: [] },
+              { id: "meetings",   label: "Meetings",    icon: <svg width="15" height="15" viewBox="0 0 18 18" fill="none"><rect x="2" y="5" width="14" height="11" rx="2" stroke="currentColor" strokeWidth="1.5"/><path d="M6 5V3a1 1 0 012 0v2M10 5V3a1 1 0 012 0v2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/><path d="M5 10h8M5 13h5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>, children: ["Past Meetings", "New Meeting"] },
             ] as { id: string; label: string; icon: React.ReactNode; children: string[] }[];
             const activeMod = crmModules.find(m => m.id === crmModule) ?? null;
             return (
@@ -12297,7 +12293,7 @@ export default function DashboardPage() {
                     <p style={{ fontSize: "10.5px", fontWeight: 700, color: "#9ca3af", letterSpacing: "0.08em", textTransform: "uppercase", margin: "14px 0 6px 10px", maxWidth: "none" }}>Modules</p>
                     <nav className="sidebar-panel-enter">
                       {crmModules.map((m) => (
-                        <button key={m.id} onClick={() => { setCrmModule(m.id); setCrmSelected(m.children[0]); setSidebarOpen(false); }}
+                        <button key={m.id} onClick={() => { setCrmModule(m.id); setCrmSelected(m.children[0] ?? null); setSidebarOpen(false); }}
                           style={{ width: "100%", display: "flex", alignItems: "center", gap: "9px", padding: "7px 10px", borderRadius: "7px", border: "none", background: "transparent", color: "#374151", fontSize: "13.5px", fontWeight: 400, cursor: "pointer", textAlign: "left", marginBottom: "1px", fontFamily: "var(--font-inter)", transition: "background 0.1s, color 0.1s", letterSpacing: "-0.01em" }}
                           onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "#f3f4f6"; }}
                           onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
@@ -12462,6 +12458,16 @@ export default function DashboardPage() {
                 <span style={{ position: "absolute", top: "4px", right: "4px", width: "8px", height: "8px", borderRadius: "50%", background: "#ef4444", border: "1.5px solid #fff" }} />
               )}
             </button>
+            {/* Settings gear icon */}
+            <button
+              onClick={() => { setSettingsOpen(v => !v); setSettingsTab("Account"); }}
+              title="Settings"
+              style={{ width: "34px", height: "34px", borderRadius: "8px", background: settingsOpen ? "#f3f4f6" : "transparent", border: "1px solid #e5e7eb", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: settingsOpen ? "#111827" : "#374151", transition: "background 0.1s, color 0.1s" }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = "#f3f4f6"; e.currentTarget.style.color = "#111827"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = settingsOpen ? "#f3f4f6" : "transparent"; e.currentTarget.style.color = settingsOpen ? "#111827" : "#374151"; }}
+            >
+              <svg width="15" height="15" viewBox="0 0 20 20" fill="none"><path d="M10 12.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/><path d="M16.17 10a6.17 6.17 0 01-.06.88l1.9 1.47-1.8 3.12-2.28-.92c-.46.34-.97.62-1.52.83L12 17.5H8l-.41-2.12a6.1 6.1 0 01-1.52-.83l-2.28.92-1.8-3.12 1.9-1.47A6.17 6.17 0 013.83 10c0-.3.02-.59.06-.88L1.99 7.65l1.8-3.12 2.28.92c.46-.34.97-.62 1.52-.83L8 2.5h4l.41 2.12c.55.21 1.06.49 1.52.83l2.28-.92 1.8 3.12-1.9 1.47c.04.29.06.58.06.88z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/></svg>
+            </button>
             {/* User avatar */}
             <div style={{ width: "32px", height: "32px", borderRadius: "50%", background: "#111827", display: "flex", alignItems: "center", justifyContent: "center", cursor: "default", flexShrink: 0 }}>
               <span style={{ fontSize: "11px", fontWeight: 700, color: "#fff" }}>{initials}</span>
@@ -12476,7 +12482,13 @@ export default function DashboardPage() {
           style={{ flex: 1, display: "flex" }}
         >
         {sidebarMode === "crm" ? (
-          <CrmSubPage moduleId={crmModule} submodule={crmSelected} crmListings={crmListings} onAddListing={handleAddCrmListing} staffRows={staffRows} agencyName={agencyName} onNavigate={(mid, sub) => { setCrmModule(mid); setCrmSelected(sub); }} />
+          crmModule === "calendar" ? (
+            <StaticSubPage label="Calendar" agencyName={agencyName} agencyAbn={agencyAbn} userEmail={userEmail} userId={userId} orgOwnerId={orgOwnerId} userRole={userRole} staffRows={staffRows} policies={policies} onPolicySaved={handlePolicySaved} onPolicyUpdated={handlePolicyUpdated} onPolicyDeleted={handlePolicyDeleted} onStaffAdded={(s) => setStaffRows(prev => [...prev, s])} />
+          ) : crmModule === "meetings" ? (
+            <StaticSubPage label="Past Meetings" agencyName={agencyName} agencyAbn={agencyAbn} userEmail={userEmail} userId={userId} orgOwnerId={orgOwnerId} userRole={userRole} staffRows={staffRows} policies={policies} onPolicySaved={handlePolicySaved} onPolicyUpdated={handlePolicyUpdated} onPolicyDeleted={handlePolicyDeleted} onStaffAdded={(s) => setStaffRows(prev => [...prev, s])} />
+          ) : (
+            <CrmSubPage moduleId={crmModule} submodule={crmSelected} crmListings={crmListings} onAddListing={handleAddCrmListing} staffRows={staffRows} agencyName={agencyName} onNavigate={(mid, sub) => { setCrmModule(mid); setCrmSelected(sub); }} />
+          )
         ) : selected?.type === "property" ? (
           selected.section === "sales" ? (
             <SalesPropertyChecklist key={selected.id} propertyId={selected.id} address={selected.address} onRemove={() => handleRemoveProperty(selected.id, "sales")} />
@@ -12485,13 +12497,41 @@ export default function DashboardPage() {
           )
         ) : selected?.type === "static" ? (
           <StaticSubPage label={selected.label} agencyName={agencyName} agencyAbn={agencyAbn} userEmail={userEmail} userId={userId} orgOwnerId={orgOwnerId} userRole={userRole} staffRows={staffRows} policies={policies} onPolicySaved={handlePolicySaved} onPolicyUpdated={handlePolicyUpdated} onPolicyDeleted={handlePolicyDeleted} onStaffAdded={(s) => setStaffRows(prev => [...prev, s])} />
-        ) : activeModule && activeModule !== "settings" ? (
+        ) : activeModule ? (
           <ModuleOverview moduleId={activeModule} onSelectProperty={setSelected} salesProps={salesProps} mgmtProps={mgmtProps} onAddSalesProperty={handleAddSalesProperty} onAddMgmtProperty={handleAddMgmtProperty} staffRows={staffRows} policies={policies} />
         ) : (
           <DashboardHome onNavigate={openModule} agencyName={agencyName} staffRows={staffRows} salesProps={salesProps} mgmtProps={mgmtProps} policies={policies} />
         )}
         </div>
       </div>
+
+      {/* Settings Panel */}
+      {settingsOpen && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 200, display: "flex" }}>
+          <div onClick={() => setSettingsOpen(false)} style={{ flex: 1, background: "rgba(0,0,0,0.18)" }} />
+          <div style={{ width: "680px", background: "#fff", borderLeft: "1px solid #e5e7eb", display: "flex", flexDirection: "column", overflow: "hidden", boxShadow: "-4px 0 24px rgba(0,0,0,0.08)" }}>
+            {/* Header */}
+            <div style={{ height: "56px", borderBottom: "1px solid #e5e7eb", padding: "0 24px", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+              <span style={{ fontSize: "15px", fontWeight: 700, color: "#111827", letterSpacing: "-0.02em" }}>Settings</span>
+              <button onClick={() => setSettingsOpen(false)} style={{ width: "28px", height: "28px", borderRadius: "6px", border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#6b7280", transition: "background 0.1s" }} onMouseEnter={e => { e.currentTarget.style.background = "#f3f4f6"; }} onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}>
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 1l12 12M13 1L1 13" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/></svg>
+              </button>
+            </div>
+            {/* Tabs */}
+            <div style={{ padding: "0 24px", borderBottom: "1px solid #e5e7eb", display: "flex", gap: "2px", flexShrink: 0 }}>
+              {(userRole === "owner" ? (["Account", "Billing", "Team & Invites"] as const) : (["Account"] as const)).map(tab => (
+                <button key={tab} onClick={() => setSettingsTab(tab)}
+                  style={{ padding: "12px 14px", border: "none", background: "transparent", cursor: "pointer", fontSize: "13px", fontWeight: settingsTab === tab ? 600 : 400, color: settingsTab === tab ? "#111827" : "#6b7280", borderBottom: settingsTab === tab ? "2px solid #111827" : "2px solid transparent", marginBottom: "-1px", letterSpacing: "-0.01em", fontFamily: "var(--font-inter)", transition: "color 0.1s" }}
+                >{tab}</button>
+              ))}
+            </div>
+            {/* Content */}
+            <div style={{ flex: 1, overflow: "auto" }}>
+              <StaticSubPage label={settingsTab} agencyName={agencyName} agencyAbn={agencyAbn} userEmail={userEmail} userId={userId} orgOwnerId={orgOwnerId} userRole={userRole} staffRows={staffRows} policies={policies} onPolicySaved={handlePolicySaved} onPolicyUpdated={handlePolicyUpdated} onPolicyDeleted={handlePolicyDeleted} onStaffAdded={(s) => setStaffRows(prev => [...prev, s])} />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* AI Assistant Panel */}
       {aiPanelOpen && <AiAssistantPanel onClose={() => setAiPanelOpen(false)} agencyName={agencyName} />}
