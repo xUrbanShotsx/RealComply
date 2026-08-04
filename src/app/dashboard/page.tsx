@@ -102,14 +102,24 @@ type CrmListing = {
   id: string;
   address: string;
   suburb: string;
-  owner: string;
-  price: string;
+  owner: string;          // vendor (sale) or landlord (rental)
+  price: string;          // sale price or weekly rent
+  displayPrice: string;   // display price or display rent string
   type: "sale" | "rental";
   status: "active" | "under-offer" | "sold" | "leased" | "archived";
+  propertyType: string;   // House, Unit, Townhouse, Land…
   bedrooms: string;
   bathrooms: string;
+  carSpaces: string;
+  landSize: string;       // sale only
   agent: string;
   listedDate: string;
+  // rental-only
+  availableDate: string;
+  leaseTerm: string;
+  bond: string;
+  petsAllowed: string;
+  furnished: string;
   complianceSynced: boolean;
 };
 
@@ -8408,6 +8418,13 @@ function AiAutomationPanel({ automations, insight }: { automations: AiAutomation
 
 // ─── Active Listings — functional with Add modal + compliance sync ─────────────
 
+const BLANK_LISTING: Omit<CrmListing, "id" | "status" | "complianceSynced"> = {
+  address: "", suburb: "", owner: "", price: "", displayPrice: "",
+  type: "sale", propertyType: "", bedrooms: "", bathrooms: "", carSpaces: "",
+  landSize: "", agent: "", listedDate: new Date().toISOString().slice(0, 10),
+  availableDate: "", leaseTerm: "", bond: "", petsAllowed: "", furnished: "",
+};
+
 function CrmActiveListingsPage({
   listings, onAddListing, staffRows,
 }: {
@@ -8416,12 +8433,17 @@ function CrmActiveListingsPage({
   staffRows: StaffRow[];
 }) {
   const [showModal, setShowModal] = useState(false);
-  const [form, setForm] = useState({ address: "", suburb: "", owner: "", price: "", type: "sale" as "sale" | "rental", bedrooms: "", bathrooms: "", agent: "", listedDate: new Date().toISOString().slice(0, 10) });
+  const [form, setForm] = useState<Omit<CrmListing, "id" | "status" | "complianceSynced">>(BLANK_LISTING);
   const [syncCompliance, setSyncCompliance] = useState(true);
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
   const active = listings.filter(l => l.status === "active");
+  const isSale = form.type === "sale";
+
+  function setType(t: "sale" | "rental") {
+    setForm({ ...BLANK_LISTING, type: t, listedDate: form.listedDate, agent: form.agent, address: form.address, suburb: form.suburb });
+  }
 
   async function submit() {
     if (!form.address.trim()) { setErr("Address is required"); return; }
@@ -8429,21 +8451,22 @@ function CrmActiveListingsPage({
     const e = await onAddListing(form, syncCompliance);
     if (e) { setErr(e); setSaving(false); return; }
     setShowModal(false);
-    setForm({ address: "", suburb: "", owner: "", price: "", type: "sale", bedrooms: "", bathrooms: "", agent: "", listedDate: new Date().toISOString().slice(0, 10) });
+    setForm(BLANK_LISTING);
     setSaving(false);
   }
 
-  const inp = (label: string, key: keyof typeof form, type = "text", opts?: string[]) => (
+  const fld = (label: string, key: keyof typeof form, inputType = "text", opts?: string[], placeholder?: string) => (
     <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
       <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151" }}>{label}</label>
       {opts ? (
         <select value={form[key] as string} onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
-          style={{ padding: "7px 10px", borderRadius: "7px", border: "1px solid #e5e7eb", fontSize: "13px", fontFamily: "var(--font-inter)", color: "#111827", background: "#fff", outline: "none" }}>
-          {opts.map(o => <option key={o} value={o}>{o}</option>)}
+          style={{ padding: "8px 10px", borderRadius: "7px", border: "1px solid #e5e7eb", fontSize: "13px", fontFamily: "var(--font-inter)", color: "#111827", background: "#fff", outline: "none", width: "100%" }}>
+          {opts.map(o => <option key={o} value={o}>{o || `Select…`}</option>)}
         </select>
       ) : (
-        <input type={type} value={form[key] as string} onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
-          style={{ padding: "7px 10px", borderRadius: "7px", border: "1px solid #e5e7eb", fontSize: "13px", fontFamily: "var(--font-inter)", color: "#111827", outline: "none" }} />
+        <input type={inputType} value={form[key] as string} onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
+          placeholder={placeholder}
+          style={{ padding: "8px 10px", borderRadius: "7px", border: "1px solid #e5e7eb", fontSize: "13px", fontFamily: "var(--font-inter)", color: "#111827", outline: "none", width: "100%", boxSizing: "border-box" }} />
       )}
     </div>
   );
@@ -8547,53 +8570,123 @@ function CrmActiveListingsPage({
 
       {/* Add Listing Modal */}
       {showModal && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}
           onClick={(e) => { if (e.target === e.currentTarget) setShowModal(false); }}>
-          <div style={{ background: "#fff", borderRadius: "14px", width: "100%", maxWidth: "560px", boxShadow: "0 20px 60px rgba(0,0,0,0.15)", display: "flex", flexDirection: "column" }}>
-            <div style={{ padding: "20px 24px 16px", borderBottom: "1px solid #f3f4f6", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ background: "#fff", borderRadius: "14px", width: "100%", maxWidth: "580px", maxHeight: "90vh", boxShadow: "0 24px 64px rgba(0,0,0,0.18)", display: "flex", flexDirection: "column" }}>
+
+            {/* Modal header */}
+            <div style={{ padding: "20px 24px 16px", borderBottom: "1px solid #f3f4f6", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
               <h2 style={{ fontSize: "15px", fontWeight: 700, color: "#111827", margin: 0, letterSpacing: "-0.02em" }}>New Listing</h2>
               <button onClick={() => setShowModal(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "#9ca3af", padding: "4px" }}>
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/></svg>
               </button>
             </div>
-            <div style={{ padding: "20px 24px", display: "flex", flexDirection: "column", gap: "14px" }}>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
-                {inp("Listing Type", "type", "text", ["sale", "rental"])}
-                {inp("Price / Rent", "price")}
-              </div>
-              {inp("Property Address", "address")}
-              {inp("Suburb", "suburb")}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
-                {inp("Owner Name", "owner")}
-                {inp("Listing Agent", "agent", "text", ["", ...staffRows.map(s => s.name)])}
-              </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "12px" }}>
-                {inp("Bedrooms", "bedrooms", "text", ["", "1", "2", "3", "4", "5", "6+"])}
-                {inp("Bathrooms", "bathrooms", "text", ["", "1", "2", "3", "4+"])}
-                {inp("Listed Date", "listedDate", "date")}
+
+            {/* Scrollable body */}
+            <div style={{ overflowY: "auto", flex: 1, padding: "20px 24px", display: "flex", flexDirection: "column", gap: "16px" }}>
+
+              {/* Sale / Rent toggle */}
+              <div style={{ display: "flex", background: "#f3f4f6", borderRadius: "10px", padding: "4px", gap: "4px" }}>
+                {(["sale", "rental"] as const).map(t => (
+                  <button key={t} onClick={() => setType(t)}
+                    style={{ flex: 1, padding: "9px 0", borderRadius: "7px", border: "none", cursor: "pointer", fontFamily: "var(--font-inter)", fontSize: "13.5px", fontWeight: 600, letterSpacing: "-0.01em", transition: "all 0.15s", background: form.type === t ? "#111827" : "transparent", color: form.type === t ? "#fff" : "#6b7280" }}>
+                    {t === "sale" ? "For Sale" : "For Rent"}
+                  </button>
+                ))}
               </div>
 
-              {/* Compliance sync toggle */}
+              {/* Common: address + suburb */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                {fld("Property Address", "address", "text", undefined, "123 Example Street")}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                  {fld("Suburb", "suburb", "text", undefined, "Suburb")}
+                  {fld("Property Type", "propertyType", "text", ["", "House", "Unit / Apartment", "Townhouse", "Villa", "Land", "Rural", "Other"])}
+                </div>
+              </div>
+
+              <div style={{ height: "1px", background: "#f3f4f6" }} />
+
+              {/* Sale-specific fields */}
+              {isSale ? (
+                <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                  <p style={{ fontSize: "11px", fontWeight: 700, color: "#9ca3af", letterSpacing: "0.06em", textTransform: "uppercase", margin: 0 }}>Sale Details</p>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                    {fld("Vendor Name", "owner", "text", undefined, "John Smith")}
+                    {fld("Listing Agent", "agent", "text", ["", ...staffRows.map(s => s.name)])}
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                    {fld("Sale Price", "price", "text", undefined, "$850,000")}
+                    {fld("Display Price", "displayPrice", "text", undefined, "Offers Over $820,000")}
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "12px" }}>
+                    {fld("Land Size (m²)", "landSize", "text", undefined, "600")}
+                    {fld("Listed Date", "listedDate", "date")}
+                  </div>
+                </div>
+              ) : (
+                /* Rental-specific fields */
+                <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                  <p style={{ fontSize: "11px", fontWeight: 700, color: "#9ca3af", letterSpacing: "0.06em", textTransform: "uppercase", margin: 0 }}>Rental Details</p>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                    {fld("Landlord Name", "owner", "text", undefined, "Jane Smith")}
+                    {fld("Listing Agent / PM", "agent", "text", ["", ...staffRows.map(s => s.name)])}
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                    {fld("Rent (per week)", "price", "text", undefined, "$650")}
+                    {fld("Display Rent", "displayPrice", "text", undefined, "$650 per week")}
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                    {fld("Bond Amount", "bond", "text", undefined, "$2,600 (4 weeks)")}
+                    {fld("Available Date", "availableDate", "date")}
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                    {fld("Lease Term", "leaseTerm", "text", ["", "6 Months", "12 Months", "Month to Month", "2 Years", "Negotiable"])}
+                    {fld("Listed Date", "listedDate", "date")}
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                    {fld("Pets Allowed", "petsAllowed", "text", ["", "Yes", "No", "Negotiable"])}
+                    {fld("Furnished", "furnished", "text", ["", "Unfurnished", "Furnished", "Partially Furnished"])}
+                  </div>
+                </div>
+              )}
+
+              <div style={{ height: "1px", background: "#f3f4f6" }} />
+
+              {/* Common: property features */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                <p style={{ fontSize: "11px", fontWeight: 700, color: "#9ca3af", letterSpacing: "0.06em", textTransform: "uppercase", margin: 0 }}>Property Features</p>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "12px" }}>
+                  {fld("Bedrooms", "bedrooms", "text", ["", "Studio", "1", "2", "3", "4", "5", "6+"])}
+                  {fld("Bathrooms", "bathrooms", "text", ["", "1", "2", "3", "4+"])}
+                  {fld("Car Spaces", "carSpaces", "text", ["", "0", "1", "2", "3", "4+"])}
+                </div>
+              </div>
+
+              <div style={{ height: "1px", background: "#f3f4f6" }} />
+
+              {/* Compliance sync */}
               <div style={{ background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: "10px", padding: "12px 14px", display: "flex", alignItems: "flex-start", gap: "12px" }}>
                 <button onClick={() => setSyncCompliance(v => !v)}
-                  style={{ width: "36px", height: "20px", borderRadius: "100px", background: syncCompliance ? "#111827" : "#e5e7eb", border: "none", cursor: "pointer", position: "relative", flexShrink: 0, marginTop: "1px", transition: "background 0.15s" }}>
+                  style={{ width: "36px", height: "20px", borderRadius: "100px", background: syncCompliance ? "#111827" : "#e5e7eb", border: "none", cursor: "pointer", position: "relative", flexShrink: 0, marginTop: "2px", transition: "background 0.15s" }}>
                   <span style={{ position: "absolute", top: "2px", left: syncCompliance ? "18px" : "2px", width: "16px", height: "16px", borderRadius: "50%", background: "#fff", transition: "left 0.15s", boxShadow: "0 1px 3px rgba(0,0,0,0.2)" }} />
                 </button>
                 <div>
                   <p style={{ fontSize: "13px", fontWeight: 600, color: "#111827", margin: 0, maxWidth: "none" }}>Sync to Compliance</p>
                   <p style={{ fontSize: "12px", color: "#6b7280", margin: "2px 0 0", maxWidth: "none" }}>
-                    Automatically creates a {form.type === "sale" ? "Residential Sales" : "Residential Management"} property record in the Compliance module.
+                    Automatically creates a {isSale ? "Residential Sales" : "Residential Management"} record in the Compliance module.
                   </p>
                 </div>
               </div>
 
               {err && <p style={{ fontSize: "12.5px", color: "#ef4444", margin: 0 }}>{err}</p>}
             </div>
-            <div style={{ padding: "14px 24px 20px", display: "flex", justifyContent: "flex-end", gap: "10px" }}>
-              <button onClick={() => setShowModal(false)} style={{ padding: "7px 16px", borderRadius: "8px", border: "1px solid #e5e7eb", background: "#fff", fontSize: "13px", fontWeight: 500, cursor: "pointer", fontFamily: "var(--font-inter)", color: "#374151" }}>Cancel</button>
+
+            {/* Footer */}
+            <div style={{ padding: "14px 24px 20px", borderTop: "1px solid #f3f4f6", display: "flex", justifyContent: "flex-end", gap: "10px", flexShrink: 0 }}>
+              <button onClick={() => setShowModal(false)} style={{ padding: "8px 16px", borderRadius: "8px", border: "1px solid #e5e7eb", background: "#fff", fontSize: "13px", fontWeight: 500, cursor: "pointer", fontFamily: "var(--font-inter)", color: "#374151" }}>Cancel</button>
               <button onClick={submit} disabled={saving}
-                style={{ padding: "7px 18px", borderRadius: "8px", border: "none", background: "#111827", color: "#fff", fontSize: "13px", fontWeight: 600, cursor: saving ? "not-allowed" : "pointer", fontFamily: "var(--font-inter)", opacity: saving ? 0.7 : 1 }}>
-                {saving ? "Saving…" : "Add Listing"}
+                style={{ padding: "8px 18px", borderRadius: "8px", border: "none", background: "#111827", color: "#fff", fontSize: "13px", fontWeight: 600, cursor: saving ? "not-allowed" : "pointer", fontFamily: "var(--font-inter)", opacity: saving ? 0.7 : 1 }}>
+                {saving ? "Saving…" : `Add ${isSale ? "Sale" : "Rental"}`}
               </button>
             </div>
           </div>
