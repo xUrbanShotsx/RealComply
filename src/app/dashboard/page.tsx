@@ -10647,7 +10647,7 @@ function AiChatPanel({ open, onClose, crmListings, staffRows, onNavigate }: {
   if (!open) return null;
 
   return (
-    <div style={{ position: "fixed", bottom: "0", right: "0", width: "380px", height: "580px", background: "#fff", border: "1px solid #e5e7eb", borderRadius: "16px 16px 0 0", boxShadow: "0 -4px 32px rgba(0,0,0,0.12)", display: "flex", flexDirection: "column", zIndex: 200, fontFamily: "var(--font-inter)" }}>
+    <div style={{ width: "380px", flexShrink: 0, borderLeft: "1px solid #e5e7eb", background: "#fff", display: "flex", flexDirection: "column", fontFamily: "var(--font-inter)", overflow: "hidden" }}>
       {/* Header */}
       <div style={{ padding: "14px 18px", borderBottom: "1px solid #f3f4f6", display: "flex", alignItems: "center", gap: "10px", flexShrink: 0 }}>
         <div style={{ width: "32px", height: "32px", borderRadius: "50%", background: "linear-gradient(135deg, #6366f1, #8b5cf6)", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -11984,7 +11984,6 @@ export default function DashboardPage() {
   const [userRole, setUserRole] = useState<"owner" | "standard">("standard");
   const [unreadCount, setUnreadCount] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [aiPanelOpen, setAiPanelOpen] = useState(false);
   const [aiChatOpen, setAiChatOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settingsTab, setSettingsTab] = useState<"Account" | "Billing" | "Team & Invites">("Account");
@@ -12437,10 +12436,10 @@ export default function DashboardPage() {
             </div>
             {/* Ask AI button */}
             <button
-              onClick={() => setAiPanelOpen(v => !v)}
-              style={{ display: "flex", alignItems: "center", gap: "6px", padding: "7px 14px", background: aiPanelOpen ? "#374151" : "#111827", color: "#fff", border: "none", borderRadius: "8px", fontSize: "12.5px", fontWeight: 600, cursor: "pointer", fontFamily: "var(--font-inter)", letterSpacing: "-0.01em", transition: "background 0.12s", flexShrink: 0 }}
+              onClick={() => setAiChatOpen(v => !v)}
+              style={{ display: "flex", alignItems: "center", gap: "6px", padding: "7px 14px", background: aiChatOpen ? "#374151" : "#111827", color: "#fff", border: "none", borderRadius: "8px", fontSize: "12.5px", fontWeight: 600, cursor: "pointer", fontFamily: "var(--font-inter)", letterSpacing: "-0.01em", transition: "background 0.12s", flexShrink: 0 }}
               onMouseEnter={(e) => { e.currentTarget.style.background = "#1f2937"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = aiPanelOpen ? "#374151" : "#111827"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = aiChatOpen ? "#374151" : "#111827"; }}
             >
               <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 1l1.8 4.2L14 7l-4.2 1.8L8 13l-1.8-4.2L2 7l4.2-1.8L8 1z" fill="currentColor"/></svg>
               Ask AI
@@ -12474,33 +12473,48 @@ export default function DashboardPage() {
           </div>
         </header>
 
-        {/* Content */}
-        <div
-          key={`${activeModule ?? "home"}__${selected?.type === "property" ? selected.id : selected?.label ?? "overview"}`}
-          className="main-panel-enter"
-          style={{ flex: 1, display: "flex" }}
-        >
-        {sidebarMode === "crm" ? (
-          crmModule === "calendar" ? (
-            <StaticSubPage label="Calendar" agencyName={agencyName} agencyAbn={agencyAbn} userEmail={userEmail} userId={userId} orgOwnerId={orgOwnerId} userRole={userRole} staffRows={staffRows} policies={policies} onPolicySaved={handlePolicySaved} onPolicyUpdated={handlePolicyUpdated} onPolicyDeleted={handlePolicyDeleted} onStaffAdded={(s) => setStaffRows(prev => [...prev, s])} />
-          ) : crmModule === "meetings" ? (
-            <StaticSubPage label="Past Meetings" agencyName={agencyName} agencyAbn={agencyAbn} userEmail={userEmail} userId={userId} orgOwnerId={orgOwnerId} userRole={userRole} staffRows={staffRows} policies={policies} onPolicySaved={handlePolicySaved} onPolicyUpdated={handlePolicyUpdated} onPolicyDeleted={handlePolicyDeleted} onStaffAdded={(s) => setStaffRows(prev => [...prev, s])} />
+        {/* Content + AI panel row */}
+        <div style={{ flex: 1, display: "flex", overflow: "hidden", minHeight: 0 }}>
+          <div
+            key={`${activeModule ?? "home"}__${selected?.type === "property" ? selected.id : selected?.label ?? "overview"}`}
+            className="main-panel-enter"
+            style={{ flex: 1, minWidth: 0, overflow: "auto", display: "flex" }}
+          >
+          {sidebarMode === "crm" ? (
+            crmModule === "calendar" ? (
+              <StaticSubPage label="Calendar" agencyName={agencyName} agencyAbn={agencyAbn} userEmail={userEmail} userId={userId} orgOwnerId={orgOwnerId} userRole={userRole} staffRows={staffRows} policies={policies} onPolicySaved={handlePolicySaved} onPolicyUpdated={handlePolicyUpdated} onPolicyDeleted={handlePolicyDeleted} onStaffAdded={(s) => setStaffRows(prev => [...prev, s])} />
+            ) : crmModule === "meetings" ? (
+              <StaticSubPage label="Past Meetings" agencyName={agencyName} agencyAbn={agencyAbn} userEmail={userEmail} userId={userId} orgOwnerId={orgOwnerId} userRole={userRole} staffRows={staffRows} policies={policies} onPolicySaved={handlePolicySaved} onPolicyUpdated={handlePolicyUpdated} onPolicyDeleted={handlePolicyDeleted} onStaffAdded={(s) => setStaffRows(prev => [...prev, s])} />
+            ) : (
+              <CrmSubPage moduleId={crmModule} submodule={crmSelected} crmListings={crmListings} onAddListing={handleAddCrmListing} staffRows={staffRows} agencyName={agencyName} onNavigate={(mid, sub) => { setCrmModule(mid); setCrmSelected(sub); }} />
+            )
+          ) : selected?.type === "property" ? (
+            selected.section === "sales" ? (
+              <SalesPropertyChecklist key={selected.id} propertyId={selected.id} address={selected.address} onRemove={() => handleRemoveProperty(selected.id, "sales")} />
+            ) : (
+              <PropertyChecklist key={selected.id} propertyId={selected.id} address={selected.address} type={selected.section} onRemove={() => handleRemoveProperty(selected.id, "management")} />
+            )
+          ) : selected?.type === "static" ? (
+            <StaticSubPage label={selected.label} agencyName={agencyName} agencyAbn={agencyAbn} userEmail={userEmail} userId={userId} orgOwnerId={orgOwnerId} userRole={userRole} staffRows={staffRows} policies={policies} onPolicySaved={handlePolicySaved} onPolicyUpdated={handlePolicyUpdated} onPolicyDeleted={handlePolicyDeleted} onStaffAdded={(s) => setStaffRows(prev => [...prev, s])} />
+          ) : activeModule ? (
+            <ModuleOverview moduleId={activeModule} onSelectProperty={setSelected} salesProps={salesProps} mgmtProps={mgmtProps} onAddSalesProperty={handleAddSalesProperty} onAddMgmtProperty={handleAddMgmtProperty} staffRows={staffRows} policies={policies} />
           ) : (
-            <CrmSubPage moduleId={crmModule} submodule={crmSelected} crmListings={crmListings} onAddListing={handleAddCrmListing} staffRows={staffRows} agencyName={agencyName} onNavigate={(mid, sub) => { setCrmModule(mid); setCrmSelected(sub); }} />
-          )
-        ) : selected?.type === "property" ? (
-          selected.section === "sales" ? (
-            <SalesPropertyChecklist key={selected.id} propertyId={selected.id} address={selected.address} onRemove={() => handleRemoveProperty(selected.id, "sales")} />
-          ) : (
-            <PropertyChecklist key={selected.id} propertyId={selected.id} address={selected.address} type={selected.section} onRemove={() => handleRemoveProperty(selected.id, "management")} />
-          )
-        ) : selected?.type === "static" ? (
-          <StaticSubPage label={selected.label} agencyName={agencyName} agencyAbn={agencyAbn} userEmail={userEmail} userId={userId} orgOwnerId={orgOwnerId} userRole={userRole} staffRows={staffRows} policies={policies} onPolicySaved={handlePolicySaved} onPolicyUpdated={handlePolicyUpdated} onPolicyDeleted={handlePolicyDeleted} onStaffAdded={(s) => setStaffRows(prev => [...prev, s])} />
-        ) : activeModule ? (
-          <ModuleOverview moduleId={activeModule} onSelectProperty={setSelected} salesProps={salesProps} mgmtProps={mgmtProps} onAddSalesProperty={handleAddSalesProperty} onAddMgmtProperty={handleAddMgmtProperty} staffRows={staffRows} policies={policies} />
-        ) : (
-          <DashboardHome onNavigate={openModule} agencyName={agencyName} staffRows={staffRows} salesProps={salesProps} mgmtProps={mgmtProps} policies={policies} />
-        )}
+            <DashboardHome onNavigate={openModule} agencyName={agencyName} staffRows={staffRows} salesProps={salesProps} mgmtProps={mgmtProps} policies={policies} />
+          )}
+          </div>
+          {/* Inline AI panel — 1/3 of main area */}
+          <AiChatPanel
+            open={aiChatOpen}
+            onClose={() => setAiChatOpen(false)}
+            crmListings={crmListings}
+            staffRows={staffRows}
+            onNavigate={(moduleId, sub) => {
+              setSidebarMode("crm");
+              setCrmModule(moduleId);
+              setCrmSelected(sub ?? null);
+              setAiChatOpen(false);
+            }}
+          />
         </div>
       </div>
 
@@ -12532,35 +12546,6 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* AI Assistant Panel */}
-      {aiPanelOpen && <AiAssistantPanel onClose={() => setAiPanelOpen(false)} agencyName={agencyName} />}
-
-      {/* AI Chat Panel */}
-      <AiChatPanel
-        open={aiChatOpen}
-        onClose={() => setAiChatOpen(false)}
-        crmListings={crmListings}
-        staffRows={staffRows}
-        onNavigate={(moduleId, sub) => {
-          setSidebarMode("crm");
-          setCrmModule(moduleId);
-          setCrmSelected(sub ?? null);
-          setAiChatOpen(false);
-        }}
-      />
-
-      {/* AI Chat Floating Button */}
-      {!aiChatOpen && (
-        <button
-          onClick={() => setAiChatOpen(true)}
-          title="Ask AI"
-          style={{ position: "fixed", bottom: "24px", right: "24px", width: "52px", height: "52px", borderRadius: "50%", background: "linear-gradient(135deg, #6366f1, #8b5cf6)", border: "none", cursor: "pointer", boxShadow: "0 4px 20px rgba(99,102,241,0.45)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 199, transition: "transform 0.15s" }}
-          onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.08)"; }}
-          onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; }}
-        >
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 2l2 5.5 5.5 2-5.5 2L12 17l-2-5.5-5.5-2 5.5-2L12 2z" stroke="#fff" strokeWidth="1.6" strokeLinejoin="round"/><path d="M19 18l1 2.5 2.5 1-2.5 1L19 25" stroke="#fff" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
-        </button>
-      )}
 
     </div>
 
