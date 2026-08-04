@@ -121,6 +121,57 @@ type CrmListing = {
   petsAllowed: string;
   furnished: string;
   complianceSynced: boolean;
+  // portal publishing
+  portalStatus?: Record<string, "idle" | "pending" | "live">;
+};
+
+type CrmContact = {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  type: "buyer" | "seller" | "landlord" | "tenant" | "prospect";
+  suburb: string;
+  source: string;
+  tag: "hot" | "warm" | "cold" | "";
+  notes: string;
+  addedAt: string;
+  budgetMin: string;
+  budgetMax: string;
+  preferredSuburbs: string;
+  preApproved: boolean;
+  beds: string;
+};
+
+type CrmAppraisal = {
+  id: string;
+  address: string;
+  suburb: string;
+  ownerName: string;
+  ownerPhone: string;
+  agent: string;
+  date: string;
+  time: string;
+  priceFrom: string;
+  priceTo: string;
+  notes: string;
+  stage: "enquired" | "booked" | "completed" | "listed" | "lost";
+  followUpDate: string;
+};
+
+type ProspectProperty = {
+  id: string;
+  address: string;
+  suburb: string;
+  soldPrice: string;
+  soldDate: string;
+  beds: string;
+  sqm: string;
+  ownerName: string;
+  ownerPhone: string;
+  status: "not-contacted" | "contacted" | "appraisal-booked" | "listed";
+  agent: string;
+  daysAgo: number;
 };
 
 type ItemStatus = "not_started" | "in_progress" | "complete" | "na";
@@ -8437,6 +8488,7 @@ function CrmActiveListingsPage({
   const [syncCompliance, setSyncCompliance] = useState(true);
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [publishingListing, setPublishingListing] = useState<CrmListing | null>(null);
 
   const active = listings.filter(l => l.status === "active");
   const isSale = form.type === "sale";
@@ -8558,7 +8610,10 @@ function CrmActiveListingsPage({
                       )}
                     </td>
                     <td style={{ padding: "11px 14px" }}>
-                      <button style={{ fontSize: "12px", color: "var(--rc-primary)", fontWeight: 600, background: "none", border: "none", cursor: "pointer", fontFamily: "var(--font-inter)", padding: 0 }}>View</button>
+                      <button onClick={() => setPublishingListing(l)}
+                        style={{ fontSize: "12px", fontWeight: 600, color: "#6366f1", background: "#f0f0ff", border: "1px solid #c7d2fe", borderRadius: "6px", padding: "4px 10px", cursor: "pointer", fontFamily: "var(--font-inter)", whiteSpace: "nowrap" as const }}>
+                        Publish →
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -8567,6 +8622,9 @@ function CrmActiveListingsPage({
           </div>
         )}
       </div>
+
+      {/* Portal Publish Modal */}
+      {publishingListing && <PortalPublishModal listing={publishingListing} onClose={() => setPublishingListing(null)} />}
 
       {/* Add Listing Modal */}
       {showModal && (
@@ -8688,6 +8746,836 @@ function CrmActiveListingsPage({
                 style={{ padding: "8px 18px", borderRadius: "8px", border: "none", background: "#111827", color: "#fff", fontSize: "13px", fontWeight: 600, cursor: saving ? "not-allowed" : "pointer", fontFamily: "var(--font-inter)", opacity: saving ? 0.7 : 1 }}>
                 {saving ? "Saving…" : `Add ${isSale ? "Sale" : "Rental"}`}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── CRM Contacts Page ────────────────────────────────────────────────────────
+
+const BLANK_CONTACT: Omit<CrmContact, "id" | "addedAt"> = {
+  name: "", email: "", phone: "", type: "prospect", suburb: "", source: "",
+  tag: "", notes: "", budgetMin: "", budgetMax: "", preferredSuburbs: "", preApproved: false, beds: "",
+};
+
+function CrmContactsPage({ staffRows, filterType }: { staffRows: StaffRow[]; filterType?: CrmContact["type"] }) {
+  const [contacts, setContacts] = useState<CrmContact[]>([]);
+  const [filter, setFilter] = useState<"all" | CrmContact["type"]>(filterType ?? "all");
+  const [search, setSearch] = useState("");
+  const [showModal, setShowModal] = useState(false);
+  const [editing, setEditing] = useState<CrmContact | null>(null);
+  const [form, setForm] = useState<Omit<CrmContact, "id" | "addedAt">>(BLANK_CONTACT);
+  const [err, setErr] = useState<string | null>(null);
+
+  const TYPE_COLORS: Record<string, string> = { buyer: "#2563eb", seller: "#16a34a", landlord: "#7c3aed", tenant: "#ea580c", prospect: "#6b7280" };
+  const TAG_STYLE: Record<string, { bg: string; color: string }> = {
+    hot: { bg: "#fef2f2", color: "#dc2626" }, warm: { bg: "#fffbeb", color: "#d97706" },
+    cold: { bg: "#eff6ff", color: "#3b82f6" }, "": { bg: "#f9fafb", color: "#6b7280" },
+  };
+
+  const filtered = contacts.filter(c => {
+    if (filter !== "all" && c.type !== filter) return false;
+    const q = search.toLowerCase();
+    return !q || c.name.toLowerCase().includes(q) || c.email.toLowerCase().includes(q) || c.suburb.toLowerCase().includes(q);
+  });
+
+  const counts: Record<string, number> = { all: contacts.length };
+  contacts.forEach(c => { counts[c.type] = (counts[c.type] ?? 0) + 1; });
+
+  function openAdd() { setForm(BLANK_CONTACT); setEditing(null); setShowModal(true); setErr(null); }
+  function openEdit(c: CrmContact) { setEditing(c); setForm({ name: c.name, email: c.email, phone: c.phone, type: c.type, suburb: c.suburb, source: c.source, tag: c.tag, notes: c.notes, budgetMin: c.budgetMin, budgetMax: c.budgetMax, preferredSuburbs: c.preferredSuburbs, preApproved: c.preApproved, beds: c.beds }); setShowModal(true); setErr(null); }
+
+  function save() {
+    if (!form.name.trim()) { setErr("Name is required"); return; }
+    if (editing) {
+      setContacts(p => p.map(c => c.id === editing.id ? { ...c, ...form } : c));
+    } else {
+      setContacts(p => [...p, { ...form, id: `cnt-${Date.now()}`, addedAt: new Date().toISOString().slice(0, 10) }]);
+    }
+    setShowModal(false);
+  }
+
+  function del(id: string) { setContacts(p => p.filter(c => c.id !== id)); setShowModal(false); }
+
+  const cFld = (label: string, key: keyof typeof form, inputType = "text", opts?: string[], placeholder?: string) => (
+    <div>
+      <label style={{ fontSize: "11.5px", fontWeight: 600, color: "#6b7280", display: "block", marginBottom: "5px" }}>{label}</label>
+      {opts ? (
+        <select value={String(form[key])} onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
+          style={{ width: "100%", padding: "7px 10px", border: "1px solid #e5e7eb", borderRadius: "7px", fontSize: "13px", color: "#111827", background: "#fff", fontFamily: "var(--font-inter)", outline: "none", boxSizing: "border-box" as const }}>
+          {opts.map(o => <option key={o} value={o}>{o || `Select…`}</option>)}
+        </select>
+      ) : (
+        <input type={inputType} value={String(form[key])} onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))} placeholder={placeholder}
+          style={{ width: "100%", padding: "7px 10px", border: "1px solid #e5e7eb", borderRadius: "7px", fontSize: "13px", color: "#111827", fontFamily: "var(--font-inter)", outline: "none", boxSizing: "border-box" as const }} />
+      )}
+    </div>
+  );
+
+  return (
+    <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "calc(100vh - 56px)", overflow: "hidden", padding: "20px 28px", gap: "14px" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+        <div>
+          <h1 style={{ fontSize: "1.1rem", fontWeight: 700, color: "#111827", letterSpacing: "-0.03em", margin: 0 }}>Contacts</h1>
+          <p style={{ fontSize: "12.5px", color: "#9ca3af", margin: "3px 0 0" }}>{contacts.length} total · {filtered.length} shown</p>
+        </div>
+        <button onClick={openAdd} style={{ display: "flex", alignItems: "center", gap: "7px", padding: "7px 14px", background: "#111827", color: "#fff", border: "none", borderRadius: "8px", fontSize: "12.5px", fontWeight: 600, cursor: "pointer", fontFamily: "var(--font-inter)" }}
+          onMouseEnter={e => (e.currentTarget.style.background = "#1f2937")} onMouseLeave={e => (e.currentTarget.style.background = "#111827")}>
+          <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>
+          Add Contact
+        </button>
+      </div>
+
+      {/* Type filter pills */}
+      <div style={{ display: "flex", gap: "8px", flexShrink: 0, flexWrap: "wrap" }}>
+        {([["all", "All"], ["buyer", "Buyers"], ["seller", "Sellers"], ["landlord", "Landlords"], ["tenant", "Tenants"], ["prospect", "Prospects"]] as const).map(([val, label]) => (
+          <button key={val} onClick={() => setFilter(val as "all" | CrmContact["type"])}
+            style={{ padding: "5px 14px", borderRadius: "100px", border: "1px solid", fontSize: "12.5px", fontWeight: 600, cursor: "pointer", fontFamily: "var(--font-inter)", transition: "all 0.12s",
+              background: filter === val ? "#111827" : "#fff", color: filter === val ? "#fff" : "#6b7280", borderColor: filter === val ? "#111827" : "#e5e7eb" }}>
+            {label} {counts[val === "all" ? "all" : val] ? `(${counts[val === "all" ? "all" : val]})` : "(0)"}
+          </button>
+        ))}
+      </div>
+
+      {/* Search */}
+      <div style={{ flexShrink: 0, position: "relative" }}>
+        <svg style={{ position: "absolute", left: "11px", top: "50%", transform: "translateY(-50%)", color: "#9ca3af", pointerEvents: "none" }} width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="5" stroke="currentColor" strokeWidth="1.5"/><path d="M11 11l3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by name, email, or suburb…"
+          style={{ width: "100%", padding: "8px 12px 8px 32px", border: "1px solid #e5e7eb", borderRadius: "8px", fontSize: "13px", fontFamily: "var(--font-inter)", color: "#111827", outline: "none", boxSizing: "border-box" as const }} />
+      </div>
+
+      {/* Table */}
+      <div style={{ flex: 1, overflow: "auto", background: "#fff", border: "1px solid #e5e7eb", borderRadius: "12px" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <thead>
+            <tr style={{ borderBottom: "1px solid #f3f4f6" }}>
+              {["Name", "Type", "Email", "Phone", "Suburb", "Source", "Tag", "Added"].map(h => (
+                <th key={h} style={{ padding: "10px 14px", fontSize: "11px", fontWeight: 700, color: "#9ca3af", textAlign: "left", letterSpacing: "0.04em", textTransform: "uppercase" as const, whiteSpace: "nowrap" as const }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.length === 0 ? (
+              <tr><td colSpan={8} style={{ padding: "48px", textAlign: "center" as const, color: "#9ca3af", fontSize: "13px" }}>
+                {contacts.length === 0 ? "No contacts yet — add your first contact to get started." : "No contacts match your search or filter."}
+              </td></tr>
+            ) : filtered.map(c => (
+              <tr key={c.id} onClick={() => openEdit(c)} style={{ borderBottom: "1px solid #f9fafb", cursor: "pointer" }}
+                onMouseEnter={e => (e.currentTarget.style.background = "#f9fafb")} onMouseLeave={e => (e.currentTarget.style.background = "")}>
+                <td style={{ padding: "10px 14px", fontSize: "13px", fontWeight: 600, color: "#111827", whiteSpace: "nowrap" as const }}>{c.name}</td>
+                <td style={{ padding: "10px 14px" }}>
+                  <span style={{ fontSize: "11px", fontWeight: 700, padding: "2px 8px", borderRadius: "4px", textTransform: "capitalize" as const, background: TYPE_COLORS[c.type] + "18", color: TYPE_COLORS[c.type] }}>{c.type}</span>
+                </td>
+                <td style={{ padding: "10px 14px", fontSize: "12.5px", color: "#374151" }}>{c.email || "—"}</td>
+                <td style={{ padding: "10px 14px", fontSize: "12.5px", color: "#374151", whiteSpace: "nowrap" as const }}>{c.phone || "—"}</td>
+                <td style={{ padding: "10px 14px", fontSize: "12.5px", color: "#374151" }}>{c.suburb || "—"}</td>
+                <td style={{ padding: "10px 14px", fontSize: "12.5px", color: "#374151" }}>{c.source || "—"}</td>
+                <td style={{ padding: "10px 14px" }}>
+                  {c.tag ? <span style={{ fontSize: "11px", fontWeight: 700, padding: "2px 8px", borderRadius: "4px", textTransform: "capitalize" as const, ...TAG_STYLE[c.tag] }}>{c.tag}</span> : <span style={{ color: "#d1d5db" }}>—</span>}
+                </td>
+                <td style={{ padding: "10px 14px", fontSize: "12px", color: "#9ca3af", whiteSpace: "nowrap" as const }}>{c.addedAt}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Modal */}
+      {showModal && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}
+          onClick={e => { if (e.target === e.currentTarget) setShowModal(false); }}>
+          <div style={{ background: "#fff", borderRadius: "14px", width: "100%", maxWidth: "560px", maxHeight: "90vh", display: "flex", flexDirection: "column", boxShadow: "0 24px 64px rgba(0,0,0,0.18)" }}>
+            <div style={{ padding: "20px 24px 16px", borderBottom: "1px solid #f3f4f6", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+              <h2 style={{ fontSize: "15px", fontWeight: 700, color: "#111827", margin: 0, letterSpacing: "-0.02em" }}>{editing ? "Edit Contact" : "New Contact"}</h2>
+              <button onClick={() => setShowModal(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "#9ca3af", padding: "4px" }}>
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/></svg>
+              </button>
+            </div>
+            <div style={{ overflowY: "auto", flex: 1, padding: "20px 24px", display: "flex", flexDirection: "column", gap: "12px" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                {cFld("Full Name", "name", "text", undefined, "Jane Smith")}
+                {cFld("Contact Type", "type", "text", ["buyer", "seller", "landlord", "tenant", "prospect"])}
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                {cFld("Email", "email", "email", undefined, "jane@example.com")}
+                {cFld("Phone / Mobile", "phone", "tel", undefined, "0400 000 000")}
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                {cFld("Suburb", "suburb", "text", undefined, "Wollongong")}
+                {cFld("Lead Source", "source", "text", ["", "REA Enquiry", "Domain Enquiry", "Walk-in", "Referral", "Social Media", "Open Home", "Website", "Cold Call", "Database", "Other"])}
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                {cFld("Lead Tag", "tag", "text", ["", "hot", "warm", "cold"])}
+                {cFld("Assigned Agent", "source", "text", ["", ...staffRows.map(s => s.name)])}
+              </div>
+              {form.type === "buyer" && (
+                <>
+                  <div style={{ height: "1px", background: "#f3f4f6" }} />
+                  <p style={{ fontSize: "11px", fontWeight: 700, color: "#9ca3af", letterSpacing: "0.06em", textTransform: "uppercase" as const, margin: 0 }}>Buyer Criteria</p>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                    {cFld("Min Budget", "budgetMin", "text", undefined, "$600,000")}
+                    {cFld("Max Budget", "budgetMax", "text", undefined, "$850,000")}
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                    {cFld("Preferred Suburbs", "preferredSuburbs", "text", undefined, "Wollongong, Thirroul…")}
+                    {cFld("Min Bedrooms", "beds", "text", ["", "1", "2", "3", "4", "5+"])}
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                    <button onClick={() => setForm(f => ({ ...f, preApproved: !f.preApproved }))}
+                      style={{ width: "34px", height: "18px", borderRadius: "100px", background: form.preApproved ? "#111827" : "#e5e7eb", border: "none", cursor: "pointer", position: "relative", transition: "background 0.15s", flexShrink: 0 }}>
+                      <span style={{ position: "absolute", top: "1px", left: form.preApproved ? "17px" : "1px", width: "16px", height: "16px", borderRadius: "50%", background: "#fff", transition: "left 0.15s", boxShadow: "0 1px 2px rgba(0,0,0,0.2)" }} />
+                    </button>
+                    <span style={{ fontSize: "13px", color: "#374151" }}>Finance pre-approved</span>
+                  </div>
+                </>
+              )}
+              <div style={{ height: "1px", background: "#f3f4f6" }} />
+              <div>
+                <label style={{ fontSize: "11.5px", fontWeight: 600, color: "#6b7280", display: "block", marginBottom: "5px" }}>Notes</label>
+                <textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} placeholder="Relevant notes about this contact…" rows={3}
+                  style={{ width: "100%", padding: "8px 10px", border: "1px solid #e5e7eb", borderRadius: "7px", fontSize: "13px", color: "#111827", fontFamily: "var(--font-inter)", outline: "none", resize: "vertical", boxSizing: "border-box" as const }} />
+              </div>
+              {err && <p style={{ fontSize: "12.5px", color: "#ef4444", margin: 0 }}>{err}</p>}
+            </div>
+            <div style={{ padding: "14px 24px 20px", borderTop: "1px solid #f3f4f6", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "10px", flexShrink: 0 }}>
+              <div>
+                {editing && <button onClick={() => del(editing.id)} style={{ fontSize: "12.5px", color: "#ef4444", background: "none", border: "none", cursor: "pointer", fontFamily: "var(--font-inter)", fontWeight: 500 }}>Delete contact</button>}
+              </div>
+              <div style={{ display: "flex", gap: "10px" }}>
+                <button onClick={() => setShowModal(false)} style={{ padding: "7px 16px", borderRadius: "8px", border: "1px solid #e5e7eb", background: "#fff", fontSize: "13px", fontWeight: 500, cursor: "pointer", fontFamily: "var(--font-inter)", color: "#374151" }}>Cancel</button>
+                <button onClick={save} style={{ padding: "7px 18px", borderRadius: "8px", border: "none", background: "#111827", color: "#fff", fontSize: "13px", fontWeight: 600, cursor: "pointer", fontFamily: "var(--font-inter)" }}>
+                  {editing ? "Save Changes" : "Add Contact"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── CRM Appraisal Kanban Page ────────────────────────────────────────────────
+
+const BLANK_APPRAISAL: Omit<CrmAppraisal, "id"> = {
+  address: "", suburb: "", ownerName: "", ownerPhone: "", agent: "",
+  date: new Date().toISOString().slice(0, 10), time: "10:00",
+  priceFrom: "", priceTo: "", notes: "", stage: "enquired", followUpDate: "",
+};
+
+function CrmAppraisalKanbanPage({ staffRows, initialStage }: { staffRows: StaffRow[]; initialStage?: CrmAppraisal["stage"] }) {
+  const [appraisals, setAppraisals] = useState<CrmAppraisal[]>([]);
+  const [showModal, setShowModal] = useState(false);
+  const [form, setForm] = useState<Omit<CrmAppraisal, "id">>(BLANK_APPRAISAL);
+  const [err, setErr] = useState<string | null>(null);
+
+  const STAGES: { key: CrmAppraisal["stage"]; label: string; color: string; bg: string; border: string }[] = [
+    { key: "enquired",  label: "Enquired",  color: "#6b7280", bg: "#f9fafb", border: "#e5e7eb" },
+    { key: "booked",    label: "Booked",    color: "#2563eb", bg: "#eff6ff", border: "#bfdbfe" },
+    { key: "completed", label: "Completed", color: "#7c3aed", bg: "#f5f3ff", border: "#ddd6fe" },
+    { key: "listed",    label: "Listed",    color: "#16a34a", bg: "#f0fdf4", border: "#bbf7d0" },
+  ];
+
+  const stageOrder: CrmAppraisal["stage"][] = ["enquired", "booked", "completed", "listed"];
+
+  function advance(id: string) {
+    setAppraisals(prev => prev.map(a => {
+      if (a.id !== id) return a;
+      const idx = stageOrder.indexOf(a.stage);
+      return idx < stageOrder.length - 1 ? { ...a, stage: stageOrder[idx + 1] } : a;
+    }));
+  }
+
+  function save() {
+    if (!form.address.trim()) { setErr("Address is required"); return; }
+    if (!form.ownerName.trim()) { setErr("Owner name is required"); return; }
+    setAppraisals(p => [...p, { ...form, id: `apr-${Date.now()}` }]);
+    setShowModal(false); setForm(BLANK_APPRAISAL); setErr(null);
+  }
+
+  const aFld = (label: string, key: keyof typeof form, inputType = "text", opts?: string[], placeholder?: string) => (
+    <div>
+      <label style={{ fontSize: "11.5px", fontWeight: 600, color: "#6b7280", display: "block", marginBottom: "5px" }}>{label}</label>
+      {opts ? (
+        <select value={String(form[key])} onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
+          style={{ width: "100%", padding: "7px 10px", border: "1px solid #e5e7eb", borderRadius: "7px", fontSize: "13px", color: "#111827", background: "#fff", fontFamily: "var(--font-inter)", outline: "none", boxSizing: "border-box" as const }}>
+          {opts.map(o => <option key={o} value={o}>{o || `Select…`}</option>)}
+        </select>
+      ) : (
+        <input type={inputType} value={String(form[key])} onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))} placeholder={placeholder}
+          style={{ width: "100%", padding: "7px 10px", border: "1px solid #e5e7eb", borderRadius: "7px", fontSize: "13px", color: "#111827", fontFamily: "var(--font-inter)", outline: "none", boxSizing: "border-box" as const }} />
+      )}
+    </div>
+  );
+
+  const counts = Object.fromEntries(STAGES.map(s => [s.key, appraisals.filter(a => a.stage === s.key).length]));
+  const conversion = appraisals.length > 0 ? Math.round((counts.listed / appraisals.length) * 100) : 0;
+
+  return (
+    <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "calc(100vh - 56px)", overflow: "hidden", padding: "20px 28px", gap: "14px" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+        <div>
+          <h1 style={{ fontSize: "1.1rem", fontWeight: 700, color: "#111827", letterSpacing: "-0.03em", margin: 0 }}>Appraisal Pipeline</h1>
+          <p style={{ fontSize: "12.5px", color: "#9ca3af", margin: "3px 0 0" }}>{appraisals.length} appraisals · {conversion}% conversion to listing</p>
+        </div>
+        <button onClick={() => { setForm(BLANK_APPRAISAL); setShowModal(true); setErr(null); }}
+          style={{ display: "flex", alignItems: "center", gap: "7px", padding: "7px 14px", background: "#111827", color: "#fff", border: "none", borderRadius: "8px", fontSize: "12.5px", fontWeight: 600, cursor: "pointer", fontFamily: "var(--font-inter)" }}
+          onMouseEnter={e => (e.currentTarget.style.background = "#1f2937")} onMouseLeave={e => (e.currentTarget.style.background = "#111827")}>
+          <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>
+          New Appraisal
+        </button>
+      </div>
+
+      {/* KPIs */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "10px", flexShrink: 0 }}>
+        {STAGES.map(s => (
+          <div key={s.key} style={{ background: "#fff", border: `1px solid ${s.border}`, borderRadius: "10px", padding: "12px 16px", borderTop: `3px solid ${s.color}` }}>
+            <div style={{ fontSize: "22px", fontWeight: 700, color: s.color, letterSpacing: "-0.04em" }}>{counts[s.key]}</div>
+            <div style={{ fontSize: "12px", color: "#9ca3af", marginTop: "2px" }}>{s.label}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* AI Automation */}
+      <AiAutomationPanel
+        automations={[
+          { title: "Prep Pack Generation", description: "AI generates a suburb market snapshot and comparable sales PDF before each appraisal appointment", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" strokeWidth="1.3"/><path d="M5 8h6M5 11h4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg> },
+          { title: "Smart Follow-Up Timing", description: "AI determines the optimal time to re-contact owners based on suburb activity and listing sentiment", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 1v7l4 2" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/><circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.3"/></svg> },
+          { title: "Nearby Sale Trigger", description: "When a comparable property sells nearby, auto-surface appraisals in that area for agent follow-up", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 2l5 5H3l5-5z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/><rect x="5" y="7" width="6" height="7" rx="1" stroke="currentColor" strokeWidth="1.3"/></svg> },
+        ]}
+        insight={{ title: "Re-appraisal radar", body: "Once AI is connected, completed appraisals that never listed will auto-surface for re-contact after 90 days, or sooner if a nearby sale happens." }}
+      />
+
+      {/* Kanban board */}
+      <div style={{ flex: 1, overflow: "hidden", display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px", minHeight: 0 }}>
+        {STAGES.map((s, si) => {
+          const cards = appraisals.filter(a => a.stage === s.key);
+          const isLast = si === STAGES.length - 1;
+          return (
+            <div key={s.key} style={{ display: "flex", flexDirection: "column", minHeight: 0 }}>
+              <div style={{ padding: "8px 12px", background: s.bg, border: `1px solid ${s.border}`, borderRadius: "10px 10px 0 0", display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
+                <span style={{ width: "7px", height: "7px", borderRadius: "50%", background: s.color, flexShrink: 0 }} />
+                <span style={{ fontSize: "12px", fontWeight: 700, color: s.color }}>{s.label}</span>
+                <span style={{ marginLeft: "auto", fontSize: "11px", fontWeight: 700, color: s.color, background: s.color + "22", padding: "1px 7px", borderRadius: "10px" }}>{cards.length}</span>
+              </div>
+              <div style={{ flex: 1, overflowY: "auto", padding: "8px", background: "#f9fafb", border: `1px solid ${s.border}`, borderTop: "none", borderRadius: "0 0 10px 10px", display: "flex", flexDirection: "column", gap: "8px" }}>
+                {cards.length === 0 ? (
+                  <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", color: "#d1d5db", fontSize: "12px", padding: "20px", textAlign: "center" as const, minHeight: "80px" }}>
+                    No appraisals
+                  </div>
+                ) : cards.map(a => (
+                  <div key={a.id} style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: "9px", padding: "12px 14px" }}
+                    onMouseEnter={e => (e.currentTarget.style.borderColor = "#d1d5db")}
+                    onMouseLeave={e => (e.currentTarget.style.borderColor = "#e5e7eb")}>
+                    <div style={{ fontSize: "13px", fontWeight: 600, color: "#111827", marginBottom: "3px", lineHeight: 1.3 }}>{a.address}</div>
+                    <div style={{ fontSize: "11.5px", color: "#6b7280", marginBottom: "6px" }}>{a.suburb}</div>
+                    <div style={{ fontSize: "12px", color: "#374151", marginBottom: "2px" }}>{a.ownerName}</div>
+                    {a.ownerPhone && <div style={{ fontSize: "11.5px", color: "#9ca3af", marginBottom: "4px" }}>{a.ownerPhone}</div>}
+                    {(a.priceFrom || a.priceTo) && (
+                      <div style={{ fontSize: "11.5px", color: "#374151", marginBottom: "4px", fontWeight: 500 }}>
+                        {a.priceFrom}{a.priceTo ? ` – ${a.priceTo}` : ""}
+                      </div>
+                    )}
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: "10px", paddingTop: "8px", borderTop: "1px solid #f3f4f6" }}>
+                      <span style={{ fontSize: "11px", color: "#9ca3af" }}>{a.agent || "Unassigned"}</span>
+                      {!isLast && (
+                        <button onClick={() => advance(a.id)}
+                          style={{ fontSize: "11px", fontWeight: 600, color: STAGES[si + 1].color, background: STAGES[si + 1].bg, border: `1px solid ${STAGES[si + 1].border}`, borderRadius: "6px", padding: "3px 8px", cursor: "pointer", fontFamily: "var(--font-inter)" }}>
+                          {STAGES[si + 1].label} →
+                        </button>
+                      )}
+                      {isLast && <span style={{ fontSize: "11px", fontWeight: 600, color: s.color }}>✓ Listed</span>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {showModal && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}
+          onClick={e => { if (e.target === e.currentTarget) setShowModal(false); }}>
+          <div style={{ background: "#fff", borderRadius: "14px", width: "100%", maxWidth: "520px", maxHeight: "90vh", display: "flex", flexDirection: "column", boxShadow: "0 24px 64px rgba(0,0,0,0.18)" }}>
+            <div style={{ padding: "20px 24px 16px", borderBottom: "1px solid #f3f4f6", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+              <h2 style={{ fontSize: "15px", fontWeight: 700, color: "#111827", margin: 0 }}>New Appraisal</h2>
+              <button onClick={() => setShowModal(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "#9ca3af", padding: "4px" }}>
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/></svg>
+              </button>
+            </div>
+            <div style={{ overflowY: "auto", flex: 1, padding: "20px 24px", display: "flex", flexDirection: "column", gap: "12px" }}>
+              {aFld("Property Address", "address", "text", undefined, "14 Example Street, Wollongong NSW 2500")}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                {aFld("Suburb", "suburb", "text", undefined, "Wollongong")}
+                {aFld("Assigned Agent", "agent", "text", ["", ...staffRows.map(s => s.name)])}
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                {aFld("Owner Name", "ownerName", "text", undefined, "John Smith")}
+                {aFld("Owner Phone", "ownerPhone", "tel", undefined, "0400 000 000")}
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                {aFld("Appraisal Date", "date", "date")}
+                {aFld("Time", "time", "time")}
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                {aFld("Estimated Price (from)", "priceFrom", "text", undefined, "$800,000")}
+                {aFld("Estimated Price (to)", "priceTo", "text", undefined, "$880,000")}
+              </div>
+              {aFld("Follow-up Date", "followUpDate", "date")}
+              <div>
+                <label style={{ fontSize: "11.5px", fontWeight: 600, color: "#6b7280", display: "block", marginBottom: "5px" }}>Notes</label>
+                <textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} placeholder="Notes from the appraisal…" rows={3}
+                  style={{ width: "100%", padding: "8px 10px", border: "1px solid #e5e7eb", borderRadius: "7px", fontSize: "13px", fontFamily: "var(--font-inter)", outline: "none", resize: "vertical", boxSizing: "border-box" as const }} />
+              </div>
+              {err && <p style={{ fontSize: "12.5px", color: "#ef4444", margin: 0 }}>{err}</p>}
+            </div>
+            <div style={{ padding: "14px 24px 20px", borderTop: "1px solid #f3f4f6", display: "flex", justifyContent: "flex-end", gap: "10px", flexShrink: 0 }}>
+              <button onClick={() => setShowModal(false)} style={{ padding: "7px 16px", borderRadius: "8px", border: "1px solid #e5e7eb", background: "#fff", fontSize: "13px", fontWeight: 500, cursor: "pointer", fontFamily: "var(--font-inter)", color: "#374151" }}>Cancel</button>
+              <button onClick={save} style={{ padding: "7px 18px", borderRadius: "8px", border: "none", background: "#111827", color: "#fff", fontSize: "13px", fontWeight: 600, cursor: "pointer", fontFamily: "var(--font-inter)" }}>Add Appraisal</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Portal Publishing Modal ──────────────────────────────────────────────────
+
+function PortalPublishModal({ listing, onClose }: { listing: CrmListing; onClose: () => void }) {
+  const [status, setStatus] = useState<Record<string, "idle" | "pending" | "live">>({
+    rea: "idle", domain: "idle", rent: "idle", homely: "idle", allhomes: "idle",
+  });
+  const [socialDraft, setSocialDraft] = useState("");
+  const [showSocial, setShowSocial] = useState(false);
+
+  const portals = [
+    { id: "rea", name: "realestate.com.au", desc: "Australia's #1 portal", logo: "🏠", types: ["sale", "rental"] as const },
+    { id: "domain", name: "domain.com.au", desc: "Premium buyer & renter audience", logo: "🏘", types: ["sale", "rental"] as const },
+    { id: "rent", name: "rent.com.au", desc: "Rental-focused audience", logo: "🔑", types: ["rental"] as const },
+    { id: "homely", name: "homely.com.au", desc: "Growing audience, neighbourhood focus", logo: "🏡", types: ["sale", "rental"] as const },
+    { id: "allhomes", name: "allhomes.com.au", desc: "ACT & regional coverage", logo: "📍", types: ["sale", "rental"] as const },
+  ].filter(p => p.types.includes(listing.type));
+
+  const PORTAL_STATUS: Record<string, { label: string; color: string; bg: string; border: string }> = {
+    idle:    { label: "Not published", color: "#6b7280", bg: "#f9fafb",  border: "#e5e7eb" },
+    pending: { label: "Publishing…",   color: "#d97706", bg: "#fffbeb",  border: "#fde68a" },
+    live:    { label: "Live",          color: "#16a34a", bg: "#f0fdf4",  border: "#bbf7d0" },
+  };
+
+  function publish(id: string) {
+    setStatus(s => ({ ...s, [id]: "pending" }));
+    setTimeout(() => setStatus(s => ({ ...s, [id]: "live" })), 1800);
+  }
+  function withdraw(id: string) { setStatus(s => ({ ...s, [id]: "idle" })); }
+
+  const SOCIAL_DRAFT = listing.type === "sale"
+    ? `🏡 Just Listed — ${listing.address}, ${listing.suburb}\n\n${listing.displayPrice || listing.price}\n${listing.bedrooms ? `${listing.bedrooms} bed · ${listing.bathrooms} bath` : ""}\n\nInquire now or come through our open home. 📞 [Agent Phone]\n\n#JustListed #${listing.suburb?.replace(/\s/g, "")} #RealEstate`
+    : `🔑 For Rent — ${listing.address}, ${listing.suburb}\n\n${listing.displayPrice || listing.price}/week\nAvailable: ${listing.availableDate || "Now"}\n${listing.bedrooms ? `${listing.bedrooms} bed · ${listing.bathrooms} bath · Pets: ${listing.petsAllowed || "Enquire"}` : ""}\n\nEnquire today! 📞 [Agent Phone]\n\n#ForRent #${listing.suburb?.replace(/\s/g, "")} #Rental`;
+
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}
+      onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
+      <div style={{ background: "#fff", borderRadius: "14px", width: "100%", maxWidth: "600px", maxHeight: "90vh", display: "flex", flexDirection: "column", boxShadow: "0 32px 80px rgba(0,0,0,0.2)" }}>
+        <div style={{ padding: "20px 24px 16px", borderBottom: "1px solid #f3f4f6", display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexShrink: 0 }}>
+          <div>
+            <h2 style={{ fontSize: "15px", fontWeight: 700, color: "#111827", margin: 0, letterSpacing: "-0.02em" }}>Publish Listing</h2>
+            <p style={{ fontSize: "12.5px", color: "#9ca3af", margin: "3px 0 0" }}>{listing.address}{listing.suburb ? `, ${listing.suburb}` : ""}</p>
+          </div>
+          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "#9ca3af", padding: "4px" }}>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/></svg>
+          </button>
+        </div>
+
+        <div style={{ overflowY: "auto", flex: 1, padding: "20px 24px", display: "flex", flexDirection: "column", gap: "16px" }}>
+          {/* Portal list */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+            <p style={{ fontSize: "11px", fontWeight: 700, color: "#9ca3af", letterSpacing: "0.07em", textTransform: "uppercase" as const, margin: 0 }}>Property Portals</p>
+            {portals.map(p => {
+              const st = PORTAL_STATUS[status[p.id]];
+              return (
+                <div key={p.id} style={{ display: "flex", alignItems: "center", gap: "14px", padding: "12px 14px", background: "#f9fafb", border: `1px solid ${st.border}`, borderRadius: "10px", transition: "border-color 0.15s" }}>
+                  <span style={{ fontSize: "22px", lineHeight: 1 }}>{p.logo}</span>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: "13px", fontWeight: 600, color: "#111827" }}>{p.name}</div>
+                    <div style={{ fontSize: "11.5px", color: "#6b7280" }}>{p.desc}</div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "5px", marginTop: "4px" }}>
+                      <span style={{ width: "5px", height: "5px", borderRadius: "50%", background: st.color }} />
+                      <span style={{ fontSize: "11px", fontWeight: 600, color: st.color }}>{st.label}</span>
+                    </div>
+                  </div>
+                  {status[p.id] === "idle" && (
+                    <button onClick={() => publish(p.id)}
+                      style={{ fontSize: "12.5px", fontWeight: 600, color: "#fff", background: "#111827", border: "none", borderRadius: "7px", padding: "6px 14px", cursor: "pointer", fontFamily: "var(--font-inter)", whiteSpace: "nowrap" as const }}>
+                      Publish
+                    </button>
+                  )}
+                  {status[p.id] === "pending" && (
+                    <div style={{ fontSize: "12px", color: "#d97706", fontWeight: 600 }}>Publishing…</div>
+                  )}
+                  {status[p.id] === "live" && (
+                    <button onClick={() => withdraw(p.id)}
+                      style={{ fontSize: "12.5px", fontWeight: 600, color: "#dc2626", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: "7px", padding: "6px 14px", cursor: "pointer", fontFamily: "var(--font-inter)", whiteSpace: "nowrap" as const }}>
+                      Withdraw
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* API key notice */}
+          <div style={{ background: "#fffbeb", border: "1px solid #fde68a", borderRadius: "8px", padding: "10px 14px", display: "flex", gap: "10px" }}>
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0, marginTop: "1px", color: "#d97706" }}><path d="M8 2l6 12H2L8 2z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/><path d="M8 7v3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>
+            <div style={{ fontSize: "12px", color: "#92400e", lineHeight: 1.5 }}>
+              REA and Domain require API credentials. <strong>REA UploadAPI</strong> requires an agreement with REA Group. <strong>Domain API</strong> requires an agency API key from developer.domain.com.au. Connect them in Settings → Integrations.
+            </div>
+          </div>
+
+          {/* Social auto-post */}
+          <div>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" }}>
+              <p style={{ fontSize: "11px", fontWeight: 700, color: "#9ca3af", letterSpacing: "0.07em", textTransform: "uppercase" as const, margin: 0 }}>Social Media</p>
+              <button onClick={() => { setSocialDraft(SOCIAL_DRAFT); setShowSocial(v => !v); }}
+                style={{ fontSize: "12px", fontWeight: 600, color: "#6366f1", background: "#f0f0ff", border: "1px solid #c7d2fe", borderRadius: "6px", padding: "4px 10px", cursor: "pointer", fontFamily: "var(--font-inter)" }}>
+                {showSocial ? "Hide" : "Draft post with AI →"}
+              </button>
+            </div>
+            {showSocial && (
+              <div>
+                <textarea value={socialDraft} onChange={e => setSocialDraft(e.target.value)} rows={7}
+                  style={{ width: "100%", padding: "10px 12px", border: "1px solid #e5e7eb", borderRadius: "8px", fontSize: "13px", fontFamily: "var(--font-inter)", color: "#111827", outline: "none", resize: "vertical", boxSizing: "border-box" as const, lineHeight: 1.6 }} />
+                <div style={{ display: "flex", gap: "8px", marginTop: "8px" }}>
+                  {["Facebook", "Instagram"].map(s => (
+                    <button key={s} style={{ fontSize: "12.5px", fontWeight: 600, color: "#374151", background: "#f3f4f6", border: "none", borderRadius: "7px", padding: "6px 14px", cursor: "pointer", fontFamily: "var(--font-inter)" }}>
+                      Share to {s}
+                    </button>
+                  ))}
+                  <span style={{ fontSize: "11.5px", color: "#9ca3af", alignSelf: "center", marginLeft: "4px" }}>Requires Meta API connection</span>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div style={{ padding: "14px 24px 20px", borderTop: "1px solid #f3f4f6", display: "flex", justifyContent: "flex-end", flexShrink: 0 }}>
+          <button onClick={onClose} style={{ padding: "7px 18px", borderRadius: "8px", border: "none", background: "#111827", color: "#fff", fontSize: "13px", fontWeight: 600, cursor: "pointer", fontFamily: "var(--font-inter)" }}>Done</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── CRM Prospecting Page ─────────────────────────────────────────────────────
+
+const SEED_PROSPECTS: ProspectProperty[] = [
+  { id: "pp1", address: "14 Cliff Rd",   suburb: "Wollongong", soldPrice: "$1,250,000", soldDate: "2026-07-15", beds: "4", sqm: "620", ownerName: "", ownerPhone: "", status: "not-contacted", agent: "", daysAgo: 20 },
+  { id: "pp2", address: "8 Beach St",    suburb: "Wollongong", soldPrice: "$890,000",   soldDate: "2026-07-22", beds: "3", sqm: "480", ownerName: "", ownerPhone: "", status: "not-contacted", agent: "", daysAgo: 13 },
+  { id: "pp3", address: "22 Crown St",   suburb: "Wollongong", soldPrice: "$1,100,000", soldDate: "2026-07-28", beds: "4", sqm: "550", ownerName: "", ownerPhone: "", status: "contacted",     agent: "", daysAgo: 7  },
+  { id: "pp4", address: "5 Marine Dr",   suburb: "Thirroul",   soldPrice: "$1,420,000", soldDate: "2026-07-01", beds: "5", sqm: "720", ownerName: "", ownerPhone: "", status: "appraisal-booked", agent: "", daysAgo: 34 },
+  { id: "pp5", address: "31 Harbour St", suburb: "Wollongong", soldPrice: "$650,000",   soldDate: "2026-06-18", beds: "2", sqm: "390", ownerName: "", ownerPhone: "", status: "listed",       agent: "", daysAgo: 47 },
+];
+
+const PROSPECT_STATUS: Record<string, { label: string; color: string; bg: string; next?: string }> = {
+  "not-contacted":    { label: "Not Contacted",     color: "#6b7280", bg: "#f9fafb",   next: "contacted" },
+  "contacted":        { label: "Contacted",          color: "#d97706", bg: "#fffbeb",   next: "appraisal-booked" },
+  "appraisal-booked": { label: "Appraisal Booked",  color: "#2563eb", bg: "#eff6ff",   next: "listed" },
+  "listed":           { label: "Listed",             color: "#16a34a", bg: "#f0fdf4",   next: undefined },
+};
+
+function CrmProspectingPage({ staffRows }: { staffRows: StaffRow[] }) {
+  const [prospects, setProspects] = useState<ProspectProperty[]>(SEED_PROSPECTS);
+  const [view, setView] = useState<"list" | "map">("list");
+  const [letterProp, setLetterProp] = useState<ProspectProperty | null>(null);
+  const [showAdd, setShowAdd] = useState(false);
+  const [addForm, setAddForm] = useState({ address: "", suburb: "", soldPrice: "", soldDate: new Date().toISOString().slice(0, 10), beds: "", sqm: "" });
+  const [radiusFilter, setRadiusFilter] = useState("5");
+  const [search, setSearch] = useState("");
+
+  const counts = {
+    total: prospects.length,
+    notContacted: prospects.filter(p => p.status === "not-contacted").length,
+    contacted: prospects.filter(p => p.status === "contacted").length,
+    appraisalBooked: prospects.filter(p => p.status === "appraisal-booked").length,
+    listed: prospects.filter(p => p.status === "listed").length,
+  };
+
+  const filtered = prospects.filter(p => {
+    if (!search) return true;
+    const q = search.toLowerCase();
+    return p.address.toLowerCase().includes(q) || p.suburb.toLowerCase().includes(q);
+  });
+
+  function advance(id: string) {
+    const order: ProspectProperty["status"][] = ["not-contacted", "contacted", "appraisal-booked", "listed"];
+    setProspects(prev => prev.map(p => {
+      if (p.id !== id) return p;
+      const idx = order.indexOf(p.status);
+      return idx < order.length - 1 ? { ...p, status: order[idx + 1] } : p;
+    }));
+  }
+
+  function addProspect() {
+    if (!addForm.address.trim()) return;
+    setProspects(p => [...p, { ...addForm, id: `pp-${Date.now()}`, ownerName: "", ownerPhone: "", status: "not-contacted", agent: "", daysAgo: 0 }]);
+    setAddForm({ address: "", suburb: "", soldPrice: "", soldDate: new Date().toISOString().slice(0, 10), beds: "", sqm: "" });
+    setShowAdd(false);
+  }
+
+  const MAP_PINS = [
+    { x: "28%", y: "38%", price: "$1.25M", days: 20, suburb: "Wollongong" },
+    { x: "52%", y: "52%", price: "$890K",  days: 13, suburb: "Wollongong" },
+    { x: "63%", y: "33%", price: "$1.1M",  days: 7,  suburb: "Wollongong" },
+    { x: "38%", y: "67%", price: "$1.42M", days: 34, suburb: "Thirroul" },
+    { x: "72%", y: "58%", price: "$650K",  days: 47, suburb: "Wollongong" },
+    { x: "45%", y: "25%", price: "$980K",  days: 61, suburb: "Corrimal" },
+    { x: "82%", y: "42%", price: "$1.05M", days: 55, suburb: "Bulli" },
+  ];
+
+  const LETTER_BODY = (p: ProspectProperty) =>
+`Dear Neighbour,
+
+I recently had the pleasure of ${p.status === "listed" ? "listing" : "selling"} ${p.address}, ${p.suburb} for ${p.soldPrice} — a result that reflects the strong demand we're currently seeing in your area.
+
+With buyers still actively searching and stock remaining limited, similar properties are achieving excellent results. If you've been thinking about making a move, now could be an ideal time to understand what your home is worth.
+
+I'd love to offer you a complimentary, no-obligation appraisal at a time that suits you — providing a clear picture of your property's current value with no pressure, just honest advice.
+
+Feel free to give me a call, or scan the QR code below to book a time online.
+
+Warm regards,
+
+[Agent Name]
+[Agency Name] · [Phone] · [Email]`;
+
+  return (
+    <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "calc(100vh - 56px)", overflow: "hidden", padding: "20px 28px", gap: "14px" }}>
+      {/* Header */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+        <div>
+          <h1 style={{ fontSize: "1.1rem", fontWeight: 700, color: "#111827", letterSpacing: "-0.03em", margin: 0 }}>Prospecting Intelligence</h1>
+          <p style={{ fontSize: "12.5px", color: "#9ca3af", margin: "3px 0 0" }}>Turn every nearby sale into a new appraisal opportunity</p>
+        </div>
+        <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+          <div style={{ display: "flex", background: "#f3f4f6", borderRadius: "8px", padding: "3px", gap: "2px" }}>
+            {(["list", "map"] as const).map(v => (
+              <button key={v} onClick={() => setView(v)}
+                style={{ padding: "5px 12px", borderRadius: "6px", border: "none", cursor: "pointer", fontFamily: "var(--font-inter)", fontSize: "12.5px", fontWeight: 600, background: view === v ? "#111827" : "transparent", color: view === v ? "#fff" : "#6b7280", transition: "all 0.12s" }}>
+                {v === "list" ? "List" : "Map"}
+              </button>
+            ))}
+          </div>
+          <button onClick={() => setShowAdd(true)}
+            style={{ display: "flex", alignItems: "center", gap: "7px", padding: "7px 14px", background: "#111827", color: "#fff", border: "none", borderRadius: "8px", fontSize: "12.5px", fontWeight: 600, cursor: "pointer", fontFamily: "var(--font-inter)" }}
+            onMouseEnter={e => (e.currentTarget.style.background = "#1f2937")} onMouseLeave={e => (e.currentTarget.style.background = "#111827")}>
+            <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>
+            Add Sold Property
+          </button>
+        </div>
+      </div>
+
+      {/* KPIs */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "10px", flexShrink: 0 }}>
+        {[
+          { label: "In Radius",         value: counts.total,           color: "#111827" },
+          { label: "Not Contacted",      value: counts.notContacted,    color: "#ef4444" },
+          { label: "Contacted",          value: counts.contacted,       color: "#d97706" },
+          { label: "Appraisal Booked",   value: counts.appraisalBooked, color: "#2563eb" },
+          { label: "Converted to Listing", value: counts.listed,         color: "#16a34a" },
+        ].map(k => (
+          <div key={k.label} style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: "10px", padding: "12px 14px" }}>
+            <div style={{ fontSize: "20px", fontWeight: 700, color: k.color, letterSpacing: "-0.04em" }}>{k.value}</div>
+            <div style={{ fontSize: "11px", color: "#9ca3af", marginTop: "2px", lineHeight: 1.3 }}>{k.label}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* AI panel */}
+      <AiAutomationPanel
+        automations={[
+          { title: "Nearby Sale Trigger", description: "When a property sells, auto-identify every owner within 500m and queue them for prospecting outreach", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 2l5 5H3l5-5z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/><rect x="5" y="7" width="6" height="7" rx="1" stroke="currentColor" strokeWidth="1.3"/></svg> },
+          { title: '"Who\'s Next to Sell"', description: "AI ranks nearby owners by likelihood to list based on hold period, suburb trends, and comparable sales activity", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 1l1.5 3.5L13 6l-3.5 1.5L8 11l-1.5-3.5L3 6l3.5-1.5L8 1z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/></svg> },
+          { title: "Auto Letter Drop", description: "One-click AI-written personalised letter per prospect, with your branding and the nearby comparable result", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M2 4l6 5 6-5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/><rect x="1" y="3" width="14" height="10" rx="2" stroke="currentColor" strokeWidth="1.3"/></svg> },
+        ]}
+        insight={{ title: "Connect CoreLogic or PropTrack for live data", body: "With a property data feed connected, RealComply automatically ingests every settled sale in any suburb and builds your prospecting pipeline in real time — no manual entry needed." }}
+      />
+
+      {/* Radius filter */}
+      <div style={{ display: "flex", alignItems: "center", gap: "12px", flexShrink: 0 }}>
+        <span style={{ fontSize: "12.5px", color: "#374151", fontWeight: 500, whiteSpace: "nowrap" as const }}>Search radius:</span>
+        {["1", "2", "5", "10", "20"].map(r => (
+          <button key={r} onClick={() => setRadiusFilter(r)}
+            style={{ padding: "4px 12px", borderRadius: "100px", border: "1px solid", fontSize: "12px", fontWeight: 600, cursor: "pointer", fontFamily: "var(--font-inter)", background: radiusFilter === r ? "#111827" : "#fff", color: radiusFilter === r ? "#fff" : "#6b7280", borderColor: radiusFilter === r ? "#111827" : "#e5e7eb", transition: "all 0.1s" }}>
+            {r}km
+          </button>
+        ))}
+        <div style={{ flex: 1, position: "relative" }}>
+          <svg style={{ position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)", color: "#9ca3af", pointerEvents: "none" }} width="13" height="13" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="5" stroke="currentColor" strokeWidth="1.5"/><path d="M11 11l3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Filter by address or suburb…"
+            style={{ width: "100%", padding: "6px 12px 6px 28px", border: "1px solid #e5e7eb", borderRadius: "7px", fontSize: "12.5px", fontFamily: "var(--font-inter)", outline: "none", boxSizing: "border-box" as const }} />
+        </div>
+      </div>
+
+      {/* Main content */}
+      {view === "map" ? (
+        <div style={{ flex: 1, background: "#eef0f3", borderRadius: "12px", border: "1px solid #e5e7eb", position: "relative", overflow: "hidden", minHeight: 0 }}>
+          {/* Grid bg simulating map */}
+          <div style={{ position: "absolute", inset: 0, backgroundImage: "repeating-linear-gradient(0deg, #d1d5db33 0, #d1d5db33 1px, transparent 1px, transparent 48px), repeating-linear-gradient(90deg, #d1d5db33 0, #d1d5db33 1px, transparent 1px, transparent 48px)" }} />
+          {/* Roads simulation */}
+          <div style={{ position: "absolute", top: "45%", left: 0, right: 0, height: "3px", background: "#fff", opacity: 0.6 }} />
+          <div style={{ position: "absolute", top: "65%", left: 0, right: 0, height: "2px", background: "#fff", opacity: 0.4 }} />
+          <div style={{ position: "absolute", left: "35%", top: 0, bottom: 0, width: "3px", background: "#fff", opacity: 0.5 }} />
+          <div style={{ position: "absolute", left: "70%", top: 0, bottom: 0, width: "2px", background: "#fff", opacity: 0.35 }} />
+          {/* Radius circle */}
+          <div style={{ position: "absolute", left: "50%", top: "48%", width: "260px", height: "260px", borderRadius: "50%", border: "2px dashed #2563eb44", background: "#2563eb08", transform: "translate(-50%, -50%)" }} />
+          {/* Pins */}
+          {MAP_PINS.map((pin, i) => (
+            <div key={i} style={{ position: "absolute", left: pin.x, top: pin.y, transform: "translate(-50%, -100%)", cursor: "pointer", zIndex: 2 }}>
+              <div style={{ background: i < 3 ? "#111827" : "#6b7280", color: "#fff", fontSize: "11px", fontWeight: 700, padding: "4px 8px", borderRadius: "6px", whiteSpace: "nowrap" as const, boxShadow: "0 2px 8px rgba(0,0,0,0.2)" }}>
+                {pin.price} · {pin.days}d
+              </div>
+              <div style={{ width: "2px", height: "8px", background: i < 3 ? "#111827" : "#6b7280", margin: "0 auto" }} />
+              <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: i < 3 ? "#111827" : "#6b7280", margin: "0 auto" }} />
+            </div>
+          ))}
+          {/* Centre marker */}
+          <div style={{ position: "absolute", left: "50%", top: "48%", transform: "translate(-50%, -50%)", width: "14px", height: "14px", borderRadius: "50%", background: "#2563eb", border: "3px solid #fff", boxShadow: "0 2px 8px rgba(37,99,235,0.4)", zIndex: 3 }} />
+          {/* Legend */}
+          <div style={{ position: "absolute", bottom: "16px", left: "16px", background: "#fff", border: "1px solid #e5e7eb", borderRadius: "10px", padding: "10px 14px", display: "flex", flexDirection: "column", gap: "6px", boxShadow: "0 4px 16px rgba(0,0,0,0.08)" }}>
+            <div style={{ fontSize: "11px", fontWeight: 700, color: "#374151", letterSpacing: "0.04em" }}>LEGEND</div>
+            <div style={{ display: "flex", alignItems: "center", gap: "7px", fontSize: "12px", color: "#374151" }}>
+              <span style={{ width: "10px", height: "10px", borderRadius: "50%", background: "#111827", display: "inline-block" }} /> Sold (recent)
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: "7px", fontSize: "12px", color: "#374151" }}>
+              <span style={{ width: "10px", height: "10px", borderRadius: "50%", background: "#6b7280", display: "inline-block" }} /> Sold (older)
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: "7px", fontSize: "12px", color: "#374151" }}>
+              <span style={{ width: "10px", height: "10px", borderRadius: "50%", background: "#2563eb", display: "inline-block" }} /> Your base
+            </div>
+          </div>
+          {/* Connect notice */}
+          <div style={{ position: "absolute", bottom: "16px", right: "16px", background: "#fff", border: "1px solid #fde68a", borderRadius: "10px", padding: "10px 14px", maxWidth: "280px", boxShadow: "0 4px 16px rgba(0,0,0,0.08)" }}>
+            <div style={{ fontSize: "12.5px", fontWeight: 600, color: "#92400e", marginBottom: "4px" }}>Live map preview</div>
+            <div style={{ fontSize: "12px", color: "#78350f", lineHeight: 1.4, marginBottom: "8px" }}>Connect a Mapbox API key and a property data feed to see real sold properties on an interactive map.</div>
+            <button style={{ fontSize: "12px", fontWeight: 600, color: "#fff", background: "#111827", border: "none", borderRadius: "6px", padding: "5px 12px", cursor: "pointer", fontFamily: "var(--font-inter)" }}>Connect Mapbox →</button>
+          </div>
+        </div>
+      ) : (
+        <div style={{ flex: 1, overflow: "auto", background: "#fff", border: "1px solid #e5e7eb", borderRadius: "12px" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <thead>
+              <tr style={{ borderBottom: "1px solid #f3f4f6" }}>
+                {["Address", "Suburb", "Sold Price", "Days Since", "Beds", "Status", ""].map(h => (
+                  <th key={h} style={{ padding: "10px 14px", fontSize: "11px", fontWeight: 700, color: "#9ca3af", textAlign: "left" as const, letterSpacing: "0.04em", textTransform: "uppercase" as const, whiteSpace: "nowrap" as const }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.length === 0 ? (
+                <tr><td colSpan={7} style={{ padding: "48px", textAlign: "center" as const, color: "#9ca3af", fontSize: "13px" }}>No sold properties found.</td></tr>
+              ) : filtered.map(p => {
+                const sc = PROSPECT_STATUS[p.status];
+                const nextStatus = sc.next ? PROSPECT_STATUS[sc.next] : null;
+                return (
+                  <tr key={p.id} style={{ borderBottom: "1px solid #f9fafb" }}
+                    onMouseEnter={e => (e.currentTarget.style.background = "#f9fafb")}
+                    onMouseLeave={e => (e.currentTarget.style.background = "")}>
+                    <td style={{ padding: "10px 14px", fontSize: "13px", fontWeight: 600, color: "#111827" }}>{p.address}</td>
+                    <td style={{ padding: "10px 14px", fontSize: "12.5px", color: "#374151" }}>{p.suburb}</td>
+                    <td style={{ padding: "10px 14px", fontSize: "13px", fontWeight: 600, color: "#111827", fontVariantNumeric: "tabular-nums" }}>{p.soldPrice}</td>
+                    <td style={{ padding: "10px 14px", fontSize: "12px", color: p.daysAgo < 14 ? "#dc2626" : p.daysAgo < 30 ? "#d97706" : "#6b7280" }}>
+                      {p.daysAgo === 0 ? "Today" : `${p.daysAgo}d ago`}
+                    </td>
+                    <td style={{ padding: "10px 14px", fontSize: "12.5px", color: "#374151" }}>{p.beds ? `${p.beds} bed` : "—"}</td>
+                    <td style={{ padding: "10px 14px" }}>
+                      <span style={{ fontSize: "11px", fontWeight: 700, padding: "2px 8px", borderRadius: "4px", background: sc.bg, color: sc.color, whiteSpace: "nowrap" as const }}>{sc.label}</span>
+                    </td>
+                    <td style={{ padding: "10px 14px" }}>
+                      <div style={{ display: "flex", gap: "6px", justifyContent: "flex-end" }}>
+                        {sc.next && nextStatus && (
+                          <button onClick={() => advance(p.id)}
+                            style={{ fontSize: "11.5px", fontWeight: 600, color: nextStatus.color, background: nextStatus.bg, border: `1px solid ${nextStatus.color}33`, borderRadius: "6px", padding: "4px 10px", cursor: "pointer", fontFamily: "var(--font-inter)", whiteSpace: "nowrap" as const }}>
+                            Mark {PROSPECT_STATUS[sc.next].label} →
+                          </button>
+                        )}
+                        <button onClick={() => setLetterProp(p)}
+                          style={{ fontSize: "11.5px", fontWeight: 600, color: "#6366f1", background: "#f0f0ff", border: "none", borderRadius: "6px", padding: "4px 10px", cursor: "pointer", fontFamily: "var(--font-inter)", whiteSpace: "nowrap" as const }}>
+                          Letter Drop
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Add Sold Property modal */}
+      {showAdd && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}
+          onClick={e => { if (e.target === e.currentTarget) setShowAdd(false); }}>
+          <div style={{ background: "#fff", borderRadius: "14px", width: "100%", maxWidth: "460px", boxShadow: "0 24px 64px rgba(0,0,0,0.18)" }}>
+            <div style={{ padding: "20px 24px 16px", borderBottom: "1px solid #f3f4f6", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <h2 style={{ fontSize: "15px", fontWeight: 700, color: "#111827", margin: 0 }}>Add Sold Property</h2>
+              <button onClick={() => setShowAdd(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "#9ca3af", padding: "4px" }}>
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/></svg>
+              </button>
+            </div>
+            <div style={{ padding: "20px 24px", display: "flex", flexDirection: "column", gap: "12px" }}>
+              {([
+                { label: "Property Address", key: "address" as const, placeholder: "14 Example St" },
+                { label: "Suburb",           key: "suburb" as const,  placeholder: "Wollongong" },
+                { label: "Sold Price",        key: "soldPrice" as const, placeholder: "$950,000" },
+                { label: "Settled Date",      key: "soldDate" as const,  type: "date" },
+                { label: "Bedrooms",          key: "beds" as const,    placeholder: "4" },
+                { label: "Land Size (m²)",    key: "sqm" as const,     placeholder: "600" },
+              ]).map(({ label, key, placeholder, type }) => (
+                <div key={key}>
+                  <label style={{ fontSize: "11.5px", fontWeight: 600, color: "#6b7280", display: "block", marginBottom: "5px" }}>{label}</label>
+                  <input type={type ?? "text"} value={addForm[key]} onChange={e => setAddForm(f => ({ ...f, [key]: e.target.value }))} placeholder={placeholder}
+                    style={{ width: "100%", padding: "7px 10px", border: "1px solid #e5e7eb", borderRadius: "7px", fontSize: "13px", fontFamily: "var(--font-inter)", outline: "none", boxSizing: "border-box" as const }} />
+                </div>
+              ))}
+            </div>
+            <div style={{ padding: "14px 24px 20px", borderTop: "1px solid #f3f4f6", display: "flex", justifyContent: "flex-end", gap: "10px" }}>
+              <button onClick={() => setShowAdd(false)} style={{ padding: "7px 16px", borderRadius: "8px", border: "1px solid #e5e7eb", background: "#fff", fontSize: "13px", fontWeight: 500, cursor: "pointer", fontFamily: "var(--font-inter)", color: "#374151" }}>Cancel</button>
+              <button onClick={addProspect} style={{ padding: "7px 18px", borderRadius: "8px", border: "none", background: "#111827", color: "#fff", fontSize: "13px", fontWeight: 600, cursor: "pointer", fontFamily: "var(--font-inter)" }}>Add Property</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Letter Drop modal */}
+      {letterProp && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}
+          onClick={e => { if (e.target === e.currentTarget) setLetterProp(null); }}>
+          <div style={{ background: "#fff", borderRadius: "14px", width: "100%", maxWidth: "580px", maxHeight: "90vh", display: "flex", flexDirection: "column", boxShadow: "0 32px 80px rgba(0,0,0,0.2)" }}>
+            <div style={{ padding: "20px 24px 16px", borderBottom: "1px solid #f3f4f6", display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexShrink: 0 }}>
+              <div>
+                <h2 style={{ fontSize: "15px", fontWeight: 700, color: "#111827", margin: 0 }}>Letter Drop Preview</h2>
+                <p style={{ fontSize: "12px", color: "#9ca3af", margin: "2px 0 0" }}>Targeting neighbours of {letterProp.address} · AI-drafted</p>
+              </div>
+              <button onClick={() => setLetterProp(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "#9ca3af", padding: "4px" }}>
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/></svg>
+              </button>
+            </div>
+            <div style={{ overflowY: "auto", flex: 1, padding: "24px" }}>
+              <div style={{ background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: "10px", padding: "28px 32px", fontFamily: "Georgia, 'Times New Roman', serif", fontSize: "13.5px", lineHeight: 1.75, color: "#1f2937", whiteSpace: "pre-line" as const }}>
+                {LETTER_BODY(letterProp)}
+              </div>
+            </div>
+            <div style={{ padding: "14px 24px 20px", borderTop: "1px solid #f3f4f6", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px", flexShrink: 0 }}>
+              <span style={{ fontSize: "12px", color: "#9ca3af" }}>Connect AI API to personalise with owner name & local data</span>
+              <div style={{ display: "flex", gap: "8px" }}>
+                <button onClick={() => setLetterProp(null)} style={{ padding: "7px 14px", borderRadius: "8px", border: "1px solid #e5e7eb", background: "#fff", fontSize: "13px", fontWeight: 500, cursor: "pointer", fontFamily: "var(--font-inter)", color: "#374151" }}>Close</button>
+                <button style={{ padding: "7px 18px", borderRadius: "8px", border: "none", background: "#111827", color: "#fff", fontSize: "13px", fontWeight: 600, cursor: "pointer", fontFamily: "var(--font-inter)" }}>Download PDF</button>
+              </div>
             </div>
           </div>
         </div>
@@ -9145,6 +10033,9 @@ function CrmSubPage({ moduleId, submodule, crmListings, onAddListing, staffRows,
   };
 
   // Route functional pages
+  if (moduleId === "contacts") return <CrmContactsPage staffRows={staffRows} />;
+  if (moduleId === "appraisals") return <CrmAppraisalKanbanPage staffRows={staffRows} />;
+  if (moduleId === "prospecting") return <CrmProspectingPage staffRows={staffRows} />;
   if (moduleId === "listings" && (submodule === "Active Listings" || submodule === null)) {
     return <CrmActiveListingsPage listings={crmListings} onAddListing={onAddListing} staffRows={staffRows} />;
   }
@@ -9647,7 +10538,8 @@ export default function DashboardPage() {
               { id: "appraisals", label: "Appraisals", icon: <svg width="15" height="15" viewBox="0 0 18 18" fill="none"><path d="M2 14V6l7-4 7 4v8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><rect x="6" y="9" width="6" height="5" rx="1" stroke="currentColor" strokeWidth="1.4"/></svg>,   children: ["All Appraisals", "Scheduled", "Completed", "Follow Up"] },
               { id: "listings",   label: "Listings",   icon: <svg width="15" height="15" viewBox="0 0 18 18" fill="none"><rect x="2" y="2" width="14" height="14" rx="2" stroke="currentColor" strokeWidth="1.5"/><path d="M5 6h8M5 9h6M5 12h4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>,   children: ["Active Listings", "Under Offer", "Sold / Leased", "Archive"] },
               { id: "marketing",  label: "Marketing",  icon: <svg width="15" height="15" viewBox="0 0 18 18" fill="none"><path d="M3 11V7l10-4v12L3 11z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/><path d="M3 11v3l2-1" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>,   children: ["Campaigns", "Email Templates", "Social Media", "Analytics"] },
-              { id: "team",       label: "Team",       icon: <svg width="15" height="15" viewBox="0 0 18 18" fill="none"><circle cx="6" cy="6" r="2.5" stroke="currentColor" strokeWidth="1.4"/><circle cx="12" cy="6" r="2.5" stroke="currentColor" strokeWidth="1.4"/><path d="M1 15c0-2.485 2.239-4.5 5-4.5s5 2.015 5 4.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/><path d="M12 10.5c2.761 0 5 2.015 5 4.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>,   children: ["Overview", "Performance", "Leads", "Activity Log"] },
+              { id: "team",        label: "Team",        icon: <svg width="15" height="15" viewBox="0 0 18 18" fill="none"><circle cx="6" cy="6" r="2.5" stroke="currentColor" strokeWidth="1.4"/><circle cx="12" cy="6" r="2.5" stroke="currentColor" strokeWidth="1.4"/><path d="M1 15c0-2.485 2.239-4.5 5-4.5s5 2.015 5 4.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/><path d="M12 10.5c2.761 0 5 2.015 5 4.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>,   children: ["Overview", "Performance", "Leads", "Activity Log"] },
+              { id: "prospecting", label: "Prospecting", icon: <svg width="15" height="15" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="8" r="3" stroke="currentColor" strokeWidth="1.4"/><path d="M9 1v2M9 13v2M1 8h2M13 8h2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/><path d="M9 11c-3 0-6 1.5-6 4h12c0-2.5-3-4-6-4z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/></svg>, children: ["Map View", "Radius Prospecting", "Who's Next", "Letter Drop", "Sequences"] },
             ] as { id: string; label: string; icon: React.ReactNode; children: string[] }[];
             const activeMod = crmModules.find(m => m.id === crmModule) ?? null;
             return (
