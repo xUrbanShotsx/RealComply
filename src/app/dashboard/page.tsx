@@ -8299,6 +8299,519 @@ function StaticSubPage({ label, agencyName, agencyAbn, userEmail, userId, orgOwn
   }
 }
 
+// --- CRM Sub Pages ---
+
+function CrmKpiTile({ label, value, sub, color = "#111827" }: { label: string; value: string; sub: string; color?: string }) {
+  return (
+    <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: "10px", padding: "16px 20px", display: "flex", flexDirection: "column", gap: "6px" }}>
+      <span style={{ fontSize: "12px", color: "#6b7280", fontWeight: 500 }}>{label}</span>
+      <p style={{ fontSize: "1.6rem", fontWeight: 700, color, letterSpacing: "-0.04em", margin: 0, lineHeight: 1 }}>{value}</p>
+      <span style={{ fontSize: "11.5px", color: "#9ca3af" }}>{sub}</span>
+    </div>
+  );
+}
+
+type CrmCol = { key: string; label: string; width?: string };
+
+function CrmTable({ cols, emptyLabel }: { cols: CrmCol[]; emptyLabel: string }) {
+  return (
+    <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: "10px", overflow: "hidden", flex: 1, display: "flex", flexDirection: "column" }}>
+      <table style={{ width: "100%", borderCollapse: "collapse" }}>
+        <thead>
+          <tr style={{ borderBottom: "1px solid #f3f4f6" }}>
+            {cols.map(c => (
+              <th key={c.key} style={{ padding: "11px 16px", textAlign: "left", fontSize: "11.5px", fontWeight: 600, color: "#6b7280", letterSpacing: "0.02em", textTransform: "uppercase", width: c.width }}>
+                {c.label}
+              </th>
+            ))}
+          </tr>
+        </thead>
+      </table>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "8px", padding: "40px 20px" }}>
+        <div style={{ width: "36px", height: "36px", borderRadius: "9px", background: "#f3f4f6", display: "flex", alignItems: "center", justifyContent: "center", color: "#9ca3af" }}>
+          <svg width="16" height="16" viewBox="0 0 18 18" fill="none"><rect x="2" y="2" width="14" height="14" rx="2" stroke="currentColor" strokeWidth="1.4"/><path d="M5 6h8M5 9h6M5 12h4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>
+        </div>
+        <p style={{ fontSize: "13px", fontWeight: 600, color: "#374151", margin: 0 }}>{emptyLabel}</p>
+        <p style={{ fontSize: "12px", color: "#9ca3af", margin: 0 }}>Records will appear here once added.</p>
+      </div>
+    </div>
+  );
+}
+
+function CrmSubPage({ moduleId, submodule }: { moduleId: string | null; submodule: string | null }) {
+  if (!moduleId) {
+    return (
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "12px", padding: "40px" }}>
+        <div style={{ width: "48px", height: "48px", borderRadius: "12px", background: "#f3f4f6", display: "flex", alignItems: "center", justifyContent: "center", color: "#9ca3af" }}>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="3" stroke="currentColor" strokeWidth="1.5"/><path d="M8 9h8M8 13h5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>
+        </div>
+        <p style={{ fontSize: "15px", fontWeight: 700, color: "#111827", margin: 0, letterSpacing: "-0.02em" }}>CRM</p>
+        <p style={{ fontSize: "13px", color: "#9ca3af", margin: 0, maxWidth: "300px", textAlign: "center", lineHeight: 1.6 }}>Select a module from the sidebar to get started.</p>
+      </div>
+    );
+  }
+
+  type PageConfig = {
+    kpis: { label: string; value: string; sub: string; color?: string }[];
+    cols: CrmCol[];
+    emptyLabel: string;
+    action: string;
+  };
+
+  const configs: Record<string, Record<string, PageConfig>> = {
+    contacts: {
+      "All Contacts": {
+        kpis: [
+          { label: "Total Contacts", value: "0", sub: "In database" },
+          { label: "Added This Month", value: "0", sub: "New records" },
+          { label: "Buyers", value: "0", sub: "Active buyer leads" },
+          { label: "Sellers", value: "0", sub: "Active seller leads" },
+        ],
+        cols: [
+          { key: "name", label: "Name", width: "20%" },
+          { key: "type", label: "Type", width: "12%" },
+          { key: "email", label: "Email", width: "22%" },
+          { key: "phone", label: "Phone", width: "15%" },
+          { key: "source", label: "Source", width: "13%" },
+          { key: "lastActivity", label: "Last Activity", width: "12%" },
+          { key: "tag", label: "Tag", width: "6%" },
+        ],
+        emptyLabel: "No contacts yet",
+        action: "Add Contact",
+      },
+      "Buyers": {
+        kpis: [
+          { label: "Active Buyers", value: "0", sub: "Registered" },
+          { label: "Pre-Approved", value: "0", sub: "Finance ready" },
+          { label: "Enquiries This Week", value: "0", sub: "New leads" },
+          { label: "Inspections Attended", value: "0", sub: "This month" },
+        ],
+        cols: [
+          { key: "name", label: "Name", width: "20%" },
+          { key: "budget", label: "Budget", width: "14%" },
+          { key: "areas", label: "Preferred Areas", width: "22%" },
+          { key: "preApproved", label: "Pre-Approved", width: "13%" },
+          { key: "source", label: "Source", width: "13%" },
+          { key: "lastContact", label: "Last Contact", width: "12%" },
+          { key: "status", label: "Status", width: "6%" },
+        ],
+        emptyLabel: "No buyer contacts",
+        action: "Add Buyer",
+      },
+      "Sellers": {
+        kpis: [
+          { label: "Active Sellers", value: "0", sub: "On file" },
+          { label: "Appraisal Stage", value: "0", sub: "Not yet listed" },
+          { label: "Listed", value: "0", sub: "Currently on market" },
+          { label: "Sold This Month", value: "0", sub: "Completed" },
+        ],
+        cols: [
+          { key: "name", label: "Name", width: "20%" },
+          { key: "property", label: "Property", width: "24%" },
+          { key: "stage", label: "Stage", width: "14%" },
+          { key: "agent", label: "Agent", width: "14%" },
+          { key: "listed", label: "Listed Date", width: "12%" },
+          { key: "lastContact", label: "Last Contact", width: "10%" },
+          { key: "status", label: "Status", width: "6%" },
+        ],
+        emptyLabel: "No seller contacts",
+        action: "Add Seller",
+      },
+      "Landlords": {
+        kpis: [
+          { label: "Total Landlords", value: "0", sub: "On file" },
+          { label: "Active Properties", value: "0", sub: "Under management" },
+          { label: "Vacant", value: "0", sub: "Needs tenant" },
+          { label: "Reviews Due", value: "0", sub: "This quarter" },
+        ],
+        cols: [
+          { key: "name", label: "Name", width: "20%" },
+          { key: "properties", label: "Properties", width: "8%" },
+          { key: "address", label: "Primary Address", width: "24%" },
+          { key: "agent", label: "Property Manager", width: "16%" },
+          { key: "lastContact", label: "Last Contact", width: "14%" },
+          { key: "review", label: "Review Due", width: "12%" },
+          { key: "status", label: "Status", width: "6%" },
+        ],
+        emptyLabel: "No landlord contacts",
+        action: "Add Landlord",
+      },
+      "Tenants": {
+        kpis: [
+          { label: "Active Tenants", value: "0", sub: "Current leases" },
+          { label: "Leases Expiring", value: "0", sub: "Next 90 days" },
+          { label: "Arrears", value: "0", sub: "Behind on rent" },
+          { label: "Applications", value: "0", sub: "Under review" },
+        ],
+        cols: [
+          { key: "name", label: "Name", width: "18%" },
+          { key: "property", label: "Property", width: "24%" },
+          { key: "rent", label: "Weekly Rent", width: "12%" },
+          { key: "leaseEnd", label: "Lease End", width: "13%" },
+          { key: "agent", label: "Manager", width: "14%" },
+          { key: "arrears", label: "Arrears", width: "10%" },
+          { key: "status", label: "Status", width: "9%" },
+        ],
+        emptyLabel: "No tenant contacts",
+        action: "Add Tenant",
+      },
+    },
+    appraisals: {
+      "All Appraisals": {
+        kpis: [
+          { label: "Total Appraisals", value: "0", sub: "All time" },
+          { label: "This Month", value: "0", sub: "Completed" },
+          { label: "Listed After Appraisal", value: "0%", sub: "Conversion rate" },
+          { label: "Scheduled", value: "0", sub: "Upcoming" },
+        ],
+        cols: [
+          { key: "address", label: "Property", width: "26%" },
+          { key: "owner", label: "Owner", width: "16%" },
+          { key: "agent", label: "Agent", width: "14%" },
+          { key: "date", label: "Date", width: "13%" },
+          { key: "priceRange", label: "Price Range", width: "13%" },
+          { key: "outcome", label: "Outcome", width: "12%" },
+          { key: "status", label: "Status", width: "6%" },
+        ],
+        emptyLabel: "No appraisals recorded",
+        action: "New Appraisal",
+      },
+      "Scheduled": {
+        kpis: [
+          { label: "This Week", value: "0", sub: "Upcoming" },
+          { label: "Next Week", value: "0", sub: "Scheduled" },
+          { label: "Unconfirmed", value: "0", sub: "Awaiting response" },
+          { label: "Avg. per Week", value: "0", sub: "Rolling 4-week" },
+        ],
+        cols: [
+          { key: "address", label: "Property", width: "26%" },
+          { key: "owner", label: "Owner", width: "16%" },
+          { key: "agent", label: "Agent", width: "14%" },
+          { key: "date", label: "Date & Time", width: "16%" },
+          { key: "type", label: "Type", width: "12%" },
+          { key: "confirmed", label: "Confirmed", width: "10%" },
+          { key: "actions", label: "", width: "6%" },
+        ],
+        emptyLabel: "No scheduled appraisals",
+        action: "Schedule Appraisal",
+      },
+      "Completed": {
+        kpis: [
+          { label: "Completed", value: "0", sub: "All time" },
+          { label: "Listed", value: "0", sub: "Converted to listing" },
+          { label: "Lost", value: "0", sub: "Did not list" },
+          { label: "Conversion Rate", value: "0%", sub: "vs industry avg 45%" },
+        ],
+        cols: [
+          { key: "address", label: "Property", width: "24%" },
+          { key: "owner", label: "Owner", width: "14%" },
+          { key: "agent", label: "Agent", width: "13%" },
+          { key: "date", label: "Appraisal Date", width: "13%" },
+          { key: "priceRange", label: "Price Range", width: "13%" },
+          { key: "listed", label: "Listed", width: "10%" },
+          { key: "outcome", label: "Outcome", width: "13%" },
+        ],
+        emptyLabel: "No completed appraisals",
+        action: "New Appraisal",
+      },
+      "Follow Up": {
+        kpis: [
+          { label: "Needs Follow Up", value: "0", sub: "Action required" },
+          { label: "Overdue", value: "0", sub: "Past due date", color: "#ef4444" },
+          { label: "Due Today", value: "0", sub: "Follow up today" },
+          { label: "Due This Week", value: "0", sub: "Upcoming" },
+        ],
+        cols: [
+          { key: "address", label: "Property", width: "24%" },
+          { key: "owner", label: "Owner", width: "16%" },
+          { key: "agent", label: "Agent", width: "13%" },
+          { key: "appraisalDate", label: "Appraised", width: "13%" },
+          { key: "followUpDate", label: "Follow Up Due", width: "13%" },
+          { key: "notes", label: "Notes", width: "15%" },
+          { key: "status", label: "Status", width: "6%" },
+        ],
+        emptyLabel: "No follow ups pending",
+        action: "Add Follow Up",
+      },
+    },
+    listings: {
+      "Active Listings": {
+        kpis: [
+          { label: "Active", value: "0", sub: "On market now" },
+          { label: "Avg. Days on Market", value: "—", sub: "All active" },
+          { label: "Total Listed Value", value: "$0", sub: "Combined asking price" },
+          { label: "Inspections This Week", value: "0", sub: "Scheduled" },
+        ],
+        cols: [
+          { key: "address", label: "Property", width: "26%" },
+          { key: "price", label: "Price", width: "13%" },
+          { key: "type", label: "Type", width: "10%" },
+          { key: "agent", label: "Agent", width: "13%" },
+          { key: "listed", label: "Listed", width: "12%" },
+          { key: "dom", label: "Days on Mkt", width: "11%" },
+          { key: "inspections", label: "Inspections", width: "9%" },
+          { key: "status", label: "Status", width: "6%" },
+        ],
+        emptyLabel: "No active listings",
+        action: "Add Listing",
+      },
+      "Under Offer": {
+        kpis: [
+          { label: "Under Offer", value: "0", sub: "In negotiation" },
+          { label: "Avg. Offer Price", value: "$0", sub: "vs asking" },
+          { label: "Avg. Days to Offer", value: "—", sub: "From listing" },
+          { label: "Unconditional", value: "0", sub: "Finance cleared" },
+        ],
+        cols: [
+          { key: "address", label: "Property", width: "24%" },
+          { key: "asking", label: "Asking Price", width: "13%" },
+          { key: "offer", label: "Offer Price", width: "13%" },
+          { key: "agent", label: "Agent", width: "13%" },
+          { key: "offerDate", label: "Offer Date", width: "12%" },
+          { key: "settlement", label: "Settlement", width: "12%" },
+          { key: "finance", label: "Finance", width: "7%" },
+          { key: "status", label: "Status", width: "6%" },
+        ],
+        emptyLabel: "No listings under offer",
+        action: "Add Listing",
+      },
+      "Sold / Leased": {
+        kpis: [
+          { label: "Sold This Month", value: "0", sub: "Settled & unconditional" },
+          { label: "Total Sales Value", value: "$0", sub: "This month" },
+          { label: "Leased This Month", value: "0", sub: "New tenancies" },
+          { label: "Avg. Sale Price", value: "$0", sub: "This month" },
+        ],
+        cols: [
+          { key: "address", label: "Property", width: "24%" },
+          { key: "salePrice", label: "Sale / Rent", width: "13%" },
+          { key: "type", label: "Type", width: "9%" },
+          { key: "agent", label: "Agent", width: "13%" },
+          { key: "listedDate", label: "Listed", width: "11%" },
+          { key: "soldDate", label: "Sold / Leased", width: "13%" },
+          { key: "dom", label: "Days on Mkt", width: "11%" },
+          { key: "status", label: "Type", width: "6%" },
+        ],
+        emptyLabel: "No sold or leased records",
+        action: "Add Record",
+      },
+      "Archive": {
+        kpis: [
+          { label: "Archived Listings", value: "0", sub: "Withdrawn / expired" },
+          { label: "Expired", value: "0", sub: "Past listing period" },
+          { label: "Withdrawn", value: "0", sub: "Owner withdrew" },
+          { label: "Re-listed", value: "0", sub: "Back on market" },
+        ],
+        cols: [
+          { key: "address", label: "Property", width: "26%" },
+          { key: "asking", label: "Last Price", width: "13%" },
+          { key: "agent", label: "Agent", width: "13%" },
+          { key: "listed", label: "Originally Listed", width: "14%" },
+          { key: "archived", label: "Archived", width: "13%" },
+          { key: "reason", label: "Reason", width: "13%" },
+          { key: "actions", label: "", width: "8%" },
+        ],
+        emptyLabel: "No archived listings",
+        action: "Add Listing",
+      },
+    },
+    marketing: {
+      "Campaigns": {
+        kpis: [
+          { label: "Active Campaigns", value: "0", sub: "Running now" },
+          { label: "Sent This Month", value: "0", sub: "Total sends" },
+          { label: "Avg. Open Rate", value: "0%", sub: "vs 22% benchmark" },
+          { label: "Avg. Click Rate", value: "0%", sub: "vs 3% benchmark" },
+        ],
+        cols: [
+          { key: "name", label: "Campaign", width: "24%" },
+          { key: "type", label: "Type", width: "12%" },
+          { key: "audience", label: "Audience", width: "14%" },
+          { key: "sent", label: "Sent", width: "10%" },
+          { key: "opens", label: "Open Rate", width: "11%" },
+          { key: "clicks", label: "Click Rate", width: "11%" },
+          { key: "created", label: "Created", width: "12%" },
+          { key: "status", label: "Status", width: "6%" },
+        ],
+        emptyLabel: "No campaigns yet",
+        action: "New Campaign",
+      },
+      "Email Templates": {
+        kpis: [
+          { label: "Templates", value: "0", sub: "Saved" },
+          { label: "Most Used", value: "—", sub: "Last 30 days" },
+          { label: "Avg. Open Rate", value: "0%", sub: "Across templates" },
+          { label: "Last Created", value: "—", sub: "" },
+        ],
+        cols: [
+          { key: "name", label: "Template Name", width: "28%" },
+          { key: "category", label: "Category", width: "15%" },
+          { key: "subject", label: "Subject Line", width: "28%" },
+          { key: "lastUsed", label: "Last Used", width: "14%" },
+          { key: "uses", label: "Uses", width: "9%" },
+          { key: "actions", label: "", width: "6%" },
+        ],
+        emptyLabel: "No email templates",
+        action: "Create Template",
+      },
+      "Social Media": {
+        kpis: [
+          { label: "Scheduled Posts", value: "0", sub: "Upcoming" },
+          { label: "Published This Month", value: "0", sub: "Across platforms" },
+          { label: "Total Reach", value: "0", sub: "This month" },
+          { label: "Engagement Rate", value: "0%", sub: "Avg. across posts" },
+        ],
+        cols: [
+          { key: "caption", label: "Post Caption", width: "30%" },
+          { key: "platform", label: "Platform", width: "13%" },
+          { key: "type", label: "Type", width: "10%" },
+          { key: "scheduled", label: "Scheduled", width: "14%" },
+          { key: "reach", label: "Reach", width: "10%" },
+          { key: "engagement", label: "Engagement", width: "12%" },
+          { key: "status", label: "Status", width: "11%" },
+        ],
+        emptyLabel: "No social posts",
+        action: "Schedule Post",
+      },
+      "Analytics": {
+        kpis: [
+          { label: "Total Contacts Reached", value: "0", sub: "This month" },
+          { label: "Leads Generated", value: "0", sub: "From campaigns" },
+          { label: "Best Channel", value: "—", sub: "By open rate" },
+          { label: "Revenue Attributed", value: "$0", sub: "Linked to campaigns" },
+        ],
+        cols: [
+          { key: "channel", label: "Channel", width: "18%" },
+          { key: "campaigns", label: "Campaigns", width: "12%" },
+          { key: "sends", label: "Sends", width: "10%" },
+          { key: "opens", label: "Opens", width: "10%" },
+          { key: "openRate", label: "Open Rate", width: "11%" },
+          { key: "clicks", label: "Clicks", width: "10%" },
+          { key: "leads", label: "Leads", width: "10%" },
+          { key: "revenue", label: "Revenue", width: "13%" },
+          { key: "period", label: "Period", width: "6%" },
+        ],
+        emptyLabel: "No analytics data yet",
+        action: "Run Report",
+      },
+    },
+    team: {
+      "Overview": {
+        kpis: [
+          { label: "Team Members", value: "0", sub: "Active agents" },
+          { label: "Active Listings", value: "0", sub: "Across team" },
+          { label: "Sales This Month", value: "0", sub: "Settled" },
+          { label: "Appraisals This Month", value: "0", sub: "Completed" },
+        ],
+        cols: [
+          { key: "agent", label: "Agent", width: "22%" },
+          { key: "role", label: "Role", width: "14%" },
+          { key: "listings", label: "Active Listings", width: "14%" },
+          { key: "appraisals", label: "Appraisals", width: "13%" },
+          { key: "leads", label: "Leads", width: "11%" },
+          { key: "sales", label: "Sales MTD", width: "12%" },
+          { key: "revenue", label: "Revenue MTD", width: "14%" },
+        ],
+        emptyLabel: "No team members added",
+        action: "Add Agent",
+      },
+      "Performance": {
+        kpis: [
+          { label: "Top Agent", value: "—", sub: "By revenue this month" },
+          { label: "Team Revenue MTD", value: "$0", sub: "Settled sales" },
+          { label: "Avg. Days on Market", value: "—", sub: "Team average" },
+          { label: "Avg. Sale vs Asking", value: "0%", sub: "Price achievement" },
+        ],
+        cols: [
+          { key: "agent", label: "Agent", width: "20%" },
+          { key: "appraisals", label: "Appraisals", width: "12%" },
+          { key: "listings", label: "Listings", width: "10%" },
+          { key: "sold", label: "Sold", width: "8%" },
+          { key: "dom", label: "Avg DOM", width: "10%" },
+          { key: "priceAchievement", label: "Price Achvmt", width: "13%" },
+          { key: "revenue", label: "Revenue", width: "13%" },
+          { key: "target", label: "Target", width: "8%" },
+          { key: "progress", label: "%", width: "6%" },
+        ],
+        emptyLabel: "No performance data",
+        action: "Set Targets",
+      },
+      "Leads": {
+        kpis: [
+          { label: "Open Leads", value: "0", sub: "Unassigned or in progress" },
+          { label: "Assigned This Week", value: "0", sub: "New leads" },
+          { label: "Conversion Rate", value: "0%", sub: "Lead to listing" },
+          { label: "Avg. Response Time", value: "—", sub: "First contact" },
+        ],
+        cols: [
+          { key: "contact", label: "Contact", width: "18%" },
+          { key: "type", label: "Type", width: "10%" },
+          { key: "source", label: "Source", width: "12%" },
+          { key: "assigned", label: "Assigned To", width: "14%" },
+          { key: "received", label: "Received", width: "12%" },
+          { key: "lastContact", label: "Last Contact", width: "12%" },
+          { key: "stage", label: "Stage", width: "12%" },
+          { key: "status", label: "Status", width: "10%" },
+        ],
+        emptyLabel: "No leads recorded",
+        action: "Add Lead",
+      },
+      "Activity Log": {
+        kpis: [
+          { label: "Actions Today", value: "0", sub: "Across team" },
+          { label: "Calls Logged", value: "0", sub: "This week" },
+          { label: "Emails Sent", value: "0", sub: "This week" },
+          { label: "Meetings Held", value: "0", sub: "This week" },
+        ],
+        cols: [
+          { key: "agent", label: "Agent", width: "16%" },
+          { key: "type", label: "Activity", width: "14%" },
+          { key: "contact", label: "Contact / Property", width: "24%" },
+          { key: "notes", label: "Notes", width: "26%" },
+          { key: "date", label: "Date & Time", width: "14%" },
+          { key: "actions", label: "", width: "6%" },
+        ],
+        emptyLabel: "No activity logged",
+        action: "Log Activity",
+      },
+    },
+  };
+
+  const sub = submodule ?? Object.keys(configs[moduleId] ?? {})[0] ?? "";
+  const cfg = configs[moduleId]?.[sub];
+
+  if (!cfg) return null;
+
+  return (
+    <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "calc(100vh - 56px)", overflow: "hidden", padding: "20px 28px", gap: "14px" }}>
+      {/* Header */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+        <div>
+          <h1 style={{ fontSize: "1.1rem", fontWeight: 700, color: "#111827", letterSpacing: "-0.03em", margin: 0 }}>{sub}</h1>
+          <p style={{ fontSize: "12.5px", color: "#9ca3af", margin: "3px 0 0" }}>
+            {moduleId.charAt(0).toUpperCase() + moduleId.slice(1)}
+          </p>
+        </div>
+        <button style={{ display: "flex", alignItems: "center", gap: "7px", padding: "7px 14px", background: "#111827", color: "#fff", border: "none", borderRadius: "8px", fontSize: "12.5px", fontWeight: 600, cursor: "pointer", fontFamily: "var(--font-inter)", letterSpacing: "-0.01em" }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = "#1f2937"; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = "#111827"; }}
+        >
+          <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>
+          {cfg.action}
+        </button>
+      </div>
+
+      {/* KPI tiles */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px", flexShrink: 0 }}>
+        {cfg.kpis.map(k => <CrmKpiTile key={k.label} label={k.label} value={k.value} sub={k.sub} color={k.color} />)}
+      </div>
+
+      {/* Table */}
+      <CrmTable cols={cfg.cols} emptyLabel={cfg.emptyLabel} />
+    </div>
+  );
+}
+
 // --- Sidebar nav ---
 type Selected =
   | { type: "property"; section: "sales" | "management"; id: string; address: string }
@@ -8324,6 +8837,7 @@ export default function DashboardPage() {
   const [aiPanelOpen, setAiPanelOpen] = useState(false);
   const [sidebarMode, setSidebarMode] = useState<"compliance" | "crm">("compliance");
   const [crmModule, setCrmModule] = useState<string | null>(null);
+  const [crmSelected, setCrmSelected] = useState<string | null>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data }) => {
@@ -8537,7 +9051,7 @@ export default function DashboardPage() {
             {(["compliance", "crm"] as const).map((mode) => (
               <button
                 key={mode}
-                onClick={() => { setSidebarMode(mode); if (mode === "crm") goBack(); else setCrmModule(null); }}
+                onClick={() => { setSidebarMode(mode); if (mode === "crm") goBack(); else { setCrmModule(null); setCrmSelected(null); } }}
                 style={{ flex: 1, padding: "6px 0", borderRadius: "6px", border: "none", cursor: "pointer", fontFamily: "var(--font-inter)", fontSize: "13px", fontWeight: 600, letterSpacing: "-0.01em", transition: "background 0.15s, color 0.15s", background: sidebarMode === mode ? "#fff" : "transparent", color: sidebarMode === mode ? "#111827" : "rgba(255,255,255,0.5)" }}
               >
                 {mode === "compliance" ? "Compliance" : "CRM"}
@@ -8584,41 +9098,81 @@ export default function DashboardPage() {
             </>
           )}
 
-          {sidebarMode === "crm" && (
-            <>
-              {/* CRM home */}
-              <button
-                onClick={() => { setCrmModule(null); setSidebarOpen(false); }}
-                style={{ width: "100%", display: "flex", alignItems: "center", gap: "9px", padding: "7px 10px", borderRadius: "7px", border: "none", background: !crmModule ? "#111827" : "transparent", color: !crmModule ? "#fff" : "#374151", fontSize: "13.5px", fontWeight: !crmModule ? 600 : 400, cursor: "pointer", textAlign: "left", fontFamily: "var(--font-inter)", transition: "background 0.12s, color 0.12s", letterSpacing: "-0.01em" }}
-                onMouseEnter={(e) => { if (crmModule) e.currentTarget.style.background = "#f3f4f6"; }}
-                onMouseLeave={(e) => { if (crmModule) e.currentTarget.style.background = "transparent"; }}
-              >
-                <span style={{ flexShrink: 0, color: !crmModule ? "rgba(255,255,255,0.7)" : "#9ca3af" }}>
-                  <svg width="15" height="15" viewBox="0 0 18 18" fill="none"><path d="M2 9L9 2l7 7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/><path d="M4 7v8a1 1 0 001 1h3v-4h2v4h3a1 1 0 001-1V7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                </span>
-                CRM
-              </button>
-              <p style={{ fontSize: "10.5px", fontWeight: 700, color: "#9ca3af", letterSpacing: "0.08em", textTransform: "uppercase", margin: "14px 0 6px 10px", maxWidth: "none" }}>Modules</p>
-              <nav className="sidebar-panel-enter">
-                {([
-                  { id: "contacts",   label: "Contacts",   icon: <svg width="15" height="15" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="6" r="3" stroke="currentColor" strokeWidth="1.5"/><path d="M2 16c0-3.314 3.134-6 7-6s7 2.686 7 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg> },
-                  { id: "appraisals", label: "Appraisals", icon: <svg width="15" height="15" viewBox="0 0 18 18" fill="none"><path d="M2 14V6l7-4 7 4v8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><rect x="6" y="9" width="6" height="5" rx="1" stroke="currentColor" strokeWidth="1.4"/></svg> },
-                  { id: "listings",   label: "Listings",   icon: <svg width="15" height="15" viewBox="0 0 18 18" fill="none"><rect x="2" y="2" width="14" height="14" rx="2" stroke="currentColor" strokeWidth="1.5"/><path d="M5 6h8M5 9h6M5 12h4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg> },
-                  { id: "marketing",  label: "Marketing",  icon: <svg width="15" height="15" viewBox="0 0 18 18" fill="none"><path d="M3 11V7l10-4v12L3 11z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/><path d="M3 11v3l2-1" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg> },
-                  { id: "team",       label: "Team",       icon: <svg width="15" height="15" viewBox="0 0 18 18" fill="none"><circle cx="6" cy="6" r="2.5" stroke="currentColor" strokeWidth="1.4"/><circle cx="12" cy="6" r="2.5" stroke="currentColor" strokeWidth="1.4"/><path d="M1 15c0-2.485 2.239-4.5 5-4.5s5 2.015 5 4.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/><path d="M12 10.5c2.761 0 5 2.015 5 4.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg> },
-                ] as { id: string; label: string; icon: React.ReactNode }[]).map((m) => (
-                  <button key={m.id} onClick={() => { setCrmModule(m.id); setSidebarOpen(false); }}
-                    style={{ width: "100%", display: "flex", alignItems: "center", gap: "9px", padding: "7px 10px", borderRadius: "7px", border: "none", background: crmModule === m.id ? "#111827" : "transparent", color: crmModule === m.id ? "#fff" : "#374151", fontSize: "13.5px", fontWeight: crmModule === m.id ? 600 : 400, cursor: "pointer", textAlign: "left", marginBottom: "1px", fontFamily: "var(--font-inter)", transition: "background 0.1s, color 0.1s", letterSpacing: "-0.01em" }}
-                    onMouseEnter={(e) => { if (crmModule !== m.id) (e.currentTarget as HTMLButtonElement).style.background = "#f3f4f6"; }}
-                    onMouseLeave={(e) => { if (crmModule !== m.id) (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
-                  >
-                    <span style={{ flexShrink: 0, color: crmModule === m.id ? "rgba(255,255,255,0.7)" : "#9ca3af" }}>{m.icon}</span>
-                    {m.label}
-                  </button>
-                ))}
-              </nav>
-            </>
-          )}
+          {sidebarMode === "crm" && (() => {
+            const crmModules = [
+              { id: "contacts",   label: "Contacts",   icon: <svg width="15" height="15" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="6" r="3" stroke="currentColor" strokeWidth="1.5"/><path d="M2 16c0-3.314 3.134-6 7-6s7 2.686 7 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>,   children: ["All Contacts", "Buyers", "Sellers", "Landlords", "Tenants"] },
+              { id: "appraisals", label: "Appraisals", icon: <svg width="15" height="15" viewBox="0 0 18 18" fill="none"><path d="M2 14V6l7-4 7 4v8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><rect x="6" y="9" width="6" height="5" rx="1" stroke="currentColor" strokeWidth="1.4"/></svg>,   children: ["All Appraisals", "Scheduled", "Completed", "Follow Up"] },
+              { id: "listings",   label: "Listings",   icon: <svg width="15" height="15" viewBox="0 0 18 18" fill="none"><rect x="2" y="2" width="14" height="14" rx="2" stroke="currentColor" strokeWidth="1.5"/><path d="M5 6h8M5 9h6M5 12h4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>,   children: ["Active Listings", "Under Offer", "Sold / Leased", "Archive"] },
+              { id: "marketing",  label: "Marketing",  icon: <svg width="15" height="15" viewBox="0 0 18 18" fill="none"><path d="M3 11V7l10-4v12L3 11z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/><path d="M3 11v3l2-1" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>,   children: ["Campaigns", "Email Templates", "Social Media", "Analytics"] },
+              { id: "team",       label: "Team",       icon: <svg width="15" height="15" viewBox="0 0 18 18" fill="none"><circle cx="6" cy="6" r="2.5" stroke="currentColor" strokeWidth="1.4"/><circle cx="12" cy="6" r="2.5" stroke="currentColor" strokeWidth="1.4"/><path d="M1 15c0-2.485 2.239-4.5 5-4.5s5 2.015 5 4.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/><path d="M12 10.5c2.761 0 5 2.015 5 4.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>,   children: ["Overview", "Performance", "Leads", "Activity Log"] },
+            ] as { id: string; label: string; icon: React.ReactNode; children: string[] }[];
+            const activeMod = crmModules.find(m => m.id === crmModule) ?? null;
+            return (
+              <>
+                {/* CRM home button */}
+                <button
+                  onClick={() => { setCrmModule(null); setCrmSelected(null); setSidebarOpen(false); }}
+                  style={{ width: "100%", display: "flex", alignItems: "center", gap: "9px", padding: "7px 10px", borderRadius: "7px", border: "none", background: !crmModule ? "#111827" : "transparent", color: !crmModule ? "#fff" : "#374151", fontSize: "13.5px", fontWeight: !crmModule ? 600 : 400, cursor: "pointer", textAlign: "left", fontFamily: "var(--font-inter)", transition: "background 0.12s, color 0.12s", letterSpacing: "-0.01em" }}
+                  onMouseEnter={(e) => { if (crmModule) e.currentTarget.style.background = "#f3f4f6"; }}
+                  onMouseLeave={(e) => { if (crmModule) e.currentTarget.style.background = "transparent"; }}
+                >
+                  <span style={{ flexShrink: 0, color: !crmModule ? "rgba(255,255,255,0.7)" : "#9ca3af" }}>
+                    <svg width="15" height="15" viewBox="0 0 18 18" fill="none"><path d="M2 9L9 2l7 7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/><path d="M4 7v8a1 1 0 001 1h3v-4h2v4h3a1 1 0 001-1V7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  </span>
+                  CRM
+                </button>
+
+                {/* Module list (no module selected) */}
+                {!crmModule && (
+                  <>
+                    <p style={{ fontSize: "10.5px", fontWeight: 700, color: "#9ca3af", letterSpacing: "0.08em", textTransform: "uppercase", margin: "14px 0 6px 10px", maxWidth: "none" }}>Modules</p>
+                    <nav className="sidebar-panel-enter">
+                      {crmModules.map((m) => (
+                        <button key={m.id} onClick={() => { setCrmModule(m.id); setCrmSelected(m.children[0]); setSidebarOpen(false); }}
+                          style={{ width: "100%", display: "flex", alignItems: "center", gap: "9px", padding: "7px 10px", borderRadius: "7px", border: "none", background: "transparent", color: "#374151", fontSize: "13.5px", fontWeight: 400, cursor: "pointer", textAlign: "left", marginBottom: "1px", fontFamily: "var(--font-inter)", transition: "background 0.1s, color 0.1s", letterSpacing: "-0.01em" }}
+                          onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "#f3f4f6"; }}
+                          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
+                        >
+                          <span style={{ flexShrink: 0, color: "#9ca3af" }}>{m.icon}</span>
+                          <span style={{ flex: 1 }}>{m.label}</span>
+                        </button>
+                      ))}
+                    </nav>
+                  </>
+                )}
+
+                {/* Submodule nav (module selected) */}
+                {crmModule && activeMod && (
+                  <div key={`crm-sub-${crmModule}`} className="sidebar-panel-enter">
+                    <button
+                      onClick={() => setCrmSelected(null)}
+                      style={{ width: "100%", display: "flex", alignItems: "center", gap: "9px", padding: "7px 10px", borderRadius: "7px", border: "none", background: !crmSelected ? "#111827" : "transparent", color: !crmSelected ? "#fff" : "#374151", fontSize: "13.5px", fontWeight: 600, cursor: "pointer", textAlign: "left", fontFamily: "var(--font-inter)", transition: "background 0.12s, color 0.12s", letterSpacing: "-0.01em", marginBottom: "2px" }}
+                      onMouseEnter={(e) => { if (crmSelected) e.currentTarget.style.background = "#f3f4f6"; }}
+                      onMouseLeave={(e) => { if (crmSelected) e.currentTarget.style.background = "transparent"; }}
+                    >
+                      <span style={{ flexShrink: 0, color: !crmSelected ? "rgba(255,255,255,0.65)" : "#9ca3af" }}>{activeMod.icon}</span>
+                      <span>{activeMod.label}</span>
+                    </button>
+                    <nav style={{ paddingLeft: "4px" }}>
+                      {activeMod.children.map((child) => {
+                        const isActive = crmSelected === child;
+                        return (
+                          <button key={child} onClick={() => { setCrmSelected(child); setSidebarOpen(false); }}
+                            style={{ width: "100%", display: "flex", alignItems: "center", gap: "8px", padding: "6px 10px 6px 14px", border: "none", background: isActive ? "#111827" : "transparent", color: isActive ? "#fff" : "#374151", fontSize: "13px", fontWeight: isActive ? 500 : 400, cursor: "pointer", textAlign: "left", borderRadius: "7px", marginBottom: "1px", transition: "background 0.1s, color 0.1s", fontFamily: "var(--font-inter)", letterSpacing: "-0.01em" }}
+                            onMouseEnter={(e) => { if (!isActive) (e.currentTarget as HTMLButtonElement).style.background = "#f3f4f6"; }}
+                            onMouseLeave={(e) => { if (!isActive) (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
+                          >
+                            <span style={{ flexShrink: 0, color: isActive ? "rgba(255,255,255,0.5)" : "#d1d5db", fontSize: "7px" }}>●</span>
+                            {child}
+                          </button>
+                        );
+                      })}
+                    </nav>
+                  </div>
+                )}
+              </>
+            );
+          })()}
 
           {sidebarMode === "compliance" && activeModule && module && (
             <div key={`sub-${activeModule}`} className="sidebar-panel-enter">
@@ -8752,16 +9306,8 @@ export default function DashboardPage() {
           className="main-panel-enter"
           style={{ flex: 1, display: "flex" }}
         >
-        {sidebarMode === "crm" && crmModule ? (
-          <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "16px", padding: "40px" }}>
-            <div style={{ width: "52px", height: "52px", borderRadius: "14px", background: "#f3f4f6", display: "flex", alignItems: "center", justifyContent: "center", color: "#9ca3af" }}>
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="3" stroke="currentColor" strokeWidth="1.5"/><path d="M8 12h8M8 8h8M8 16h5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>
-            </div>
-            <div style={{ textAlign: "center" }}>
-              <p style={{ fontSize: "15px", fontWeight: 700, color: "#111827", margin: "0 0 6px", letterSpacing: "-0.02em" }}>{crmModule.charAt(0).toUpperCase() + crmModule.slice(1)} — Coming Soon</p>
-              <p style={{ fontSize: "13.5px", color: "#9ca3af", margin: 0, maxWidth: "320px", lineHeight: 1.6 }}>This module is being built. Check back soon.</p>
-            </div>
-          </div>
+        {sidebarMode === "crm" && (crmModule || true) ? (
+          <CrmSubPage moduleId={crmModule} submodule={crmSelected} />
         ) : sidebarMode === "crm" ? (
           <DashboardHome onNavigate={openModule} agencyName={agencyName} staffRows={staffRows} salesProps={salesProps} mgmtProps={mgmtProps} policies={policies} />
         ) : selected?.type === "property" ? (
