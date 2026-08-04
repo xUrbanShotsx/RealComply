@@ -10723,7 +10723,7 @@ function CrmHomePage({ agencyName, onNavigate }: { agencyName: string; onNavigat
     {
       id: "appraisals", label: "Appraisals", color: "#f59e0b", bg: "#fefce8",
       count: DEMO_APPRAISALS.length,
-      value: `$${(DEMO_APPRAISALS.reduce((s, a) => s + parseFloat(a.estimatedValue?.replace(/[$M,]/g, "") || "0") * (a.estimatedValue?.includes("M") ? 1000000 : 1), 0) / 1000000).toFixed(1)}M est.`,
+      value: `$${(DEMO_APPRAISALS.reduce((s, a) => s + parseFloat(a.priceFrom?.replace(/[$,]/g, "") || "0"), 0) / 1000000).toFixed(1)}M est.`,
       items: DEMO_APPRAISALS.map(a => ({ label: a.address, sub: `${a.suburb} · ${a.ownerName}`, badge: a.stage.charAt(0).toUpperCase() + a.stage.slice(1), urgent: daysUntil(a.followUpDate) <= 1 })),
       nav: () => onNavigate("appraisals", null),
     },
