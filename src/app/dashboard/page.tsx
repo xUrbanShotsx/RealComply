@@ -2114,10 +2114,10 @@ function DashboardHome({ onNavigate, agencyName, staffRows, salesProps, mgmtProp
   ];
 
   return (
-    <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "calc(100vh - 56px)", overflow: "hidden", padding: "20px 28px", gap: "14px" }}>
+    <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "calc(100vh - 56px)", overflow: "hidden", padding: "28px 36px", gap: "20px" }}>
 
       {/* Welcome header */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0, paddingBottom: "20px", borderBottom: "1px solid #e5e7eb" }}>
         <div>
           <h1 style={{ fontSize: "1.25rem", fontWeight: 700, color: "#111827", letterSpacing: "-0.04em", lineHeight: 1.2, margin: 0 }}>
             Welcome Back, {agencyName || "there"}!
@@ -2146,7 +2146,7 @@ function DashboardHome({ onNavigate, agencyName, staffRows, salesProps, mgmtProp
       {/* Stat tiles */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px", flexShrink: 0 }}>
         {tiles.map(({ label, value, unit, trend, warn, icon }) => (
-          <div key={label} style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: "10px", padding: "14px 18px", display: "flex", flexDirection: "column", gap: "8px", boxShadow: "0 1px 2px rgba(0,0,0,0.04)" }}>
+          <div key={label} style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: "12px", padding: "14px 18px", display: "flex", flexDirection: "column", gap: "8px", boxShadow: "0 1px 2px rgba(0,0,0,0.04)" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <span style={{ fontSize: "12px", color: "#6b7280", fontWeight: 500 }}>{label}</span>
               <span style={{ color: "#9ca3af" }}>{icon}</span>
@@ -5010,7 +5010,7 @@ function _renderDocContent_unused(doc: { title: string; category: string; date: 
       <p style={{ fontSize: "10px", fontWeight: 700, color: "var(--rc-faint)", letterSpacing: "0.1em", textTransform: "uppercase", margin: "0 0 16px", maxWidth: "none" }}>NSW Fair Trading · Department of Customer Service</p>
       <p style={{ fontSize: "18px", fontWeight: 700, color: "var(--rc-ink)", letterSpacing: "-0.02em", margin: "0 0 4px", maxWidth: "none" }}>Certificate of Licence</p>
       <p style={{ fontSize: "12px", color: "var(--rc-faint)", margin: "0 0 28px", maxWidth: "none" }}>Property and Stock Agents Act 2002</p>
-      <div style={{ border: "1px solid var(--rc-border)", borderRadius: "10px", padding: "20px 24px", background: "var(--rc-surface)", marginBottom: "24px" }}>
+      <div style={{ border: "1px solid var(--rc-border)", borderRadius: "12px", padding: "20px 24px", background: "var(--rc-surface)", marginBottom: "24px" }}>
         <p style={{ fontSize: "13px", color: "var(--rc-faint)", margin: "0 0 12px", maxWidth: "none" }}>This is to certify that</p>
         <p style={{ fontSize: "20px", fontWeight: 700, color: "var(--rc-ink)", letterSpacing: "-0.02em", margin: "0 0 16px", maxWidth: "none" }}>{s.name}</p>
         {[["Licence Number", licNum], ["Licence Class", "Class 2 — Real Estate Agent"], ["Authorisation", "Sales, leasing, and property management in NSW"], ["Issue Date", doc.date], ["Expiry Date", s.expiry]].map(([l, v]) => (
@@ -5077,7 +5077,7 @@ function _renderDocContent_unused(doc: { title: string; category: string; date: 
       <p style={{ fontSize: "10px", fontWeight: 700, color: "var(--rc-faint)", letterSpacing: "0.1em", textTransform: "uppercase", margin: "0 0 16px", maxWidth: "none" }}>Real Estate Institute of NSW (REINSW)</p>
       <p style={{ fontSize: "18px", fontWeight: 700, color: "var(--rc-ink)", letterSpacing: "-0.02em", margin: "0 0 4px", maxWidth: "none" }}>CPD {doc.title.includes("Registration") ? "Registration" : "Completion Certificate"}</p>
       <p style={{ fontSize: "12px", color: "var(--rc-faint)", margin: "0 0 28px", maxWidth: "none" }}>Continuing Professional Development · {doc.date}</p>
-      <div style={{ border: "1px solid var(--rc-border)", borderRadius: "10px", padding: "20px 24px", background: "var(--rc-surface)", marginBottom: "24px" }}>
+      <div style={{ border: "1px solid var(--rc-border)", borderRadius: "12px", padding: "20px 24px", background: "var(--rc-surface)", marginBottom: "24px" }}>
         {[["Licensee", s.name], ["Licence No.", licNum], ["CPD Period", doc.title.includes("2025") ? "Sep 2024 – Aug 2025" : "Sep 2023 – Aug 2024"], ["Hours Required", "12"], ["Hours Completed", doc.title.includes("Registration") ? "0 (cycle commenced)" : "12"], ["Status", doc.title.includes("Registration") ? "Enrolled" : "Complete"]].map(([l, v]) => (
           <div key={l} style={{ display: "flex", gap: "20px", marginBottom: "10px" }}>
             <p style={{ fontSize: "11px", fontWeight: 600, color: "var(--rc-faint)", textTransform: "uppercase", letterSpacing: "0.06em", margin: 0, width: "140px", flexShrink: 0, maxWidth: "none" }}>{l}</p>
@@ -7336,7 +7336,7 @@ function GiftRegisterPage() {
       </div>
 
       {showAdd && (
-        <div style={{ background: "var(--rc-surface)", border: "1px solid var(--rc-border)", borderRadius: "10px", padding: "22px 24px", display: "flex", flexDirection: "column", gap: "16px", flexShrink: 0 }}>
+        <div style={{ background: "var(--rc-surface)", border: "1px solid var(--rc-border)", borderRadius: "12px", padding: "22px 24px", display: "flex", flexDirection: "column", gap: "16px", flexShrink: 0 }}>
           <p style={{ fontSize: "13.5px", fontWeight: 700, color: "var(--rc-ink)", margin: 0 }}>New Gift Entry</p>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "14px" }}>
             <div><label style={lbl}>Date Received *</label><input type="date" value={form.date_received} onChange={e => setF("date_received", e.target.value)} style={{ ...inp, colorScheme: "light" }} /></div>
@@ -7456,7 +7456,7 @@ function IncidentRegisterPage() {
       </div>
 
       {showAdd && (
-        <div style={{ background: "var(--rc-surface)", border: "1px solid var(--rc-border)", borderRadius: "10px", padding: "22px 24px", display: "flex", flexDirection: "column", gap: "16px", flexShrink: 0 }}>
+        <div style={{ background: "var(--rc-surface)", border: "1px solid var(--rc-border)", borderRadius: "12px", padding: "22px 24px", display: "flex", flexDirection: "column", gap: "16px", flexShrink: 0 }}>
           <p style={{ fontSize: "13.5px", fontWeight: 700, color: "var(--rc-ink)", margin: 0 }}>New Incident Entry</p>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "14px" }}>
             <div><label style={lbl}>Incident Date *</label><input type="date" value={form.incident_date} onChange={e => setF("incident_date", e.target.value)} style={{ ...inp, colorScheme: "light" }} /></div>
@@ -7608,7 +7608,7 @@ function RiskRegisterPage() {
       </div>
 
       {showAdd && (
-        <div style={{ background: "var(--rc-surface)", border: "1px solid var(--rc-border)", borderRadius: "10px", padding: "22px 24px", display: "flex", flexDirection: "column", gap: "16px", flexShrink: 0 }}>
+        <div style={{ background: "var(--rc-surface)", border: "1px solid var(--rc-border)", borderRadius: "12px", padding: "22px 24px", display: "flex", flexDirection: "column", gap: "16px", flexShrink: 0 }}>
           <p style={{ fontSize: "13.5px", fontWeight: 700, color: "var(--rc-ink)", margin: 0 }}>New Risk Entry</p>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: "14px" }}>
             <div>
@@ -7769,7 +7769,7 @@ function ComplaintsRegisterPage({ userRole }: { userRole: "owner" | "standard" }
       )}
 
       {showAdd && (
-        <div style={{ background: "var(--rc-surface)", border: "1px solid var(--rc-border)", borderRadius: "10px", padding: "22px 24px", display: "flex", flexDirection: "column", gap: "16px", flexShrink: 0 }}>
+        <div style={{ background: "var(--rc-surface)", border: "1px solid var(--rc-border)", borderRadius: "12px", padding: "22px 24px", display: "flex", flexDirection: "column", gap: "16px", flexShrink: 0 }}>
           <p style={{ fontSize: "13.5px", fontWeight: 700, color: "var(--rc-ink)", margin: 0 }}>New Complaint</p>
 
           {/* Anonymous toggle */}
@@ -8394,16 +8394,15 @@ function CrmKpiTile({ label, value, sub, color = "#111827", trend, spark }: {
   const path = pts.map((v, i) => `${(i / (pts.length - 1)) * W},${H - ((v - min) / (max - min || 1)) * H}`).join(" L ");
   const trendColor = trend?.dir === "up" ? "#16a34a" : "#dc2626";
   return (
-    <div style={{ background: "#fff", border: "1.5px solid #e5e7eb", borderRadius: "12px", padding: "15px 18px", display: "flex", flexDirection: "column", gap: "6px", position: "relative", overflow: "hidden" }}>
-      <div style={{ position: "absolute", top: 0, left: 0, bottom: 0, width: "3.5px", background: color, borderRadius: "12px 0 0 12px" }} />
+    <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: "12px", padding: "15px 18px", display: "flex", flexDirection: "column", gap: "6px", boxShadow: "0 1px 2px rgba(0,0,0,0.04)", position: "relative", overflow: "hidden" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <span style={{ fontSize: "11px", color: "#6b7280", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</span>
-        {trend && <span style={{ fontSize: "10.5px", fontWeight: 700, color: trendColor, background: trendColor + "18", padding: "1px 6px", borderRadius: "6px" }}>{trend.dir === "up" ? "↑" : "↓"} {trend.pct}</span>}
+        <span style={{ fontSize: "12px", color: "#6b7280", fontWeight: 500 }}>{label}</span>
+        {trend && <span style={{ fontSize: "10.5px", fontWeight: 700, color: trend.dir === "up" ? "#166534" : "#991b1b", background: trend.dir === "up" ? "#f0fdf4" : "#fef2f2", padding: "1px 6px", borderRadius: "6px" }}>{trend.dir === "up" ? "↑" : "↓"} {trend.pct}</span>}
       </div>
       <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: "8px" }}>
         <div>
-          <p style={{ fontSize: "1.7rem", fontWeight: 800, color, letterSpacing: "-0.05em", margin: 0, lineHeight: 1 }}>{value}</p>
-          <span style={{ fontSize: "11px", color: "#9ca3af", marginTop: "4px", display: "block" }}>{sub}</span>
+          <p style={{ fontSize: "1.6rem", fontWeight: 700, color: "#111827", letterSpacing: "-0.05em", margin: 0, lineHeight: 1 }}>{value}</p>
+          <span style={{ fontSize: "12px", fontWeight: 500, color: "#6b7280", marginTop: "4px", display: "block" }}>{sub}</span>
         </div>
         <svg width={W} height={H} style={{ flexShrink: 0, opacity: 0.55 }}>
           <defs><linearGradient id={`sg-${label.replace(/\s/g,"")}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={color} stopOpacity="0.35"/><stop offset="100%" stopColor={color} stopOpacity="0"/></linearGradient></defs>
@@ -8574,11 +8573,11 @@ function CrmActiveListingsPage({
   const cardGrads = ["linear-gradient(135deg,#6366f1,#8b5cf6)", "linear-gradient(135deg,#0ea5e9,#6366f1)", "linear-gradient(135deg,#10b981,#0ea5e9)", "linear-gradient(135deg,#f59e0b,#ef4444)", "linear-gradient(135deg,#ec4899,#8b5cf6)"];
 
   return (
-    <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "calc(100vh - 56px)", overflow: "hidden", padding: "20px 28px", gap: "14px" }}>
+    <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "calc(100vh - 56px)", overflow: "hidden", padding: "28px 36px", gap: "20px" }}>
       {/* Header */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0, paddingBottom: "20px", borderBottom: "1px solid #e5e7eb" }}>
         <div>
-          <h1 style={{ fontSize: "1.1rem", fontWeight: 700, color: "#111827", letterSpacing: "-0.03em", margin: 0 }}>Active Listings</h1>
+          <h1 style={{ fontSize: "1.2rem", fontWeight: 700, color: "#111827", letterSpacing: "-0.03em", margin: 0 }}>Active Listings</h1>
           <p style={{ fontSize: "12.5px", color: "#9ca3af", margin: "3px 0 0" }}>{active.length} showing · {allListings.length} total on market</p>
         </div>
         <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
@@ -8613,9 +8612,9 @@ function CrmActiveListingsPage({
         ))}
         <div style={{ position: "relative", flex: 1, maxWidth: "280px" }}>
           <svg style={{ position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)", color: "#9ca3af" }} width="13" height="13" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="5" stroke="currentColor" strokeWidth="1.5"/><path d="M11 11l3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search address or suburb…" style={{ width: "100%", padding: "6px 10px 6px 30px", border: "1.5px solid #e5e7eb", borderRadius: "20px", fontSize: "12.5px", fontFamily: "var(--font-inter)", outline: "none", boxSizing: "border-box" }} />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search address or suburb…" style={{ width: "100%", padding: "6px 10px 6px 30px", border: "1px solid #e5e7eb", borderRadius: "20px", fontSize: "12.5px", fontFamily: "var(--font-inter)", outline: "none", boxSizing: "border-box" }} />
         </div>
-        <select value={sortBy} onChange={e => setSortBy(e.target.value as typeof sortBy)} style={{ padding: "6px 10px", border: "1.5px solid #e5e7eb", borderRadius: "8px", fontSize: "12.5px", fontFamily: "var(--font-inter)", color: "#374151", background: "#fff", outline: "none", cursor: "pointer" }}>
+        <select value={sortBy} onChange={e => setSortBy(e.target.value as typeof sortBy)} style={{ padding: "6px 10px", border: "1px solid #e5e7eb", borderRadius: "8px", fontSize: "12.5px", fontFamily: "var(--font-inter)", color: "#374151", background: "#fff", outline: "none", cursor: "pointer" }}>
           <option value="date">Sort: Date Listed</option>
           <option value="days">Sort: Days on Market</option>
           <option value="price">Sort: Price</option>
@@ -8641,7 +8640,7 @@ function CrmActiveListingsPage({
               const domPct = Math.min((days / 60) * 100, 100);
               const domColor = days > 45 ? "#dc2626" : days > 25 ? "#f59e0b" : "#10b981";
               return (
-                <div key={l.id} style={{ background: "#fff", border: "1.5px solid #e5e7eb", borderRadius: "14px", overflow: "hidden", display: "flex", flexDirection: "column" }}>
+                <div key={l.id} style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: "14px", overflow: "hidden", display: "flex", flexDirection: "column" }}>
                   {/* Property card header */}
                   <div style={{ height: "80px", background: cardGrads[idx % cardGrads.length], position: "relative", display: "flex", alignItems: "flex-end", padding: "10px 14px" }}>
                     <span style={{ padding: "2px 8px", background: "rgba(255,255,255,0.25)", backdropFilter: "blur(4px)", borderRadius: "6px", fontSize: "11px", fontWeight: 700, color: "#fff", textTransform: "uppercase" as const }}>{l.type === "sale" ? "For Sale" : "For Rent"}</span>
@@ -8702,12 +8701,12 @@ function CrmActiveListingsPage({
           </div>
         ) : (
           /* List view */
-          <div style={{ background: "#fff", border: "1.5px solid #e5e7eb", borderRadius: "12px", overflow: "hidden" }}>
+          <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: "12px", overflow: "hidden", boxShadow: "0 1px 2px rgba(0,0,0,0.04)" }}>
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
                 <tr style={{ borderBottom: "1px solid #f3f4f6" }}>
                   {["Property", "Type", "Price", "Owner", "Agent", "DOM", "Portals", "Compliance", ""].map(h => (
-                    <th key={h} style={{ padding: "10px 14px", textAlign: "left", fontSize: "11px", fontWeight: 600, color: "#9ca3af", letterSpacing: "0.04em", textTransform: "uppercase" as const }}>{h}</th>
+                    <th key={h} style={{ padding: "10px 16px", textAlign: "left", fontSize: "10.5px", fontWeight: 700, color: "#6b7280", letterSpacing: "0.07em", textTransform: "uppercase" as const }}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -8716,24 +8715,24 @@ function CrmActiveListingsPage({
                   const days = daysAgo(l.listedDate);
                   const domColor = days > 45 ? "#dc2626" : days > 25 ? "#f59e0b" : "#10b981";
                   return (
-                    <tr key={l.id} style={{ borderBottom: "1px solid #f9fafb" }} onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "#f9fafb"; }} onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = ""; }}>
-                      <td style={{ padding: "11px 14px" }}>
+                    <tr key={l.id} style={{ borderBottom: "1px solid #f3f4f6" }} onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "#f9fafb"; }} onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = ""; }}>
+                      <td style={{ padding: "12px 16px" }}>
                         <div style={{ fontSize: "13px", fontWeight: 600, color: "#111827" }}>{l.address}</div>
                         <div style={{ fontSize: "11.5px", color: "#9ca3af" }}>{l.suburb} · {l.propertyType}</div>
                       </td>
-                      <td style={{ padding: "11px 14px" }}><span style={{ fontSize: "11px", fontWeight: 700, color: l.type === "sale" ? "#16a34a" : "#1d4ed8", background: l.type === "sale" ? "#f0fdf4" : "#eff6ff", padding: "2px 8px", borderRadius: "20px" }}>{l.type === "sale" ? "Sale" : "Rental"}</span></td>
-                      <td style={{ padding: "11px 14px", fontWeight: 700, color: "#111827" }}>{l.price}</td>
-                      <td style={{ padding: "11px 14px", fontSize: "12.5px", color: "#6b7280" }}>{l.owner || "—"}</td>
-                      <td style={{ padding: "11px 14px", fontSize: "12.5px", color: "#6b7280" }}>{l.agent || "—"}</td>
-                      <td style={{ padding: "11px 14px" }}><span style={{ fontWeight: 700, color: domColor, fontSize: "13px" }}>{days}d</span></td>
-                      <td style={{ padding: "11px 14px" }}>
+                      <td style={{ padding: "12px 16px" }}><span style={{ fontSize: "11px", fontWeight: 700, color: l.type === "sale" ? "#16a34a" : "#1d4ed8", background: l.type === "sale" ? "#f0fdf4" : "#eff6ff", padding: "2px 8px", borderRadius: "20px" }}>{l.type === "sale" ? "Sale" : "Rental"}</span></td>
+                      <td style={{ padding: "12px 16px", fontWeight: 700, color: "#111827" }}>{l.price}</td>
+                      <td style={{ padding: "12px 16px", fontSize: "12.5px", color: "#6b7280" }}>{l.owner || "—"}</td>
+                      <td style={{ padding: "12px 16px", fontSize: "12.5px", color: "#6b7280" }}>{l.agent || "—"}</td>
+                      <td style={{ padding: "12px 16px" }}><span style={{ fontWeight: 700, color: domColor, fontSize: "13px" }}>{days}d</span></td>
+                      <td style={{ padding: "12px 16px" }}>
                         <div style={{ display: "flex", gap: "4px", alignItems: "center" }}>
                           <span style={{ fontSize: "10px", color: "#9ca3af" }}>REA</span>{portalDot(l.portalStatus?.rea as "idle"|"pending"|"live")}
                           <span style={{ fontSize: "10px", color: "#9ca3af", marginLeft: "4px" }}>DOM</span>{portalDot(l.portalStatus?.domain as "idle"|"pending"|"live")}
                         </div>
                       </td>
-                      <td style={{ padding: "11px 14px" }}>{l.complianceSynced ? <span style={{ fontSize: "11px", color: "#16a34a", fontWeight: 600 }}>✓ Synced</span> : <span style={{ fontSize: "11px", color: "#9ca3af" }}>—</span>}</td>
-                      <td style={{ padding: "11px 14px" }}><button onClick={() => setPublishingListing(l)} style={{ fontSize: "12px", fontWeight: 600, color: "#6d28d9", background: "#f5f3ff", border: "1px solid #ede9fe", borderRadius: "6px", padding: "4px 10px", cursor: "pointer" }}>Publish →</button></td>
+                      <td style={{ padding: "12px 16px" }}>{l.complianceSynced ? <span style={{ fontSize: "11px", color: "#16a34a", fontWeight: 600 }}>✓ Synced</span> : <span style={{ fontSize: "11px", color: "#9ca3af" }}>—</span>}</td>
+                      <td style={{ padding: "12px 16px" }}><button onClick={() => setPublishingListing(l)} style={{ fontSize: "12px", fontWeight: 600, color: "#6d28d9", background: "#f5f3ff", border: "1px solid #ede9fe", borderRadius: "6px", padding: "4px 10px", cursor: "pointer" }}>Publish →</button></td>
                     </tr>
                   );
                 })}
@@ -8951,10 +8950,10 @@ function CrmContactsPage({ staffRows, filterType }: { staffRows: StaffRow[]; fil
   );
 
   return (
-    <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "calc(100vh - 56px)", overflow: "hidden", padding: "20px 28px", gap: "14px" }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+    <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "calc(100vh - 56px)", overflow: "hidden", padding: "28px 36px", gap: "20px" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0, paddingBottom: "20px", borderBottom: "1px solid #e5e7eb" }}>
         <div>
-          <h1 style={{ fontSize: "1.1rem", fontWeight: 700, color: "#111827", letterSpacing: "-0.03em", margin: 0 }}>Contacts</h1>
+          <h1 style={{ fontSize: "1.2rem", fontWeight: 700, color: "#111827", letterSpacing: "-0.03em", margin: 0 }}>Contacts</h1>
           <p style={{ fontSize: "12.5px", color: "#9ca3af", margin: "3px 0 0" }}>{contacts.length} total · {filtered.length} shown</p>
         </div>
         <button onClick={openAdd} style={{ display: "flex", alignItems: "center", gap: "7px", padding: "7px 14px", background: "#111827", color: "#fff", border: "none", borderRadius: "8px", fontSize: "12.5px", fontWeight: 600, cursor: "pointer", fontFamily: "var(--font-inter)" }}
@@ -8984,17 +8983,17 @@ function CrmContactsPage({ staffRows, filterType }: { staffRows: StaffRow[]; fil
         <div style={{ position: "relative", marginLeft: "auto" }}>
           <svg style={{ position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)", color: "#9ca3af", pointerEvents: "none" }} width="13" height="13" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="5" stroke="currentColor" strokeWidth="1.5"/><path d="M11 11l3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search contacts…"
-            style={{ padding: "7px 12px 7px 30px", border: "1.5px solid #e5e7eb", borderRadius: "20px", fontSize: "12.5px", fontFamily: "var(--font-inter)", color: "#111827", outline: "none", width: "200px" }} />
+            style={{ padding: "7px 12px 7px 30px", border: "1px solid #e5e7eb", borderRadius: "20px", fontSize: "12.5px", fontFamily: "var(--font-inter)", color: "#111827", outline: "none", width: "200px" }} />
         </div>
       </div>
 
       {/* Table */}
-      <div style={{ flex: 1, overflow: "auto", background: "#fff", border: "1.5px solid #e5e7eb", borderRadius: "12px" }}>
+      <div style={{ flex: 1, overflow: "auto", background: "#fff", border: "1px solid #e5e7eb", borderRadius: "12px", boxShadow: "0 1px 2px rgba(0,0,0,0.04)" }}>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr style={{ borderBottom: "1px solid #f3f4f6", background: "#fafafa" }}>
               {["Contact", "Type", "Phone", "Suburb", "Tag", "AI Score", "Last Contact", "Next Action", ""].map(h => (
-                <th key={h} style={{ padding: "9px 14px", fontSize: "10.5px", fontWeight: 700, color: "#9ca3af", textAlign: "left", letterSpacing: "0.05em", textTransform: "uppercase" as const, whiteSpace: "nowrap" as const }}>{h}</th>
+                <th key={h} style={{ padding: "10px 16px", fontSize: "10.5px", fontWeight: 700, color: "#6b7280", textAlign: "left", letterSpacing: "0.07em", textTransform: "uppercase" as const, whiteSpace: "nowrap" as const }}>{h}</th>
               ))}
             </tr>
           </thead>
@@ -9010,9 +9009,9 @@ function CrmContactsPage({ staffRows, filterType }: { staffRows: StaffRow[]; fil
               const scoreColor = score >= 8 ? "#16a34a" : score >= 6 ? "#f59e0b" : "#dc2626";
               const lastUrgent = lastContact === "Today" ? false : lastContact.includes("day") && parseInt(lastContact) > 7;
               return (
-                <tr key={c.id} onClick={() => openEdit(c)} style={{ borderBottom: "1px solid #f9fafb", cursor: "pointer" }}
+                <tr key={c.id} onClick={() => openEdit(c)} style={{ borderBottom: "1px solid #f3f4f6", cursor: "pointer" }}
                   onMouseEnter={e => (e.currentTarget.style.background = "#f9fafb")} onMouseLeave={e => (e.currentTarget.style.background = "")}>
-                  <td style={{ padding: "11px 14px" }}>
+                  <td style={{ padding: "12px 16px" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                       <div style={{ width: "32px", height: "32px", borderRadius: "50%", background: TYPE_COLORS[c.type] + "20", color: TYPE_COLORS[c.type], display: "flex", alignItems: "center", justifyContent: "center", fontSize: "11px", fontWeight: 800, flexShrink: 0 }}>
                         {c.name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase()}
@@ -9023,25 +9022,25 @@ function CrmContactsPage({ staffRows, filterType }: { staffRows: StaffRow[]; fil
                       </div>
                     </div>
                   </td>
-                  <td style={{ padding: "11px 14px" }}>
+                  <td style={{ padding: "12px 16px" }}>
                     <span style={{ fontSize: "11px", fontWeight: 700, padding: "3px 9px", borderRadius: "20px", textTransform: "capitalize" as const, background: TYPE_COLORS[c.type] + "18", color: TYPE_COLORS[c.type] }}>{c.type}</span>
                   </td>
-                  <td style={{ padding: "11px 14px", fontSize: "12.5px", color: "#374151", whiteSpace: "nowrap" as const }}>{c.phone || "—"}</td>
-                  <td style={{ padding: "11px 14px", fontSize: "12.5px", color: "#374151" }}>{c.suburb || "—"}</td>
-                  <td style={{ padding: "11px 14px" }}>
+                  <td style={{ padding: "12px 16px", fontSize: "12.5px", color: "#374151", whiteSpace: "nowrap" as const }}>{c.phone || "—"}</td>
+                  <td style={{ padding: "12px 16px", fontSize: "12.5px", color: "#374151" }}>{c.suburb || "—"}</td>
+                  <td style={{ padding: "12px 16px" }}>
                     {c.tag ? <span style={{ fontSize: "11px", fontWeight: 700, padding: "2px 9px", borderRadius: "20px", textTransform: "capitalize" as const, ...TAG_STYLE[c.tag] }}>{c.tag}</span> : <span style={{ color: "#d1d5db", fontSize: "12px" }}>—</span>}
                   </td>
-                  <td style={{ padding: "11px 14px" }}>
+                  <td style={{ padding: "12px 16px" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                       <div style={{ width: "7px", height: "7px", borderRadius: "50%", background: scoreColor, flexShrink: 0 }} />
                       <span style={{ fontSize: "13px", fontWeight: 700, color: scoreColor }}>{score}<span style={{ fontWeight: 400, color: "#9ca3af", fontSize: "11px" }}>/10</span></span>
                     </div>
                   </td>
-                  <td style={{ padding: "11px 14px" }}>
+                  <td style={{ padding: "12px 16px" }}>
                     <span style={{ fontSize: "12px", color: lastUrgent ? "#dc2626" : "#374151", fontWeight: lastUrgent ? 600 : 400 }}>{lastContact}</span>
                   </td>
-                  <td style={{ padding: "11px 14px", fontSize: "12px", color: "#374151", maxWidth: "180px" }}>{nextAction}</td>
-                  <td style={{ padding: "11px 14px" }}>
+                  <td style={{ padding: "12px 16px", fontSize: "12px", color: "#374151", maxWidth: "180px" }}>{nextAction}</td>
+                  <td style={{ padding: "12px 16px" }}>
                     <button onClick={e => { e.stopPropagation(); openEdit(c); }} style={{ padding: "4px 10px", background: "#f5f3ff", color: "#6d28d9", border: "1px solid #ede9fe", borderRadius: "6px", fontSize: "11.5px", fontWeight: 600, cursor: "pointer" }}>Edit</button>
                   </td>
                 </tr>
@@ -9191,10 +9190,10 @@ function CrmAppraisalKanbanPage({ staffRows, initialStage }: { staffRows: StaffR
   const conversion = appraisals.length > 0 ? Math.round((counts.listed / appraisals.length) * 100) : 0;
 
   return (
-    <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "calc(100vh - 56px)", overflow: "hidden", padding: "20px 28px", gap: "14px" }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+    <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "calc(100vh - 56px)", overflow: "hidden", padding: "28px 36px", gap: "20px" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0, paddingBottom: "20px", borderBottom: "1px solid #e5e7eb" }}>
         <div>
-          <h1 style={{ fontSize: "1.1rem", fontWeight: 700, color: "#111827", letterSpacing: "-0.03em", margin: 0 }}>Appraisal Pipeline</h1>
+          <h1 style={{ fontSize: "1.2rem", fontWeight: 700, color: "#111827", letterSpacing: "-0.03em", margin: 0 }}>Appraisal Pipeline</h1>
           <p style={{ fontSize: "12.5px", color: "#9ca3af", margin: "3px 0 0" }}>{appraisals.length} appraisals · {conversion}% conversion to listing</p>
         </div>
         <button onClick={() => { setForm(BLANK_APPRAISAL); setShowModal(true); setErr(null); }}
@@ -9565,11 +9564,11 @@ Warm regards,
 [Agency Name] · [Phone] · [Email]`;
 
   return (
-    <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "calc(100vh - 56px)", overflow: "hidden", padding: "20px 28px", gap: "14px" }}>
+    <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "calc(100vh - 56px)", overflow: "hidden", padding: "28px 36px", gap: "20px" }}>
       {/* Header */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0, paddingBottom: "20px", borderBottom: "1px solid #e5e7eb" }}>
         <div>
-          <h1 style={{ fontSize: "1.1rem", fontWeight: 700, color: "#111827", letterSpacing: "-0.03em", margin: 0 }}>Prospecting Intelligence</h1>
+          <h1 style={{ fontSize: "1.2rem", fontWeight: 700, color: "#111827", letterSpacing: "-0.03em", margin: 0 }}>Prospecting Intelligence</h1>
           <p style={{ fontSize: "12.5px", color: "#9ca3af", margin: "3px 0 0" }}>Turn every nearby sale into a new appraisal opportunity</p>
         </div>
         <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
@@ -9674,7 +9673,7 @@ Warm regards,
           </div>
         </div>
       ) : (
-        <div style={{ flex: 1, overflow: "auto", background: "#fff", border: "1px solid #e5e7eb", borderRadius: "12px" }}>
+        <div style={{ flex: 1, overflow: "auto", background: "#fff", border: "1px solid #e5e7eb", borderRadius: "12px", boxShadow: "0 1px 2px rgba(0,0,0,0.04)" }}>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr style={{ borderBottom: "1px solid #f3f4f6" }}>
@@ -9690,7 +9689,7 @@ Warm regards,
                 const sc = PROSPECT_STATUS[p.status];
                 const nextStatus = sc.next ? PROSPECT_STATUS[sc.next] : null;
                 return (
-                  <tr key={p.id} style={{ borderBottom: "1px solid #f9fafb" }}
+                  <tr key={p.id} style={{ borderBottom: "1px solid #f3f4f6" }}
                     onMouseEnter={e => (e.currentTarget.style.background = "#f9fafb")}
                     onMouseLeave={e => (e.currentTarget.style.background = "")}>
                     <td style={{ padding: "10px 14px" }}>
@@ -9848,10 +9847,10 @@ function CrmUnderOfferPage({ staffRows }: { staffRows: StaffRow[] }) {
   ];
 
   return (
-    <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "calc(100vh - 56px)", overflow: "hidden", padding: "20px 28px", gap: "14px" }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+    <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "calc(100vh - 56px)", overflow: "hidden", padding: "28px 36px", gap: "20px" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0, paddingBottom: "20px", borderBottom: "1px solid #e5e7eb" }}>
         <div>
-          <h1 style={{ fontSize: "1.1rem", fontWeight: 700, color: "#111827", letterSpacing: "-0.03em", margin: 0 }}>Under Offer</h1>
+          <h1 style={{ fontSize: "1.2rem", fontWeight: 700, color: "#111827", letterSpacing: "-0.03em", margin: 0 }}>Under Offer</h1>
           <p style={{ fontSize: "12.5px", color: "#9ca3af", margin: "3px 0 0" }}>Listings · Contract tracking & condition monitoring</p>
         </div>
         <button style={{ display: "flex", alignItems: "center", gap: "7px", padding: "7px 14px", background: "#111827", color: "#fff", border: "none", borderRadius: "8px", fontSize: "12.5px", fontWeight: 600, cursor: "pointer" }}>
@@ -9940,10 +9939,10 @@ function CrmSoldLeasedPage({ staffRows }: { staffRows: StaffRow[] }) {
   const totalSaleVol = items.filter(i => i.type === "sale").reduce((sum, i) => sum + parseFloat(i.price.replace(/[$,]/g, "")) / 1e6, 0);
 
   return (
-    <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "calc(100vh - 56px)", overflow: "hidden", padding: "20px 28px", gap: "14px" }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+    <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "calc(100vh - 56px)", overflow: "hidden", padding: "28px 36px", gap: "20px" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0, paddingBottom: "20px", borderBottom: "1px solid #e5e7eb" }}>
         <div>
-          <h1 style={{ fontSize: "1.1rem", fontWeight: 700, color: "#111827", letterSpacing: "-0.03em", margin: 0 }}>Sold / Leased</h1>
+          <h1 style={{ fontSize: "1.2rem", fontWeight: 700, color: "#111827", letterSpacing: "-0.03em", margin: 0 }}>Sold / Leased</h1>
           <p style={{ fontSize: "12.5px", color: "#9ca3af", margin: "3px 0 0" }}>Listings · Results & neighbour prospecting triggers</p>
         </div>
         <div style={{ display: "flex", gap: "6px" }}>
@@ -10030,10 +10029,10 @@ function CrmMarketingPage({ submodule, staffRows }: { submodule: string | null; 
 
   if (sub === "Email Templates") {
     return (
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "calc(100vh - 56px)", overflow: "hidden", padding: "20px 28px", gap: "14px" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "calc(100vh - 56px)", overflow: "hidden", padding: "28px 36px", gap: "20px" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0, paddingBottom: "20px", borderBottom: "1px solid #e5e7eb" }}>
           <div>
-            <h1 style={{ fontSize: "1.1rem", fontWeight: 700, color: "#111827", letterSpacing: "-0.03em", margin: 0 }}>Email Templates</h1>
+            <h1 style={{ fontSize: "1.2rem", fontWeight: 700, color: "#111827", letterSpacing: "-0.03em", margin: 0 }}>Email Templates</h1>
             <p style={{ fontSize: "12.5px", color: "#9ca3af", margin: "3px 0 0" }}>Marketing · Reusable email designs & performance tracking</p>
           </div>
           <button style={{ display: "flex", alignItems: "center", gap: "7px", padding: "7px 14px", background: "#111827", color: "#fff", border: "none", borderRadius: "8px", fontSize: "12.5px", fontWeight: 600, cursor: "pointer" }}>
@@ -10054,7 +10053,7 @@ function CrmMarketingPage({ submodule, staffRows }: { submodule: string | null; 
         <div style={{ flex: 1, overflow: "auto" }}>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px" }}>
             {EMAIL_TEMPLATES.map(t => (
-              <div key={t.id} style={{ background: "#fff", border: "1.5px solid #e5e7eb", borderRadius: "12px", padding: "16px 18px" }}>
+              <div key={t.id} style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: "12px", padding: "16px 18px" }}>
                 <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "10px" }}>
                   <div>
                     <div style={{ fontWeight: 700, fontSize: "13.5px", color: "#111827" }}>{t.name}</div>
@@ -10089,10 +10088,10 @@ function CrmMarketingPage({ submodule, staffRows }: { submodule: string | null; 
       { id: "sp4", caption: "Market Update — Wollongong median prices up 4.2% this quarter. Thinking now might be the right time? DM us for a free appraisal.", image: "📊", likes: 0, reach: 0, status: "draft", date: "2026-08-05" },
     ];
     return (
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "calc(100vh - 56px)", overflow: "hidden", padding: "20px 28px", gap: "14px" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "calc(100vh - 56px)", overflow: "hidden", padding: "28px 36px", gap: "20px" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0, paddingBottom: "20px", borderBottom: "1px solid #e5e7eb" }}>
           <div>
-            <h1 style={{ fontSize: "1.1rem", fontWeight: 700, color: "#111827", letterSpacing: "-0.03em", margin: 0 }}>Social Media</h1>
+            <h1 style={{ fontSize: "1.2rem", fontWeight: 700, color: "#111827", letterSpacing: "-0.03em", margin: 0 }}>Social Media</h1>
             <p style={{ fontSize: "12.5px", color: "#9ca3af", margin: "3px 0 0" }}>Marketing · Post queue, scheduling & engagement</p>
           </div>
           <button style={{ display: "flex", alignItems: "center", gap: "7px", padding: "7px 14px", background: "#111827", color: "#fff", border: "none", borderRadius: "8px", fontSize: "12.5px", fontWeight: 600, cursor: "pointer" }}>Create Post</button>
@@ -10108,7 +10107,7 @@ function CrmMarketingPage({ submodule, staffRows }: { submodule: string | null; 
             const statusStyles: Record<string, { bg: string; color: string }> = { published: { bg: "#dcfce7", color: "#16a34a" }, scheduled: { bg: "#eff6ff", color: "#1d4ed8" }, draft: { bg: "#f3f4f6", color: "#6b7280" } };
             const ss = statusStyles[p.status];
             return (
-              <div key={p.id} style={{ background: "#fff", border: "1.5px solid #e5e7eb", borderRadius: "12px", padding: "16px 18px", display: "flex", flexDirection: "column", gap: "10px" }}>
+              <div key={p.id} style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: "12px", padding: "16px 18px", display: "flex", flexDirection: "column", gap: "10px" }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                   <span style={{ fontSize: "24px" }}>{p.image}</span>
                   <span style={{ padding: "2px 8px", borderRadius: "20px", fontSize: "11px", fontWeight: 600, ...ss, textTransform: "capitalize" }}>{p.status}</span>
@@ -10146,10 +10145,10 @@ function CrmMarketingPage({ submodule, staffRows }: { submodule: string | null; 
     ];
     const maxEnq = Math.max(...channels.map(c => c.enquiries));
     return (
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "calc(100vh - 56px)", overflow: "hidden", padding: "20px 28px", gap: "14px" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "calc(100vh - 56px)", overflow: "hidden", padding: "28px 36px", gap: "20px" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0, paddingBottom: "20px", borderBottom: "1px solid #e5e7eb" }}>
           <div>
-            <h1 style={{ fontSize: "1.1rem", fontWeight: 700, color: "#111827", letterSpacing: "-0.03em", margin: 0 }}>Marketing Analytics</h1>
+            <h1 style={{ fontSize: "1.2rem", fontWeight: 700, color: "#111827", letterSpacing: "-0.03em", margin: 0 }}>Marketing Analytics</h1>
             <p style={{ fontSize: "12.5px", color: "#9ca3af", margin: "3px 0 0" }}>Channel attribution · ROI · Budget allocation</p>
           </div>
         </div>
@@ -10161,7 +10160,7 @@ function CrmMarketingPage({ submodule, staffRows }: { submodule: string | null; 
         </div>
         <div style={{ flex: 1, overflow: "auto", display: "flex", flexDirection: "column", gap: "14px" }}>
           {/* Bar chart */}
-          <div style={{ background: "#fff", border: "1.5px solid #e5e7eb", borderRadius: "12px", padding: "20px 22px" }}>
+          <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: "12px", padding: "20px 22px" }}>
             <div style={{ fontSize: "13px", fontWeight: 700, color: "#111827", marginBottom: "16px" }}>Enquiries by Channel</div>
             <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
               {channels.map(ch => (
@@ -10183,18 +10182,18 @@ function CrmMarketingPage({ submodule, staffRows }: { submodule: string | null; 
               <div style={{ display: "flex", alignItems: "center", gap: "4px" }}><div style={{ width: "12px", height: "8px", background: "#6b7280", borderRadius: "2px" }} />&lt;10%</div>
             </div>
           </div>
-          <div style={{ background: "#fff", border: "1.5px solid #e5e7eb", borderRadius: "12px", overflow: "hidden" }}>
+          <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: "12px", overflow: "hidden", boxShadow: "0 1px 2px rgba(0,0,0,0.04)" }}>
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
               <thead>
                 <tr style={{ borderBottom: "1px solid #f3f4f6", background: "#fafafa" }}>
                   {["Channel", "Enquiries", "Appraisals", "Listed", "Conv. Rate", "Ad Spend", "Cost/Listing"].map(h => (
-                    <th key={h} style={{ textAlign: "left", padding: "9px 14px", fontSize: "10.5px", fontWeight: 700, color: "#9ca3af", textTransform: "uppercase" as const, letterSpacing: "0.05em" }}>{h}</th>
+                    <th key={h} style={{ textAlign: "left", padding: "10px 16px", fontSize: "10.5px", fontWeight: 700, color: "#6b7280", textTransform: "uppercase" as const, letterSpacing: "0.07em" }}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {channels.map(ch => (
-                  <tr key={ch.name} style={{ borderBottom: "1px solid #f9fafb" }}>
+                  <tr key={ch.name} style={{ borderBottom: "1px solid #f3f4f6" }}>
                     <td style={{ padding: "10px 14px" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                         <div style={{ width: "10px", height: "10px", borderRadius: "50%", background: ch.color, flexShrink: 0 }} />
@@ -10222,10 +10221,10 @@ function CrmMarketingPage({ submodule, staffRows }: { submodule: string | null; 
   // Default: Campaigns
   const [campaigns, setCampaigns] = useState(SEED_CAMPAIGNS);
   return (
-    <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "calc(100vh - 56px)", overflow: "hidden", padding: "20px 28px", gap: "14px" }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+    <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "calc(100vh - 56px)", overflow: "hidden", padding: "28px 36px", gap: "20px" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0, paddingBottom: "20px", borderBottom: "1px solid #e5e7eb" }}>
         <div>
-          <h1 style={{ fontSize: "1.1rem", fontWeight: 700, color: "#111827", letterSpacing: "-0.03em", margin: 0 }}>Campaigns</h1>
+          <h1 style={{ fontSize: "1.2rem", fontWeight: 700, color: "#111827", letterSpacing: "-0.03em", margin: 0 }}>Campaigns</h1>
           <p style={{ fontSize: "12.5px", color: "#9ca3af", margin: "3px 0 0" }}>Marketing · Email & social campaign management</p>
         </div>
         <button style={{ display: "flex", alignItems: "center", gap: "7px", padding: "7px 14px", background: "#111827", color: "#fff", border: "none", borderRadius: "8px", fontSize: "12.5px", fontWeight: 600, cursor: "pointer" }}>
@@ -10244,12 +10243,12 @@ function CrmMarketingPage({ submodule, staffRows }: { submodule: string | null; 
         { title: "Optimal Send Time", description: "Predict the best send time per contact based on past open behaviour", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 1v7l4 2" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/><circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.3"/></svg> },
         { title: "Audience Segmentation", description: "Suggest the right contact segment for each new listing campaign", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.3"/><path d="M8 8l5-5M8 8V1M8 8l5 5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg> },
       ]} />
-      <div style={{ flex: 1, overflow: "auto", background: "#fff", border: "1.5px solid #e5e7eb", borderRadius: "12px" }}>
+      <div style={{ flex: 1, overflow: "auto", background: "#fff", border: "1px solid #e5e7eb", borderRadius: "12px", boxShadow: "0 1px 2px rgba(0,0,0,0.04)" }}>
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
           <thead>
             <tr style={{ borderBottom: "1px solid #f3f4f6", background: "#fafafa" }}>
               {["Campaign", "Type", "Listing", "Sent", "Open Rate", "Click Rate", "Status", ""].map(h => (
-                <th key={h} style={{ textAlign: "left", padding: "9px 14px", fontSize: "10.5px", fontWeight: 700, color: "#9ca3af", textTransform: "uppercase" as const, letterSpacing: "0.05em" }}>{h}</th>
+                <th key={h} style={{ textAlign: "left", padding: "10px 16px", fontSize: "10.5px", fontWeight: 700, color: "#6b7280", textTransform: "uppercase" as const, letterSpacing: "0.07em" }}>{h}</th>
               ))}
             </tr>
           </thead>
@@ -10260,15 +10259,15 @@ function CrmMarketingPage({ submodule, staffRows }: { submodule: string | null; 
               const statusColor: Record<string, { bg: string; color: string }> = { draft: { bg: "#f3f4f6", color: "#6b7280" }, active: { bg: "#dcfce7", color: "#16a34a" }, completed: { bg: "#eff6ff", color: "#1d4ed8" } };
               const sc = statusColor[c.status];
               return (
-                <tr key={c.id} style={{ borderBottom: "1px solid #f9fafb" }}>
-                  <td style={{ padding: "11px 14px" }}>
+                <tr key={c.id} style={{ borderBottom: "1px solid #f3f4f6" }}>
+                  <td style={{ padding: "12px 16px" }}>
                     <div style={{ fontWeight: 600, color: "#111827", maxWidth: "200px" }}>{c.name}</div>
                     <div style={{ fontSize: "11px", color: "#9ca3af" }}>{new Date(c.date).toLocaleDateString("en-AU", { day: "numeric", month: "short" })}</div>
                   </td>
-                  <td style={{ padding: "11px 14px" }}><span style={{ padding: "2px 8px", borderRadius: "20px", fontSize: "11px", fontWeight: 600, background: c.type === "email" ? "#eff6ff" : c.type === "social" ? "#fdf4ff" : "#fefce8", color: c.type === "email" ? "#1d4ed8" : c.type === "social" ? "#7e22ce" : "#92400e", textTransform: "capitalize" as const }}>{c.type}</span></td>
-                  <td style={{ padding: "11px 14px", color: "#374151", fontSize: "12px" }}>{c.listing}</td>
-                  <td style={{ padding: "11px 14px", color: "#374151" }}>{c.sent > 0 ? c.sent.toLocaleString() : "—"}</td>
-                  <td style={{ padding: "11px 14px", minWidth: "120px" }}>
+                  <td style={{ padding: "12px 16px" }}><span style={{ padding: "2px 8px", borderRadius: "20px", fontSize: "11px", fontWeight: 600, background: c.type === "email" ? "#eff6ff" : c.type === "social" ? "#fdf4ff" : "#fefce8", color: c.type === "email" ? "#1d4ed8" : c.type === "social" ? "#7e22ce" : "#92400e", textTransform: "capitalize" as const }}>{c.type}</span></td>
+                  <td style={{ padding: "12px 16px", color: "#374151", fontSize: "12px" }}>{c.listing}</td>
+                  <td style={{ padding: "12px 16px", color: "#374151" }}>{c.sent > 0 ? c.sent.toLocaleString() : "—"}</td>
+                  <td style={{ padding: "12px 16px", minWidth: "120px" }}>
                     {c.sent > 0 ? (
                       <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                         <div style={{ flex: 1, height: "6px", background: "#f3f4f6", borderRadius: "3px" }}>
@@ -10278,7 +10277,7 @@ function CrmMarketingPage({ submodule, staffRows }: { submodule: string | null; 
                       </div>
                     ) : <span style={{ color: "#d1d5db" }}>—</span>}
                   </td>
-                  <td style={{ padding: "11px 14px", minWidth: "100px" }}>
+                  <td style={{ padding: "12px 16px", minWidth: "100px" }}>
                     {c.sent > 0 ? (
                       <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                         <div style={{ flex: 1, height: "6px", background: "#f3f4f6", borderRadius: "3px" }}>
@@ -10288,8 +10287,8 @@ function CrmMarketingPage({ submodule, staffRows }: { submodule: string | null; 
                       </div>
                     ) : <span style={{ color: "#d1d5db" }}>—</span>}
                   </td>
-                  <td style={{ padding: "11px 14px" }}><span style={{ padding: "2px 8px", borderRadius: "20px", fontSize: "11px", fontWeight: 600, ...sc, textTransform: "capitalize" as const }}>{c.status}</span></td>
-                  <td style={{ padding: "11px 14px" }}><button style={{ padding: "4px 10px", background: "#f5f3ff", color: "#6d28d9", border: "1px solid #ede9fe", borderRadius: "6px", fontSize: "11.5px", fontWeight: 600, cursor: "pointer" }}>View</button></td>
+                  <td style={{ padding: "12px 16px" }}><span style={{ padding: "2px 8px", borderRadius: "20px", fontSize: "11px", fontWeight: 600, ...sc, textTransform: "capitalize" as const }}>{c.status}</span></td>
+                  <td style={{ padding: "12px 16px" }}><button style={{ padding: "4px 10px", background: "#f5f3ff", color: "#6d28d9", border: "1px solid #ede9fe", borderRadius: "6px", fontSize: "11.5px", fontWeight: 600, cursor: "pointer" }}>View</button></td>
                 </tr>
               );
             })}
@@ -10341,10 +10340,10 @@ function CrmTeamPage({ submodule, staffRows }: { submodule: string | null; staff
       qualified: { bg: "#f0fdf4", color: "#16a34a" }, appraisal: { bg: "#fdf4ff", color: "#7e22ce" }, lost: { bg: "#fef2f2", color: "#dc2626" },
     };
     return (
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "calc(100vh - 56px)", overflow: "hidden", padding: "20px 28px", gap: "14px" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "calc(100vh - 56px)", overflow: "hidden", padding: "28px 36px", gap: "20px" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0, paddingBottom: "20px", borderBottom: "1px solid #e5e7eb" }}>
           <div>
-            <h1 style={{ fontSize: "1.1rem", fontWeight: 700, color: "#111827", letterSpacing: "-0.03em", margin: 0 }}>Leads</h1>
+            <h1 style={{ fontSize: "1.2rem", fontWeight: 700, color: "#111827", letterSpacing: "-0.03em", margin: 0 }}>Leads</h1>
             <p style={{ fontSize: "12.5px", color: "#9ca3af", margin: "3px 0 0" }}>Team · Inbound lead pipeline & assignment</p>
           </div>
           <button style={{ display: "flex", alignItems: "center", gap: "7px", padding: "7px 14px", background: "#111827", color: "#fff", border: "none", borderRadius: "8px", fontSize: "12.5px", fontWeight: 600, cursor: "pointer" }}>Add Lead</button>
@@ -10402,9 +10401,9 @@ function CrmTeamPage({ submodule, staffRows }: { submodule: string | null; staff
 
   if (sub === "Performance") {
     return (
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "calc(100vh - 56px)", overflow: "hidden", padding: "20px 28px", gap: "14px" }}>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "calc(100vh - 56px)", overflow: "hidden", padding: "28px 36px", gap: "20px" }}>
         <div style={{ flexShrink: 0 }}>
-          <h1 style={{ fontSize: "1.1rem", fontWeight: 700, color: "#111827", letterSpacing: "-0.03em", margin: 0 }}>Performance</h1>
+          <h1 style={{ fontSize: "1.2rem", fontWeight: 700, color: "#111827", letterSpacing: "-0.03em", margin: 0 }}>Performance</h1>
           <p style={{ fontSize: "12.5px", color: "#9ca3af", margin: "3px 0 0" }}>Team · Individual agent metrics & target pacing</p>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px", flexShrink: 0 }}>
@@ -10415,7 +10414,7 @@ function CrmTeamPage({ submodule, staffRows }: { submodule: string | null; staff
         </div>
         <div style={{ flex: 1, overflow: "auto", display: "flex", flexDirection: "column", gap: "12px" }}>
           {agents.map(a => (
-            <div key={a.name} style={{ background: "#fff", border: "1.5px solid #e5e7eb", borderRadius: "12px", padding: "16px 20px" }}>
+            <div key={a.name} style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: "12px", padding: "16px 20px" }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "12px" }}>
                 <div>
                   <div style={{ fontWeight: 700, fontSize: "14px", color: "#111827" }}>{a.name}</div>
@@ -10462,9 +10461,9 @@ function CrmTeamPage({ submodule, staffRows }: { submodule: string | null; staff
       note: { icon: <svg width="11" height="11" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" strokeWidth="1.3"/><path d="M5 6h6M5 9h4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg>, color: "#6b7280", bg: "#f3f4f6" },
     };
     return (
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "calc(100vh - 56px)", overflow: "hidden", padding: "20px 28px", gap: "14px" }}>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "calc(100vh - 56px)", overflow: "hidden", padding: "28px 36px", gap: "20px" }}>
         <div style={{ flexShrink: 0 }}>
-          <h1 style={{ fontSize: "1.1rem", fontWeight: 700, color: "#111827", letterSpacing: "-0.03em", margin: 0 }}>Activity Log</h1>
+          <h1 style={{ fontSize: "1.2rem", fontWeight: 700, color: "#111827", letterSpacing: "-0.03em", margin: 0 }}>Activity Log</h1>
           <p style={{ fontSize: "12.5px", color: "#9ca3af", margin: "3px 0 0" }}>Team · All agent activity across calls, emails & appraisals</p>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px", flexShrink: 0 }}>
@@ -10496,10 +10495,10 @@ function CrmTeamPage({ submodule, staffRows }: { submodule: string | null; staff
   const medalColors = ["#f59e0b", "#9ca3af", "#b45309"];
   const medalLabels = ["🥇", "🥈", "🥉"];
   return (
-    <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "calc(100vh - 56px)", overflow: "hidden", padding: "20px 28px", gap: "14px" }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+    <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "calc(100vh - 56px)", overflow: "hidden", padding: "28px 36px", gap: "20px" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0, paddingBottom: "20px", borderBottom: "1px solid #e5e7eb" }}>
         <div>
-          <h1 style={{ fontSize: "1.1rem", fontWeight: 700, color: "#111827", letterSpacing: "-0.03em", margin: 0 }}>Team Overview</h1>
+          <h1 style={{ fontSize: "1.2rem", fontWeight: 700, color: "#111827", letterSpacing: "-0.03em", margin: 0 }}>Team Overview</h1>
           <p style={{ fontSize: "12.5px", color: "#9ca3af", margin: "3px 0 0" }}>Team · Commission leaderboard & performance snapshot</p>
         </div>
       </div>
@@ -10516,7 +10515,7 @@ function CrmTeamPage({ submodule, staffRows }: { submodule: string | null; staff
       ]} />
       {/* Commission Leaderboard */}
       <div style={{ flex: 1, overflow: "auto", display: "flex", flexDirection: "column", gap: "12px" }}>
-        <div style={{ background: "#fff", border: "1.5px solid #e5e7eb", borderRadius: "12px", overflow: "hidden" }}>
+        <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: "12px", overflow: "hidden", boxShadow: "0 1px 2px rgba(0,0,0,0.04)" }}>
           <div style={{ padding: "14px 18px 10px", borderBottom: "1px solid #f3f4f6", display: "flex", alignItems: "center", gap: "8px" }}>
             <span style={{ fontSize: "13px", fontWeight: 700, color: "#111827" }}>Commission Leaderboard</span>
             <span style={{ fontSize: "11px", color: "#9ca3af", background: "#f3f4f6", padding: "1px 8px", borderRadius: "20px" }}>August 2026</span>
@@ -10696,7 +10695,7 @@ function AiChatPanel({ open, onClose, crmListings, staffRows, onNavigate }: {
           onChange={e => setInput(e.target.value)}
           onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
           placeholder="Ask anything…"
-          style={{ flex: 1, border: "1.5px solid #e5e7eb", borderRadius: "10px", padding: "8px 12px", fontSize: "13px", outline: "none", fontFamily: "var(--font-inter)" }}
+          style={{ flex: 1, border: "1px solid #e5e7eb", borderRadius: "10px", padding: "8px 12px", fontSize: "13px", outline: "none", fontFamily: "var(--font-inter)" }}
         />
         <button onClick={() => send()} style={{ width: "36px", height: "36px", background: "#111827", border: "none", borderRadius: "10px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
           <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="#fff" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
@@ -10757,12 +10756,12 @@ function CrmHomePage({ agencyName, crmListings, onNavigate }: {
   const total = crmListings.length || 1;
 
   return (
-    <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "calc(100vh - 56px)", overflow: "hidden", padding: "20px 28px", gap: "14px" }}>
+    <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "calc(100vh - 56px)", overflow: "hidden", padding: "28px 36px", gap: "20px" }}>
 
       {/* Header */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0, paddingBottom: "20px", borderBottom: "1px solid #e5e7eb" }}>
         <div>
-          <h1 style={{ fontSize: "1.15rem", fontWeight: 800, color: "#111827", letterSpacing: "-0.04em", margin: 0 }}>{agencyName || "CRM"} — Overview</h1>
+          <h1 style={{ fontSize: "1.25rem", fontWeight: 700, color: "#111827", letterSpacing: "-0.04em", margin: 0 }}>{agencyName || "CRM"} — Overview</h1>
           <p style={{ fontSize: "12.5px", color: "#9ca3af", margin: "2px 0 0" }}>{todayStr} · {active.length + underOffer.length} active deals</p>
         </div>
         <div style={{ display: "flex", gap: "8px" }}>
@@ -10803,7 +10802,7 @@ function CrmHomePage({ agencyName, crmListings, onNavigate }: {
         <div style={{ flex: 1, display: "grid", gridTemplateColumns: "1fr 340px", gap: "12px", overflow: "hidden" }}>
 
           {/* Pipeline funnel bar chart */}
-          <div style={{ background: "#fff", border: "1.5px solid #e5e7eb", borderRadius: "12px", padding: "20px 24px", overflow: "hidden", display: "flex", flexDirection: "column" }}>
+          <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: "12px", padding: "20px 24px", overflow: "hidden", display: "flex", flexDirection: "column" }}>
             <div style={{ fontSize: "13px", fontWeight: 700, color: "#111827", marginBottom: "4px" }}>Pipeline Flow</div>
             <div style={{ fontSize: "11.5px", color: "#9ca3af", marginBottom: "20px" }}>Deal count by stage — click a bar to open the module</div>
             <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-around", gap: "10px" }}>
@@ -10837,7 +10836,7 @@ function CrmHomePage({ agencyName, crmListings, onNavigate }: {
           <div style={{ display: "flex", flexDirection: "column", gap: "12px", overflow: "hidden" }}>
 
             {/* Property type breakdown */}
-            <div style={{ background: "#fff", border: "1.5px solid #e5e7eb", borderRadius: "12px", padding: "16px 18px", flex: 1 }}>
+            <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: "12px", padding: "16px 18px", flex: 1 }}>
               <div style={{ fontSize: "13px", fontWeight: 700, color: "#111827", marginBottom: "14px" }}>By Property Type</div>
               {byType.length > 0 ? (
                 <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
@@ -10858,7 +10857,7 @@ function CrmHomePage({ agencyName, crmListings, onNavigate }: {
             </div>
 
             {/* Sale vs Rental split */}
-            <div style={{ background: "#fff", border: "1.5px solid #e5e7eb", borderRadius: "12px", padding: "16px 18px" }}>
+            <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: "12px", padding: "16px 18px" }}>
               <div style={{ fontSize: "13px", fontWeight: 700, color: "#111827", marginBottom: "14px" }}>Sale vs. Rental</div>
               <div style={{ display: "flex", gap: "8px", marginBottom: "10px" }}>
                 <div style={{ flex: saleCount || 1, height: "10px", background: "#6366f1", borderRadius: "4px 0 0 4px" }} />
@@ -10879,7 +10878,7 @@ function CrmHomePage({ agencyName, crmListings, onNavigate }: {
             </div>
 
             {/* Module shortcuts */}
-            <div style={{ background: "#fff", border: "1.5px solid #e5e7eb", borderRadius: "12px", padding: "16px 18px" }}>
+            <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: "12px", padding: "16px 18px" }}>
               <div style={{ fontSize: "13px", fontWeight: 700, color: "#111827", marginBottom: "12px" }}>Quick Access</div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px" }}>
                 {[
@@ -10889,7 +10888,7 @@ function CrmHomePage({ agencyName, crmListings, onNavigate }: {
                   { label: "Team", mod: "team", sub: null, color: "#10b981" },
                 ].map(link => (
                   <button key={link.mod} onClick={() => onNavigate(link.mod, link.sub)}
-                    style={{ padding: "8px 10px", background: "#f9fafb", border: "1.5px solid #e5e7eb", borderRadius: "8px", fontSize: "12px", fontWeight: 600, color: "#374151", cursor: "pointer", textAlign: "left", display: "flex", alignItems: "center", gap: "6px" }}>
+                    style={{ padding: "8px 10px", background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: "8px", fontSize: "12px", fontWeight: 600, color: "#374151", cursor: "pointer", textAlign: "left", display: "flex", alignItems: "center", gap: "6px" }}>
                     <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: link.color, flexShrink: 0 }} />
                     {link.label}
                   </button>
@@ -10926,10 +10925,10 @@ function CrmFollowUpsPage({ staffRows }: { staffRows: StaffRow[] }) {
   const typeColor: Record<string, string> = { buyer: "#2563eb", seller: "#16a34a", landlord: "#7e22ce", tenant: "#ea580c", prospect: "#6b7280", investor: "#0e7490", referral: "#be185d", "past-client": "#92400e" };
 
   return (
-    <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "calc(100vh - 56px)", overflow: "hidden", padding: "20px 28px", gap: "14px" }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+    <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "calc(100vh - 56px)", overflow: "hidden", padding: "28px 36px", gap: "20px" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0, paddingBottom: "20px", borderBottom: "1px solid #e5e7eb" }}>
         <div>
-          <h1 style={{ fontSize: "1.1rem", fontWeight: 700, color: "#111827", letterSpacing: "-0.03em", margin: 0 }}>Follow-ups</h1>
+          <h1 style={{ fontSize: "1.2rem", fontWeight: 700, color: "#111827", letterSpacing: "-0.03em", margin: 0 }}>Follow-ups</h1>
           <p style={{ fontSize: "12.5px", color: "#9ca3af", margin: "3px 0 0" }}>Contacts · Daily action queue & overdue touchpoints</p>
         </div>
         <button style={{ padding: "7px 14px", background: "#111827", color: "#fff", border: "none", borderRadius: "8px", fontSize: "12.5px", fontWeight: 600, cursor: "pointer" }}>Log Activity</button>
@@ -10969,8 +10968,8 @@ function CrmFollowUpsPage({ staffRows }: { staffRows: StaffRow[] }) {
                     </div>
                     <span style={{ fontSize: "10.5px", fontWeight: 600, padding: "2px 8px", borderRadius: "20px", background: `${typeColor[f.type] ?? "#6b7280"}15`, color: typeColor[f.type] ?? "#6b7280" }}>{typeLabel[f.type] ?? f.type}</span>
                     <div style={{ display: "flex", gap: "6px" }}>
-                      <button style={{ padding: "5px 12px", background: "#fff", border: "1.5px solid #e5e7eb", borderRadius: "6px", fontSize: "11.5px", fontWeight: 600, color: "#374151", cursor: "pointer" }}>Call</button>
-                      <button style={{ padding: "5px 12px", background: "#fff", border: "1.5px solid #e5e7eb", borderRadius: "6px", fontSize: "11.5px", fontWeight: 600, color: "#374151", cursor: "pointer" }}>Email</button>
+                      <button style={{ padding: "5px 12px", background: "#fff", border: "1px solid #e5e7eb", borderRadius: "6px", fontSize: "11.5px", fontWeight: 600, color: "#374151", cursor: "pointer" }}>Call</button>
+                      <button style={{ padding: "5px 12px", background: "#fff", border: "1px solid #e5e7eb", borderRadius: "6px", fontSize: "11.5px", fontWeight: 600, color: "#374151", cursor: "pointer" }}>Email</button>
                       <button style={{ padding: "5px 12px", background: "#111827", border: "none", borderRadius: "6px", fontSize: "11.5px", fontWeight: 600, color: "#fff", cursor: "pointer" }}>Done</button>
                     </div>
                   </div>
@@ -10994,10 +10993,10 @@ function CrmInvestorsPage({ staffRows }: { staffRows: StaffRow[] }) {
   const professionColor: Record<string, string> = { "Residential": "#6366f1", "Commercial": "#0e7490", "Development": "#ea580c", "Mixed": "#7e22ce" };
 
   return (
-    <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "calc(100vh - 56px)", overflow: "hidden", padding: "20px 28px", gap: "14px" }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+    <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "calc(100vh - 56px)", overflow: "hidden", padding: "28px 36px", gap: "20px" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0, paddingBottom: "20px", borderBottom: "1px solid #e5e7eb" }}>
         <div>
-          <h1 style={{ fontSize: "1.1rem", fontWeight: 700, color: "#111827", letterSpacing: "-0.03em", margin: 0 }}>Investors</h1>
+          <h1 style={{ fontSize: "1.2rem", fontWeight: 700, color: "#111827", letterSpacing: "-0.03em", margin: 0 }}>Investors</h1>
           <p style={{ fontSize: "12.5px", color: "#9ca3af", margin: "3px 0 0" }}>Contacts · Property investors & developers</p>
         </div>
         <button style={{ display: "flex", alignItems: "center", gap: "7px", padding: "7px 14px", background: "#111827", color: "#fff", border: "none", borderRadius: "8px", fontSize: "12.5px", fontWeight: 600, cursor: "pointer" }}>
@@ -11017,12 +11016,12 @@ function CrmInvestorsPage({ staffRows }: { staffRows: StaffRow[] }) {
         { title: "Yield Analysis Brief", description: "Quarterly AI report on rental yield trends across investor-preferred suburbs", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" strokeWidth="1.3"/><path d="M5 8h6M5 11h4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg> },
       ]} />
       <div style={{ flex: 1, overflow: "auto" }}>
-        <div style={{ background: "#fff", border: "1.5px solid #e5e7eb", borderRadius: "12px", overflow: "hidden" }}>
+        <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: "12px", overflow: "hidden", boxShadow: "0 1px 2px rgba(0,0,0,0.04)" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
             <thead>
               <tr style={{ background: "#fafafa", borderBottom: "1px solid #f3f4f6" }}>
                 {["Investor", "Focus", "Preferred Suburbs", "Yield Target", "Portfolio Size", "Status", ""].map(h => (
-                  <th key={h} style={{ textAlign: "left", padding: "9px 14px", fontSize: "10.5px", fontWeight: 700, color: "#9ca3af", textTransform: "uppercase" as const, letterSpacing: "0.05em" }}>{h}</th>
+                  <th key={h} style={{ textAlign: "left", padding: "10px 16px", fontSize: "10.5px", fontWeight: 700, color: "#6b7280", textTransform: "uppercase" as const, letterSpacing: "0.07em" }}>{h}</th>
                 ))}
               </tr>
             </thead>
@@ -11051,10 +11050,10 @@ function CrmReferralNetworkPage({ staffRows }: { staffRows: StaffRow[] }) {
   };
 
   return (
-    <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "calc(100vh - 56px)", overflow: "hidden", padding: "20px 28px", gap: "14px" }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+    <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "calc(100vh - 56px)", overflow: "hidden", padding: "28px 36px", gap: "20px" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0, paddingBottom: "20px", borderBottom: "1px solid #e5e7eb" }}>
         <div>
-          <h1 style={{ fontSize: "1.1rem", fontWeight: 700, color: "#111827", letterSpacing: "-0.03em", margin: 0 }}>Referral Network</h1>
+          <h1 style={{ fontSize: "1.2rem", fontWeight: 700, color: "#111827", letterSpacing: "-0.03em", margin: 0 }}>Referral Network</h1>
           <p style={{ fontSize: "12.5px", color: "#9ca3af", margin: "3px 0 0" }}>Contacts · Brokers, solicitors, accountants & partner professionals</p>
         </div>
         <button style={{ display: "flex", alignItems: "center", gap: "7px", padding: "7px 14px", background: "#111827", color: "#fff", border: "none", borderRadius: "8px", fontSize: "12.5px", fontWeight: 600, cursor: "pointer" }}>
@@ -11087,12 +11086,12 @@ function CrmReferralNetworkPage({ staffRows }: { staffRows: StaffRow[] }) {
         </div>
         {/* Table */}
         <div style={{ flex: 1, overflow: "auto" }}>
-          <div style={{ background: "#fff", border: "1.5px solid #e5e7eb", borderRadius: "12px", overflow: "hidden" }}>
+          <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: "12px", overflow: "hidden", boxShadow: "0 1px 2px rgba(0,0,0,0.04)" }}>
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
               <thead>
                 <tr style={{ background: "#fafafa", borderBottom: "1px solid #f3f4f6" }}>
                   {["Partner", "Profession", "Referrals In", "Referrals Out", "Last Referral", "Last Contact", ""].map(h => (
-                    <th key={h} style={{ textAlign: "left", padding: "9px 14px", fontSize: "10.5px", fontWeight: 700, color: "#9ca3af", textTransform: "uppercase" as const, letterSpacing: "0.05em" }}>{h}</th>
+                    <th key={h} style={{ textAlign: "left", padding: "10px 16px", fontSize: "10.5px", fontWeight: 700, color: "#6b7280", textTransform: "uppercase" as const, letterSpacing: "0.07em" }}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -11116,10 +11115,10 @@ function CrmReferralNetworkPage({ staffRows }: { staffRows: StaffRow[] }) {
 
 function CrmPastClientsPage({ staffRows }: { staffRows: StaffRow[] }) {
   return (
-    <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "calc(100vh - 56px)", overflow: "hidden", padding: "20px 28px", gap: "14px" }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+    <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "calc(100vh - 56px)", overflow: "hidden", padding: "28px 36px", gap: "20px" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0, paddingBottom: "20px", borderBottom: "1px solid #e5e7eb" }}>
         <div>
-          <h1 style={{ fontSize: "1.1rem", fontWeight: 700, color: "#111827", letterSpacing: "-0.03em", margin: 0 }}>Past Clients</h1>
+          <h1 style={{ fontSize: "1.2rem", fontWeight: 700, color: "#111827", letterSpacing: "-0.03em", margin: 0 }}>Past Clients</h1>
           <p style={{ fontSize: "12.5px", color: "#9ca3af", margin: "3px 0 0" }}>Contacts · Post-settlement relationships & re-listing pipeline</p>
         </div>
         <button style={{ display: "flex", alignItems: "center", gap: "7px", padding: "7px 14px", background: "#111827", color: "#fff", border: "none", borderRadius: "8px", fontSize: "12.5px", fontWeight: 600, cursor: "pointer" }}>
@@ -11139,12 +11138,12 @@ function CrmPastClientsPage({ staffRows }: { staffRows: StaffRow[] }) {
         { title: "Referral Request", description: "7 days post-settlement, auto-send a review request and referral prompt to the client", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 1l2 5h5l-4 3 1.5 5L8 11l-4.5 3L5 9 1 6h5L8 1z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/></svg> },
       ]} />
       <div style={{ flex: 1, overflow: "auto" }}>
-        <div style={{ background: "#fff", border: "1.5px solid #e5e7eb", borderRadius: "12px", overflow: "hidden" }}>
+        <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: "12px", overflow: "hidden", boxShadow: "0 1px 2px rgba(0,0,0,0.04)" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
             <thead>
               <tr style={{ background: "#fafafa", borderBottom: "1px solid #f3f4f6" }}>
                 {["Client", "Property Purchased", "Settlement Date", "Years Since", "Est. Equity", "Re-listing Probability", ""].map(h => (
-                  <th key={h} style={{ textAlign: "left", padding: "9px 14px", fontSize: "10.5px", fontWeight: 700, color: "#9ca3af", textTransform: "uppercase" as const, letterSpacing: "0.05em" }}>{h}</th>
+                  <th key={h} style={{ textAlign: "left", padding: "10px 16px", fontSize: "10.5px", fontWeight: 700, color: "#6b7280", textTransform: "uppercase" as const, letterSpacing: "0.07em" }}>{h}</th>
                 ))}
               </tr>
             </thead>
@@ -11195,12 +11194,12 @@ function CrmWithdrawnExpiredPage({ staffRows }: { staffRows: StaffRow[] }) {
   const filtered = filter === "all" ? items : items.filter(i => i.status === filter);
 
   return (
-    <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "calc(100vh - 56px)", overflow: "hidden", padding: "20px 28px", gap: "14px" }}>
+    <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "calc(100vh - 56px)", overflow: "hidden", padding: "28px 36px", gap: "20px" }}>
 
       {/* Header */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0, paddingBottom: "20px", borderBottom: "1px solid #e5e7eb" }}>
         <div>
-          <h1 style={{ fontSize: "1.1rem", fontWeight: 700, color: "#111827", letterSpacing: "-0.03em", margin: 0 }}>Withdrawn & Expired</h1>
+          <h1 style={{ fontSize: "1.2rem", fontWeight: 700, color: "#111827", letterSpacing: "-0.03em", margin: 0 }}>Withdrawn & Expired</h1>
           <p style={{ fontSize: "12.5px", color: "#9ca3af", margin: "3px 0 0" }}>Prospecting · Listings pulled from market — prime re-appraisal opportunities</p>
         </div>
         <div style={{ display: "flex", gap: "8px" }}>
@@ -11259,7 +11258,7 @@ function CrmWithdrawnExpiredPage({ staffRows }: { staffRows: StaffRow[] }) {
           { icon: "⏱️", title: "Expired Listings", body: "Agreement lapsed — vendor is available. First agent to call wins the re-list." },
           { icon: "🔁", title: "Re-listed Properties", body: "Listed again after a gap — shows vendor is still motivated but switched strategy or agent." },
         ].map(card => (
-          <div key={card.title} style={{ background: "#fff", border: "1.5px solid #e5e7eb", borderRadius: "10px", padding: "14px 16px" }}>
+          <div key={card.title} style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: "12px", padding: "14px 16px" }}>
             <div style={{ fontSize: "18px", marginBottom: "6px" }}>{card.icon}</div>
             <div style={{ fontSize: "12.5px", fontWeight: 700, color: "#111827", marginBottom: "4px" }}>{card.title}</div>
             <div style={{ fontSize: "11.5px", color: "#6b7280", lineHeight: 1.5 }}>{card.body}</div>
@@ -11269,29 +11268,29 @@ function CrmWithdrawnExpiredPage({ staffRows }: { staffRows: StaffRow[] }) {
 
       {/* Table */}
       <div style={{ flex: 1, overflow: "auto" }}>
-        <div style={{ background: "#fff", border: "1.5px solid #e5e7eb", borderRadius: "12px", overflow: "hidden" }}>
+        <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: "12px", overflow: "hidden", boxShadow: "0 1px 2px rgba(0,0,0,0.04)" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
             <thead>
               <tr style={{ background: "#fafafa", borderBottom: "1px solid #f3f4f6" }}>
                 {["Property", "Status", "Portal", "Last Price", "Days on Mkt", "Withdrawn", "Reason Signal", ""].map(h => (
-                  <th key={h} style={{ textAlign: "left", padding: "9px 14px", fontSize: "10.5px", fontWeight: 700, color: "#9ca3af", textTransform: "uppercase" as const, letterSpacing: "0.05em" }}>{h}</th>
+                  <th key={h} style={{ textAlign: "left", padding: "10px 16px", fontSize: "10.5px", fontWeight: 700, color: "#6b7280", textTransform: "uppercase" as const, letterSpacing: "0.07em" }}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {filtered.length > 0 ? filtered.map(item => (
-                <tr key={item.id} style={{ borderBottom: "1px solid #f9fafb" }}>
-                  <td style={{ padding: "11px 14px" }}>
+                <tr key={item.id} style={{ borderBottom: "1px solid #f3f4f6" }}>
+                  <td style={{ padding: "12px 16px" }}>
                     <div style={{ fontWeight: 700, color: "#111827" }}>{item.address}</div>
                     <div style={{ fontSize: "11.5px", color: "#9ca3af" }}>{item.suburb}</div>
                   </td>
-                  <td style={{ padding: "11px 14px" }}>{statusBadge(item.status)}</td>
-                  <td style={{ padding: "11px 14px" }}>{portalBadge(item.portal)}</td>
-                  <td style={{ padding: "11px 14px", fontWeight: 600, color: "#374151" }}>{item.lastPrice}</td>
-                  <td style={{ padding: "11px 14px", color: "#374151" }}>{item.daysOnMarket}d</td>
-                  <td style={{ padding: "11px 14px", color: item.daysSinceWithdrawn <= 7 ? "#dc2626" : "#374151", fontWeight: item.daysSinceWithdrawn <= 7 ? 700 : 400 }}>{item.daysSinceWithdrawn}d ago</td>
-                  <td style={{ padding: "11px 14px", fontSize: "12px", color: "#6b7280", fontStyle: "italic" }}>{item.reasonGuess}</td>
-                  <td style={{ padding: "11px 14px" }}>
+                  <td style={{ padding: "12px 16px" }}>{statusBadge(item.status)}</td>
+                  <td style={{ padding: "12px 16px" }}>{portalBadge(item.portal)}</td>
+                  <td style={{ padding: "12px 16px", fontWeight: 600, color: "#374151" }}>{item.lastPrice}</td>
+                  <td style={{ padding: "12px 16px", color: "#374151" }}>{item.daysOnMarket}d</td>
+                  <td style={{ padding: "12px 16px", color: item.daysSinceWithdrawn <= 7 ? "#dc2626" : "#374151", fontWeight: item.daysSinceWithdrawn <= 7 ? 700 : 400 }}>{item.daysSinceWithdrawn}d ago</td>
+                  <td style={{ padding: "12px 16px", fontSize: "12px", color: "#6b7280", fontStyle: "italic" }}>{item.reasonGuess}</td>
+                  <td style={{ padding: "12px 16px" }}>
                     <button style={{ padding: "5px 12px", background: "#111827", color: "#fff", border: "none", borderRadius: "6px", fontSize: "11.5px", fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap" }}>Book Appraisal</button>
                   </td>
                 </tr>
@@ -11934,11 +11933,11 @@ function CrmSubPage({ moduleId, submodule, crmListings, onAddListing, staffRows,
   const aiDef = aiDefs[moduleId]?.[sub];
 
   return (
-    <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "calc(100vh - 56px)", overflow: "hidden", padding: "20px 28px", gap: "14px" }}>
+    <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "calc(100vh - 56px)", overflow: "hidden", padding: "28px 36px", gap: "20px" }}>
       {/* Header */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0, paddingBottom: "20px", borderBottom: "1px solid #e5e7eb" }}>
         <div>
-          <h1 style={{ fontSize: "1.1rem", fontWeight: 700, color: "#111827", letterSpacing: "-0.03em", margin: 0 }}>{sub}</h1>
+          <h1 style={{ fontSize: "1.2rem", fontWeight: 700, color: "#111827", letterSpacing: "-0.03em", margin: 0 }}>{sub}</h1>
           <p style={{ fontSize: "12.5px", color: "#9ca3af", margin: "3px 0 0" }}>{moduleId.charAt(0).toUpperCase() + moduleId.slice(1)}</p>
         </div>
         <button style={{ display: "flex", alignItems: "center", gap: "7px", padding: "7px 14px", background: "#111827", color: "#fff", border: "none", borderRadius: "8px", fontSize: "12.5px", fontWeight: 600, cursor: "pointer", fontFamily: "var(--font-inter)" }}
