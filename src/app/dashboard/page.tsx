@@ -10709,87 +10709,61 @@ function AiChatPanel({ open, onClose, crmListings, staffRows, onNavigate }: {
 
 // ─── CrmHomePage ──────────────────────────────────────────────────────────────
 
-const SEED_PENDING_LISTINGS = [
-  { id: "pl1", address: "47 Crown St", suburb: "Wollongong", agent: "Sarah Mitchell", price: "$1,100,000–$1,300,000", signedDate: "2026-08-01", type: "sale", blocker: "Photos booked Aug 7" },
-  { id: "pl2", address: "18 Lawrence Hargrave Dr", suburb: "Stanwell Park", agent: "Tom Briggs", price: "$2,200,000", signedDate: "2026-08-03", type: "sale", blocker: "Copywriting in review" },
-  { id: "pl3", address: "5 Lyrebird Dr", suburb: "Bulli", agent: "Sarah Mitchell", price: "$690/wk", signedDate: "2026-08-04", type: "rental", blocker: "Entry condition report pending" },
-];
-
-function CrmHomePage({ agencyName, onNavigate }: { agencyName: string; onNavigate: (moduleId: string, submodule: string | null) => void }) {
+function CrmHomePage({ agencyName, crmListings, onNavigate }: {
+  agencyName: string;
+  crmListings: CrmListing[];
+  onNavigate: (moduleId: string, submodule: string | null) => void;
+}) {
   const today = new Date();
   const todayStr = today.toLocaleDateString("en-AU", { weekday: "long", day: "numeric", month: "long" });
 
+  // Derive counts from real listing data
+  const active = crmListings.filter(l => l.status === "active");
+  const underOffer = crmListings.filter(l => l.status === "under-offer");
+  const sold = crmListings.filter(l => l.status === "sold" || l.status === "leased");
+
+  const sumPrice = (ls: CrmListing[]) =>
+    ls.filter(l => l.type === "sale").reduce((s, l) => s + parseFloat(l.price.replace(/[$,]/g, "") || "0"), 0);
+
+  const activeVal = sumPrice(active) / 1000000;
+  const underOfferVal = sumPrice(underOffer) / 1000000;
+  const soldVal = sumPrice(sold) / 1000000;
+  const totalPipeline = activeVal + underOfferVal;
+
+  // Pipeline stages — appraisals/presentations/pending come from their own Supabase tables
+  // and will be non-zero once those modules load data. For now they gracefully show 0.
   const pipeline = [
-    {
-      id: "appraisals", label: "Appraisals", color: "#f59e0b", bg: "#fefce8",
-      count: DEMO_APPRAISALS.length,
-      value: `$${(DEMO_APPRAISALS.reduce((s, a) => s + parseFloat(a.priceFrom?.replace(/[$,]/g, "") || "0"), 0) / 1000000).toFixed(1)}M est.`,
-      items: DEMO_APPRAISALS.map(a => ({ label: a.address, sub: `${a.suburb} · ${a.ownerName}`, badge: a.stage.charAt(0).toUpperCase() + a.stage.slice(1), urgent: daysUntil(a.followUpDate) <= 1 })),
-      nav: () => onNavigate("appraisals", null),
-    },
-    {
-      id: "presentations", label: "Presentations", color: "#8b5cf6", bg: "#f5f3ff",
-      count: DEMO_APPRAISALS.filter(a => a.stage === "completed").length,
-      value: "Ready to pitch",
-      items: DEMO_APPRAISALS.filter(a => a.stage === "completed").map(a => ({ label: a.address, sub: `${a.suburb} · ${a.ownerName}`, badge: "Completed", urgent: false })),
-      nav: () => onNavigate("appraisals", null),
-    },
-    {
-      id: "pending", label: "Listed — Pending", color: "#3b82f6", bg: "#eff6ff",
-      count: SEED_PENDING_LISTINGS.length,
-      value: "Signed, not online",
-      items: SEED_PENDING_LISTINGS.map(p => ({ label: p.address, sub: `${p.suburb} · ${p.blocker}`, badge: "Pending", urgent: false })),
-      nav: () => onNavigate("listings", "Active Listings"),
-    },
-    {
-      id: "active", label: "Active Listed", color: "#10b981", bg: "#f0fdf4",
-      count: DEMO_LISTINGS.length,
-      value: `$${(DEMO_LISTINGS.reduce((s, l) => s + parseFloat(l.price.replace(/[$,]/g, "") || "0"), 0) / 1000000).toFixed(1)}M listed`,
-      items: DEMO_LISTINGS.map(l => ({ label: l.address, sub: `${l.suburb} · ${l.agent}`, badge: `${daysAgo(l.listedDate)}d on market`, urgent: false })),
-      nav: () => onNavigate("listings", "Active Listings"),
-    },
-    {
-      id: "underOffer", label: "Exchanged", color: "#6366f1", bg: "#f5f3ff",
-      count: SEED_UNDER_OFFER.length,
-      value: `$${(3.725).toFixed(2)}M`,
-      items: SEED_UNDER_OFFER.map(u => ({ label: u.address, sub: `${u.suburb} · Settles ${new Date(u.settlementDate).toLocaleDateString("en-AU", { day: "numeric", month: "short" })}`, badge: u.financeCleared && u.buildingCleared && u.pestCleared ? "All Clear" : "Conditions Pending", urgent: !u.financeCleared && daysUntil(u.financeDate) <= 3 })),
-      nav: () => onNavigate("listings", "Under Offer"),
-    },
-    {
-      id: "settled", label: "Settled", color: "#16a34a", bg: "#f0fdf4",
-      count: SEED_SOLD.length,
-      value: `$${(SEED_SOLD.filter(s => s.type === "sale").reduce((sum, s) => sum + parseFloat(s.price.replace(/[$,]/g, "") || "0"), 0) / 1000000).toFixed(2)}M`,
-      items: SEED_SOLD.map(s => ({ label: s.address, sub: `${s.suburb} · ${s.agent} · ${s.daysOnMarket}d`, badge: s.type === "sale" ? s.price : s.price, urgent: false })),
-      nav: () => onNavigate("listings", "Sold / Leased"),
-    },
+    { id: "appraisals",    label: "Appraisals",      color: "#f59e0b", count: 0,              value: "—",                                          nav: () => onNavigate("appraisals", null) },
+    { id: "presentations", label: "Presentations",   color: "#8b5cf6", count: 0,              value: "—",                                          nav: () => onNavigate("appraisals", null) },
+    { id: "pending",       label: "Listed — Pending",color: "#3b82f6", count: 0,              value: "Signed, not online",                         nav: () => onNavigate("listings", "Active Listings") },
+    { id: "active",        label: "Active Listed",   color: "#10b981", count: active.length,  value: activeVal > 0 ? `$${activeVal.toFixed(1)}M`   : "—", nav: () => onNavigate("listings", "Active Listings") },
+    { id: "exchanged",     label: "Exchanged",       color: "#6366f1", count: underOffer.length, value: underOfferVal > 0 ? `$${underOfferVal.toFixed(2)}M` : "—", nav: () => onNavigate("listings", "Under Offer") },
+    { id: "settled",       label: "Settled",         color: "#16a34a", count: sold.length,    value: soldVal > 0 ? `$${soldVal.toFixed(2)}M`      : "—", nav: () => onNavigate("listings", "Sold / Leased") },
   ];
 
-  const totalPipelineValue = 3.725 + DEMO_LISTINGS.reduce((s, l) => s + parseFloat(l.price.replace(/[$,]/g, "") || "0"), 0) / 1000000;
+  const maxCount = Math.max(...pipeline.map(s => s.count), 1);
 
-  const notifications: Array<{ id: string; type: "urgent" | "warning" | "info" | "success"; title: string; body: string; time: string; action?: string; nav?: () => void }> = [
-    { id: "n1", type: "urgent", title: "Finance deadline in 1 day", body: "3 Illawarra Rd — Michael Chen's finance expires Aug 6. Follow up immediately.", time: "Now", action: "View Contract", nav: () => onNavigate("listings", "Under Offer") },
-    { id: "n2", type: "warning", title: "Follow-up overdue", body: "47 Crown St appraisal — Chris & Anna Wong. Booked follow-up was today.", time: "Today", action: "Open Appraisals", nav: () => onNavigate("appraisals", null) },
-    { id: "n3", type: "warning", title: "2 unsent neighbour letters", body: "14 Wentworth Ave and 3 Illawarra Rd sold — letter drop not yet actioned.", time: "2 days ago", action: "Open Sold/Leased", nav: () => onNavigate("listings", "Sold / Leased") },
-    { id: "n4", type: "info", title: "New lead assigned", body: "Daniel Russo (REA.com.au) — Wollongong, $900k–$1.1M. Assigned to Sarah Mitchell.", time: "1h ago", action: "View Leads", nav: () => onNavigate("team", "Leads") },
-    { id: "n5", type: "info", title: "Listing presentation ready", body: "47 Crown St — appraisal complete, estimated $1.1M–$1.3M. Ready to pitch.", time: "Yesterday", action: "Open Appraisals", nav: () => onNavigate("appraisals", null) },
-    { id: "n6", type: "success", title: "Campaign delivered", body: "Buyer Database Blast — 620 sent, 51% open rate (industry avg 28%).", time: "Yesterday", action: "View Campaign", nav: () => onNavigate("marketing", "Campaigns") },
-    { id: "n7", type: "info", title: "18 Lawrence Hargrave Dr", body: "Photos booked Aug 7 — confirm booking with photographer.", time: "2 days ago" },
-  ];
+  // Property type breakdown from real data
+  const byType = ["House", "Unit", "Townhouse", "Land", "Other"].map(t => ({
+    label: t,
+    count: crmListings.filter(l => l.propertyType === t || (t === "Other" && !["House","Unit","Townhouse","Land"].includes(l.propertyType))).length,
+  })).filter(t => t.count > 0);
+  const maxTypeCount = Math.max(...byType.map(t => t.count), 1);
+  const typeColors = ["#6366f1", "#10b981", "#f59e0b", "#3b82f6", "#9ca3af"];
 
-  const notifStyle: Record<string, { bg: string; border: string; dot: string; icon: React.ReactNode }> = {
-    urgent: { bg: "#fef2f2", border: "#fecaca", dot: "#dc2626", icon: <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M8 2l6 12H2L8 2z" stroke="#dc2626" strokeWidth="1.4" strokeLinejoin="round"/><path d="M8 7v3M8 12v.5" stroke="#dc2626" strokeWidth="1.4" strokeLinecap="round"/></svg> },
-    warning: { bg: "#fffbeb", border: "#fde68a", dot: "#f59e0b", icon: <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M8 1v7l4 2" stroke="#f59e0b" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/><circle cx="8" cy="8" r="7" stroke="#f59e0b" strokeWidth="1.3"/></svg> },
-    info: { bg: "#f0f9ff", border: "#bae6fd", dot: "#0284c7", icon: <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="#0284c7" strokeWidth="1.3"/><path d="M8 7v5M8 5v.5" stroke="#0284c7" strokeWidth="1.4" strokeLinecap="round"/></svg> },
-    success: { bg: "#f0fdf4", border: "#bbf7d0", dot: "#16a34a", icon: <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M3 8l4 4 6-6" stroke="#16a34a" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg> },
-  };
+  // Sale vs rental split
+  const saleCount = crmListings.filter(l => l.type === "sale").length;
+  const rentalCount = crmListings.filter(l => l.type === "rental").length;
+  const total = crmListings.length || 1;
 
   return (
-    <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "calc(100vh - 56px)", overflow: "hidden", padding: "20px 28px", gap: "16px" }}>
+    <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "calc(100vh - 56px)", overflow: "hidden", padding: "20px 28px", gap: "14px" }}>
+
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
         <div>
-          <h1 style={{ fontSize: "1.15rem", fontWeight: 800, color: "#111827", letterSpacing: "-0.04em", margin: 0 }}>{agencyName || "CRM"} — Pipeline</h1>
-          <p style={{ fontSize: "12.5px", color: "#9ca3af", margin: "2px 0 0" }}>{todayStr} · {DEMO_APPRAISALS.length + DEMO_LISTINGS.length + SEED_UNDER_OFFER.length} active deals</p>
+          <h1 style={{ fontSize: "1.15rem", fontWeight: 800, color: "#111827", letterSpacing: "-0.04em", margin: 0 }}>{agencyName || "CRM"} — Overview</h1>
+          <p style={{ fontSize: "12.5px", color: "#9ca3af", margin: "2px 0 0" }}>{todayStr} · {active.length + underOffer.length} active deals</p>
         </div>
         <div style={{ display: "flex", gap: "8px" }}>
           <button onClick={() => onNavigate("appraisals", null)} style={{ padding: "7px 14px", background: "#f3f4f6", color: "#374151", border: "none", borderRadius: "8px", fontSize: "12.5px", fontWeight: 600, cursor: "pointer" }}>+ Appraisal</button>
@@ -10799,80 +10773,129 @@ function CrmHomePage({ agencyName, onNavigate }: { agencyName: string; onNavigat
 
       {/* KPI Strip */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "10px", flexShrink: 0 }}>
-        <CrmKpiTile label="Pipeline Value" value={`$${totalPipelineValue.toFixed(1)}M`} sub="active + under offer" color="#6366f1" trend={{ dir: "up", pct: "12%" }} spark={[5,6,7,7,8,9,9,10,11,11]} />
-        <CrmKpiTile label="Active Listings" value={String(DEMO_LISTINGS.length)} sub="live on portals" color="#10b981" spark={[3,3,4,4,4,5,5,5,5,5]} />
-        <CrmKpiTile label="Under Offer" value={String(SEED_UNDER_OFFER.length)} sub={`$3.73M in contracts`} color="#f59e0b" spark={[1,2,2,3,3,3,3,3,3,3]} />
-        <CrmKpiTile label="Settled This Month" value={String(SEED_SOLD.filter(s => s.type === "sale").length)} sub="sales closed" color="#16a34a" trend={{ dir: "up", pct: "50%" }} spark={[1,1,2,2,2,2,3,3,3,3]} />
+        <CrmKpiTile label="Pipeline Value" value={totalPipeline > 0 ? `$${totalPipeline.toFixed(1)}M` : "—"} sub="active + under offer" color="#6366f1" />
+        <CrmKpiTile label="Active Listings" value={String(active.length)} sub="live on portals" color="#10b981" />
+        <CrmKpiTile label="Under Offer" value={String(underOffer.length)} sub={underOfferVal > 0 ? `$${underOfferVal.toFixed(2)}M in contracts` : "no contracts"} color="#f59e0b" />
+        <CrmKpiTile label="Settled" value={String(sold.length)} sub={soldVal > 0 ? `$${soldVal.toFixed(2)}M closed` : "no settlements"} color="#16a34a" />
       </div>
 
-      {/* Main: Pipeline + Notifications */}
-      <div style={{ flex: 1, display: "flex", gap: "16px", overflow: "hidden" }}>
+      {/* Pipeline tiles + Chart area */}
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "12px", overflow: "hidden" }}>
 
-        {/* Pipeline column */}
-        <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column", gap: "12px" }}>
-          <div style={{ fontSize: "12px", fontWeight: 700, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.06em", flexShrink: 0 }}>Deal Pipeline</div>
-          {/* Stage headers */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: "8px", flexShrink: 0 }}>
+        {/* Pipeline stage tiles */}
+        <div style={{ flexShrink: 0 }}>
+          <div style={{ fontSize: "11px", fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "8px" }}>Deal Pipeline</div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: "8px" }}>
             {pipeline.map(stage => (
-              <button key={stage.id} onClick={stage.nav} style={{ background: stage.bg, border: `1.5px solid ${stage.color}30`, borderRadius: "10px", padding: "10px 12px", textAlign: "left", cursor: "pointer", transition: "transform 0.15s" }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "4px" }}>
-                  <span style={{ fontSize: "11px", fontWeight: 700, color: stage.color, textTransform: "uppercase", letterSpacing: "0.04em" }}>{stage.label}</span>
-                  <span style={{ fontSize: "16px", fontWeight: 800, color: "#111827" }}>{stage.count}</span>
-                </div>
-                <div style={{ fontSize: "10.5px", color: "#6b7280" }}>{stage.value}</div>
-                <div style={{ marginTop: "6px", height: "3px", background: `${stage.color}20`, borderRadius: "2px" }}>
-                  <div style={{ height: "100%", width: `${Math.min((stage.count / 6) * 100, 100)}%`, background: stage.color, borderRadius: "2px" }} />
-                </div>
+              <button key={stage.id} onClick={stage.nav} style={{ background: "#fff", border: `1.5px solid #e5e7eb`, borderRadius: "10px", padding: "12px 14px", textAlign: "left", cursor: "pointer", position: "relative", overflow: "hidden", transition: "border-color 0.15s, box-shadow 0.15s" }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = stage.color; e.currentTarget.style.boxShadow = `0 0 0 3px ${stage.color}15`; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = "#e5e7eb"; e.currentTarget.style.boxShadow = "none"; }}>
+                <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "3px", background: stage.color, borderRadius: "10px 10px 0 0" }} />
+                <div style={{ fontSize: "10.5px", fontWeight: 700, color: stage.color, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "6px" }}>{stage.label}</div>
+                <div style={{ fontSize: "22px", fontWeight: 800, color: "#111827", letterSpacing: "-0.04em", lineHeight: 1 }}>{stage.count}</div>
+                <div style={{ fontSize: "11px", color: "#9ca3af", marginTop: "4px" }}>{stage.value}</div>
               </button>
-            ))}
-          </div>
-          {/* Property cards per stage */}
-          <div style={{ flex: 1, overflow: "auto", display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: "8px", alignContent: "start" }}>
-            {pipeline.map(stage => (
-              <div key={stage.id} style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                {stage.items.length === 0 && (
-                  <div style={{ border: "1.5px dashed #e5e7eb", borderRadius: "8px", padding: "12px", textAlign: "center" }}>
-                    <div style={{ fontSize: "11px", color: "#d1d5db" }}>Empty</div>
-                  </div>
-                )}
-                {stage.items.map((item, idx) => (
-                  <button key={idx} onClick={stage.nav} style={{ background: "#fff", border: `1.5px solid ${item.urgent ? "#fca5a5" : "#e5e7eb"}`, borderRadius: "8px", padding: "10px 11px", textAlign: "left", cursor: "pointer", width: "100%" }}>
-                    {item.urgent && <div style={{ fontSize: "10px", fontWeight: 700, color: "#dc2626", marginBottom: "4px", display: "flex", alignItems: "center", gap: "3px" }}><svg width="9" height="9" viewBox="0 0 12 12" fill="none"><path d="M6 1l5 9H1L6 1z" stroke="#dc2626" strokeWidth="1.3" strokeLinejoin="round"/></svg>URGENT</div>}
-                    <div style={{ fontSize: "11.5px", fontWeight: 700, color: "#111827", lineHeight: 1.3, marginBottom: "3px" }}>{item.label}</div>
-                    <div style={{ fontSize: "10.5px", color: "#9ca3af", lineHeight: 1.3, marginBottom: "5px" }}>{item.sub}</div>
-                    <span style={{ fontSize: "10px", fontWeight: 600, padding: "1px 6px", borderRadius: "20px", background: `${stage.color}15`, color: stage.color }}>{item.badge}</span>
-                  </button>
-                ))}
-              </div>
             ))}
           </div>
         </div>
 
-        {/* Notifications panel */}
-        <div style={{ width: "280px", flexShrink: 0, display: "flex", flexDirection: "column", gap: "10px", overflow: "hidden" }}>
-          <div style={{ fontSize: "12px", fontWeight: 700, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.06em", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <span>Notifications</span>
-            <span style={{ background: "#fef2f2", color: "#dc2626", fontSize: "10px", fontWeight: 700, padding: "1px 6px", borderRadius: "20px" }}>{notifications.filter(n => n.type === "urgent").length} urgent</span>
-          </div>
-          <div style={{ flex: 1, overflow: "auto", display: "flex", flexDirection: "column", gap: "6px" }}>
-            {notifications.map(n => {
-              const ns = notifStyle[n.type];
-              return (
-                <div key={n.id} style={{ background: ns.bg, border: `1.5px solid ${ns.border}`, borderRadius: "10px", padding: "10px 12px" }}>
-                  <div style={{ display: "flex", alignItems: "flex-start", gap: "8px" }}>
-                    <div style={{ marginTop: "1px", flexShrink: 0 }}>{ns.icon}</div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: "12px", fontWeight: 700, color: "#111827", marginBottom: "2px" }}>{n.title}</div>
-                      <div style={{ fontSize: "11px", color: "#6b7280", lineHeight: 1.4, marginBottom: n.action ? "6px" : 0 }}>{n.body}</div>
-                      {n.action && n.nav && (
-                        <button onClick={n.nav} style={{ fontSize: "11px", fontWeight: 600, color: ns.dot, background: "transparent", border: "none", padding: 0, cursor: "pointer", textDecoration: "underline", textUnderlineOffset: "2px" }}>{n.action} →</button>
-                      )}
+        {/* Charts row */}
+        <div style={{ flex: 1, display: "grid", gridTemplateColumns: "1fr 340px", gap: "12px", overflow: "hidden" }}>
+
+          {/* Pipeline funnel bar chart */}
+          <div style={{ background: "#fff", border: "1.5px solid #e5e7eb", borderRadius: "12px", padding: "20px 24px", overflow: "hidden", display: "flex", flexDirection: "column" }}>
+            <div style={{ fontSize: "13px", fontWeight: 700, color: "#111827", marginBottom: "4px" }}>Pipeline Flow</div>
+            <div style={{ fontSize: "11.5px", color: "#9ca3af", marginBottom: "20px" }}>Deal count by stage — click a bar to open the module</div>
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-around", gap: "10px" }}>
+              {pipeline.map((stage, i) => {
+                const barPct = maxCount > 0 ? (stage.count / maxCount) * 100 : 0;
+                return (
+                  <button key={stage.id} onClick={stage.nav} style={{ display: "flex", alignItems: "center", gap: "12px", background: "none", border: "none", padding: 0, cursor: "pointer", textAlign: "left", width: "100%" }}>
+                    <div style={{ width: "130px", flexShrink: 0, fontSize: "12px", fontWeight: 600, color: "#374151" }}>{stage.label}</div>
+                    <div style={{ flex: 1, position: "relative" }}>
+                      <div style={{ height: "28px", background: "#f3f4f6", borderRadius: "6px", overflow: "hidden" }}>
+                        <div style={{ height: "100%", width: `${barPct}%`, background: stage.color, borderRadius: "6px", minWidth: barPct > 0 ? "28px" : "0", transition: "width 0.4s ease", display: "flex", alignItems: "center", justifyContent: "flex-end", paddingRight: "8px" }}>
+                          {stage.count > 0 && <span style={{ fontSize: "12px", fontWeight: 700, color: "#fff" }}>{stage.count}</span>}
+                        </div>
+                      </div>
+                      {stage.count === 0 && <span style={{ position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)", fontSize: "11.5px", color: "#d1d5db", fontStyle: "italic" }}>None yet</span>}
                     </div>
-                  </div>
-                  <div style={{ marginTop: "4px", fontSize: "10px", color: "#9ca3af", textAlign: "right" }}>{n.time}</div>
+                    <div style={{ width: "72px", flexShrink: 0, fontSize: "11.5px", color: "#6b7280", textAlign: "right" }}>{stage.value}</div>
+                    {i < pipeline.length - 1 && stage.count > 0 && pipeline[i + 1].count > 0 && (
+                      <div style={{ position: "absolute", right: "-6px" }} />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+            {crmListings.length === 0 && (
+              <div style={{ marginTop: "16px", paddingTop: "16px", borderTop: "1px solid #f3f4f6", fontSize: "12px", color: "#9ca3af", textAlign: "center" }}>Add your first listing to see pipeline data</div>
+            )}
+          </div>
+
+          {/* Right column — breakdown charts */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "12px", overflow: "hidden" }}>
+
+            {/* Property type breakdown */}
+            <div style={{ background: "#fff", border: "1.5px solid #e5e7eb", borderRadius: "12px", padding: "16px 18px", flex: 1 }}>
+              <div style={{ fontSize: "13px", fontWeight: 700, color: "#111827", marginBottom: "14px" }}>By Property Type</div>
+              {byType.length > 0 ? (
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                  {byType.map((t, i) => (
+                    <div key={t.label} style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                      <div style={{ width: "10px", height: "10px", borderRadius: "3px", background: typeColors[i % typeColors.length], flexShrink: 0 }} />
+                      <div style={{ fontSize: "12px", color: "#374151", width: "80px", flexShrink: 0 }}>{t.label}</div>
+                      <div style={{ flex: 1, height: "8px", background: "#f3f4f6", borderRadius: "4px" }}>
+                        <div style={{ height: "100%", width: `${(t.count / maxTypeCount) * 100}%`, background: typeColors[i % typeColors.length], borderRadius: "4px" }} />
+                      </div>
+                      <div style={{ fontSize: "12px", fontWeight: 700, color: "#111827", width: "20px", textAlign: "right" }}>{t.count}</div>
+                    </div>
+                  ))}
                 </div>
-              );
-            })}
+              ) : (
+                <div style={{ fontSize: "12px", color: "#d1d5db", textAlign: "center", padding: "16px 0" }}>No listings yet</div>
+              )}
+            </div>
+
+            {/* Sale vs Rental split */}
+            <div style={{ background: "#fff", border: "1.5px solid #e5e7eb", borderRadius: "12px", padding: "16px 18px" }}>
+              <div style={{ fontSize: "13px", fontWeight: 700, color: "#111827", marginBottom: "14px" }}>Sale vs. Rental</div>
+              <div style={{ display: "flex", gap: "8px", marginBottom: "10px" }}>
+                <div style={{ flex: saleCount || 1, height: "10px", background: "#6366f1", borderRadius: "4px 0 0 4px" }} />
+                <div style={{ flex: rentalCount || 0, height: "10px", background: "#10b981", borderRadius: "0 4px 4px 0" }} />
+              </div>
+              <div style={{ display: "flex", gap: "16px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                  <div style={{ width: "10px", height: "10px", borderRadius: "2px", background: "#6366f1" }} />
+                  <span style={{ fontSize: "12px", color: "#374151" }}>Sales <strong>{saleCount}</strong></span>
+                  <span style={{ fontSize: "11px", color: "#9ca3af" }}>({Math.round((saleCount / total) * 100)}%)</span>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                  <div style={{ width: "10px", height: "10px", borderRadius: "2px", background: "#10b981" }} />
+                  <span style={{ fontSize: "12px", color: "#374151" }}>Rentals <strong>{rentalCount}</strong></span>
+                  <span style={{ fontSize: "11px", color: "#9ca3af" }}>({Math.round((rentalCount / total) * 100)}%)</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Module shortcuts */}
+            <div style={{ background: "#fff", border: "1.5px solid #e5e7eb", borderRadius: "12px", padding: "16px 18px" }}>
+              <div style={{ fontSize: "13px", fontWeight: 700, color: "#111827", marginBottom: "12px" }}>Quick Access</div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px" }}>
+                {[
+                  { label: "Contacts", mod: "contacts", sub: null, color: "#6366f1" },
+                  { label: "Prospecting", mod: "prospecting", sub: null, color: "#f59e0b" },
+                  { label: "Marketing", mod: "marketing", sub: null, color: "#8b5cf6" },
+                  { label: "Team", mod: "team", sub: null, color: "#10b981" },
+                ].map(link => (
+                  <button key={link.mod} onClick={() => onNavigate(link.mod, link.sub)}
+                    style={{ padding: "8px 10px", background: "#f9fafb", border: "1.5px solid #e5e7eb", borderRadius: "8px", fontSize: "12px", fontWeight: 600, color: "#374151", cursor: "pointer", textAlign: "left", display: "flex", alignItems: "center", gap: "6px" }}>
+                    <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: link.color, flexShrink: 0 }} />
+                    {link.label}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -10892,7 +10915,7 @@ function CrmSubPage({ moduleId, submodule, crmListings, onAddListing, staffRows,
   onNavigate: (moduleId: string, submodule: string | null) => void;
 }) {
   if (!moduleId) {
-    return <CrmHomePage agencyName={agencyName} onNavigate={onNavigate} />;
+    return <CrmHomePage agencyName={agencyName} crmListings={crmListings} onNavigate={onNavigate} />;
   }
 
   type PageConfig = {
