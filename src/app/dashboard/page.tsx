@@ -98,6 +98,21 @@ type PolicyRow = {
   source: "template" | "upload";
 };
 
+type CrmListing = {
+  id: string;
+  address: string;
+  suburb: string;
+  owner: string;
+  price: string;
+  type: "sale" | "rental";
+  status: "active" | "under-offer" | "sold" | "leased" | "archived";
+  bedrooms: string;
+  bathrooms: string;
+  agent: string;
+  listedDate: string;
+  complianceSynced: boolean;
+};
+
 type ItemStatus = "not_started" | "in_progress" | "complete" | "na";
 interface UploadedFile { name: string; size: string; addedAt: string; }
 interface ItemData { status: ItemStatus; notes: string; files: UploadedFile[]; }
@@ -8301,6 +8316,13 @@ function StaticSubPage({ label, agencyName, agencyAbn, userEmail, userId, orgOwn
 
 // --- CRM Sub Pages ---
 
+// ─── CRM shared helpers ───────────────────────────────────────────────────────
+
+function daysAgo(dateStr: string): number {
+  const d = new Date(dateStr);
+  return Math.floor((Date.now() - d.getTime()) / 86_400_000);
+}
+
 function CrmKpiTile({ label, value, sub, color = "#111827" }: { label: string; value: string; sub: string; color?: string }) {
   return (
     <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: "10px", padding: "16px 20px", display: "flex", flexDirection: "column", gap: "6px" }}>
@@ -8338,7 +8360,259 @@ function CrmTable({ cols, emptyLabel }: { cols: CrmCol[]; emptyLabel: string }) 
   );
 }
 
-function CrmSubPage({ moduleId, submodule }: { moduleId: string | null; submodule: string | null }) {
+// ─── AI Automation Panel ──────────────────────────────────────────────────────
+
+type AiAutomation = { title: string; description: string; icon: React.ReactNode };
+
+function AiAutomationPanel({ automations, insight }: { automations: AiAutomation[]; insight?: { title: string; body: string } }) {
+  const [open, setOpen] = useState(true);
+  return (
+    <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: "10px", overflow: "hidden", flexShrink: 0 }}>
+      <button onClick={() => setOpen(v => !v)} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 18px", background: "none", border: "none", cursor: "pointer", fontFamily: "var(--font-inter)" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "9px" }}>
+          <div style={{ width: "22px", height: "22px", borderRadius: "6px", background: "linear-gradient(135deg, #6366f1, #8b5cf6)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M7 1l1.5 3.5L12 6l-3.5 1.5L7 11l-1.5-3.5L2 6l3.5-1.5L7 1z" fill="#fff"/></svg>
+          </div>
+          <span style={{ fontSize: "13px", fontWeight: 600, color: "#111827", letterSpacing: "-0.01em" }}>AI Automation</span>
+          <span style={{ fontSize: "10.5px", fontWeight: 600, color: "#7c3aed", background: "#f5f3ff", padding: "2px 8px", borderRadius: "100px" }}>Connect API to activate</span>
+        </div>
+        <svg width="12" height="12" viewBox="0 0 14 14" fill="none" style={{ color: "#9ca3af", transform: open ? "rotate(180deg)" : "none", transition: "transform 0.15s" }}><path d="M2 5l5 5 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+      </button>
+      {open && (
+        <div style={{ borderTop: "1px solid #f3f4f6", padding: "14px 18px", display: "flex", flexDirection: "column", gap: "12px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: `repeat(${Math.min(automations.length, 3)}, 1fr)`, gap: "10px" }}>
+            {automations.map((a, i) => (
+              <div key={i} style={{ background: "#f9fafb", border: "1px solid #f3f4f6", borderRadius: "8px", padding: "12px 14px", display: "flex", gap: "10px", alignItems: "flex-start" }}>
+                <div style={{ width: "28px", height: "28px", borderRadius: "7px", background: "#ede9fe", display: "flex", alignItems: "center", justifyContent: "center", color: "#7c3aed", flexShrink: 0 }}>{a.icon}</div>
+                <div>
+                  <p style={{ fontSize: "12.5px", fontWeight: 600, color: "#111827", margin: "0 0 2px", maxWidth: "none" }}>{a.title}</p>
+                  <p style={{ fontSize: "11.5px", color: "#6b7280", margin: 0, lineHeight: 1.5, maxWidth: "none" }}>{a.description}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+          {insight && (
+            <div style={{ background: "linear-gradient(135deg, #f5f3ff, #ede9fe)", border: "1px solid #ddd6fe", borderRadius: "8px", padding: "12px 14px", display: "flex", gap: "10px", alignItems: "flex-start" }}>
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0, marginTop: "1px", color: "#7c3aed" }}><circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.4"/><path d="M8 7v4M8 5v.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>
+              <div>
+                <p style={{ fontSize: "12.5px", fontWeight: 600, color: "#5b21b6", margin: "0 0 2px", maxWidth: "none" }}>{insight.title}</p>
+                <p style={{ fontSize: "11.5px", color: "#6d28d9", margin: 0, lineHeight: 1.5, maxWidth: "none" }}>{insight.body}</p>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Active Listings — functional with Add modal + compliance sync ─────────────
+
+function CrmActiveListingsPage({
+  listings, onAddListing, staffRows,
+}: {
+  listings: CrmListing[];
+  onAddListing: (data: Omit<CrmListing, "id" | "status" | "complianceSynced">, sync: boolean) => Promise<string | null>;
+  staffRows: StaffRow[];
+}) {
+  const [showModal, setShowModal] = useState(false);
+  const [form, setForm] = useState({ address: "", suburb: "", owner: "", price: "", type: "sale" as "sale" | "rental", bedrooms: "", bathrooms: "", agent: "", listedDate: new Date().toISOString().slice(0, 10) });
+  const [syncCompliance, setSyncCompliance] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  const active = listings.filter(l => l.status === "active");
+
+  async function submit() {
+    if (!form.address.trim()) { setErr("Address is required"); return; }
+    setSaving(true); setErr(null);
+    const e = await onAddListing(form, syncCompliance);
+    if (e) { setErr(e); setSaving(false); return; }
+    setShowModal(false);
+    setForm({ address: "", suburb: "", owner: "", price: "", type: "sale", bedrooms: "", bathrooms: "", agent: "", listedDate: new Date().toISOString().slice(0, 10) });
+    setSaving(false);
+  }
+
+  const inp = (label: string, key: keyof typeof form, type = "text", opts?: string[]) => (
+    <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
+      <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151" }}>{label}</label>
+      {opts ? (
+        <select value={form[key] as string} onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
+          style={{ padding: "7px 10px", borderRadius: "7px", border: "1px solid #e5e7eb", fontSize: "13px", fontFamily: "var(--font-inter)", color: "#111827", background: "#fff", outline: "none" }}>
+          {opts.map(o => <option key={o} value={o}>{o}</option>)}
+        </select>
+      ) : (
+        <input type={type} value={form[key] as string} onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
+          style={{ padding: "7px 10px", borderRadius: "7px", border: "1px solid #e5e7eb", fontSize: "13px", fontFamily: "var(--font-inter)", color: "#111827", outline: "none" }} />
+      )}
+    </div>
+  );
+
+  return (
+    <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "calc(100vh - 56px)", overflow: "hidden", padding: "20px 28px", gap: "14px" }}>
+      {/* Header */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+        <div>
+          <h1 style={{ fontSize: "1.1rem", fontWeight: 700, color: "#111827", letterSpacing: "-0.03em", margin: 0 }}>Active Listings</h1>
+          <p style={{ fontSize: "12.5px", color: "#9ca3af", margin: "3px 0 0" }}>Listings</p>
+        </div>
+        <button onClick={() => setShowModal(true)}
+          style={{ display: "flex", alignItems: "center", gap: "7px", padding: "7px 14px", background: "#111827", color: "#fff", border: "none", borderRadius: "8px", fontSize: "12.5px", fontWeight: 600, cursor: "pointer", fontFamily: "var(--font-inter)" }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = "#1f2937"; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = "#111827"; }}>
+          <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>
+          Add Listing
+        </button>
+      </div>
+
+      {/* KPIs */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px", flexShrink: 0 }}>
+        <CrmKpiTile label="Active Listings" value={String(active.length)} sub="On market now" />
+        <CrmKpiTile label="For Sale" value={String(active.filter(l => l.type === "sale").length)} sub="Residential sales" />
+        <CrmKpiTile label="For Rent" value={String(active.filter(l => l.type === "rental").length)} sub="Rental listings" />
+        <CrmKpiTile label="Compliance Synced" value={String(active.filter(l => l.complianceSynced).length)} sub={`of ${active.length} listings`} />
+      </div>
+
+      {/* AI Panel */}
+      <AiAutomationPanel
+        automations={[
+          { title: "Match to Buyers", description: "Auto-match new listings to registered buyers by suburb, price, and bedrooms", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><circle cx="6" cy="5" r="3" stroke="currentColor" strokeWidth="1.3"/><path d="M1 13c0-2.761 2.239-5 5-5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/><circle cx="12" cy="11" r="3" stroke="currentColor" strokeWidth="1.3"/><path d="M10 11h4M12 9v4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg> },
+          { title: "Generate Campaign", description: "AI drafts property marketing email and social post on listing creation", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M2 10V6l9-4v12L2 10z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/></svg> },
+          { title: "Price Insights", description: "Compare listing price to recent sales in the same suburb", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M2 12l4-4 3 2 5-6" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg> },
+        ]}
+        insight={{ title: "Compliance sync active", body: "New sale listings are automatically added to Compliance → Residential Sales when synced. Rental listings sync to Residential Management." }}
+      />
+
+      {/* Listings table */}
+      <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: "10px", overflow: "hidden", flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
+        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <thead>
+            <tr style={{ borderBottom: "1px solid #f3f4f6" }}>
+              {["Property", "Type", "Price", "Owner", "Agent", "Listed", "Days", "Compliance", ""].map(h => (
+                <th key={h} style={{ padding: "10px 14px", textAlign: "left", fontSize: "11px", fontWeight: 600, color: "#6b7280", letterSpacing: "0.04em", textTransform: "uppercase" }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+        </table>
+        {active.length === 0 ? (
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "8px", padding: "40px" }}>
+            <div style={{ width: "36px", height: "36px", borderRadius: "9px", background: "#f3f4f6", display: "flex", alignItems: "center", justifyContent: "center", color: "#9ca3af" }}>
+              <svg width="16" height="16" viewBox="0 0 18 18" fill="none"><rect x="2" y="2" width="14" height="14" rx="2" stroke="currentColor" strokeWidth="1.4"/><path d="M5 6h8M5 9h6M5 12h4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>
+            </div>
+            <p style={{ fontSize: "13px", fontWeight: 600, color: "#374151", margin: 0 }}>No active listings</p>
+            <p style={{ fontSize: "12px", color: "#9ca3af", margin: 0 }}>Click "Add Listing" to create your first.</p>
+          </div>
+        ) : (
+          <div style={{ overflowY: "auto", flex: 1 }}>
+            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <tbody>
+                {active.map(l => (
+                  <tr key={l.id} style={{ borderBottom: "1px solid #f9fafb" }}
+                    onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "#fafafa"; }}
+                    onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}>
+                    <td style={{ padding: "11px 14px" }}>
+                      <p style={{ fontSize: "13px", fontWeight: 600, color: "#111827", margin: 0, maxWidth: "none" }}>{l.address}</p>
+                      {l.suburb && <p style={{ fontSize: "11.5px", color: "#9ca3af", margin: "2px 0 0", maxWidth: "none" }}>{l.suburb}</p>}
+                    </td>
+                    <td style={{ padding: "11px 14px" }}>
+                      <span style={{ fontSize: "11.5px", fontWeight: 600, color: l.type === "sale" ? "#166534" : "#1e40af", background: l.type === "sale" ? "#f0fdf4" : "#eff6ff", padding: "2px 8px", borderRadius: "100px" }}>
+                        {l.type === "sale" ? "For Sale" : "For Rent"}
+                      </span>
+                    </td>
+                    <td style={{ padding: "11px 14px", fontSize: "13px", color: "#374151", fontWeight: 500 }}>{l.price || "—"}</td>
+                    <td style={{ padding: "11px 14px", fontSize: "13px", color: "#6b7280" }}>{l.owner || "—"}</td>
+                    <td style={{ padding: "11px 14px", fontSize: "13px", color: "#6b7280" }}>{l.agent || "—"}</td>
+                    <td style={{ padding: "11px 14px", fontSize: "12.5px", color: "#6b7280" }}>{l.listedDate}</td>
+                    <td style={{ padding: "11px 14px", fontSize: "13px", color: "#374151", fontWeight: 600 }}>{daysAgo(l.listedDate)}d</td>
+                    <td style={{ padding: "11px 14px" }}>
+                      {l.complianceSynced ? (
+                        <span style={{ display: "flex", alignItems: "center", gap: "5px", fontSize: "11.5px", color: "#166534" }}>
+                          <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M2 7l4 4 6-6" stroke="#22c55e" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                          Synced
+                        </span>
+                      ) : (
+                        <span style={{ fontSize: "11.5px", color: "#9ca3af" }}>Not synced</span>
+                      )}
+                    </td>
+                    <td style={{ padding: "11px 14px" }}>
+                      <button style={{ fontSize: "12px", color: "var(--rc-primary)", fontWeight: 600, background: "none", border: "none", cursor: "pointer", fontFamily: "var(--font-inter)", padding: 0 }}>View</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Add Listing Modal */}
+      {showModal && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}
+          onClick={(e) => { if (e.target === e.currentTarget) setShowModal(false); }}>
+          <div style={{ background: "#fff", borderRadius: "14px", width: "100%", maxWidth: "560px", boxShadow: "0 20px 60px rgba(0,0,0,0.15)", display: "flex", flexDirection: "column" }}>
+            <div style={{ padding: "20px 24px 16px", borderBottom: "1px solid #f3f4f6", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <h2 style={{ fontSize: "15px", fontWeight: 700, color: "#111827", margin: 0, letterSpacing: "-0.02em" }}>New Listing</h2>
+              <button onClick={() => setShowModal(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "#9ca3af", padding: "4px" }}>
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/></svg>
+              </button>
+            </div>
+            <div style={{ padding: "20px 24px", display: "flex", flexDirection: "column", gap: "14px" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                {inp("Listing Type", "type", "text", ["sale", "rental"])}
+                {inp("Price / Rent", "price")}
+              </div>
+              {inp("Property Address", "address")}
+              {inp("Suburb", "suburb")}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                {inp("Owner Name", "owner")}
+                {inp("Listing Agent", "agent", "text", ["", ...staffRows.map(s => s.name)])}
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "12px" }}>
+                {inp("Bedrooms", "bedrooms", "text", ["", "1", "2", "3", "4", "5", "6+"])}
+                {inp("Bathrooms", "bathrooms", "text", ["", "1", "2", "3", "4+"])}
+                {inp("Listed Date", "listedDate", "date")}
+              </div>
+
+              {/* Compliance sync toggle */}
+              <div style={{ background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: "10px", padding: "12px 14px", display: "flex", alignItems: "flex-start", gap: "12px" }}>
+                <button onClick={() => setSyncCompliance(v => !v)}
+                  style={{ width: "36px", height: "20px", borderRadius: "100px", background: syncCompliance ? "#111827" : "#e5e7eb", border: "none", cursor: "pointer", position: "relative", flexShrink: 0, marginTop: "1px", transition: "background 0.15s" }}>
+                  <span style={{ position: "absolute", top: "2px", left: syncCompliance ? "18px" : "2px", width: "16px", height: "16px", borderRadius: "50%", background: "#fff", transition: "left 0.15s", boxShadow: "0 1px 3px rgba(0,0,0,0.2)" }} />
+                </button>
+                <div>
+                  <p style={{ fontSize: "13px", fontWeight: 600, color: "#111827", margin: 0, maxWidth: "none" }}>Sync to Compliance</p>
+                  <p style={{ fontSize: "12px", color: "#6b7280", margin: "2px 0 0", maxWidth: "none" }}>
+                    Automatically creates a {form.type === "sale" ? "Residential Sales" : "Residential Management"} property record in the Compliance module.
+                  </p>
+                </div>
+              </div>
+
+              {err && <p style={{ fontSize: "12.5px", color: "#ef4444", margin: 0 }}>{err}</p>}
+            </div>
+            <div style={{ padding: "14px 24px 20px", display: "flex", justifyContent: "flex-end", gap: "10px" }}>
+              <button onClick={() => setShowModal(false)} style={{ padding: "7px 16px", borderRadius: "8px", border: "1px solid #e5e7eb", background: "#fff", fontSize: "13px", fontWeight: 500, cursor: "pointer", fontFamily: "var(--font-inter)", color: "#374151" }}>Cancel</button>
+              <button onClick={submit} disabled={saving}
+                style={{ padding: "7px 18px", borderRadius: "8px", border: "none", background: "#111827", color: "#fff", fontSize: "13px", fontWeight: 600, cursor: saving ? "not-allowed" : "pointer", fontFamily: "var(--font-inter)", opacity: saving ? 0.7 : 1 }}>
+                {saving ? "Saving…" : "Add Listing"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── CrmSubPage (router) ──────────────────────────────────────────────────────
+
+function CrmSubPage({ moduleId, submodule, crmListings, onAddListing, staffRows, agencyName }: {
+  moduleId: string | null;
+  submodule: string | null;
+  crmListings: CrmListing[];
+  onAddListing: (data: Omit<CrmListing, "id" | "status" | "complianceSynced">, sync: boolean) => Promise<string | null>;
+  staffRows: StaffRow[];
+  agencyName: string;
+}) {
   if (!moduleId) {
     return (
       <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "12px", padding: "40px" }}>
@@ -8777,10 +9051,170 @@ function CrmSubPage({ moduleId, submodule }: { moduleId: string | null; submodul
     },
   };
 
+  // Route functional pages
+  if (moduleId === "listings" && (submodule === "Active Listings" || submodule === null)) {
+    return <CrmActiveListingsPage listings={crmListings} onAddListing={onAddListing} staffRows={staffRows} />;
+  }
+
   const sub = submodule ?? Object.keys(configs[moduleId] ?? {})[0] ?? "";
   const cfg = configs[moduleId]?.[sub];
-
   if (!cfg) return null;
+
+  // AI automation definitions per page
+  type AiDef = { automations: AiAutomation[]; insight?: { title: string; body: string } };
+  const aiDefs: Record<string, Record<string, AiDef>> = {
+    contacts: {
+      "All Contacts": {
+        automations: [
+          { title: "Buyer–Listing Match", description: "Notify registered buyers when a listing matches their criteria", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><circle cx="6" cy="5" r="3" stroke="currentColor" strokeWidth="1.3"/><path d="M1 13c0-2.761 2.239-5 5-5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/><circle cx="12" cy="11" r="3" stroke="currentColor" strokeWidth="1.3"/><path d="M10 11h4M12 9v4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg> },
+          { title: "Re-engagement Alerts", description: "Flag contacts with no activity in 60+ days for follow-up", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 1v7l4 2" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/><circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.3"/></svg> },
+          { title: "Lead Source Attribution", description: "Track which source each contact came from and score accordingly", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M2 12l4-4 3 2 5-6" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg> },
+        ],
+        insight: { title: "AI insight ready", body: "Once connected, AI will score each contact's likelihood to transact and surface the highest-priority leads at the top." },
+      },
+      "Buyers": {
+        automations: [
+          { title: "Instant Match Alert", description: "Email buyers the moment a listing matching their profile goes live", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M2 4l6 5 6-5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/><rect x="1" y="3" width="14" height="10" rx="2" stroke="currentColor" strokeWidth="1.3"/></svg> },
+          { title: "Budget Drift Detection", description: "Alert agents when a buyer's enquiries suggest their budget has shifted", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.3"/><path d="M8 5v3l2 2" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg> },
+          { title: "Finance Pre-approval Follow-up", description: "Remind buyers approaching their pre-approval expiry to renew", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg> },
+        ],
+      },
+      "Sellers": {
+        automations: [
+          { title: "Price Expectation Calibration", description: "Compare seller's expectation to recent comparable sales and flag gaps", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M2 12l4-4 3 2 5-6" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg> },
+          { title: "Campaign Performance Report", description: "Auto-send weekly marketing performance summaries to vendors", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" strokeWidth="1.3"/><path d="M5 8h6M5 11h4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg> },
+          { title: "Offer Outcome Notification", description: "Instantly notify sellers when a new offer is received or a condition clears", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M2 4l6 5 6-5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/><rect x="1" y="3" width="14" height="10" rx="2" stroke="currentColor" strokeWidth="1.3"/></svg> },
+        ],
+      },
+      "Landlords": {
+        automations: [
+          { title: "Lease Renewal Prompt", description: "Alert landlords 90 days before lease expiry with renewal options", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 1v7l4 2" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/><circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.3"/></svg> },
+          { title: "Market Rent Analysis", description: "Quarterly AI rent comparison to ensure landlords are at market rate", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M2 12l4-4 3 2 5-6" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg> },
+          { title: "Maintenance Digest", description: "Monthly summary of maintenance requests and costs per property", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" strokeWidth="1.3"/><path d="M5 8h6M5 11h4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg> },
+        ],
+      },
+      "Tenants": {
+        automations: [
+          { title: "Arrears Early Warning", description: "Flag tenants approaching arrears 3 days before they trigger a breach", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 2l6 12H2L8 2z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/><path d="M8 7v3M8 11.5v.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg> },
+          { title: "Lease Renewal Offer", description: "Auto-send renewal offers to tenants 60 days before lease end", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M2 4l6 5 6-5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/><rect x="1" y="3" width="14" height="10" rx="2" stroke="currentColor" strokeWidth="1.3"/></svg> },
+          { title: "Vacating Checklist", description: "Auto-send inspection checklist and timeline when a tenant gives notice", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M3 5l2 2 4-4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/><rect x="1" y="2" width="14" height="12" rx="2" stroke="currentColor" strokeWidth="1.3"/></svg> },
+        ],
+      },
+    },
+    appraisals: {
+      "All Appraisals": {
+        automations: [
+          { title: "Appraisal Conversion Tracking", description: "Track which appraisals convert to listings and identify winning patterns", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M2 12l4-4 3 2 5-6" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg> },
+          { title: "Comparable Sales Report", description: "Auto-generate a comparable sales pack before each appraisal", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" strokeWidth="1.3"/><path d="M5 8h6M5 11h4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg> },
+          { title: "Agent Performance Benchmark", description: "Compare each agent's appraisal-to-list conversion rate against team average", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><circle cx="5" cy="11" r="2" stroke="currentColor" strokeWidth="1.2"/><circle cx="11" cy="5" r="2" stroke="currentColor" strokeWidth="1.2"/><path d="M7 9l2-2" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg> },
+        ],
+      },
+      "Scheduled": {
+        automations: [
+          { title: "Day-before Reminder", description: "Automated SMS/email reminder to owner 24 hours before appraisal", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 1v7l4 2" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/><circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.3"/></svg> },
+          { title: "Prep Pack Generation", description: "AI generates a suburb market snapshot and recent sales PDF before each appointment", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" strokeWidth="1.3"/><path d="M5 8h6M5 11h4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg> },
+          { title: "Conflict Detection", description: "Flag scheduling conflicts with other appraisals or inspections for the same agent", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 2l6 12H2L8 2z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/><path d="M8 7v3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg> },
+        ],
+      },
+      "Completed": {
+        automations: [
+          { title: "Outcome Classification", description: "AI classifies outcomes (Listed, Lost to competitor, Not ready) and updates records", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M3 5l2 2 4-4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/><rect x="1" y="2" width="14" height="12" rx="2" stroke="currentColor" strokeWidth="1.3"/></svg> },
+          { title: "Lost Deal Analysis", description: "Detect patterns in lost appraisals — price, area, agent — and surface insights", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M2 12l4-4 3 2 5-6" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg> },
+          { title: "Re-appraisal Trigger", description: "Flag completed but unlisted appraisals for re-contact after 90 days", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 1v7l4 2" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/><circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.3"/></svg> },
+        ],
+      },
+      "Follow Up": {
+        automations: [
+          { title: "Smart Follow-Up Timing", description: "AI determines optimal contact timing based on owner sentiment and market activity", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 1v7l4 2" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/><circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.3"/></svg> },
+          { title: "Nearby Sale Trigger", description: "Auto-suggest follow-up when a comparable property sells nearby", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 2l5 5H3l5-5z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/><rect x="5" y="7" width="6" height="7" rx="1" stroke="currentColor" strokeWidth="1.3"/></svg> },
+          { title: "Auto-draft Outreach", description: "AI drafts a personalised follow-up message for agent to review and send", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M2 4l6 5 6-5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/><rect x="1" y="3" width="14" height="10" rx="2" stroke="currentColor" strokeWidth="1.3"/></svg> },
+        ],
+        insight: { title: "Nearby sale trigger (preview)", body: "When a property sells in the same suburb, AI will automatically surface appraisals in that area and prompt agents to re-engage those owners." },
+      },
+    },
+    listings: {
+      "Under Offer": {
+        automations: [
+          { title: "Finance Deadline Monitor", description: "Alert agents 48h before finance condition expiry and auto-remind buyers", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 1v7l4 2" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/><circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.3"/></svg> },
+          { title: "Vendor Update Digest", description: "Automated daily status update to seller while under offer", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M2 4l6 5 6-5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/><rect x="1" y="3" width="14" height="10" rx="2" stroke="currentColor" strokeWidth="1.3"/></svg> },
+          { title: "Backup Buyer Alert", description: "Notify registered backup buyers if a deal falls through", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><circle cx="6" cy="5" r="3" stroke="currentColor" strokeWidth="1.3"/><path d="M1 13c0-2.761 2.239-5 5-5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg> },
+        ],
+      },
+      "Sold / Leased": {
+        automations: [
+          { title: "Nearby Owner Notification", description: "When a property sells, AI identifies owners within 500m and queues appraisal outreach", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 2l5 5H3l5-5z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/><rect x="5" y="7" width="6" height="7" rx="1" stroke="currentColor" strokeWidth="1.3"/></svg> },
+          { title: "Buyer Re-engagement", description: "Alert registered buyers who missed out to similar properties coming to market", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><circle cx="6" cy="5" r="3" stroke="currentColor" strokeWidth="1.3"/><path d="M1 13c0-2.761 2.239-5 5-5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg> },
+          { title: "Testimonial Request", description: "Auto-send a review request to the vendor 7 days after settlement", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 1l2 5h5l-4 3 1.5 5L8 11l-4.5 3L5 9 1 6h5L8 1z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/></svg> },
+        ],
+        insight: { title: "Nearby notification (preview)", body: "After connecting AI, every settled sale will automatically trigger an outreach queue for neighbouring owners — turning each result into new appraisal opportunities." },
+      },
+      "Archive": {
+        automations: [
+          { title: "Re-list Opportunity Detector", description: "Monitor market conditions and alert when an archived listing may be ready to re-list", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M2 12l4-4 3 2 5-6" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg> },
+          { title: "Competitor Win Analysis", description: "If a withdrawn listing appears on another agency, flag and log the loss", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 2l6 12H2L8 2z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/></svg> },
+        ],
+      },
+    },
+    marketing: {
+      "Campaigns": {
+        automations: [
+          { title: "AI Content Generation", description: "Draft property email copy, subject lines, and social captions automatically", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 1l1.5 3.5L13 6l-3.5 1.5L8 11l-1.5-3.5L3 6l3.5-1.5L8 1z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/></svg> },
+          { title: "Optimal Send Time", description: "Predict the best send time per contact based on past open behaviour", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 1v7l4 2" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/><circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.3"/></svg> },
+          { title: "Audience Segmentation", description: "Suggest the right contact segment for each new listing campaign", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.3"/><path d="M8 8l5-5M8 8V1M8 8l5 5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg> },
+        ],
+      },
+      "Email Templates": {
+        automations: [
+          { title: "Template Performance Scoring", description: "Rank templates by open and click rates and surface the top performers", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M2 12l4-4 3 2 5-6" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg> },
+          { title: "Subject Line Optimiser", description: "AI suggests alternative subject lines predicted to improve open rates", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 1l1.5 3.5L13 6l-3.5 1.5L8 11l-1.5-3.5L3 6l3.5-1.5L8 1z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/></svg> },
+        ],
+      },
+      "Social Media": {
+        automations: [
+          { title: "Auto-Post on Listing", description: "When a listing goes live, AI drafts and queues a social post for agent approval", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M2 10V6l9-4v12L2 10z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/></svg> },
+          { title: "Result Announcement", description: "Auto-draft a 'Just Sold / Just Leased' post when a listing status updates", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 1l1.5 3.5L13 6l-3.5 1.5L8 11l-1.5-3.5L3 6l3.5-1.5L8 1z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/></svg> },
+          { title: "Engagement Monitoring", description: "Alert agents when a post gets high engagement — likely buyer or seller leads", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 2l6 12H2L8 2z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/></svg> },
+        ],
+      },
+      "Analytics": {
+        automations: [
+          { title: "Channel Attribution", description: "AI traces each closed deal back to the marketing touchpoint that started it", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M2 12l4-4 3 2 5-6" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg> },
+          { title: "Budget Optimisation", description: "Recommend shifting ad spend toward the channels generating most appraisals", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.3"/><path d="M8 5v3l2 2" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg> },
+        ],
+      },
+    },
+    team: {
+      "Overview": {
+        automations: [
+          { title: "Performance Alerts", description: "Notify managers when an agent's listings or appraisals fall below target", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 2l6 12H2L8 2z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/><path d="M8 7v3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg> },
+          { title: "Lead Load Balancing", description: "Auto-assign new leads based on each agent's current workload and speciality", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><circle cx="5" cy="5" r="3" stroke="currentColor" strokeWidth="1.2"/><circle cx="11" cy="11" r="3" stroke="currentColor" strokeWidth="1.2"/><path d="M8 8H5m6-3h-3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg> },
+          { title: "Monthly Report", description: "Auto-generate team performance report at the end of each month", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" strokeWidth="1.3"/><path d="M5 8h6M5 11h4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg> },
+        ],
+      },
+      "Leads": {
+        automations: [
+          { title: "Lead Scoring", description: "AI scores each lead 1–10 based on enquiry intent, property match, and response speed", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 1l1.5 3.5L13 6l-3.5 1.5L8 11l-1.5-3.5L3 6l3.5-1.5L8 1z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/></svg> },
+          { title: "Response Time Monitor", description: "Alert managers if a lead hasn't been contacted within 1 hour of enquiry", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 1v7l4 2" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/><circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.3"/></svg> },
+          { title: "Auto-Assignment", description: "Route new leads to the best-matched agent based on suburb and budget", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg> },
+        ],
+        insight: { title: "Lead scoring preview", body: "AI will rank each lead by transaction likelihood — so agents always work the hottest opportunities first." },
+      },
+      "Performance": {
+        automations: [
+          { title: "Target Pacing Alerts", description: "Weekly digest showing each agent's revenue pacing against monthly target", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M2 12l4-4 3 2 5-6" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg> },
+          { title: "Price Achievement Analysis", description: "Compare each agent's average sale price vs asking across all listings", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.3"/></svg> },
+        ],
+      },
+      "Activity Log": {
+        automations: [
+          { title: "Activity Scoring", description: "AI weights activities by impact (call > email > SMS) and surfaces low-activity agents", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 1l1.5 3.5L13 6l-3.5 1.5L8 11l-1.5-3.5L3 6l3.5-1.5L8 1z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/></svg> },
+          { title: "Auto-log from Calls", description: "Detect completed calls via VoIP integration and auto-create activity records", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M4 2h3l1 3-2 1a8 8 0 004 4l1-2 3 1v3c0 1-1 2-2 2C7 14 2 9 2 4a2 2 0 012-2z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/></svg> },
+        ],
+      },
+    },
+  };
+
+  const aiDef = aiDefs[moduleId]?.[sub];
 
   return (
     <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "calc(100vh - 56px)", overflow: "hidden", padding: "20px 28px", gap: "14px" }}>
@@ -8788,14 +9222,11 @@ function CrmSubPage({ moduleId, submodule }: { moduleId: string | null; submodul
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
         <div>
           <h1 style={{ fontSize: "1.1rem", fontWeight: 700, color: "#111827", letterSpacing: "-0.03em", margin: 0 }}>{sub}</h1>
-          <p style={{ fontSize: "12.5px", color: "#9ca3af", margin: "3px 0 0" }}>
-            {moduleId.charAt(0).toUpperCase() + moduleId.slice(1)}
-          </p>
+          <p style={{ fontSize: "12.5px", color: "#9ca3af", margin: "3px 0 0" }}>{moduleId.charAt(0).toUpperCase() + moduleId.slice(1)}</p>
         </div>
-        <button style={{ display: "flex", alignItems: "center", gap: "7px", padding: "7px 14px", background: "#111827", color: "#fff", border: "none", borderRadius: "8px", fontSize: "12.5px", fontWeight: 600, cursor: "pointer", fontFamily: "var(--font-inter)", letterSpacing: "-0.01em" }}
+        <button style={{ display: "flex", alignItems: "center", gap: "7px", padding: "7px 14px", background: "#111827", color: "#fff", border: "none", borderRadius: "8px", fontSize: "12.5px", fontWeight: 600, cursor: "pointer", fontFamily: "var(--font-inter)" }}
           onMouseEnter={(e) => { e.currentTarget.style.background = "#1f2937"; }}
-          onMouseLeave={(e) => { e.currentTarget.style.background = "#111827"; }}
-        >
+          onMouseLeave={(e) => { e.currentTarget.style.background = "#111827"; }}>
           <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>
           {cfg.action}
         </button>
@@ -8805,6 +9236,9 @@ function CrmSubPage({ moduleId, submodule }: { moduleId: string | null; submodul
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px", flexShrink: 0 }}>
         {cfg.kpis.map(k => <CrmKpiTile key={k.label} label={k.label} value={k.value} sub={k.sub} color={k.color} />)}
       </div>
+
+      {/* AI panel (where defined) */}
+      {aiDef && <AiAutomationPanel automations={aiDef.automations} insight={aiDef.insight} />}
 
       {/* Table */}
       <CrmTable cols={cfg.cols} emptyLabel={cfg.emptyLabel} />
@@ -8838,6 +9272,7 @@ export default function DashboardPage() {
   const [sidebarMode, setSidebarMode] = useState<"compliance" | "crm">("compliance");
   const [crmModule, setCrmModule] = useState<string | null>(null);
   const [crmSelected, setCrmSelected] = useState<string | null>(null);
+  const [crmListings, setCrmListings] = useState<CrmListing[]>([]);
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data }) => {
@@ -8948,6 +9383,21 @@ export default function DashboardPage() {
     }).select().single();
     if (error) { console.error("Management property insert failed:", error); return error.message; }
     if (row) setMgmtProps(prev => [...prev, { id: row.id, address: row.address, vendorName: row.vendor_name ?? undefined, addedAt: row.added_at ?? undefined }]);
+    return null;
+  }
+
+  async function handleAddCrmListing(
+    data: Omit<CrmListing, "id" | "status" | "complianceSynced">,
+    syncToCompliance: boolean
+  ): Promise<string | null> {
+    if (syncToCompliance) {
+      const prop: Required<SalesPropItem> = { id: "", address: data.address, vendorName: data.owner, addedAt: data.listedDate };
+      const err = data.type === "sale"
+        ? await handleAddSalesProperty(prop)
+        : await handleAddMgmtProperty(prop);
+      if (err) return err;
+    }
+    setCrmListings(prev => [...prev, { ...data, id: `crm-${Date.now()}`, status: "active", complianceSynced: syncToCompliance }]);
     return null;
   }
 
@@ -9307,7 +9757,7 @@ export default function DashboardPage() {
           style={{ flex: 1, display: "flex" }}
         >
         {sidebarMode === "crm" ? (
-          <CrmSubPage moduleId={crmModule} submodule={crmSelected} />
+          <CrmSubPage moduleId={crmModule} submodule={crmSelected} crmListings={crmListings} onAddListing={handleAddCrmListing} staffRows={staffRows} agencyName={agencyName} />
         ) : selected?.type === "property" ? (
           selected.section === "sales" ? (
             <SalesPropertyChecklist key={selected.id} propertyId={selected.id} address={selected.address} onRemove={() => handleRemoveProperty(selected.id, "sales")} />
