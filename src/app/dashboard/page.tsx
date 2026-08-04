@@ -2,7 +2,7 @@
 
 export const dynamic = "force-dynamic";
 
-import { useState, useRef, useEffect, useCallback, createContext, useContext } from "react";
+import { useState, useRef, useEffect, useCallback, createContext, useContext, Fragment } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import type { Document } from "@/lib/supabase";
@@ -9614,8 +9614,8 @@ function CountdownChip({ date, label, cleared }: { date: string; label: string; 
 }
 
 function CrmUnderOfferPage({ staffRows }: { staffRows: StaffRow[] }) {
-  const [items, setItems] = React.useState(SEED_UNDER_OFFER);
-  const [selectedId, setSelectedId] = React.useState<string | null>(null);
+  const [items, setItems] = useState(SEED_UNDER_OFFER);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const selected = items.find(i => i.id === selectedId) ?? null;
 
   const kpis = [
@@ -9703,9 +9703,9 @@ const SEED_SOLD: Array<{ id: string; address: string; suburb: string; type: "sal
 ];
 
 function CrmSoldLeasedPage({ staffRows }: { staffRows: StaffRow[] }) {
-  const [items, setItems] = React.useState(SEED_SOLD);
-  const [filter, setFilter] = React.useState<"all" | "sale" | "rental">("all");
-  const [notifyingId, setNotifyingId] = React.useState<string | null>(null);
+  const [items, setItems] = useState(SEED_SOLD);
+  const [filter, setFilter] = useState<"all" | "sale" | "rental">("all");
+  const [notifyingId, setNotifyingId] = useState<string | null>(null);
   const visible = items.filter(i => filter === "all" || i.type === filter);
 
   async function handleNotify(id: string) {
@@ -9971,7 +9971,7 @@ function CrmMarketingPage({ submodule, staffRows }: { submodule: string | null; 
   }
 
   // Default: Campaigns
-  const [campaigns, setCampaigns] = React.useState(SEED_CAMPAIGNS);
+  const [campaigns, setCampaigns] = useState(SEED_CAMPAIGNS);
   return (
     <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "calc(100vh - 56px)", overflow: "hidden", padding: "20px 28px", gap: "14px" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
@@ -10068,7 +10068,7 @@ function CrmTeamPage({ submodule, staffRows }: { submodule: string | null; staff
   ];
 
   if (sub === "Leads") {
-    const [leads, setLeads] = React.useState(SEED_LEADS);
+    const [leads, setLeads] = useState(SEED_LEADS);
     const statusColors: Record<string, { bg: string; color: string }> = {
       new: { bg: "#eff6ff", color: "#1d4ed8" }, contacted: { bg: "#fefce8", color: "#92400e" },
       qualified: { bg: "#f0fdf4", color: "#16a34a" }, appraisal: { bg: "#fdf4ff", color: "#7e22ce" }, lost: { bg: "#fef2f2", color: "#dc2626" },
@@ -10328,14 +10328,14 @@ function AiChatPanel({ open, onClose, crmListings, staffRows, onNavigate }: {
   staffRows: StaffRow[];
   onNavigate: (moduleId: string, submodule?: string) => void;
 }) {
-  const [msgs, setMsgs] = React.useState<AiChatMsg[]>([
+  const [msgs, setMsgs] = useState<AiChatMsg[]>([
     { id: "init", role: "assistant", text: "G'day! I'm your AI assistant. Ask me who to call, what streets to letterbox, or tell me to create a listing — I'll navigate the CRM for you.", timestamp: new Date() },
   ]);
-  const [input, setInput] = React.useState("");
-  const [typing, setTyping] = React.useState(false);
-  const bottomRef = React.useRef<HTMLDivElement>(null);
+  const [input, setInput] = useState("");
+  const [typing, setTyping] = useState(false);
+  const bottomRef = useRef<HTMLDivElement>(null);
 
-  React.useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [msgs, typing]);
+  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [msgs, typing]);
 
   async function send(text?: string) {
     const q = (text ?? input).trim();
@@ -10353,7 +10353,7 @@ function AiChatPanel({ open, onClose, crmListings, staffRows, onNavigate }: {
   function renderText(t: string) {
     return t.split("\n").map((line, i) => {
       const parts = line.split(/\*\*(.*?)\*\*/g);
-      return <React.Fragment key={i}>{parts.map((p, j) => j % 2 === 1 ? <strong key={j}>{p}</strong> : p)}{i < t.split("\n").length - 1 && <br />}</React.Fragment>;
+      return <Fragment key={i}>{parts.map((p, j) => j % 2 === 1 ? <strong key={j}>{p}</strong> : p)}{i < t.split("\n").length - 1 && <br />}</Fragment>;
     });
   }
 
