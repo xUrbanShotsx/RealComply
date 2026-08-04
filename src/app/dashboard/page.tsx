@@ -11163,6 +11163,154 @@ function CrmPastClientsPage({ staffRows }: { staffRows: StaffRow[] }) {
   );
 }
 
+// ─── CrmWithdrawnExpiredPage ──────────────────────────────────────────────────
+
+type WithdrawnListing = {
+  id: string;
+  address: string;
+  suburb: string;
+  lastPrice: string;
+  daysOnMarket: number;
+  daysSinceWithdrawn: number;
+  status: "withdrawn" | "expired";
+  originalAgent: string;
+  portal: "rea" | "domain" | "both";
+  reasonGuess: string;
+};
+
+function CrmWithdrawnExpiredPage({ staffRows }: { staffRows: StaffRow[] }) {
+  const [filter, setFilter] = useState<"all" | "withdrawn" | "expired">("all");
+  const [items] = useState<WithdrawnListing[]>([]);
+
+  const portalBadge = (p: WithdrawnListing["portal"]) => {
+    const map = { rea: { label: "REA", color: "#e2231a" }, domain: { label: "Domain", color: "#1a72b8" }, both: { label: "Both", color: "#6366f1" } };
+    const m = map[p];
+    return <span style={{ fontSize: "10.5px", fontWeight: 700, padding: "1px 7px", borderRadius: "20px", background: `${m.color}15`, color: m.color }}>{m.label}</span>;
+  };
+
+  const statusBadge = (s: WithdrawnListing["status"]) => (
+    <span style={{ fontSize: "10.5px", fontWeight: 700, padding: "2px 8px", borderRadius: "20px", background: s === "withdrawn" ? "#fef3c7" : "#fee2e2", color: s === "withdrawn" ? "#92400e" : "#991b1b", textTransform: "capitalize" as const }}>{s}</span>
+  );
+
+  const filtered = filter === "all" ? items : items.filter(i => i.status === filter);
+
+  return (
+    <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "calc(100vh - 56px)", overflow: "hidden", padding: "20px 28px", gap: "14px" }}>
+
+      {/* Header */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+        <div>
+          <h1 style={{ fontSize: "1.1rem", fontWeight: 700, color: "#111827", letterSpacing: "-0.03em", margin: 0 }}>Withdrawn & Expired</h1>
+          <p style={{ fontSize: "12.5px", color: "#9ca3af", margin: "3px 0 0" }}>Prospecting · Listings pulled from market — prime re-appraisal opportunities</p>
+        </div>
+        <div style={{ display: "flex", gap: "8px" }}>
+          {(["all", "withdrawn", "expired"] as const).map(f => (
+            <button key={f} onClick={() => setFilter(f)} style={{ padding: "6px 14px", borderRadius: "7px", border: "1.5px solid", borderColor: filter === f ? "#111827" : "#e5e7eb", background: filter === f ? "#111827" : "#fff", color: filter === f ? "#fff" : "#374151", fontSize: "12px", fontWeight: 600, cursor: "pointer", textTransform: "capitalize" as const }}>{f === "all" ? "All" : f}</button>
+          ))}
+        </div>
+      </div>
+
+      {/* KPI tiles */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px", flexShrink: 0 }}>
+        <CrmKpiTile label="Withdrawn" value={String(items.filter(i => i.status === "withdrawn").length)} sub="pulled from market" color="#f59e0b" />
+        <CrmKpiTile label="Expired" value={String(items.filter(i => i.status === "expired").length)} sub="listing lapsed" color="#dc2626" />
+        <CrmKpiTile label="Avg Days on Market" value={items.length > 0 ? String(Math.round(items.reduce((s, i) => s + i.daysOnMarket, 0) / items.length)) : "—"} sub="before withdrawn" color="#6366f1" />
+        <CrmKpiTile label="Booked Appraisals" value="0" sub="from this list" color="#10b981" />
+      </div>
+
+      {/* How it works banner */}
+      <div style={{ background: "linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%)", borderRadius: "12px", padding: "16px 20px", flexShrink: 0, display: "flex", alignItems: "flex-start", gap: "14px" }}>
+        <div style={{ width: "36px", height: "36px", borderRadius: "10px", background: "rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+          <svg width="18" height="18" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="9" stroke="rgba(255,255,255,0.6)" strokeWidth="1.5"/><path d="M10 6v5l3 2" stroke="rgba(255,255,255,0.9)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+        </div>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: "13px", fontWeight: 700, color: "#fff", marginBottom: "4px" }}>How AI portal monitoring works</div>
+          <div style={{ fontSize: "12px", color: "rgba(255,255,255,0.65)", lineHeight: 1.6, marginBottom: "10px" }}>
+            Direct scraping of REA and Domain is not possible (Terms of Service). Instead, this module connects via two legitimate commercial data feeds:
+            <strong style={{ color: "rgba(255,255,255,0.85)" }}> PropTrack API</strong> (REA Group's data arm — requires a commercial agreement) and the
+            <strong style={{ color: "rgba(255,255,255,0.85)" }}> Domain Group API</strong> (developer.domain.com.au — free tier available). A Supabase Edge Function
+            polls both APIs on a schedule, detects status changes (active → withdrawn, active → expired, price drops, relisted), writes them to your
+            <code style={{ background: "rgba(255,255,255,0.1)", padding: "1px 5px", borderRadius: "4px", fontSize: "11px" }}>withdrawn_listings</code> table, and surfaces them here automatically.
+          </div>
+          <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+            {[
+              { label: "PropTrack API", detail: "REA Group commercial", color: "#e2231a" },
+              { label: "Domain API", detail: "developer.domain.com.au", color: "#1a72b8" },
+              { label: "Supabase Edge Function", detail: "polling cron job", color: "#3ecf8e" },
+              { label: "Webhook alerts", detail: "instant notifications", color: "#6366f1" },
+            ].map(tag => (
+              <div key={tag.label} style={{ display: "flex", alignItems: "center", gap: "6px", background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: "6px", padding: "4px 10px" }}>
+                <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: tag.color, flexShrink: 0 }} />
+                <div>
+                  <div style={{ fontSize: "11.5px", fontWeight: 700, color: "#fff" }}>{tag.label}</div>
+                  <div style={{ fontSize: "10px", color: "rgba(255,255,255,0.5)" }}>{tag.detail}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* What we can detect */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "10px", flexShrink: 0 }}>
+        {[
+          { icon: "📉", title: "Price Reductions", body: "Vendor motivation signal — owner may now be open to an appraisal conversation" },
+          { icon: "🔕", title: "Withdrawn Listings", body: "Pulled by vendor — often means agent relationship broke down. Prime re-appraisal target." },
+          { icon: "⏱️", title: "Expired Listings", body: "Agreement lapsed — vendor is available. First agent to call wins the re-list." },
+          { icon: "🔁", title: "Re-listed Properties", body: "Listed again after a gap — shows vendor is still motivated but switched strategy or agent." },
+        ].map(card => (
+          <div key={card.title} style={{ background: "#fff", border: "1.5px solid #e5e7eb", borderRadius: "10px", padding: "14px 16px" }}>
+            <div style={{ fontSize: "18px", marginBottom: "6px" }}>{card.icon}</div>
+            <div style={{ fontSize: "12.5px", fontWeight: 700, color: "#111827", marginBottom: "4px" }}>{card.title}</div>
+            <div style={{ fontSize: "11.5px", color: "#6b7280", lineHeight: 1.5 }}>{card.body}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Table */}
+      <div style={{ flex: 1, overflow: "auto" }}>
+        <div style={{ background: "#fff", border: "1.5px solid #e5e7eb", borderRadius: "12px", overflow: "hidden" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
+            <thead>
+              <tr style={{ background: "#fafafa", borderBottom: "1px solid #f3f4f6" }}>
+                {["Property", "Status", "Portal", "Last Price", "Days on Mkt", "Withdrawn", "Reason Signal", ""].map(h => (
+                  <th key={h} style={{ textAlign: "left", padding: "9px 14px", fontSize: "10.5px", fontWeight: 700, color: "#9ca3af", textTransform: "uppercase" as const, letterSpacing: "0.05em" }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.length > 0 ? filtered.map(item => (
+                <tr key={item.id} style={{ borderBottom: "1px solid #f9fafb" }}>
+                  <td style={{ padding: "11px 14px" }}>
+                    <div style={{ fontWeight: 700, color: "#111827" }}>{item.address}</div>
+                    <div style={{ fontSize: "11.5px", color: "#9ca3af" }}>{item.suburb}</div>
+                  </td>
+                  <td style={{ padding: "11px 14px" }}>{statusBadge(item.status)}</td>
+                  <td style={{ padding: "11px 14px" }}>{portalBadge(item.portal)}</td>
+                  <td style={{ padding: "11px 14px", fontWeight: 600, color: "#374151" }}>{item.lastPrice}</td>
+                  <td style={{ padding: "11px 14px", color: "#374151" }}>{item.daysOnMarket}d</td>
+                  <td style={{ padding: "11px 14px", color: item.daysSinceWithdrawn <= 7 ? "#dc2626" : "#374151", fontWeight: item.daysSinceWithdrawn <= 7 ? 700 : 400 }}>{item.daysSinceWithdrawn}d ago</td>
+                  <td style={{ padding: "11px 14px", fontSize: "12px", color: "#6b7280", fontStyle: "italic" }}>{item.reasonGuess}</td>
+                  <td style={{ padding: "11px 14px" }}>
+                    <button style={{ padding: "5px 12px", background: "#111827", color: "#fff", border: "none", borderRadius: "6px", fontSize: "11.5px", fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap" }}>Book Appraisal</button>
+                  </td>
+                </tr>
+              )) : (
+                <tr>
+                  <td colSpan={8} style={{ padding: "48px", textAlign: "center" }}>
+                    <div style={{ fontSize: "13px", fontWeight: 600, color: "#9ca3af", marginBottom: "6px" }}>No withdrawn or expired listings yet</div>
+                    <div style={{ fontSize: "12px", color: "#d1d5db", maxWidth: "400px", margin: "0 auto", lineHeight: 1.6 }}>Once you connect the PropTrack or Domain API via a Supabase Edge Function, listings that go withdrawn or expired in your target suburbs will appear here automatically — ready for you to book an appraisal before any other agent.</div>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── CrmSubPage (router) ──────────────────────────────────────────────────────
 
 function CrmSubPage({ moduleId, submodule, crmListings, onAddListing, staffRows, agencyName, onNavigate }: {
@@ -11613,6 +11761,7 @@ function CrmSubPage({ moduleId, submodule, crmListings, onAddListing, staffRows,
     return <CrmContactsPage staffRows={staffRows} filterType={undefined} />;
   }
   if (moduleId === "appraisals") return <CrmAppraisalKanbanPage staffRows={staffRows} />;
+  if (moduleId === "prospecting" && submodule === "Withdrawn & Expired") return <CrmWithdrawnExpiredPage staffRows={staffRows} />;
   if (moduleId === "prospecting") return <CrmProspectingPage staffRows={staffRows} />;
   if (moduleId === "listings" && (submodule === "Active Listings" || submodule === null)) {
     return <CrmActiveListingsPage listings={crmListings} onAddListing={onAddListing} staffRows={staffRows} />;
@@ -12124,7 +12273,7 @@ export default function DashboardPage() {
               { id: "listings",   label: "Listings",   icon: <svg width="15" height="15" viewBox="0 0 18 18" fill="none"><rect x="2" y="2" width="14" height="14" rx="2" stroke="currentColor" strokeWidth="1.5"/><path d="M5 6h8M5 9h6M5 12h4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>,   children: ["Active Listings", "Under Offer", "Sold / Leased", "Archive"] },
               { id: "marketing",  label: "Marketing",  icon: <svg width="15" height="15" viewBox="0 0 18 18" fill="none"><path d="M3 11V7l10-4v12L3 11z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/><path d="M3 11v3l2-1" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>,   children: ["Campaigns", "Email Templates", "Social Media", "Analytics"] },
               { id: "team",        label: "Team",        icon: <svg width="15" height="15" viewBox="0 0 18 18" fill="none"><circle cx="6" cy="6" r="2.5" stroke="currentColor" strokeWidth="1.4"/><circle cx="12" cy="6" r="2.5" stroke="currentColor" strokeWidth="1.4"/><path d="M1 15c0-2.485 2.239-4.5 5-4.5s5 2.015 5 4.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/><path d="M12 10.5c2.761 0 5 2.015 5 4.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>,   children: ["Overview", "Performance", "Leads", "Activity Log"] },
-              { id: "prospecting", label: "Prospecting", icon: <svg width="15" height="15" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="8" r="3" stroke="currentColor" strokeWidth="1.4"/><path d="M9 1v2M9 13v2M1 8h2M13 8h2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/><path d="M9 11c-3 0-6 1.5-6 4h12c0-2.5-3-4-6-4z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/></svg>, children: ["Map View", "Radius Prospecting", "Who's Next", "Letter Drop", "Sequences"] },
+              { id: "prospecting", label: "Prospecting", icon: <svg width="15" height="15" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="8" r="3" stroke="currentColor" strokeWidth="1.4"/><path d="M9 1v2M9 13v2M1 8h2M13 8h2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/><path d="M9 11c-3 0-6 1.5-6 4h12c0-2.5-3-4-6-4z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/></svg>, children: ["Map View", "Radius Prospecting", "Who's Next", "Letter Drop", "Sequences", "Withdrawn & Expired"] },
             ] as { id: string; label: string; icon: React.ReactNode; children: string[] }[];
             const activeMod = crmModules.find(m => m.id === crmModule) ?? null;
             return (
