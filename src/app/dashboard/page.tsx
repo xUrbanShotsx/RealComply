@@ -130,7 +130,7 @@ type CrmContact = {
   name: string;
   email: string;
   phone: string;
-  type: "buyer" | "seller" | "landlord" | "tenant" | "prospect";
+  type: "buyer" | "seller" | "landlord" | "tenant" | "prospect" | "investor" | "referral" | "past-client";
   suburb: string;
   source: string;
   tag: "hot" | "warm" | "cold" | "";
@@ -10903,6 +10903,266 @@ function CrmHomePage({ agencyName, crmListings, onNavigate }: {
   );
 }
 
+// ─── CrmFollowUpsPage ─────────────────────────────────────────────────────────
+
+function CrmFollowUpsPage({ staffRows }: { staffRows: StaffRow[] }) {
+  type FollowUp = { id: string; name: string; type: CrmContact["type"]; phone: string; lastContact: string; nextAction: string; daysOverdue: number; score: number; agent: string };
+  const groups: { label: string; color: string; bg: string; border: string; items: FollowUp[] }[] = [
+    {
+      label: "Overdue", color: "#dc2626", bg: "#fef2f2", border: "#fecaca",
+      items: [],
+    },
+    {
+      label: "Due Today", color: "#f59e0b", bg: "#fffbeb", border: "#fde68a",
+      items: [],
+    },
+    {
+      label: "Due This Week", color: "#0284c7", bg: "#f0f9ff", border: "#bae6fd",
+      items: [],
+    },
+  ];
+
+  const typeLabel: Record<string, string> = { buyer: "Buyer", seller: "Seller", landlord: "Landlord", tenant: "Tenant", prospect: "Prospect", investor: "Investor", referral: "Referral", "past-client": "Past Client" };
+  const typeColor: Record<string, string> = { buyer: "#2563eb", seller: "#16a34a", landlord: "#7e22ce", tenant: "#ea580c", prospect: "#6b7280", investor: "#0e7490", referral: "#be185d", "past-client": "#92400e" };
+
+  return (
+    <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "calc(100vh - 56px)", overflow: "hidden", padding: "20px 28px", gap: "14px" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+        <div>
+          <h1 style={{ fontSize: "1.1rem", fontWeight: 700, color: "#111827", letterSpacing: "-0.03em", margin: 0 }}>Follow-ups</h1>
+          <p style={{ fontSize: "12.5px", color: "#9ca3af", margin: "3px 0 0" }}>Contacts · Daily action queue & overdue touchpoints</p>
+        </div>
+        <button style={{ padding: "7px 14px", background: "#111827", color: "#fff", border: "none", borderRadius: "8px", fontSize: "12.5px", fontWeight: 600, cursor: "pointer" }}>Log Activity</button>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px", flexShrink: 0 }}>
+        <CrmKpiTile label="Overdue" value="0" sub="need action now" color="#dc2626" />
+        <CrmKpiTile label="Due Today" value="0" sub="scheduled calls" color="#f59e0b" />
+        <CrmKpiTile label="Due This Week" value="0" sub="upcoming touches" color="#3b82f6" />
+        <CrmKpiTile label="Avg Response Time" value="—" sub="days to first reply" color="#6366f1" />
+      </div>
+      <AiAutomationPanel automations={[
+        { title: "Smart Follow-Up Timing", description: "AI determines optimal contact time per person based on past response patterns", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 1v7l4 2" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/><circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.3"/></svg> },
+        { title: "Nearby Sale Trigger", description: "Auto-queue a follow-up when a comparable property sells close to a prospect", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 2l5 5H3l5-5z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/><rect x="5" y="7" width="6" height="7" rx="1" stroke="currentColor" strokeWidth="1.3"/></svg> },
+        { title: "Auto-draft Outreach", description: "AI drafts a personalised follow-up for agent review before sending", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M2 4l6 5 6-5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/><rect x="1" y="3" width="14" height="10" rx="2" stroke="currentColor" strokeWidth="1.3"/></svg> },
+      ]} />
+      <div style={{ flex: 1, overflow: "auto", display: "flex", flexDirection: "column", gap: "16px" }}>
+        {groups.map(g => (
+          <div key={g.label}>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
+              <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: g.color }} />
+              <span style={{ fontSize: "12px", fontWeight: 700, color: g.color, textTransform: "uppercase", letterSpacing: "0.05em" }}>{g.label}</span>
+              <span style={{ fontSize: "11px", color: "#9ca3af" }}>({g.items.length})</span>
+            </div>
+            {g.items.length === 0 ? (
+              <div style={{ border: "1.5px dashed #e5e7eb", borderRadius: "10px", padding: "20px", textAlign: "center" }}>
+                <div style={{ fontSize: "12px", color: "#d1d5db" }}>No {g.label.toLowerCase()} follow-ups</div>
+                <div style={{ fontSize: "11px", color: "#e5e7eb", marginTop: "4px" }}>Follow-ups will appear here once you add contacts with scheduled touchpoints</div>
+              </div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                {g.items.map(f => (
+                  <div key={f.id} style={{ background: g.bg, border: `1.5px solid ${g.border}`, borderRadius: "10px", padding: "12px 16px", display: "flex", alignItems: "center", gap: "14px" }}>
+                    <div style={{ width: "34px", height: "34px", borderRadius: "50%", background: `${g.color}20`, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: "12px", color: g.color, flexShrink: 0 }}>{f.name.split(" ").map(n => n[0]).join("").slice(0,2)}</div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: 700, fontSize: "13px", color: "#111827" }}>{f.name}</div>
+                      <div style={{ fontSize: "11.5px", color: "#6b7280", marginTop: "2px" }}>{f.nextAction}</div>
+                    </div>
+                    <span style={{ fontSize: "10.5px", fontWeight: 600, padding: "2px 8px", borderRadius: "20px", background: `${typeColor[f.type] ?? "#6b7280"}15`, color: typeColor[f.type] ?? "#6b7280" }}>{typeLabel[f.type] ?? f.type}</span>
+                    <div style={{ display: "flex", gap: "6px" }}>
+                      <button style={{ padding: "5px 12px", background: "#fff", border: "1.5px solid #e5e7eb", borderRadius: "6px", fontSize: "11.5px", fontWeight: 600, color: "#374151", cursor: "pointer" }}>Call</button>
+                      <button style={{ padding: "5px 12px", background: "#fff", border: "1.5px solid #e5e7eb", borderRadius: "6px", fontSize: "11.5px", fontWeight: 600, color: "#374151", cursor: "pointer" }}>Email</button>
+                      <button style={{ padding: "5px 12px", background: "#111827", border: "none", borderRadius: "6px", fontSize: "11.5px", fontWeight: 600, color: "#fff", cursor: "pointer" }}>Done</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
+        <div style={{ background: "#f9fafb", border: "1.5px dashed #e5e7eb", borderRadius: "12px", padding: "24px", textAlign: "center" }}>
+          <div style={{ fontSize: "13px", fontWeight: 600, color: "#9ca3af", marginBottom: "4px" }}>Connect Supabase to activate follow-up tracking</div>
+          <div style={{ fontSize: "12px", color: "#d1d5db" }}>Follow-up dates and action history will sync automatically from your contact records</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── CrmInvestorsPage ─────────────────────────────────────────────────────────
+
+function CrmInvestorsPage({ staffRows }: { staffRows: StaffRow[] }) {
+  const professionColor: Record<string, string> = { "Residential": "#6366f1", "Commercial": "#0e7490", "Development": "#ea580c", "Mixed": "#7e22ce" };
+
+  return (
+    <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "calc(100vh - 56px)", overflow: "hidden", padding: "20px 28px", gap: "14px" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+        <div>
+          <h1 style={{ fontSize: "1.1rem", fontWeight: 700, color: "#111827", letterSpacing: "-0.03em", margin: 0 }}>Investors</h1>
+          <p style={{ fontSize: "12.5px", color: "#9ca3af", margin: "3px 0 0" }}>Contacts · Property investors & developers</p>
+        </div>
+        <button style={{ display: "flex", alignItems: "center", gap: "7px", padding: "7px 14px", background: "#111827", color: "#fff", border: "none", borderRadius: "8px", fontSize: "12.5px", fontWeight: 600, cursor: "pointer" }}>
+          <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>
+          Add Investor
+        </button>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px", flexShrink: 0 }}>
+        <CrmKpiTile label="Total Investors" value="0" sub="in database" color="#0e7490" />
+        <CrmKpiTile label="Actively Looking" value="0" sub="in-market buyers" color="#6366f1" />
+        <CrmKpiTile label="Portfolio Value" value="—" sub="represented" color="#10b981" />
+        <CrmKpiTile label="Avg Deal Size" value="—" sub="across investors" color="#f59e0b" />
+      </div>
+      <AiAutomationPanel automations={[
+        { title: "Portfolio Growth Alert", description: "Notify investors when a property matching their yield target and suburb criteria lists", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M2 12l4-4 3 2 5-6" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg> },
+        { title: "Off-market First Look", description: "Alert investor clients about off-market opportunities before public listing", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.3"/><path d="M8 5v3l2 2" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg> },
+        { title: "Yield Analysis Brief", description: "Quarterly AI report on rental yield trends across investor-preferred suburbs", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" strokeWidth="1.3"/><path d="M5 8h6M5 11h4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg> },
+      ]} />
+      <div style={{ flex: 1, overflow: "auto" }}>
+        <div style={{ background: "#fff", border: "1.5px solid #e5e7eb", borderRadius: "12px", overflow: "hidden" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
+            <thead>
+              <tr style={{ background: "#fafafa", borderBottom: "1px solid #f3f4f6" }}>
+                {["Investor", "Focus", "Preferred Suburbs", "Yield Target", "Portfolio Size", "Status", ""].map(h => (
+                  <th key={h} style={{ textAlign: "left", padding: "9px 14px", fontSize: "10.5px", fontWeight: 700, color: "#9ca3af", textTransform: "uppercase" as const, letterSpacing: "0.05em" }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td colSpan={7} style={{ padding: "40px", textAlign: "center", color: "#9ca3af", fontSize: "13px" }}>
+                  <div style={{ fontWeight: 600, marginBottom: "6px" }}>No investors yet</div>
+                  <div style={{ fontSize: "12px", color: "#d1d5db" }}>Add investors and developers to track their portfolio criteria, yield targets, and off-market appetite</div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── CrmReferralNetworkPage ────────────────────────────────────────────────────
+
+function CrmReferralNetworkPage({ staffRows }: { staffRows: StaffRow[] }) {
+  const profTypes = ["Mortgage Broker", "Solicitor / Conveyancer", "Accountant", "Financial Planner", "Building Inspector", "Buyers Agent", "Other Agent"];
+  const profColor: Record<string, string> = {
+    "Mortgage Broker": "#6366f1", "Solicitor / Conveyancer": "#0e7490", "Accountant": "#16a34a",
+    "Financial Planner": "#f59e0b", "Building Inspector": "#ea580c", "Buyers Agent": "#8b5cf6", "Other Agent": "#6b7280",
+  };
+
+  return (
+    <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "calc(100vh - 56px)", overflow: "hidden", padding: "20px 28px", gap: "14px" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+        <div>
+          <h1 style={{ fontSize: "1.1rem", fontWeight: 700, color: "#111827", letterSpacing: "-0.03em", margin: 0 }}>Referral Network</h1>
+          <p style={{ fontSize: "12.5px", color: "#9ca3af", margin: "3px 0 0" }}>Contacts · Brokers, solicitors, accountants & partner professionals</p>
+        </div>
+        <button style={{ display: "flex", alignItems: "center", gap: "7px", padding: "7px 14px", background: "#111827", color: "#fff", border: "none", borderRadius: "8px", fontSize: "12.5px", fontWeight: 600, cursor: "pointer" }}>
+          <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>
+          Add Partner
+        </button>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px", flexShrink: 0 }}>
+        <CrmKpiTile label="Network Size" value="0" sub="active partners" color="#6366f1" />
+        <CrmKpiTile label="Referrals This Month" value="0" sub="inbound leads" color="#10b981" />
+        <CrmKpiTile label="Referrals Sent" value="0" sub="outbound this month" color="#f59e0b" />
+        <CrmKpiTile label="Top Referrer" value="—" sub="by deal volume" color="#8b5cf6" />
+      </div>
+      <AiAutomationPanel automations={[
+        { title: "Referral Reciprocity Tracker", description: "Track referrals sent vs received per partner and flag imbalanced relationships", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg> },
+        { title: "Partner Nurture Sequence", description: "Automated quarterly touchpoint to stay top-of-mind with your referral network", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M2 4l6 5 6-5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/><rect x="1" y="3" width="14" height="10" rx="2" stroke="currentColor" strokeWidth="1.3"/></svg> },
+        { title: "Settlement Thank-you", description: "Auto-send a thank-you to the referring partner when a referred deal closes", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 1l2 5h5l-4 3 1.5 5L8 11l-4.5 3L5 9 1 6h5L8 1z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/></svg> },
+      ]} />
+      <div style={{ flex: 1, display: "flex", gap: "14px", overflow: "hidden" }}>
+        {/* Profession breakdown */}
+        <div style={{ width: "220px", flexShrink: 0, display: "flex", flexDirection: "column", gap: "10px", overflow: "auto" }}>
+          <div style={{ fontSize: "11px", fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.06em" }}>By Profession</div>
+          {profTypes.map(p => (
+            <div key={p} style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <div style={{ width: "8px", height: "8px", borderRadius: "2px", background: profColor[p] ?? "#6b7280", flexShrink: 0 }} />
+              <div style={{ flex: 1, fontSize: "12px", color: "#374151" }}>{p}</div>
+              <div style={{ fontSize: "12px", fontWeight: 700, color: "#111827" }}>0</div>
+            </div>
+          ))}
+        </div>
+        {/* Table */}
+        <div style={{ flex: 1, overflow: "auto" }}>
+          <div style={{ background: "#fff", border: "1.5px solid #e5e7eb", borderRadius: "12px", overflow: "hidden" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
+              <thead>
+                <tr style={{ background: "#fafafa", borderBottom: "1px solid #f3f4f6" }}>
+                  {["Partner", "Profession", "Referrals In", "Referrals Out", "Last Referral", "Last Contact", ""].map(h => (
+                    <th key={h} style={{ textAlign: "left", padding: "9px 14px", fontSize: "10.5px", fontWeight: 700, color: "#9ca3af", textTransform: "uppercase" as const, letterSpacing: "0.05em" }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td colSpan={7} style={{ padding: "40px", textAlign: "center", color: "#9ca3af", fontSize: "13px" }}>
+                    <div style={{ fontWeight: 600, marginBottom: "6px" }}>No referral partners yet</div>
+                    <div style={{ fontSize: "12px", color: "#d1d5db" }}>Add mortgage brokers, solicitors, accountants, and other partners who send or receive referrals</div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── CrmPastClientsPage ───────────────────────────────────────────────────────
+
+function CrmPastClientsPage({ staffRows }: { staffRows: StaffRow[] }) {
+  return (
+    <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "calc(100vh - 56px)", overflow: "hidden", padding: "20px 28px", gap: "14px" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+        <div>
+          <h1 style={{ fontSize: "1.1rem", fontWeight: 700, color: "#111827", letterSpacing: "-0.03em", margin: 0 }}>Past Clients</h1>
+          <p style={{ fontSize: "12.5px", color: "#9ca3af", margin: "3px 0 0" }}>Contacts · Post-settlement relationships & re-listing pipeline</p>
+        </div>
+        <button style={{ display: "flex", alignItems: "center", gap: "7px", padding: "7px 14px", background: "#111827", color: "#fff", border: "none", borderRadius: "8px", fontSize: "12.5px", fontWeight: 600, cursor: "pointer" }}>
+          <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>
+          Add Past Client
+        </button>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px", flexShrink: 0 }}>
+        <CrmKpiTile label="Past Clients" value="0" sub="total database" color="#92400e" />
+        <CrmKpiTile label="Anniversary Due" value="0" sub="this quarter" color="#f59e0b" />
+        <CrmKpiTile label="Re-listing Pipeline" value="—" sub="est. portfolio value" color="#6366f1" />
+        <CrmKpiTile label="Referrals Received" value="0" sub="from past clients" color="#10b981" />
+      </div>
+      <AiAutomationPanel automations={[
+        { title: "Anniversary Re-engagement", description: "Call prompt on the 3rd, 5th & 7th purchase anniversary — prime re-listing windows", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 1v7l4 2" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/><circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.3"/></svg> },
+        { title: "Equity Growth Report", description: "Annual AI-generated equity snapshot based on suburb median movement — a ready-made reason to call", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M2 12l4-4 3 2 5-6" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg> },
+        { title: "Referral Request", description: "7 days post-settlement, auto-send a review request and referral prompt to the client", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 1l2 5h5l-4 3 1.5 5L8 11l-4.5 3L5 9 1 6h5L8 1z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/></svg> },
+      ]} />
+      <div style={{ flex: 1, overflow: "auto" }}>
+        <div style={{ background: "#fff", border: "1.5px solid #e5e7eb", borderRadius: "12px", overflow: "hidden" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
+            <thead>
+              <tr style={{ background: "#fafafa", borderBottom: "1px solid #f3f4f6" }}>
+                {["Client", "Property Purchased", "Settlement Date", "Years Since", "Est. Equity", "Re-listing Probability", ""].map(h => (
+                  <th key={h} style={{ textAlign: "left", padding: "9px 14px", fontSize: "10.5px", fontWeight: 700, color: "#9ca3af", textTransform: "uppercase" as const, letterSpacing: "0.05em" }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td colSpan={7} style={{ padding: "40px", textAlign: "center" }}>
+                  <div style={{ fontSize: "13px", fontWeight: 600, color: "#9ca3af", marginBottom: "6px" }}>No past clients yet</div>
+                  <div style={{ fontSize: "12px", color: "#d1d5db", maxWidth: "360px", margin: "0 auto", lineHeight: 1.6 }}>Past clients are your highest-converting re-listing source. Once connected to Supabase, settled transactions will automatically populate this list with anniversary and equity tracking.</div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── CrmSubPage (router) ──────────────────────────────────────────────────────
 
 function CrmSubPage({ moduleId, submodule, crmListings, onAddListing, staffRows, agencyName, onNavigate }: {
@@ -11346,8 +11606,11 @@ function CrmSubPage({ moduleId, submodule, crmListings, onAddListing, staffRows,
 
   // Route functional pages
   if (moduleId === "contacts") {
-    const contactTypeMap: Record<string, CrmContact["type"]> = { "Buyers": "buyer", "Sellers": "seller", "Landlords": "landlord", "Tenants": "tenant", "Prospects": "prospect" };
-    return <CrmContactsPage staffRows={staffRows} filterType={submodule ? contactTypeMap[submodule] : undefined} />;
+    if (submodule === "Follow-ups")       return <CrmFollowUpsPage staffRows={staffRows} />;
+    if (submodule === "Investors")        return <CrmInvestorsPage staffRows={staffRows} />;
+    if (submodule === "Referral Network") return <CrmReferralNetworkPage staffRows={staffRows} />;
+    if (submodule === "Past Clients")     return <CrmPastClientsPage staffRows={staffRows} />;
+    return <CrmContactsPage staffRows={staffRows} filterType={undefined} />;
   }
   if (moduleId === "appraisals") return <CrmAppraisalKanbanPage staffRows={staffRows} />;
   if (moduleId === "prospecting") return <CrmProspectingPage staffRows={staffRows} />;
@@ -11375,33 +11638,35 @@ function CrmSubPage({ moduleId, submodule, crmListings, onAddListing, staffRows,
         ],
         insight: { title: "AI insight ready", body: "Once connected, AI will score each contact's likelihood to transact and surface the highest-priority leads at the top." },
       },
-      "Buyers": {
+      "Follow-ups": {
         automations: [
-          { title: "Instant Match Alert", description: "Email buyers the moment a listing matching their profile goes live", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M2 4l6 5 6-5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/><rect x="1" y="3" width="14" height="10" rx="2" stroke="currentColor" strokeWidth="1.3"/></svg> },
-          { title: "Budget Drift Detection", description: "Alert agents when a buyer's enquiries suggest their budget has shifted", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.3"/><path d="M8 5v3l2 2" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg> },
-          { title: "Finance Pre-approval Follow-up", description: "Remind buyers approaching their pre-approval expiry to renew", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg> },
+          { title: "Smart Follow-Up Timing", description: "AI determines optimal contact time per person based on past response patterns", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 1v7l4 2" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/><circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.3"/></svg> },
+          { title: "Nearby Sale Trigger", description: "Auto-queue a follow-up when a comparable property sells close to a prospect", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 2l5 5H3l5-5z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/><rect x="5" y="7" width="6" height="7" rx="1" stroke="currentColor" strokeWidth="1.3"/></svg> },
+          { title: "Auto-draft Outreach", description: "AI drafts a personalised follow-up message for agent review before sending", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M2 4l6 5 6-5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/><rect x="1" y="3" width="14" height="10" rx="2" stroke="currentColor" strokeWidth="1.3"/></svg> },
+        ],
+        insight: { title: "Follow-up engine ready", body: "Once connected, AI will score urgency and surface the highest-value contacts to contact each morning — ranked by deal likelihood." },
+      },
+      "Investors": {
+        automations: [
+          { title: "Portfolio Growth Alert", description: "Notify investors when a property matching their yield target and suburb criteria lists", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M2 12l4-4 3 2 5-6" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg> },
+          { title: "Off-market First Look", description: "Auto-alert investor clients about off-market opportunities before public listing", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.3"/><path d="M8 5v3l2 2" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg> },
+          { title: "Yield Analysis Brief", description: "Quarterly AI report on rental yield trends across investor-preferred suburbs", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" strokeWidth="1.3"/><path d="M5 8h6M5 11h4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg> },
         ],
       },
-      "Sellers": {
+      "Referral Network": {
         automations: [
-          { title: "Price Expectation Calibration", description: "Compare seller's expectation to recent comparable sales and flag gaps", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M2 12l4-4 3 2 5-6" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg> },
-          { title: "Campaign Performance Report", description: "Auto-send weekly marketing performance summaries to vendors", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" strokeWidth="1.3"/><path d="M5 8h6M5 11h4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg> },
-          { title: "Offer Outcome Notification", description: "Instantly notify sellers when a new offer is received or a condition clears", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M2 4l6 5 6-5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/><rect x="1" y="3" width="14" height="10" rx="2" stroke="currentColor" strokeWidth="1.3"/></svg> },
+          { title: "Referral Reciprocity Tracker", description: "Track referrals sent vs received per partner and prompt when the relationship is out of balance", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg> },
+          { title: "Partner Nurture Sequence", description: "Automated quarterly touchpoint to stay top-of-mind with brokers, solicitors, and accountants", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M2 4l6 5 6-5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/><rect x="1" y="3" width="14" height="10" rx="2" stroke="currentColor" strokeWidth="1.3"/></svg> },
+          { title: "Settlement Thank-you", description: "Auto-send a thank-you to the referring partner when a deal closes", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 1l2 5h5l-4 3 1.5 5L8 11l-4.5 3L5 9 1 6h5L8 1z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/></svg> },
         ],
       },
-      "Landlords": {
+      "Past Clients": {
         automations: [
-          { title: "Lease Renewal Prompt", description: "Alert landlords 90 days before lease expiry with renewal options", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 1v7l4 2" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/><circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.3"/></svg> },
-          { title: "Market Rent Analysis", description: "Quarterly AI rent comparison to ensure landlords are at market rate", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M2 12l4-4 3 2 5-6" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg> },
-          { title: "Maintenance Digest", description: "Monthly summary of maintenance requests and costs per property", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" strokeWidth="1.3"/><path d="M5 8h6M5 11h4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg> },
+          { title: "Anniversary Re-engagement", description: "Trigger a personalised call prompt on the 3rd, 5th, and 7th anniversary of purchase — prime re-listing windows", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 1v7l4 2" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/><circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.3"/></svg> },
+          { title: "Equity Growth Report", description: "Annual AI-generated equity snapshot based on suburb median movement — a reason to call", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M2 12l4-4 3 2 5-6" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg> },
+          { title: "Testimonial & Referral Request", description: "7 days post-settlement, auto-send a review request and referral prompt", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><circle cx="6" cy="5" r="3" stroke="currentColor" strokeWidth="1.3"/><path d="M1 13c0-2.761 2.239-5 5-5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/><circle cx="12" cy="11" r="3" stroke="currentColor" strokeWidth="1.3"/><path d="M10 11h4M12 9v4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg> },
         ],
-      },
-      "Tenants": {
-        automations: [
-          { title: "Arrears Early Warning", description: "Flag tenants approaching arrears 3 days before they trigger a breach", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 2l6 12H2L8 2z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/><path d="M8 7v3M8 11.5v.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg> },
-          { title: "Lease Renewal Offer", description: "Auto-send renewal offers to tenants 60 days before lease end", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M2 4l6 5 6-5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/><rect x="1" y="3" width="14" height="10" rx="2" stroke="currentColor" strokeWidth="1.3"/></svg> },
-          { title: "Vacating Checklist", description: "Auto-send inspection checklist and timeline when a tenant gives notice", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M3 5l2 2 4-4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/><rect x="1" y="2" width="14" height="12" rx="2" stroke="currentColor" strokeWidth="1.3"/></svg> },
-        ],
+        insight: { title: "Re-listing pipeline", body: "The average Australian holds a home 7–10 years. Past clients are your highest-converting re-listing source — worth more per contact than cold prospecting." },
       },
     },
     appraisals: {
@@ -11854,7 +12119,7 @@ export default function DashboardPage() {
 
           {sidebarMode === "crm" && (() => {
             const crmModules = [
-              { id: "contacts",   label: "Contacts",   icon: <svg width="15" height="15" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="6" r="3" stroke="currentColor" strokeWidth="1.5"/><path d="M2 16c0-3.314 3.134-6 7-6s7 2.686 7 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>,   children: ["All Contacts", "Buyers", "Sellers", "Landlords", "Tenants"] },
+              { id: "contacts",   label: "Contacts",   icon: <svg width="15" height="15" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="6" r="3" stroke="currentColor" strokeWidth="1.5"/><path d="M2 16c0-3.314 3.134-6 7-6s7 2.686 7 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>,   children: ["All Contacts", "Follow-ups", "Investors", "Referral Network", "Past Clients"] },
               { id: "appraisals", label: "Appraisals", icon: <svg width="15" height="15" viewBox="0 0 18 18" fill="none"><path d="M2 14V6l7-4 7 4v8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><rect x="6" y="9" width="6" height="5" rx="1" stroke="currentColor" strokeWidth="1.4"/></svg>,   children: ["All Appraisals", "Scheduled", "Completed", "Follow Up"] },
               { id: "listings",   label: "Listings",   icon: <svg width="15" height="15" viewBox="0 0 18 18" fill="none"><rect x="2" y="2" width="14" height="14" rx="2" stroke="currentColor" strokeWidth="1.5"/><path d="M5 6h8M5 9h6M5 12h4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>,   children: ["Active Listings", "Under Offer", "Sold / Leased", "Archive"] },
               { id: "marketing",  label: "Marketing",  icon: <svg width="15" height="15" viewBox="0 0 18 18" fill="none"><path d="M3 11V7l10-4v12L3 11z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/><path d="M3 11v3l2-1" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>,   children: ["Campaigns", "Email Templates", "Social Media", "Analytics"] },
