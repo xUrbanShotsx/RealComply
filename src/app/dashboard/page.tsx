@@ -115,11 +115,11 @@ type CrmListing = {
   agent: string;
   listedDate: string;
   // rental-only
-  availableDate: string;
-  leaseTerm: string;
-  bond: string;
-  petsAllowed: string;
-  furnished: string;
+  availableDate?: string;
+  leaseTerm?: string;
+  bond?: string;
+  petsAllowed?: string;
+  furnished?: string;
   complianceSynced: boolean;
   // portal publishing
   portalStatus?: Record<string, "idle" | "pending" | "live">;
