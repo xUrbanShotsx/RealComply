@@ -1958,7 +1958,7 @@ function AiAssistantPanel({ onClose, agencyName }: { onClose: () => void; agency
           <div style={{ width: "22px", height: "22px", borderRadius: "6px", background: "#111827", display: "flex", alignItems: "center", justifyContent: "center" }}>
             <svg width="11" height="11" viewBox="0 0 16 16" fill="none"><path d="M8 1l1.8 4.2L14 7l-4.2 1.8L8 13l-1.8-4.2L2 7l4.2-1.8L8 1z" fill="white"/></svg>
           </div>
-          <span style={{ fontSize: "13px", fontWeight: 600, color: "#111827", letterSpacing: "-0.01em" }}>RealComply Assistant</span>
+          <span style={{ fontSize: "13px", fontWeight: 600, color: "#111827", letterSpacing: "-0.01em" }}>REA Hub Assistant</span>
         </div>
         <button onClick={onClose} style={{ width: "24px", height: "24px", borderRadius: "6px", border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#9ca3af", transition: "background 0.1s" }}
           onMouseEnter={(e) => { e.currentTarget.style.background = "#f3f4f6"; }}
@@ -2740,8 +2740,8 @@ const onboardingItems: OBItemConfig[] = [
   },
   {
     id: "rcAccount",
-    label: "RealComply account created",
-    description: "Confirm the staff member's RealComply account has been set up and access granted.",
+    label: "REA Hub account created",
+    description: "Confirm the staff member's REA Hub account has been set up and access granted.",
     fields: [
       { id: "email", label: "Login email", placeholder: "e.g. sarah@agency.com.au" },
       { id: "accessLevel", label: "Access level", placeholder: "e.g. Agent, Manager" },
@@ -3099,12 +3099,12 @@ const policyTemplateConfigs: PTConfig[] = [
       { id: "absenceDelegate", label: "Nominated senior licensee to act in principal's absence", placeholder: "e.g. James Chen (Licence No. 7654321)" },
       { id: "meetingFreq", label: "Team meeting / supervision meeting frequency", placeholder: "e.g. Weekly team meetings every Monday at 8:30am, plus daily morning check-ins" },
       { id: "checkInMethod", label: "Day-to-day supervision method", placeholder: "e.g. open-door policy, daily activity logs reviewed each afternoon, CRM pipeline reviewed weekly", multiline: true },
-      { id: "cpdMethod", label: "How CPD obligations are monitored", placeholder: "e.g. tracked in RealComply with automated expiry alerts 90 and 30 days before deadline" },
+      { id: "cpdMethod", label: "How CPD obligations are monitored", placeholder: "e.g. tracked in REA Hub with automated expiry alerts 90 and 30 days before deadline" },
       { id: "delegationLimits", label: "Decisions that require LIC sign-off (cannot be delegated)", placeholder: "e.g. agency agreement execution, price guidance letters, trust account disbursements over $5,000, any communication with NSW Fair Trading, marketing material approval", multiline: true },
       { id: "inductionSteps", label: "Key steps in your new staff induction program", placeholder: "e.g. Day 1: agency tour, IT setup, WHS briefing; Week 1: shadow senior agent on 3 appraisals; Week 2: client file management training; Month 1: first unsupervised open homes under LIC observation", multiline: true },
       { id: "breach", label: "Process when a compliance breach or concern is identified", placeholder: "e.g. immediate verbal counselling, written incident report filed within 24 hours, principal reviews and determines remedial action", multiline: true },
       { id: "performanceReview", label: "Staff performance review frequency and format", placeholder: "e.g. 90-day probation review, then 6-monthly; written KPI assessment covering listings won, compliance incidents, CPD completion, client satisfaction" },
-      { id: "records", label: "How are supervision records kept and where?", placeholder: "e.g. documented in RealComply and individual staff files; reviewed monthly by the principal" },
+      { id: "records", label: "How are supervision records kept and where?", placeholder: "e.g. documented in REA Hub and individual staff files; reviewed monthly by the principal" },
       { id: "review", label: "How often is this policy reviewed?", placeholder: "e.g. Annually in July, or immediately following any regulatory change or Fair Trading audit" },
     ],
     generate: (a) => {
@@ -5152,7 +5152,7 @@ function _renderDocContent_unused(doc: { title: string; category: string; date: 
         </div>
       ))}
       <p style={h2}>Areas Covered</p>
-      {["Office layout, facilities, and amenities — kitchen, meeting rooms, parking", "Introduction to all team members and their roles", "IT systems overview — CRM, email, PropertyMe, DocuSign, RealComply", "Phone system, voicemail, and communication protocols", "Agency procedures for listings, appraisals, and open homes", "Filing systems and document management — physical and digital", "Brand standards — use of Ray White logo, templates, and signage", "Dress code and professional presentation expectations", "Client relationship management and referral protocols"].map((item, i) => (
+      {["Office layout, facilities, and amenities — kitchen, meeting rooms, parking", "Introduction to all team members and their roles", "IT systems overview — CRM, email, PropertyMe, DocuSign, REA Hub", "Phone system, voicemail, and communication protocols", "Agency procedures for listings, appraisals, and open homes", "Filing systems and document management — physical and digital", "Brand standards — use of Ray White logo, templates, and signage", "Dress code and professional presentation expectations", "Client relationship management and referral protocols"].map((item, i) => (
         <div key={i} style={{ display: "flex", gap: "10px", marginBottom: "8px" }}><span style={{ fontSize: "13px", color: "oklch(0.60 0.16 145)", flexShrink: 0 }}>✓</span><p style={{ ...p, margin: 0 }}>{item}</p></div>
       ))}
       <div style={{ marginTop: "28px", paddingTop: "20px", borderTop: "1px solid var(--rc-border)" }}>
@@ -5202,7 +5202,7 @@ function _renderDocContent_unused(doc: { title: string; category: string; date: 
       ))}
       {doc.category === "Onboarding" && doc.title.includes("IT") && <>
         <p style={h2}>Systems Access Granted</p>
-        {["Office 365 — email, calendar, Teams (sarah@raywhite.com.au)", "PropertyMe — listings, property management, trust accounting", "DocuSign — digital document signing and contracts", "RealComply — compliance management and onboarding", "MRI Software — rental management and arrears", "Canon multi-function printer — print/scan/copy access"].map((item, i) => (
+        {["Office 365 — email, calendar, Teams (sarah@raywhite.com.au)", "PropertyMe — listings, property management, trust accounting", "DocuSign — digital document signing and contracts", "REA Hub — compliance management and onboarding", "MRI Software — rental management and arrears", "Canon multi-function printer — print/scan/copy access"].map((item, i) => (
           <div key={i} style={{ display: "flex", gap: "10px", marginBottom: "8px" }}><span style={{ fontSize: "13px", color: "oklch(0.60 0.16 145)", flexShrink: 0 }}>✓</span><p style={{ ...p, margin: 0 }}>{item}</p></div>
         ))}
         <div style={{ marginTop: "28px", paddingTop: "20px", borderTop: "1px solid var(--rc-border)" }}>
@@ -5915,7 +5915,7 @@ function OnboardingPage({ onStaffAdded }: { onStaffAdded?: (s: StaffRow) => void
         cpd_deadline: "",
       }).select().single(),
     ]);
-    // If email provided and matches a RealComply account, send them a notification
+    // If email provided and matches a REA Hub account, send them a notification
     if (!error && emailInput.trim() && orgOwnerId) {
       fetch("/api/notify-staff", {
         method: "POST",
@@ -5924,8 +5924,8 @@ function OnboardingPage({ onStaffAdded }: { onStaffAdded?: (s: StaffRow) => void
           email: emailInput.trim(),
           orgOwnerId,
           type: "onboarding",
-          title: "You've been added to RealComply",
-          message: `${nameInput.trim()} has been onboarded. Your CPD and licence tracking is now active in RealComply. Log in to view your compliance status.`,
+          title: "You've been added to REA Hub",
+          message: `${nameInput.trim()} has been onboarded. Your CPD and licence tracking is now active in REA Hub. Log in to view your compliance status.`,
         }),
       }).catch(() => {});
     }
@@ -6031,7 +6031,7 @@ function OnboardingPage({ onStaffAdded }: { onStaffAdded?: (s: StaffRow) => void
                 <input value={roleInput} onChange={e => setRoleInput(e.target.value)} onKeyDown={e => { if (e.key === "Enter") submitAdd(); if (e.key === "Escape") setShowAdd(false); }} placeholder="e.g. Sales Agent" style={inputSty2} />
               </div>
               <div>
-                <p style={{ fontSize: "11.5px", fontWeight: 600, color: "var(--rc-faint)", margin: "0 0 6px", textTransform: "uppercase", letterSpacing: "0.04em" }}>Email <span style={{ fontWeight: 400, textTransform: "none" }}>(optional — links to their RealComply account)</span></p>
+                <p style={{ fontSize: "11.5px", fontWeight: 600, color: "var(--rc-faint)", margin: "0 0 6px", textTransform: "uppercase", letterSpacing: "0.04em" }}>Email <span style={{ fontWeight: 400, textTransform: "none" }}>(optional — links to their REA Hub account)</span></p>
                 <input type="email" value={emailInput} onChange={e => setEmailInput(e.target.value)} onKeyDown={e => { if (e.key === "Enter") submitAdd(); if (e.key === "Escape") setShowAdd(false); }} placeholder="e.g. sarah@youragency.com.au" style={inputSty2} />
               </div>
               <div>
@@ -8340,7 +8340,7 @@ function SuspendedScreen({ userId }: { userId: string | null }) {
         <div style={{ width: "64px", height: "64px", borderRadius: "16px", background: "oklch(0.97 0.02 25)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 24px", fontSize: "28px" }}>⚠️</div>
         <h1 style={{ fontFamily: "var(--font-inter)", fontSize: "1.5rem", fontWeight: 600, color: "var(--rc-ink)", marginBottom: "12px", letterSpacing: "-0.02em" }}>Subscription payment failed</h1>
         <p style={{ fontSize: "14px", color: "var(--rc-muted)", lineHeight: 1.7, marginBottom: "28px" }}>
-          Your access to RealComply has been suspended due to a failed payment. Your data is safely retained and will remain available for <strong>6 months</strong>. Update your payment method to restore access immediately.
+          Your access to REA Hub has been suspended due to a failed payment. Your data is safely retained and will remain available for <strong>6 months</strong>. Update your payment method to restore access immediately.
         </p>
         {error && <p style={{ fontSize: "13px", color: "oklch(0.55 0.18 25)", marginBottom: "16px" }}>{error}</p>}
         <button
@@ -10527,7 +10527,7 @@ Warm regards,
           { title: '"Who\'s Next to Sell"', description: "AI ranks nearby owners by likelihood to list based on hold period, suburb trends, and comparable sales activity", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 1l1.5 3.5L13 6l-3.5 1.5L8 11l-1.5-3.5L3 6l3.5-1.5L8 1z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/></svg> },
           { title: "Auto Letter Drop", description: "One-click AI-written personalised letter per prospect, with your branding and the nearby comparable result", icon: <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M2 4l6 5 6-5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/><rect x="1" y="3" width="14" height="10" rx="2" stroke="currentColor" strokeWidth="1.3"/></svg> },
         ]}
-        insight={{ title: "Connect CoreLogic or PropTrack for live data", body: "With a property data feed connected, RealComply automatically ingests every settled sale in any suburb and builds your prospecting pipeline in real time — no manual entry needed." }}
+        insight={{ title: "Connect CoreLogic or PropTrack for live data", body: "With a property data feed connected, REA Hub automatically ingests every settled sale in any suburb and builds your prospecting pipeline in real time — no manual entry needed." }}
       />
 
       {/* Radius filter */}
@@ -11520,7 +11520,7 @@ function buildAiResponse(msg: string, context: { crmListings: CrmListing[]; staf
     return { text: `You have ${SEED_SOLD.length} recent results this month. ${SEED_SOLD.filter(s => !s.notified).length} properties haven't had neighbour notification letters sent yet — that's ${SEED_SOLD.filter(s => !s.notified).length} prospecting opportunity waiting. Head to Sold/Leased to send them.`, action: { type: "navigate", moduleId: "listings", submodule: "Sold / Leased", label: "Open Sold / Leased" } };
   }
   if (m.includes("hello") || m.includes("hi") || m.includes("hey") || m.includes("help")) {
-    return { text: "G'day! I'm your RealComply AI assistant. I can help you:\n\n• **Navigate** — \"open appraisals\", \"show me under offer\"\n• **Prospect** — \"what streets are hot to letterbox?\"\n• **Prioritise** — \"who should I call today?\"\n• **Create** — \"add a new listing\", \"book an appraisal\"\n• **Analyse** — \"how's the team tracking?\", \"what campaigns are active?\"\n\nWhat do you need?" };
+    return { text: "G'day! I'm your REA Hub AI assistant. I can help you:\n\n• **Navigate** — \"open appraisals\", \"show me under offer\"\n• **Prospect** — \"what streets are hot to letterbox?\"\n• **Prioritise** — \"who should I call today?\"\n• **Create** — \"add a new listing\", \"book an appraisal\"\n• **Analyse** — \"how's the team tracking?\", \"what campaigns are active?\"\n\nWhat do you need?" };
   }
 
   return { text: "I can help with that. Could you give me a bit more detail? For example, you can ask me to:\n• \"Who should I call today?\"\n• \"What streets are hot to letterbox?\"\n• \"Create a new listing\"\n• \"Book an appraisal at [address]\"\n• \"How's the team performing?\"" };
@@ -11572,7 +11572,7 @@ function AiChatPanel({ open, onClose, crmListings, staffRows, onNavigate }: {
           <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 1l1.5 3.5L13 6l-3.5 1.5L8 11l-1.5-3.5L3 6l3.5-1.5L8 1z" stroke="#fff" strokeWidth="1.4" strokeLinejoin="round"/></svg>
         </div>
         <div style={{ flex: 1 }}>
-          <div style={{ fontWeight: 700, fontSize: "13.5px", color: "#111827" }}>RealComply AI</div>
+          <div style={{ fontWeight: 700, fontSize: "13.5px", color: "#111827" }}>REA Hub AI</div>
           <div style={{ fontSize: "11px", color: "#9ca3af" }}>Navigate, prospect & create</div>
         </div>
         <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "#9ca3af", padding: "4px", display: "flex" }}>
@@ -13527,7 +13527,12 @@ export default function DashboardPage() {
         <button className="rc-hamburger" onClick={() => setSidebarOpen(v => !v)} aria-label="Open menu">
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"/></svg>
         </button>
-        <img src="/dashboardtitle.png" alt="RealComply" style={{ height: "28px", width: "auto", objectFit: "contain" }} />
+        <div style={{ display: "flex", alignItems: "center", gap: "7px" }}>
+            <div style={{ width: "22px", height: "22px", background: "#111827", borderRadius: "6px", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M2 12V5l6-3 6 3v7l-6 3-6-3z" stroke="white" strokeWidth="1.3" strokeLinejoin="round"/><path d="M8 2v13M2 5l6 3 6-3" stroke="white" strokeWidth="1.3" strokeLinejoin="round"/></svg>
+            </div>
+            <span style={{ fontSize: "14px", fontWeight: 700, color: "#111827", letterSpacing: "-0.02em", fontFamily: "var(--font-inter), system-ui, sans-serif" }}>REA Hub</span>
+          </div>
       </div>
 
       {/* Sidebar overlay (mobile) */}
@@ -13538,7 +13543,12 @@ export default function DashboardPage() {
 
         {/* Logo */}
         <div style={{ height: "60px", padding: "0 20px", flexShrink: 0, borderBottom: "1px solid #f3f4f6", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <img src="/dashboardtitle.png" alt="RealComply" style={{ height: "38px", width: "auto", objectFit: "contain", maxWidth: "160px" }} />
+          <div style={{ display: "flex", alignItems: "center", gap: "7px" }}>
+            <div style={{ width: "24px", height: "24px", background: "#111827", borderRadius: "6px", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M2 12V5l6-3 6 3v7l-6 3-6-3z" stroke="white" strokeWidth="1.3" strokeLinejoin="round"/><path d="M8 2v13M2 5l6 3 6-3" stroke="white" strokeWidth="1.3" strokeLinejoin="round"/></svg>
+            </div>
+            <span style={{ fontSize: "15px", fontWeight: 700, color: "#111827", letterSpacing: "-0.02em", fontFamily: "var(--font-inter), system-ui, sans-serif" }}>REA Hub</span>
+          </div>
           <button className="rc-sidebar-close" onClick={() => setSidebarOpen(false)} aria-label="Close menu" style={{ background: "none", border: "none", cursor: "pointer", padding: "4px", borderRadius: "6px", color: "#9ca3af", display: "none" }}>
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/></svg>
           </button>
@@ -13767,7 +13777,7 @@ export default function DashboardPage() {
         <header style={{ height: "56px", background: "#fff", borderBottom: "1px solid #e5e7eb", display: "flex", alignItems: "center", padding: "0 28px", gap: "16px", flexShrink: 0, position: "sticky", top: 0, zIndex: 5 }}>
           {/* Breadcrumb */}
           <div style={{ display: "flex", alignItems: "center", gap: "6px", flex: 1, minWidth: 0 }}>
-            <span style={{ fontSize: "13px", color: "#9ca3af", fontWeight: 500, letterSpacing: "-0.01em" }}>RealComply</span>
+            <span style={{ fontSize: "13px", color: "#9ca3af", fontWeight: 500, letterSpacing: "-0.01em" }}>REA Hub</span>
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4 2l4 4-4 4" stroke="#d1d5db" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
             <span style={{ fontSize: "13px", color: "#111827", fontWeight: 600, letterSpacing: "-0.01em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{breadcrumb}</span>
           </div>
