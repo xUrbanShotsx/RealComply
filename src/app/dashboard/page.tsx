@@ -10726,175 +10726,219 @@ function CrmHomePage({ agencyName, crmListings, onNavigate }: {
 
   const activeVal = sumPrice(active) / 1000000;
   const underOfferVal = sumPrice(underOffer) / 1000000;
-  const soldVal = sumPrice(sold) / 1000000;
   const totalPipeline = activeVal + underOfferVal;
 
-  // Pipeline stages — appraisals/presentations/pending come from their own Supabase tables
-  // and will be non-zero once those modules load data. For now they gracefully show 0.
+  // Pipeline stages
   const pipeline = [
-    { id: "appraisals",    label: "Appraisals",      color: "#f59e0b", count: 0,              value: "—",                                          nav: () => onNavigate("appraisals", null) },
-    { id: "presentations", label: "Presentations",   color: "#8b5cf6", count: 0,              value: "—",                                          nav: () => onNavigate("appraisals", null) },
-    { id: "pending",       label: "Listed — Pending",color: "#3b82f6", count: 0,              value: "Signed, not online",                         nav: () => onNavigate("listings", "Active Listings") },
-    { id: "active",        label: "Active Listed",   color: "#10b981", count: active.length,  value: activeVal > 0 ? `$${activeVal.toFixed(1)}M`   : "—", nav: () => onNavigate("listings", "Active Listings") },
-    { id: "exchanged",     label: "Exchanged",       color: "#6366f1", count: underOffer.length, value: underOfferVal > 0 ? `$${underOfferVal.toFixed(2)}M` : "—", nav: () => onNavigate("listings", "Under Offer") },
-    { id: "settled",       label: "Settled",         color: "#16a34a", count: sold.length,    value: soldVal > 0 ? `$${soldVal.toFixed(2)}M`      : "—", nav: () => onNavigate("listings", "Sold / Leased") },
+    { id: "appraisals",    label: "Appraisals",       color: "#f59e0b", count: 0,                 value: "—",                                                     nav: () => onNavigate("appraisals", null) },
+    { id: "presentations", label: "Presentations",    color: "#8b5cf6", count: 0,                 value: "—",                                                     nav: () => onNavigate("appraisals", null) },
+    { id: "pending",       label: "Listed – Pending", color: "#3b82f6", count: 0,                 value: "Signed, not online",                                    nav: () => onNavigate("listings", "Active Listings") },
+    { id: "active",        label: "Active Listed",    color: "#10b981", count: active.length,     value: activeVal > 0 ? `$${activeVal.toFixed(1)}M` : "—",       nav: () => onNavigate("listings", "Active Listings") },
+    { id: "exchanged",     label: "Exchanged",        color: "#6366f1", count: underOffer.length, value: underOfferVal > 0 ? `$${underOfferVal.toFixed(2)}M` : "—", nav: () => onNavigate("listings", "Under Offer") },
+    { id: "settled",       label: "Settled",          color: "#16a34a", count: sold.length,       value: "—",                                                     nav: () => onNavigate("listings", "Sold / Leased") },
+  ];
+  const maxPipelineCount = Math.max(...pipeline.map(s => s.count), 1);
+
+  // Seed priorities
+  type Priority = { dot: string; icon: string; text: string; sub: string; due: string; dueColor: string; dueBg: string; action: string; mod: string; submod: string | null };
+  const priorities: Priority[] = [
+    { dot: "#ef4444", icon: "📞", text: "Call James Nguyen — finance condition clears in 2 days", sub: "14 Wentworth Ave", due: "Overdue", dueColor: "#991b1b", dueBg: "#fef2f2", action: "Call", mod: "contacts", submod: null },
+    { dot: "#f59e0b", icon: "🏠", text: "OFI at 10:30am — 22 Surf Parade, Thirroul", sub: "8 registered buyers", due: "Today", dueColor: "#92400e", dueBg: "#fffbeb", action: "View", mod: "open-homes", submod: null },
+    { dot: "#f59e0b", icon: "📄", text: "Vendor report due — Greg Hollis · 22 Surf Pde", sub: "Last sent 7 days ago", due: "Today", dueColor: "#92400e", dueBg: "#fffbeb", action: "Send", mod: "vendor", submod: null },
+    { dot: "#3b82f6", icon: "📞", text: "Follow up — Priya Sharma — Appraisal scheduled 3 days ago", sub: "Awaiting feedback", due: "Tomorrow", dueColor: "#374151", dueBg: "#f3f4f6", action: "Call", mod: "contacts", submod: null },
+    { dot: "#3b82f6", icon: "📋", text: "CPD renewal — Sarah Mitchell", sub: "Expires 8 Aug", due: "In 3 days", dueColor: "#374151", dueBg: "#f3f4f6", action: "View", mod: "team", submod: null },
+    { dot: "#3b82f6", icon: "📋", text: "Licence renewal reminder — Tom Briggs", sub: "Due 9 Aug", due: "In 4 days", dueColor: "#374151", dueBg: "#f3f4f6", action: "View", mod: "team", submod: null },
+    { dot: "#f59e0b", icon: "📅", text: "Book appraisal — W&E alert: 5 Clifton St, Wollongong", sub: "Expired 3 days ago", due: "Today", dueColor: "#92400e", dueBg: "#fffbeb", action: "Book", mod: "appraisals", submod: null },
+    { dot: "#3b82f6", icon: "✉️", text: "Neighbour letter — 3 recent sales, unsent notifications", sub: "Prospecting sequence", due: "This week", dueColor: "#374151", dueBg: "#f3f4f6", action: "Send", mod: "prospecting", submod: "Letter Drop" },
   ];
 
-  const maxCount = Math.max(...pipeline.map(s => s.count), 1);
+  // Seed OFIs
+  const ofis = [
+    { date: "Sat 9 Aug · 10:30am", address: "22 Surf Parade, Thirroul", registered: 8 },
+    { date: "Sat 9 Aug · 1:00pm",  address: "14 Wentworth Ave, Wollongong", registered: 5 },
+  ];
 
-  // Property type breakdown from real data
-  const byType = ["House", "Unit", "Townhouse", "Land", "Other"].map(t => ({
-    label: t,
-    count: crmListings.filter(l => l.propertyType === t || (t === "Other" && !["House","Unit","Townhouse","Land"].includes(l.propertyType))).length,
-  })).filter(t => t.count > 0);
-  const maxTypeCount = Math.max(...byType.map(t => t.count), 1);
-  const typeColors = ["#6366f1", "#10b981", "#f59e0b", "#3b82f6", "#9ca3af"];
-
-  // Sale vs rental split
-  const saleCount = crmListings.filter(l => l.type === "sale").length;
-  const rentalCount = crmListings.filter(l => l.type === "rental").length;
-  const total = crmListings.length || 1;
+  // Market alerts
+  const marketAlerts = [
+    { color: "#f59e0b", bg: "#fffbeb", text: "2 Withdrawn properties detected in your farm area", mod: "prospecting", submod: "Withdrawn & Expired" },
+    { color: "#3b82f6", bg: "#eff6ff", text: "1 Price reduction nearby — 18 Corrimal St reduced $50K", mod: "prospecting", submod: null },
+    { color: "#6366f1", bg: "#f5f3ff", text: "3 recent sales — unsent neighbour notification letters", mod: "prospecting", submod: "Letter Drop" },
+  ];
 
   return (
-    <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "calc(100vh - 56px)", overflow: "hidden", padding: "28px 36px", gap: "20px" }}>
+    <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "calc(100vh - 56px)", overflowY: "auto", padding: "28px 36px", gap: "20px" }}>
 
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0, paddingBottom: "20px", borderBottom: "1px solid #e5e7eb" }}>
         <div>
-          <h1 style={{ fontSize: "1.25rem", fontWeight: 700, color: "#111827", letterSpacing: "-0.04em", margin: 0 }}>{agencyName || "CRM"} — Overview</h1>
+          <h1 style={{ fontSize: "1.2rem", fontWeight: 700, color: "#111827", letterSpacing: "-0.03em", margin: 0 }}>{agencyName || "CRM"} — Overview</h1>
           <p style={{ fontSize: "12.5px", color: "#9ca3af", margin: "2px 0 0" }}>{todayStr} · {active.length + underOffer.length} active deals</p>
         </div>
         <div style={{ display: "flex", gap: "8px" }}>
           <button onClick={() => onNavigate("appraisals", null)} style={{ padding: "7px 14px", background: "#f3f4f6", color: "#374151", border: "none", borderRadius: "8px", fontSize: "12.5px", fontWeight: 600, cursor: "pointer" }}>+ Appraisal</button>
+          <button onClick={() => onNavigate("open-homes", null)} style={{ padding: "7px 14px", background: "#f3f4f6", color: "#374151", border: "none", borderRadius: "8px", fontSize: "12.5px", fontWeight: 600, cursor: "pointer" }}>Schedule OFI</button>
           <button onClick={() => onNavigate("listings", "Active Listings")} style={{ padding: "7px 14px", background: "#111827", color: "#fff", border: "none", borderRadius: "8px", fontSize: "12.5px", fontWeight: 600, cursor: "pointer" }}>+ New Listing</button>
         </div>
       </div>
 
       {/* KPI Strip */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "10px", flexShrink: 0 }}>
-        <CrmKpiTile label="Pipeline Value" value={totalPipeline > 0 ? `$${totalPipeline.toFixed(1)}M` : "—"} sub="active + under offer" color="#6366f1" />
-        <CrmKpiTile label="Active Listings" value={String(active.length)} sub="live on portals" color="#10b981" />
-        <CrmKpiTile label="Under Offer" value={String(underOffer.length)} sub={underOfferVal > 0 ? `$${underOfferVal.toFixed(2)}M in contracts` : "no contracts"} color="#f59e0b" />
-        <CrmKpiTile label="Settled" value={String(sold.length)} sub={soldVal > 0 ? `$${soldVal.toFixed(2)}M closed` : "no settlements"} color="#16a34a" />
+        {/* GCI MTD */}
+        <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: "12px", padding: "16px 18px", boxShadow: "0 1px 2px rgba(0,0,0,0.04)" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" }}>
+            <span style={{ fontSize: "12px", color: "#6b7280", fontWeight: 500 }}>GCI Month-to-Date</span>
+            <span style={{ fontSize: "10.5px", fontWeight: 600, color: "#166534", background: "#f0fdf4", borderRadius: "20px", padding: "2px 8px" }}>On track</span>
+          </div>
+          <p style={{ fontSize: "1.6rem", fontWeight: 700, color: "#111827", letterSpacing: "-0.05em", margin: "0 0 2px" }}>—</p>
+          <span style={{ fontSize: "11px", color: "#9ca3af" }}>vs $80K target</span>
+        </div>
+        {/* Pipeline Value */}
+        <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: "12px", padding: "16px 18px", boxShadow: "0 1px 2px rgba(0,0,0,0.04)" }}>
+          <span style={{ fontSize: "12px", color: "#6b7280", fontWeight: 500, display: "block", marginBottom: "8px" }}>Pipeline Value</span>
+          <p style={{ fontSize: "1.6rem", fontWeight: 700, color: "#111827", letterSpacing: "-0.05em", margin: "0 0 2px" }}>{totalPipeline > 0 ? `$${totalPipeline.toFixed(1)}M` : "—"}</p>
+          <span style={{ fontSize: "11px", color: "#9ca3af" }}>active &amp; under offer</span>
+        </div>
+        {/* Appraisals */}
+        <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: "12px", padding: "16px 18px", boxShadow: "0 1px 2px rgba(0,0,0,0.04)" }}>
+          <span style={{ fontSize: "12px", color: "#6b7280", fontWeight: 500, display: "block", marginBottom: "8px" }}>Appraisals</span>
+          <p style={{ fontSize: "1.6rem", fontWeight: 700, color: "#111827", letterSpacing: "-0.05em", margin: "0 0 2px" }}>0</p>
+          <span style={{ fontSize: "11px", color: "#9ca3af" }}>this month</span>
+        </div>
+        {/* Settlements */}
+        <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: "12px", padding: "16px 18px", boxShadow: "0 1px 2px rgba(0,0,0,0.04)" }}>
+          <span style={{ fontSize: "12px", color: "#6b7280", fontWeight: 500, display: "block", marginBottom: "8px" }}>Settlements Due</span>
+          <p style={{ fontSize: "1.6rem", fontWeight: 700, color: "#111827", letterSpacing: "-0.05em", margin: "0 0 2px" }}>0</p>
+          <span style={{ fontSize: "11px", color: "#9ca3af" }}>next 30 days</span>
+        </div>
       </div>
 
-      {/* Pipeline tiles + Chart area */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "12px", overflow: "hidden" }}>
+      {/* Middle row: Today's Priorities + Pipeline Snapshot */}
+      <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: "12px", flexShrink: 0 }}>
 
-        {/* Pipeline stage tiles */}
-        <div style={{ flexShrink: 0 }}>
-          <div style={{ fontSize: "11px", fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "8px" }}>Deal Pipeline</div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: "8px" }}>
-            {pipeline.map(stage => (
-              <button key={stage.id} onClick={stage.nav} style={{ background: "#fff", border: `1.5px solid #e5e7eb`, borderRadius: "10px", padding: "12px 14px", textAlign: "left", cursor: "pointer", position: "relative", overflow: "hidden", transition: "border-color 0.15s, box-shadow 0.15s" }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = stage.color; e.currentTarget.style.boxShadow = `0 0 0 3px ${stage.color}15`; }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = "#e5e7eb"; e.currentTarget.style.boxShadow = "none"; }}>
-                <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "3px", background: stage.color, borderRadius: "10px 10px 0 0" }} />
-                <div style={{ fontSize: "10.5px", fontWeight: 700, color: stage.color, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "6px" }}>{stage.label}</div>
-                <div style={{ fontSize: "22px", fontWeight: 800, color: "#111827", letterSpacing: "-0.04em", lineHeight: 1 }}>{stage.count}</div>
-                <div style={{ fontSize: "11px", color: "#9ca3af", marginTop: "4px" }}>{stage.value}</div>
+        {/* Today's Priorities */}
+        <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: "12px", boxShadow: "0 1px 2px rgba(0,0,0,0.04)", overflow: "hidden" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 18px 12px", borderBottom: "1px solid #e5e7eb" }}>
+            <div>
+              <div style={{ fontSize: "13.5px", fontWeight: 700, color: "#111827" }}>Today&apos;s Priorities</div>
+              <div style={{ fontSize: "11px", color: "#9ca3af", marginTop: "1px" }}>8 actions need attention</div>
+            </div>
+            <div style={{ display: "flex", gap: "8px", fontSize: "11px", color: "#9ca3af" }}>
+              <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#ef4444", display: "inline-block" }} />Overdue</span>
+              <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#f59e0b", display: "inline-block" }} />Today</span>
+              <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#3b82f6", display: "inline-block" }} />Upcoming</span>
+            </div>
+          </div>
+          <div>
+            {priorities.map((p, i) => (
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: "12px", padding: "11px 14px", borderBottom: i < priorities.length - 1 ? "1px solid #f3f4f6" : "none" }}>
+                <div style={{ width: "7px", height: "7px", borderRadius: "50%", background: p.dot, flexShrink: 0 }} />
+                <div style={{ fontSize: "14px", flexShrink: 0 }}>{p.icon}</div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: "12.5px", color: "#111827", fontWeight: 500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.text}</div>
+                  <div style={{ fontSize: "11px", color: "#9ca3af", marginTop: "1px" }}>{p.sub}</div>
+                </div>
+                <span style={{ fontSize: "10.5px", fontWeight: 600, color: p.dueColor, background: p.dueBg, borderRadius: "20px", padding: "2px 8px", flexShrink: 0 }}>{p.due}</span>
+                <button onClick={() => onNavigate(p.mod, p.submod)} style={{ background: "#f3f4f6", color: "#374151", border: "none", borderRadius: "6px", padding: "3px 10px", fontSize: "11.5px", fontWeight: 600, cursor: "pointer", flexShrink: 0 }}>{p.action}</button>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Pipeline Snapshot */}
+        <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: "12px", boxShadow: "0 1px 2px rgba(0,0,0,0.04)", overflow: "hidden" }}>
+          <div style={{ padding: "14px 18px 12px", borderBottom: "1px solid #e5e7eb" }}>
+            <div style={{ fontSize: "13.5px", fontWeight: 700, color: "#111827" }}>Pipeline Snapshot</div>
+            <div style={{ fontSize: "11px", color: "#9ca3af", marginTop: "1px" }}>Deal count by stage</div>
+          </div>
+          <div style={{ padding: "10px 0" }}>
+            {pipeline.map(stage => {
+              const barPct = maxPipelineCount > 0 ? (stage.count / maxPipelineCount) * 100 : 0;
+              return (
+                <button key={stage.id} onClick={stage.nav} style={{ width: "100%", display: "block", padding: "8px 18px", background: "none", border: "none", cursor: "pointer", textAlign: "left" }}
+                  onMouseEnter={e => { e.currentTarget.style.background = "#f9fafb"; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = "none"; }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "4px" }}>
+                    <span style={{ fontSize: "12px", fontWeight: 500, color: "#374151" }}>{stage.label}</span>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      <span style={{ fontSize: "12px", fontWeight: 700, color: "#111827" }}>{stage.count}</span>
+                      <span style={{ fontSize: "11px", color: "#9ca3af" }}>{stage.value}</span>
+                    </div>
+                  </div>
+                  <div style={{ height: "4px", background: "#f3f4f6", borderRadius: "4px", overflow: "hidden" }}>
+                    <div style={{ height: "100%", width: `${barPct}%`, background: stage.color, borderRadius: "4px", transition: "width 0.4s ease" }} />
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* Bottom row: Market Intelligence + Open Homes + Quick Actions */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "12px", flexShrink: 0 }}>
+
+        {/* Market Intelligence */}
+        <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: "12px", boxShadow: "0 1px 2px rgba(0,0,0,0.04)", overflow: "hidden" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 18px 12px", borderBottom: "1px solid #e5e7eb" }}>
+            <span style={{ fontSize: "13.5px", fontWeight: 700, color: "#111827" }}>Market Intelligence</span>
+            <span style={{ fontSize: "11px", color: "#9ca3af" }}>Updated just now</span>
+          </div>
+          <div style={{ padding: "4px 0" }}>
+            {marketAlerts.map((a, i) => (
+              <button key={i} onClick={() => onNavigate(a.mod, a.submod)} style={{ width: "100%", display: "flex", alignItems: "flex-start", gap: "11px", padding: "11px 18px", background: "none", border: "none", cursor: "pointer", textAlign: "left" }}
+                onMouseEnter={e => { e.currentTarget.style.background = "#f9fafb"; }}
+                onMouseLeave={e => { e.currentTarget.style.background = "none"; }}>
+                <div style={{ width: "28px", height: "28px", borderRadius: "50%", background: a.bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke={a.color} strokeWidth="1.4"/><path d="M8 5v4M8 11v.5" stroke={a.color} strokeWidth="1.4" strokeLinecap="round"/></svg>
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <span style={{ fontSize: "12px", color: "#374151", lineHeight: 1.4, display: "block" }}>{a.text}</span>
+                  <span style={{ fontSize: "11px", color: a.color, marginTop: "2px", display: "block" }}>View →</span>
+                </div>
               </button>
             ))}
           </div>
         </div>
 
-        {/* Charts row */}
-        <div style={{ flex: 1, display: "grid", gridTemplateColumns: "1fr 340px", gap: "12px", overflow: "hidden" }}>
-
-          {/* Pipeline funnel bar chart */}
-          <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: "12px", padding: "20px 24px", overflow: "hidden", display: "flex", flexDirection: "column" }}>
-            <div style={{ fontSize: "13px", fontWeight: 700, color: "#111827", marginBottom: "4px" }}>Pipeline Flow</div>
-            <div style={{ fontSize: "11.5px", color: "#9ca3af", marginBottom: "20px" }}>Deal count by stage — click a bar to open the module</div>
-            <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-around", gap: "10px" }}>
-              {pipeline.map((stage, i) => {
-                const barPct = maxCount > 0 ? (stage.count / maxCount) * 100 : 0;
-                return (
-                  <button key={stage.id} onClick={stage.nav} style={{ display: "flex", alignItems: "center", gap: "12px", background: "none", border: "none", padding: 0, cursor: "pointer", textAlign: "left", width: "100%" }}>
-                    <div style={{ width: "130px", flexShrink: 0, fontSize: "12px", fontWeight: 600, color: "#374151" }}>{stage.label}</div>
-                    <div style={{ flex: 1, position: "relative" }}>
-                      <div style={{ height: "28px", background: "#f3f4f6", borderRadius: "6px", overflow: "hidden" }}>
-                        <div style={{ height: "100%", width: `${barPct}%`, background: stage.color, borderRadius: "6px", minWidth: barPct > 0 ? "28px" : "0", transition: "width 0.4s ease", display: "flex", alignItems: "center", justifyContent: "flex-end", paddingRight: "8px" }}>
-                          {stage.count > 0 && <span style={{ fontSize: "12px", fontWeight: 700, color: "#fff" }}>{stage.count}</span>}
-                        </div>
-                      </div>
-                      {stage.count === 0 && <span style={{ position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)", fontSize: "11.5px", color: "#d1d5db", fontStyle: "italic" }}>None yet</span>}
-                    </div>
-                    <div style={{ width: "72px", flexShrink: 0, fontSize: "11.5px", color: "#6b7280", textAlign: "right" }}>{stage.value}</div>
-                    {i < pipeline.length - 1 && stage.count > 0 && pipeline[i + 1].count > 0 && (
-                      <div style={{ position: "absolute", right: "-6px" }} />
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-            {crmListings.length === 0 && (
-              <div style={{ marginTop: "16px", paddingTop: "16px", borderTop: "1px solid #f3f4f6", fontSize: "12px", color: "#9ca3af", textAlign: "center" }}>Add your first listing to see pipeline data</div>
-            )}
+        {/* Open Homes This Week */}
+        <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: "12px", boxShadow: "0 1px 2px rgba(0,0,0,0.04)", overflow: "hidden", display: "flex", flexDirection: "column" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 18px 12px", borderBottom: "1px solid #e5e7eb" }}>
+            <span style={{ fontSize: "13.5px", fontWeight: 700, color: "#111827" }}>Open Homes This Week</span>
+            <button onClick={() => onNavigate("open-homes", null)} style={{ fontSize: "11px", color: "#6b7280", background: "none", border: "none", cursor: "pointer", padding: 0 }}>View all →</button>
           </div>
-
-          {/* Right column — breakdown charts */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "12px", overflow: "hidden" }}>
-
-            {/* Property type breakdown */}
-            <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: "12px", padding: "16px 18px", flex: 1 }}>
-              <div style={{ fontSize: "13px", fontWeight: 700, color: "#111827", marginBottom: "14px" }}>By Property Type</div>
-              {byType.length > 0 ? (
-                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                  {byType.map((t, i) => (
-                    <div key={t.label} style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                      <div style={{ width: "10px", height: "10px", borderRadius: "3px", background: typeColors[i % typeColors.length], flexShrink: 0 }} />
-                      <div style={{ fontSize: "12px", color: "#374151", width: "80px", flexShrink: 0 }}>{t.label}</div>
-                      <div style={{ flex: 1, height: "8px", background: "#f3f4f6", borderRadius: "4px" }}>
-                        <div style={{ height: "100%", width: `${(t.count / maxTypeCount) * 100}%`, background: typeColors[i % typeColors.length], borderRadius: "4px" }} />
-                      </div>
-                      <div style={{ fontSize: "12px", fontWeight: 700, color: "#111827", width: "20px", textAlign: "right" }}>{t.count}</div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div style={{ fontSize: "12px", color: "#d1d5db", textAlign: "center", padding: "16px 0" }}>No listings yet</div>
-              )}
-            </div>
-
-            {/* Sale vs Rental split */}
-            <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: "12px", padding: "16px 18px" }}>
-              <div style={{ fontSize: "13px", fontWeight: 700, color: "#111827", marginBottom: "14px" }}>Sale vs. Rental</div>
-              <div style={{ display: "flex", gap: "8px", marginBottom: "10px" }}>
-                <div style={{ flex: saleCount || 1, height: "10px", background: "#6366f1", borderRadius: "4px 0 0 4px" }} />
-                <div style={{ flex: rentalCount || 0, height: "10px", background: "#10b981", borderRadius: "0 4px 4px 0" }} />
+          <div style={{ flex: 1 }}>
+            {ofis.map((ofi, i) => (
+              <div key={i} style={{ padding: "11px 18px", borderBottom: i < ofis.length - 1 ? "1px solid #f3f4f6" : "none" }}>
+                <div style={{ fontSize: "10.5px", fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "3px" }}>{ofi.date}</div>
+                <div style={{ fontSize: "12.5px", fontWeight: 600, color: "#111827" }}>{ofi.address}</div>
+                <div style={{ fontSize: "11.5px", color: "#6b7280", marginTop: "2px" }}>{ofi.registered} registered buyers</div>
               </div>
-              <div style={{ display: "flex", gap: "16px" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                  <div style={{ width: "10px", height: "10px", borderRadius: "2px", background: "#6366f1" }} />
-                  <span style={{ fontSize: "12px", color: "#374151" }}>Sales <strong>{saleCount}</strong></span>
-                  <span style={{ fontSize: "11px", color: "#9ca3af" }}>({Math.round((saleCount / total) * 100)}%)</span>
-                </div>
-                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                  <div style={{ width: "10px", height: "10px", borderRadius: "2px", background: "#10b981" }} />
-                  <span style={{ fontSize: "12px", color: "#374151" }}>Rentals <strong>{rentalCount}</strong></span>
-                  <span style={{ fontSize: "11px", color: "#9ca3af" }}>({Math.round((rentalCount / total) * 100)}%)</span>
-                </div>
-              </div>
-            </div>
+            ))}
+          </div>
+          <div style={{ padding: "12px 18px", borderTop: "1px solid #f3f4f6" }}>
+            <button onClick={() => onNavigate("open-homes", null)} style={{ width: "100%", padding: "7px 14px", background: "#111827", color: "#fff", border: "none", borderRadius: "8px", fontSize: "12.5px", fontWeight: 600, cursor: "pointer" }}>Schedule OFI</button>
+          </div>
+        </div>
 
-            {/* Module shortcuts */}
-            <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: "12px", padding: "16px 18px" }}>
-              <div style={{ fontSize: "13px", fontWeight: 700, color: "#111827", marginBottom: "12px" }}>Quick Access</div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px" }}>
-                {[
-                  { label: "Contacts", mod: "contacts", sub: null, color: "#6366f1" },
-                  { label: "Prospecting", mod: "prospecting", sub: null, color: "#f59e0b" },
-                  { label: "Marketing", mod: "marketing", sub: null, color: "#8b5cf6" },
-                  { label: "Team", mod: "team", sub: null, color: "#10b981" },
-                ].map(link => (
-                  <button key={link.mod} onClick={() => onNavigate(link.mod, link.sub)}
-                    style={{ padding: "8px 10px", background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: "8px", fontSize: "12px", fontWeight: 600, color: "#374151", cursor: "pointer", textAlign: "left", display: "flex", alignItems: "center", gap: "6px" }}>
-                    <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: link.color, flexShrink: 0 }} />
-                    {link.label}
-                  </button>
-                ))}
-              </div>
-            </div>
+        {/* Quick Actions */}
+        <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: "12px", boxShadow: "0 1px 2px rgba(0,0,0,0.04)", overflow: "hidden" }}>
+          <div style={{ padding: "14px 18px 12px", borderBottom: "1px solid #e5e7eb" }}>
+            <span style={{ fontSize: "13.5px", fontWeight: 700, color: "#111827" }}>Quick Actions</span>
+          </div>
+          <div style={{ padding: "14px 18px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+            {[
+              { label: "Book Appraisal", mod: "appraisals", submod: null, icon: <svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M3 15V7l7-4 7 4v8" stroke="#f59e0b" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><rect x="7" y="10" width="6" height="5" rx="1" stroke="#f59e0b" strokeWidth="1.4"/></svg> },
+              { label: "Add Contact",    mod: "contacts",   submod: null, icon: <svg width="18" height="18" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="7" r="3.5" stroke="#6366f1" strokeWidth="1.5"/><path d="M3 17c0-3.314 3.134-6 7-6s7 2.686 7 6" stroke="#6366f1" strokeWidth="1.5" strokeLinecap="round"/></svg> },
+              { label: "New Listing",   mod: "listings",   submod: "Active Listings", icon: <svg width="18" height="18" viewBox="0 0 20 20" fill="none"><rect x="3" y="3" width="14" height="14" rx="2" stroke="#10b981" strokeWidth="1.5"/><path d="M6 7h8M6 10h6M6 13h4" stroke="#10b981" strokeWidth="1.4" strokeLinecap="round"/></svg> },
+              { label: "Letter Drop",   mod: "prospecting", submod: "Letter Drop", icon: <svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M3 5l7 6 7-6" stroke="#8b5cf6" strokeWidth="1.5" strokeLinecap="round"/><rect x="2" y="4" width="16" height="12" rx="2" stroke="#8b5cf6" strokeWidth="1.5"/></svg> },
+            ].map(tile => (
+              <button key={tile.label} onClick={() => onNavigate(tile.mod, tile.submod)} style={{ background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: "10px", padding: "14px", display: "flex", flexDirection: "column", gap: "8px", cursor: "pointer", textAlign: "left", transition: "background 0.12s" }}
+                onMouseEnter={e => { e.currentTarget.style.background = "#f3f4f6"; }}
+                onMouseLeave={e => { e.currentTarget.style.background = "#f9fafb"; }}>
+                {tile.icon}
+                <span style={{ fontSize: "12px", fontWeight: 600, color: "#374151" }}>{tile.label}</span>
+              </button>
+            ))}
           </div>
         </div>
       </div>
@@ -11302,6 +11346,382 @@ function CrmWithdrawnExpiredPage({ staffRows }: { staffRows: StaffRow[] }) {
                   </td>
                 </tr>
               )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── CrmOpenHomesPage ─────────────────────────────────────────────────────────
+
+function CrmOpenHomesPage({ staffRows }: { staffRows: StaffRow[] }) {
+  void staffRows;
+  type OfiRow = { address: string; suburb: string; date: string; time: string; agent: string; registered: number };
+  type FollowUpRow = { buyer: string; property: string; interest: "Hot" | "Warm" | "Cold"; lastOfi: string };
+
+  const ofiRows: OfiRow[] = [
+    { address: "22 Surf Parade", suburb: "Thirroul", date: "Sat 9 Aug", time: "10:30am", agent: "Sarah Mitchell", registered: 8 },
+    { address: "14 Wentworth Ave", suburb: "Wollongong", date: "Sat 9 Aug", time: "1:00pm", agent: "Tom Briggs", registered: 5 },
+  ];
+
+  const followUps: FollowUpRow[] = [
+    { buyer: "Daniel Russo",  property: "22 Surf Pde",    interest: "Hot",  lastOfi: "2 Aug" },
+    { buyer: "Kylie Turner",  property: "22 Surf Pde",    interest: "Warm", lastOfi: "2 Aug" },
+    { buyer: "Marcus Webb",   property: "14 Wentworth",   interest: "Warm", lastOfi: "2 Aug" },
+  ];
+
+  const interestStyle = (lvl: FollowUpRow["interest"]) => {
+    if (lvl === "Hot")  return { background: "#fef2f2", color: "#991b1b" };
+    if (lvl === "Warm") return { background: "#fffbeb", color: "#92400e" };
+    return { background: "#f3f4f6", color: "#374151" };
+  };
+
+  return (
+    <div style={{ flex: 1, display: "flex", flexDirection: "column", overflowY: "auto", padding: "28px 36px", gap: "20px" }}>
+      {/* Header */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingBottom: "20px", borderBottom: "1px solid #e5e7eb" }}>
+        <div>
+          <h1 style={{ fontSize: "1.2rem", fontWeight: 700, color: "#111827", letterSpacing: "-0.03em", margin: 0 }}>Open Homes</h1>
+          <p style={{ fontSize: "12.5px", color: "#9ca3af", margin: "2px 0 0" }}>Week of 4–10 Aug 2026</p>
+        </div>
+        <button style={{ padding: "7px 14px", background: "#111827", color: "#fff", border: "none", borderRadius: "8px", fontSize: "12.5px", fontWeight: 600, cursor: "pointer" }}>Schedule OFI</button>
+      </div>
+
+      {/* KPI tiles */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "10px" }}>
+        {[
+          { label: "This Weekend", value: "2", sub: "open homes scheduled" },
+          { label: "Total Attendees", value: "13", sub: "registered across all OFIs" },
+          { label: "Post-OFI Follow-ups Due", value: "6", sub: "buyer actions pending" },
+        ].map(k => (
+          <div key={k.label} style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: "12px", padding: "16px 18px", boxShadow: "0 1px 2px rgba(0,0,0,0.04)" }}>
+            <span style={{ fontSize: "12px", color: "#6b7280", fontWeight: 500, display: "block", marginBottom: "8px" }}>{k.label}</span>
+            <p style={{ fontSize: "1.6rem", fontWeight: 700, color: "#111827", letterSpacing: "-0.05em", margin: "0 0 2px" }}>{k.value}</p>
+            <span style={{ fontSize: "11px", color: "#9ca3af" }}>{k.sub}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Upcoming OFIs table */}
+      <div>
+        <div style={{ fontSize: "10.5px", fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "8px" }}>Upcoming OFIs</div>
+        <div style={{ border: "1px solid #e5e7eb", borderRadius: "12px", overflow: "hidden", boxShadow: "0 1px 2px rgba(0,0,0,0.04)" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <thead>
+              <tr style={{ background: "#fff", borderBottom: "1px solid #e5e7eb" }}>
+                {["Property", "Date & Time", "Agent", "Registered", "Status", "Actions"].map(h => (
+                  <th key={h} style={{ fontSize: "10.5px", fontWeight: 700, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.07em", padding: "10px 16px", textAlign: "left" }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {ofiRows.map((row, i) => (
+                <tr key={i} style={{ borderBottom: "1px solid #f3f4f6" }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLTableRowElement).style.background = "#f9fafb"; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLTableRowElement).style.background = "transparent"; }}>
+                  <td style={{ fontSize: "13px", color: "#374151", padding: "12px 16px", fontWeight: 600 }}>{row.address}<span style={{ fontWeight: 400, color: "#6b7280" }}>, {row.suburb}</span></td>
+                  <td style={{ fontSize: "13px", color: "#374151", padding: "12px 16px" }}>{row.date} · {row.time}</td>
+                  <td style={{ fontSize: "13px", color: "#374151", padding: "12px 16px" }}>{row.agent}</td>
+                  <td style={{ fontSize: "13px", color: "#374151", padding: "12px 16px" }}>{row.registered}</td>
+                  <td style={{ padding: "12px 16px" }}><span style={{ fontSize: "11.5px", fontWeight: 600, color: "#166534", background: "#f0fdf4", borderRadius: "20px", padding: "2px 10px" }}>Confirmed</span></td>
+                  <td style={{ padding: "12px 16px" }}>
+                    <div style={{ display: "flex", gap: "6px" }}>
+                      <button style={{ padding: "4px 10px", background: "#f3f4f6", color: "#374151", border: "none", borderRadius: "6px", fontSize: "11.5px", fontWeight: 600, cursor: "pointer" }}>View Attendees</button>
+                      <button style={{ padding: "4px 10px", background: "#f3f4f6", color: "#374151", border: "none", borderRadius: "6px", fontSize: "11.5px", fontWeight: 600, cursor: "pointer" }}>Send Reminders</button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Post-OFI Follow-up Queue */}
+      <div>
+        <div style={{ fontSize: "10.5px", fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "8px" }}>Post-OFI Follow-up Queue</div>
+        <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: "12px", overflow: "hidden", boxShadow: "0 1px 2px rgba(0,0,0,0.04)" }}>
+          {followUps.map((f, i) => (
+            <div key={i} style={{ display: "flex", alignItems: "center", gap: "14px", padding: "12px 16px", borderBottom: i < followUps.length - 1 ? "1px solid #f3f4f6" : "none" }}>
+              <div style={{ flex: 1 }}>
+                <span style={{ fontSize: "13px", fontWeight: 600, color: "#111827" }}>{f.buyer}</span>
+                <span style={{ fontSize: "12px", color: "#9ca3af", marginLeft: "8px" }}>{f.property}</span>
+              </div>
+              <span style={{ ...interestStyle(f.interest), fontSize: "11.5px", fontWeight: 600, borderRadius: "20px", padding: "2px 10px" }}>{f.interest}</span>
+              <span style={{ fontSize: "12px", color: "#9ca3af" }}>OFI {f.lastOfi}</span>
+              <button style={{ padding: "4px 12px", background: "#111827", color: "#fff", border: "none", borderRadius: "6px", fontSize: "11.5px", fontWeight: 600, cursor: "pointer" }}>Follow Up</button>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── CrmVendorHubPage ─────────────────────────────────────────────────────────
+
+function CrmVendorHubPage({ staffRows }: { staffRows: StaffRow[] }) {
+  void staffRows;
+
+  type VendorRow = { address: string; suburb: string; vendor: string; lastReport: string; enquiries: number; inspections: number; status: "Due" | "Sent" };
+  type FeedbackRow = { address: string; rating: number; comment: string; date: string };
+
+  const vendors: VendorRow[] = [
+    { address: "22 Surf Pde",   suburb: "Thirroul",     vendor: "Greg Hollis",  lastReport: "7 days ago", enquiries: 14, inspections: 8, status: "Due" },
+    { address: "14 Wentworth Ave", suburb: "Wollongong", vendor: "James Nguyen", lastReport: "3 days ago", enquiries: 9,  inspections: 5, status: "Sent" },
+    { address: "8 Marine Dr",   suburb: "Shellharbour", vendor: "Lisa Turner",  lastReport: "1 day ago",  enquiries: 4,  inspections: 2, status: "Sent" },
+  ];
+
+  const feedback: FeedbackRow[] = [
+    { address: "22 Surf Pde", rating: 4, comment: "Agent was communicative and professional throughout.", date: "3 Aug" },
+    { address: "14 Wentworth", rating: 5, comment: "Excellent presentation and follow-up from the team.", date: "2 Aug" },
+    { address: "8 Marine Dr", rating: 3, comment: "Good but would appreciate more frequent updates.", date: "1 Aug" },
+  ];
+
+  const statusStyle = (s: VendorRow["status"]) =>
+    s === "Due" ? { background: "#fffbeb", color: "#92400e" } : { background: "#f0fdf4", color: "#166534" };
+
+  const Stars = ({ n }: { n: number }) => (
+    <span style={{ fontSize: "13px" }}>
+      {[1,2,3,4,5].map(i => (
+        <span key={i} style={{ color: i <= n ? "#f59e0b" : "#e5e7eb" }}>●</span>
+      ))}
+    </span>
+  );
+
+  return (
+    <div style={{ flex: 1, display: "flex", flexDirection: "column", overflowY: "auto", padding: "28px 36px", gap: "20px" }}>
+      {/* Header */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingBottom: "20px", borderBottom: "1px solid #e5e7eb" }}>
+        <div>
+          <h1 style={{ fontSize: "1.2rem", fontWeight: 700, color: "#111827", letterSpacing: "-0.03em", margin: 0 }}>Vendor Hub</h1>
+          <p style={{ fontSize: "12.5px", color: "#9ca3af", margin: "2px 0 0" }}>Vendor reports and buyer feedback</p>
+        </div>
+        <button style={{ padding: "7px 14px", background: "#111827", color: "#fff", border: "none", borderRadius: "8px", fontSize: "12.5px", fontWeight: 600, cursor: "pointer" }}>Generate Report</button>
+      </div>
+
+      {/* KPI tiles */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "10px" }}>
+        {[
+          { label: "Reports Due", value: "2", sub: "action required today" },
+          { label: "Sent This Week", value: "1", sub: "vendor reports delivered" },
+          { label: "Avg Vendor Satisfaction", value: "4.2/5", sub: "from buyer OFI feedback" },
+        ].map(k => (
+          <div key={k.label} style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: "12px", padding: "16px 18px", boxShadow: "0 1px 2px rgba(0,0,0,0.04)" }}>
+            <span style={{ fontSize: "12px", color: "#6b7280", fontWeight: 500, display: "block", marginBottom: "8px" }}>{k.label}</span>
+            <p style={{ fontSize: "1.6rem", fontWeight: 700, color: "#111827", letterSpacing: "-0.05em", margin: "0 0 2px" }}>{k.value}</p>
+            <span style={{ fontSize: "11px", color: "#9ca3af" }}>{k.sub}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Vendor Report Status table */}
+      <div>
+        <div style={{ fontSize: "10.5px", fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "8px" }}>Vendor Report Status</div>
+        <div style={{ border: "1px solid #e5e7eb", borderRadius: "12px", overflow: "hidden", boxShadow: "0 1px 2px rgba(0,0,0,0.04)" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <thead>
+              <tr style={{ background: "#fff", borderBottom: "1px solid #e5e7eb" }}>
+                {["Property", "Vendor", "Last Report", "Enquiries", "Inspections", "Status", "Action"].map(h => (
+                  <th key={h} style={{ fontSize: "10.5px", fontWeight: 700, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.07em", padding: "10px 16px", textAlign: "left" }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {vendors.map((v, i) => (
+                <tr key={i} style={{ borderBottom: "1px solid #f3f4f6" }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLTableRowElement).style.background = "#f9fafb"; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLTableRowElement).style.background = "transparent"; }}>
+                  <td style={{ fontSize: "13px", color: "#374151", padding: "12px 16px", fontWeight: 600 }}>{v.address}<span style={{ fontWeight: 400, color: "#6b7280" }}>, {v.suburb}</span></td>
+                  <td style={{ fontSize: "13px", color: "#374151", padding: "12px 16px" }}>{v.vendor}</td>
+                  <td style={{ fontSize: "13px", color: "#374151", padding: "12px 16px" }}>{v.lastReport}</td>
+                  <td style={{ fontSize: "13px", color: "#374151", padding: "12px 16px" }}>{v.enquiries}</td>
+                  <td style={{ fontSize: "13px", color: "#374151", padding: "12px 16px" }}>{v.inspections}</td>
+                  <td style={{ padding: "12px 16px" }}><span style={{ ...statusStyle(v.status), fontSize: "11.5px", fontWeight: 600, borderRadius: "20px", padding: "2px 10px" }}>{v.status === "Due" ? "⚠ Due" : "✓ Sent"}</span></td>
+                  <td style={{ padding: "12px 16px" }}><button style={{ padding: "4px 12px", background: v.status === "Due" ? "#111827" : "#f3f4f6", color: v.status === "Due" ? "#fff" : "#374151", border: "none", borderRadius: "6px", fontSize: "11.5px", fontWeight: 600, cursor: "pointer" }}>{v.status === "Due" ? "Send Report" : "Resend"}</button></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Vendor Feedback Summary */}
+      <div>
+        <div style={{ fontSize: "10.5px", fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "8px" }}>Vendor Feedback Summary</div>
+        <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: "12px", overflow: "hidden", boxShadow: "0 1px 2px rgba(0,0,0,0.04)" }}>
+          {feedback.map((f, i) => (
+            <div key={i} style={{ display: "flex", alignItems: "center", gap: "14px", padding: "12px 16px", borderBottom: i < feedback.length - 1 ? "1px solid #f3f4f6" : "none" }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: "12.5px", fontWeight: 600, color: "#111827", marginBottom: "3px" }}>{f.address}</div>
+                <div style={{ fontSize: "12px", color: "#6b7280", lineHeight: 1.4 }}>&ldquo;{f.comment}&rdquo;</div>
+              </div>
+              <Stars n={f.rating} />
+              <span style={{ fontSize: "11px", color: "#9ca3af", flexShrink: 0 }}>{f.date}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── CrmPipelineForecastPage ──────────────────────────────────────────────────
+
+function CrmPipelineForecastPage({ staffRows, crmListings }: { staffRows: StaffRow[]; crmListings?: CrmListing[] }) {
+  void staffRows; void crmListings;
+
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const monthlyTarget = 40; // $40K per month
+  const chartH = 180;
+  const chartW = 560;
+  const barW = 18;
+  const groupGap = 6;
+  const monthGap = 20;
+  const leftPad = 48;
+  const maxVal = 50; // y-axis max in $K
+
+  const settlements = [
+    { address: "22 Surf Pde", date: "15 Aug", days: 10 },
+    { address: "14 Wentworth Ave", date: "22 Aug", days: 17 },
+    { address: "8 Marine Dr", date: "5 Sep", days: 31 },
+  ];
+
+  const agents = [
+    { name: "Sarah Mitchell", listings: 2, gci: "$0", rate: "2.5%", earned: "$0" },
+    { name: "Tom Briggs",     listings: 1, gci: "$0", rate: "2.5%", earned: "$0" },
+    { name: "Emma Clarke",    listings: 1, gci: "$0", rate: "2.0%", earned: "$0" },
+  ];
+
+  return (
+    <div style={{ flex: 1, display: "flex", flexDirection: "column", overflowY: "auto", padding: "28px 36px", gap: "20px" }}>
+      {/* Header */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingBottom: "20px", borderBottom: "1px solid #e5e7eb" }}>
+        <div>
+          <h1 style={{ fontSize: "1.2rem", fontWeight: 700, color: "#111827", letterSpacing: "-0.03em", margin: 0 }}>Pipeline Forecast</h1>
+          <p style={{ fontSize: "12.5px", color: "#9ca3af", margin: "2px 0 0" }}>GCI targets, forecast, and settlement calendar</p>
+        </div>
+        <span style={{ fontSize: "13px", fontWeight: 700, color: "#374151", background: "#f3f4f6", borderRadius: "8px", padding: "6px 16px" }}>2026</span>
+      </div>
+
+      {/* KPI tiles */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "10px" }}>
+        {[
+          { label: "Annual GCI Target", value: "$480K", sub: "$40K per month" },
+          { label: "GCI Year-to-Date", value: "$0", sub: "from settled deals" },
+          { label: "YTD vs Target", value: "0%", sub: "Jan–Aug tracking" },
+          { label: "Projected YTD (Dec)", value: "$0", sub: "based on pipeline" },
+        ].map(k => (
+          <div key={k.label} style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: "12px", padding: "16px 18px", boxShadow: "0 1px 2px rgba(0,0,0,0.04)" }}>
+            <span style={{ fontSize: "12px", color: "#6b7280", fontWeight: 500, display: "block", marginBottom: "8px" }}>{k.label}</span>
+            <p style={{ fontSize: "1.6rem", fontWeight: 700, color: "#111827", letterSpacing: "-0.05em", margin: "0 0 2px" }}>{k.value}</p>
+            <span style={{ fontSize: "11px", color: "#9ca3af" }}>{k.sub}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Chart + Settlement Calendar */}
+      <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: "14px" }}>
+
+        {/* Bar chart */}
+        <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: "12px", padding: "20px 24px", boxShadow: "0 1px 2px rgba(0,0,0,0.04)" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
+            <div>
+              <div style={{ fontSize: "13.5px", fontWeight: 700, color: "#111827" }}>Monthly GCI Forecast</div>
+              <div style={{ fontSize: "11.5px", color: "#9ca3af", marginTop: "2px" }}>Target vs actual — connect Supabase to see live data</div>
+            </div>
+            <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+              <span style={{ display: "flex", alignItems: "center", gap: "5px", fontSize: "11.5px", color: "#6b7280" }}><span style={{ width: "10px", height: "10px", borderRadius: "2px", background: "#e5e7eb", display: "inline-block" }} />Target</span>
+              <span style={{ display: "flex", alignItems: "center", gap: "5px", fontSize: "11.5px", color: "#6b7280" }}><span style={{ width: "10px", height: "10px", borderRadius: "2px", background: "#111827", display: "inline-block" }} />Actual</span>
+            </div>
+          </div>
+          <div style={{ overflowX: "auto" }}>
+            <svg width={chartW} height={chartH + 36} style={{ display: "block" }}>
+              {/* Y-axis labels */}
+              {[0, 20, 40].map(v => {
+                const y = chartH - (v / maxVal) * chartH;
+                return (
+                  <g key={v}>
+                    <text x={leftPad - 6} y={y + 4} textAnchor="end" fontSize="10" fill="#9ca3af">${v}K</text>
+                    <line x1={leftPad} y1={y} x2={chartW} y2={y} stroke="#f3f4f6" strokeWidth="1" />
+                  </g>
+                );
+              })}
+              {/* Bars */}
+              {months.map((m, idx) => {
+                const groupW = barW * 2 + groupGap;
+                const x = leftPad + idx * (groupW + monthGap);
+                const targetH = (monthlyTarget / maxVal) * chartH;
+                const actualH = 0;
+                const targetY = chartH - targetH;
+                const actualY = chartH - actualH;
+                return (
+                  <g key={m}>
+                    {/* Target bar */}
+                    <rect x={x} y={targetY} width={barW} height={targetH} fill="#e5e7eb" rx="3" />
+                    {/* Actual bar */}
+                    <rect x={x + barW + groupGap} y={actualY} width={barW} height={actualH} fill="#111827" rx="3" />
+                    {/* Month label */}
+                    <text x={x + barW + groupGap / 2} y={chartH + 18} textAnchor="middle" fontSize="10" fill="#9ca3af">{m}</text>
+                  </g>
+                );
+              })}
+              {/* X axis line */}
+              <line x1={leftPad} y1={chartH} x2={chartW} y2={chartH} stroke="#e5e7eb" strokeWidth="1" />
+            </svg>
+          </div>
+        </div>
+
+        {/* Settlement Calendar */}
+        <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: "12px", padding: "20px 20px", boxShadow: "0 1px 2px rgba(0,0,0,0.04)" }}>
+          <div style={{ fontSize: "13.5px", fontWeight: 700, color: "#111827", marginBottom: "4px" }}>Settlement Calendar</div>
+          <div style={{ fontSize: "11.5px", color: "#9ca3af", marginBottom: "16px" }}>Upcoming settlements with countdown</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+            {settlements.map((s, i) => {
+              const urgent = s.days <= 7;
+              return (
+                <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 12px", background: urgent ? "#fffbeb" : "#f9fafb", borderRadius: "8px" }}>
+                  <div>
+                    <div style={{ fontSize: "12.5px", fontWeight: 600, color: "#111827" }}>{s.address}</div>
+                    <div style={{ fontSize: "11.5px", color: "#6b7280", marginTop: "2px" }}>Settles {s.date}</div>
+                  </div>
+                  <span style={{ fontSize: "11px", fontWeight: 600, color: urgent ? "#92400e" : "#374151", background: urgent ? "#fffbeb" : "#f3f4f6", border: urgent ? "1px solid #fde68a" : "1px solid #e5e7eb", borderRadius: "20px", padding: "3px 10px", whiteSpace: "nowrap" }}>{s.days}d</span>
+                </div>
+              );
+            })}
+            {settlements.length === 0 && (
+              <div style={{ fontSize: "12px", color: "#d1d5db", textAlign: "center", padding: "20px 0" }}>No data yet. Connect to Supabase to see live data.</div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Commission Breakdown table */}
+      <div>
+        <div style={{ fontSize: "10.5px", fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "8px" }}>Commission Breakdown</div>
+        <div style={{ border: "1px solid #e5e7eb", borderRadius: "12px", overflow: "hidden", boxShadow: "0 1px 2px rgba(0,0,0,0.04)" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <thead>
+              <tr style={{ background: "#fff", borderBottom: "1px solid #e5e7eb" }}>
+                {["Agent", "Listings", "GCI", "Commission Rate", "Commission Earned"].map(h => (
+                  <th key={h} style={{ fontSize: "10.5px", fontWeight: 700, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.07em", padding: "10px 16px", textAlign: "left" }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {agents.map((a, i) => (
+                <tr key={i} style={{ borderBottom: i < agents.length - 1 ? "1px solid #f3f4f6" : "none" }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLTableRowElement).style.background = "#f9fafb"; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLTableRowElement).style.background = "transparent"; }}>
+                  <td style={{ fontSize: "13px", fontWeight: 600, color: "#111827", padding: "12px 16px" }}>{a.name}</td>
+                  <td style={{ fontSize: "13px", color: "#374151", padding: "12px 16px" }}>{a.listings}</td>
+                  <td style={{ fontSize: "13px", color: "#374151", padding: "12px 16px" }}>{a.gci}</td>
+                  <td style={{ fontSize: "13px", color: "#374151", padding: "12px 16px" }}>{a.rate}</td>
+                  <td style={{ fontSize: "13px", color: "#374151", padding: "12px 16px" }}>{a.earned}</td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
@@ -11767,6 +12187,9 @@ function CrmSubPage({ moduleId, submodule, crmListings, onAddListing, staffRows,
   }
   if (moduleId === "listings" && submodule === "Under Offer") return <CrmUnderOfferPage staffRows={staffRows} />;
   if (moduleId === "listings" && submodule === "Sold / Leased") return <CrmSoldLeasedPage staffRows={staffRows} />;
+  if (moduleId === "open-homes") return <CrmOpenHomesPage staffRows={staffRows} />;
+  if (moduleId === "vendor")     return <CrmVendorHubPage staffRows={staffRows} />;
+  if (moduleId === "pipeline")   return <CrmPipelineForecastPage staffRows={staffRows} crmListings={crmListings} />;
   if (moduleId === "marketing") return <CrmMarketingPage submodule={submodule} staffRows={staffRows} />;
   if (moduleId === "team") return <CrmTeamPage submodule={submodule} staffRows={staffRows} />;
 
@@ -12266,6 +12689,9 @@ export default function DashboardPage() {
               { id: "marketing",  label: "Marketing",  icon: <svg width="15" height="15" viewBox="0 0 18 18" fill="none"><path d="M3 11V7l10-4v12L3 11z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/><path d="M3 11v3l2-1" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>,   children: ["Campaigns", "Email Templates", "Social Media", "Analytics"] },
               { id: "team",        label: "Team",        icon: <svg width="15" height="15" viewBox="0 0 18 18" fill="none"><circle cx="6" cy="6" r="2.5" stroke="currentColor" strokeWidth="1.4"/><circle cx="12" cy="6" r="2.5" stroke="currentColor" strokeWidth="1.4"/><path d="M1 15c0-2.485 2.239-4.5 5-4.5s5 2.015 5 4.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/><path d="M12 10.5c2.761 0 5 2.015 5 4.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>,   children: ["Overview", "Performance", "Leads", "Activity Log"] },
               { id: "prospecting", label: "Prospecting", icon: <svg width="15" height="15" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="8" r="3" stroke="currentColor" strokeWidth="1.4"/><path d="M9 1v2M9 13v2M1 8h2M13 8h2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/><path d="M9 11c-3 0-6 1.5-6 4h12c0-2.5-3-4-6-4z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/></svg>, children: ["Map View", "Radius Prospecting", "Who's Next", "Letter Drop", "Sequences", "Withdrawn & Expired"] },
+              { id: "open-homes", label: "Open Homes", icon: <svg width="15" height="15" viewBox="0 0 18 18" fill="none"><path d="M2 9L9 2l7 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M4 7v9h4v-5h2v5h4V7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><circle cx="14" cy="4" r="2" fill="currentColor" opacity="0.3"/></svg>, children: ["This Weekend", "Schedule", "Attendees", "Follow-ups"] },
+              { id: "vendor",     label: "Vendor Hub",  icon: <svg width="15" height="15" viewBox="0 0 18 18" fill="none"><rect x="2" y="4" width="14" height="11" rx="2" stroke="currentColor" strokeWidth="1.5"/><path d="M2 8h14" stroke="currentColor" strokeWidth="1.4"/><path d="M6 2v3M12 2v3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/><path d="M5 12h4M5 14.5h2" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>, children: ["All Vendors", "Reports", "Feedback", "Portal"] },
+              { id: "pipeline",   label: "Pipeline",    icon: <svg width="15" height="15" viewBox="0 0 18 18" fill="none"><path d="M2 14V8l3-3h8l3 3v6H2z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/><path d="M6 14v-4h6v4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/><path d="M2 9h14" stroke="currentColor" strokeWidth="1.3"/></svg>, children: ["Forecast", "Settlements", "Commission"] },
               { id: "calendar",    label: "Calendar",    icon: <svg width="15" height="15" viewBox="0 0 18 18" fill="none"><rect x="2" y="3" width="14" height="13" rx="2" stroke="currentColor" strokeWidth="1.5"/><path d="M2 7h14" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/><path d="M6 1v3M12 1v3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/><path d="M5 11h2M9 11h2M5 14h2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>, children: [] },
               { id: "meetings",   label: "Meetings",    icon: <svg width="15" height="15" viewBox="0 0 18 18" fill="none"><rect x="2" y="5" width="14" height="11" rx="2" stroke="currentColor" strokeWidth="1.5"/><path d="M6 5V3a1 1 0 012 0v2M10 5V3a1 1 0 012 0v2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/><path d="M5 10h8M5 13h5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>, children: ["Past Meetings", "New Meeting"] },
             ] as { id: string; label: string; icon: React.ReactNode; children: string[] }[];
