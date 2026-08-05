@@ -164,6 +164,39 @@ type CrmContact = {
   beds: string;
 };
 
+type EmailContact = {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  source: "ofi" | "enquiry" | "database" | "referral";
+  buyerType: "owner-occupier" | "investor" | "first-home" | "upsizer" | "downsizer" | "unknown";
+  suburbs: string[];
+  bedroomsMin: number;
+  bedroomsMax: number;
+  budgetMin: number;
+  budgetMax: number;
+  enquiredListings: string[];
+  ofiListings: string[];
+  notes: string;
+  addedDate: string;
+  tags: string[];
+};
+
+type EmailTemplateId = "just-listed" | "open-home" | "just-sold" | "price-drop" | "auction" | "under-offer" | "just-leased";
+
+type CrmCampaign = {
+  id: string;
+  name: string;
+  templateId: EmailTemplateId;
+  listingId: string;
+  status: "draft" | "sent" | "scheduled";
+  recipientCount: number;
+  sentDate?: string;
+  subject: string;
+  body?: string;
+};
+
 type CrmAppraisal = {
   id: string;
   address: string;
@@ -8508,6 +8541,395 @@ function AiAutomationPanel({ automations, insight }: { automations: AiAutomation
   );
 }
 
+// ─── Email Campaign System ────────────────────────────────────────────────────
+
+const EMAIL_CAMPAIGN_TEMPLATES: Record<EmailTemplateId, { label: string; subject: (l: CrmListing) => string; previewColor: string; badge: string }> = {
+  "just-listed":  { label: "Just Listed",      subject: (l) => `New Listing: ${l.address}, ${l.suburb}`,                    previewColor: "#1d4ed8", badge: "NEW" },
+  "open-home":    { label: "Open Home",         subject: (l) => `Open Home This Weekend — ${l.address}, ${l.suburb}`,        previewColor: "#7c3aed", badge: "OFI" },
+  "just-sold":    { label: "Just Sold",         subject: (l) => `Just Sold: ${l.address}, ${l.suburb}`,                     previewColor: "#dc2626", badge: "SOLD" },
+  "price-drop":   { label: "Price Reduction",   subject: (l) => `Price Reduced — ${l.address}, ${l.suburb}`,                 previewColor: "#d97706", badge: "REDUCED" },
+  "auction":      { label: "Auction",           subject: (l) => `Auction Alert: ${l.address}, ${l.suburb}`,                  previewColor: "#0891b2", badge: "AUCTION" },
+  "under-offer":  { label: "Under Offer",       subject: (l) => `Under Offer — ${l.address}, ${l.suburb}`,                   previewColor: "#16a34a", badge: "UNDER OFFER" },
+  "just-leased":  { label: "Just Leased",       subject: (l) => `Just Leased: ${l.address}, ${l.suburb}`,                   previewColor: "#9333ea", badge: "LEASED" },
+};
+
+function EmailCampaignBuilder({
+  listing,
+  contacts,
+  onClose,
+  onSent,
+}: {
+  listing: CrmListing;
+  contacts: EmailContact[];
+  onClose: () => void;
+  onSent: (msg: string) => void;
+}) {
+  const [step, setStep] = useState<"template" | "compose" | "recipients" | "confirm">("template");
+  const [templateId, setTemplateId] = useState<EmailTemplateId>("just-listed");
+  const [subject, setSubject] = useState(EMAIL_CAMPAIGN_TEMPLATES["just-listed"].subject(listing));
+  const [customBody, setCustomBody] = useState(listing.description || "");
+  const [customHeadline, setCustomHeadline] = useState(listing.headline || `New to Market: ${listing.address}, ${listing.suburb}`);
+  const [showOfi, setShowOfi] = useState(true);
+  const [showAgent, setShowAgent] = useState(true);
+  const [showPrice, setShowPrice] = useState(true);
+  const [showBio, setShowBio] = useState(true);
+  const [agentCallout, setAgentCallout] = useState(listing.agent || "");
+  const [agentPhone, setAgentPhone] = useState(listing.vendorPhone || "0400 000 000");
+
+  const [filterSuburbs, setFilterSuburbs] = useState<string[]>([]);
+  const [filterBedsMin, setFilterBedsMin] = useState(0);
+  const [filterBedsMax, setFilterBedsMax] = useState(10);
+  const [filterBudgetMin, setFilterBudgetMin] = useState(0);
+  const [filterBudgetMax, setFilterBudgetMax] = useState(99999999);
+  const [filterSources, setFilterSources] = useState<string[]>(["ofi", "enquiry", "database", "referral"]);
+  const [filterBuyerTypes, setFilterBuyerTypes] = useState<string[]>(["owner-occupier", "investor", "first-home", "upsizer", "downsizer", "unknown"]);
+  const [selectedContactIds, setSelectedContactIds] = useState<Set<string>>(new Set());
+  const [selectAllFiltered, setSelectAllFiltered] = useState(true);
+  const [sending, setSending] = useState(false);
+
+  const allSuburbs = Array.from(new Set(contacts.flatMap(c => c.suburbs))).sort();
+
+  const filteredContacts = contacts.filter(c => {
+    if (filterSuburbs.length > 0 && !c.suburbs.some(s => filterSuburbs.includes(s))) return false;
+    if (c.bedroomsMax < filterBedsMin || c.bedroomsMin > filterBedsMax) return false;
+    if (c.budgetMax < filterBudgetMin || c.budgetMin > filterBudgetMax) return false;
+    if (!filterSources.includes(c.source)) return false;
+    if (!filterBuyerTypes.includes(c.buyerType)) return false;
+    return true;
+  });
+
+  useEffect(() => {
+    if (selectAllFiltered) {
+      setSelectedContactIds(new Set(filteredContacts.map(c => c.id)));
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filteredContacts.length, selectAllFiltered]);
+
+  const recipientCount = selectAllFiltered ? filteredContacts.length : selectedContactIds.size;
+
+  const renderEmailPreview = () => {
+    const tpl = EMAIL_CAMPAIGN_TEMPLATES[templateId];
+    const listingPrice = listing.displayPrice || listing.price || "—";
+    const ofis = listing.ofis || [];
+    return (
+      <div style={{ fontFamily: "Arial, sans-serif", maxWidth: "600px", margin: "0 auto", background: "#fff" }}>
+        <div style={{ background: "#111827", padding: "18px 28px", display: "flex", alignItems: "center", gap: "10px" }}>
+          <div style={{ width: "28px", height: "28px", background: "#fff", borderRadius: "6px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 12V5l6-3 6 3v7l-6 3-6-3z" stroke="#111827" strokeWidth="1.3" strokeLinejoin="round"/><path d="M8 2v13M2 5l6 3 6-3" stroke="#111827" strokeWidth="1.3" strokeLinejoin="round"/></svg>
+          </div>
+          <span style={{ color: "#fff", fontWeight: 700, fontSize: "16px", letterSpacing: "-0.02em" }}>REA Hub</span>
+          <span style={{ marginLeft: "auto", background: tpl.previewColor, color: "#fff", fontSize: "10px", fontWeight: 700, padding: "3px 10px", borderRadius: "4px", letterSpacing: "0.08em" }}>{tpl.badge}</span>
+        </div>
+        <div style={{ height: "220px", background: "linear-gradient(135deg, #1e293b 0%, #334155 100%)", display: "flex", alignItems: "center", justifyContent: "center", position: "relative" }}>
+          <span style={{ color: "rgba(255,255,255,0.3)", fontSize: "13px" }}>Property photos will appear here</span>
+          <div style={{ position: "absolute", bottom: "16px", left: "20px", background: tpl.previewColor, color: "#fff", fontSize: "11px", fontWeight: 700, padding: "4px 12px", borderRadius: "4px", letterSpacing: "0.06em" }}>{tpl.badge}</div>
+        </div>
+        <div style={{ padding: "28px 32px", background: "#fff" }}>
+          <h1 style={{ fontSize: "22px", fontWeight: 700, color: "#111827", lineHeight: 1.2, marginBottom: "8px", marginTop: 0 }}>{customHeadline}</h1>
+          <p style={{ fontSize: "13px", color: "#6b7280", marginBottom: "20px", marginTop: 0 }}>{listing.address}, {listing.suburb} {listing.state || "NSW"} {listing.postcode || ""}</p>
+          {showPrice && (
+            <div style={{ background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: "10px", padding: "14px 20px", marginBottom: "20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div>
+                <div style={{ fontSize: "11px", fontWeight: 700, color: "#9ca3af", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: "2px" }}>Price Guide</div>
+                <div style={{ fontSize: "20px", fontWeight: 700, color: "#111827" }}>{listingPrice}</div>
+              </div>
+              <div style={{ textAlign: "right" }}>
+                <div style={{ fontSize: "12px", color: "#6b7280", display: "flex", gap: "12px" }}>
+                  <span>🛏 {listing.bedrooms} bed</span>
+                  <span>🚿 {listing.bathrooms} bath</span>
+                  <span>🚗 {listing.carSpaces} car</span>
+                  {listing.landSize && <span>📐 {listing.landSize}m²</span>}
+                </div>
+              </div>
+            </div>
+          )}
+          {showBio && customBody && (
+            <div style={{ marginBottom: "24px" }}>
+              <p style={{ fontSize: "14px", color: "#374151", lineHeight: 1.7, marginTop: 0, marginBottom: 0 }}>{customBody.slice(0, 600)}{customBody.length > 600 ? "…" : ""}</p>
+            </div>
+          )}
+          {showOfi && ofis.length > 0 && (
+            <div style={{ marginBottom: "24px" }}>
+              <h3 style={{ fontSize: "14px", fontWeight: 700, color: "#111827", marginBottom: "10px", marginTop: 0 }}>Open Home Times</h3>
+              {ofis.map((ofi, i) => (
+                <div key={i} style={{ display: "flex", alignItems: "center", gap: "12px", padding: "10px 14px", background: "#f9fafb", borderRadius: "8px", marginBottom: "6px", border: "1px solid #e5e7eb" }}>
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="2" y="3" width="12" height="11" rx="2" stroke="#6b7280" strokeWidth="1.2"/><path d="M5 1v3M11 1v3M2 7h12" stroke="#6b7280" strokeWidth="1.2" strokeLinecap="round"/></svg>
+                  <span style={{ fontSize: "13px", color: "#374151", fontWeight: 600 }}>{ofi.date}</span>
+                  <span style={{ fontSize: "13px", color: "#6b7280" }}>{ofi.from} – {ofi.to}</span>
+                  <span style={{ marginLeft: "auto", fontSize: "12px", background: "#eff6ff", color: "#1d4ed8", padding: "2px 8px", borderRadius: "4px", fontWeight: 600 }}>{ofi.type}</span>
+                </div>
+              ))}
+            </div>
+          )}
+          <div style={{ textAlign: "center", marginBottom: "28px" }}>
+            <div style={{ display: "inline-block", background: "#111827", color: "#fff", padding: "12px 32px", borderRadius: "8px", fontSize: "14px", fontWeight: 600, letterSpacing: "-0.01em" }}>
+              Enquire Now →
+            </div>
+          </div>
+          {showAgent && (
+            <div style={{ borderTop: "1px solid #e5e7eb", paddingTop: "20px", display: "flex", alignItems: "center", gap: "14px" }}>
+              <div style={{ width: "48px", height: "48px", borderRadius: "50%", background: "#e5e7eb", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <span style={{ fontSize: "16px", fontWeight: 700, color: "#374151" }}>{(agentCallout || "A").charAt(0)}</span>
+              </div>
+              <div>
+                <div style={{ fontSize: "14px", fontWeight: 700, color: "#111827" }}>{agentCallout || "Your Agent"}</div>
+                <div style={{ fontSize: "12px", color: "#6b7280" }}>Listing Agent · REA Hub</div>
+                <div style={{ fontSize: "12px", color: "#1d4ed8", marginTop: "2px" }}>{agentPhone}</div>
+              </div>
+              <div style={{ marginLeft: "auto" }}>
+                <div style={{ width: "60px", height: "24px", background: "#f3f4f6", borderRadius: "4px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <span style={{ fontSize: "9px", fontWeight: 700, color: "#9ca3af", letterSpacing: "0.06em" }}>AGENCY</span>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+        <div style={{ background: "#f9fafb", borderTop: "1px solid #e5e7eb", padding: "20px 32px", textAlign: "center" }}>
+          <p style={{ fontSize: "11px", color: "#9ca3af", margin: 0 }}>
+            You are receiving this email because you are registered with our agency.<br />
+            <span style={{ color: "#1d4ed8", cursor: "pointer", textDecoration: "underline" }}>Unsubscribe</span> · <span style={{ color: "#1d4ed8", cursor: "pointer", textDecoration: "underline" }}>View in browser</span>
+          </p>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div style={{ position: "fixed" as const, inset: 0, background: "#111827", zIndex: 1001, display: "flex", flexDirection: "column" }}>
+      {/* Top bar */}
+      <div style={{ height: "52px", background: "#1f2937", borderBottom: "1px solid #374151", display: "flex", alignItems: "center", padding: "0 24px", gap: "16px", flexShrink: 0 }}>
+        <button onClick={onClose} style={{ background: "rgba(255,255,255,0.08)", border: "none", borderRadius: "6px", padding: "5px 10px", cursor: "pointer", color: "rgba(255,255,255,0.7)", fontSize: "12px", fontWeight: 600, fontFamily: "var(--font-inter)", display: "flex", alignItems: "center", gap: "5px" }}>
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M10 3L5 8l5 5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          Close
+        </button>
+        <div style={{ display: "flex", gap: "4px" }}>
+          {(["template", "compose", "recipients", "confirm"] as const).map((s, i) => (
+            <div key={s} style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+              <button onClick={() => { if (s !== "confirm" || step === "confirm") setStep(s); }} style={{ padding: "4px 12px", borderRadius: "6px", border: "none", background: step === s ? "#fff" : "rgba(255,255,255,0.08)", color: step === s ? "#111827" : "rgba(255,255,255,0.5)", fontSize: "12px", fontWeight: 600, cursor: "pointer", fontFamily: "var(--font-inter)" }}>
+                {i + 1}. {s.charAt(0).toUpperCase() + s.slice(1)}
+              </button>
+              {i < 3 && <span style={{ color: "rgba(255,255,255,0.2)", fontSize: "10px" }}>›</span>}
+            </div>
+          ))}
+        </div>
+        <div style={{ marginLeft: "auto", display: "flex", gap: "8px", alignItems: "center" }}>
+          <span style={{ fontSize: "12px", color: "rgba(255,255,255,0.4)" }}>{recipientCount} recipient{recipientCount !== 1 ? "s" : ""}</span>
+          {step !== "template" && <button onClick={() => setStep(step === "compose" ? "template" : step === "recipients" ? "compose" : "recipients")} style={{ background: "rgba(255,255,255,0.08)", border: "none", borderRadius: "6px", padding: "6px 14px", cursor: "pointer", color: "rgba(255,255,255,0.7)", fontSize: "12.5px", fontWeight: 600, fontFamily: "var(--font-inter)" }}>Back</button>}
+          <button onClick={() => {
+            if (step === "template") setStep("compose");
+            else if (step === "compose") setStep("recipients");
+            else if (step === "recipients") setStep("confirm");
+            else {
+              setSending(true);
+              setTimeout(() => { setSending(false); onSent(`Campaign "${subject}" sent to ${recipientCount} recipients`); onClose(); }, 1200);
+            }
+          }} style={{ background: step === "confirm" ? "#16a34a" : "#3b82f6", color: "#fff", border: "none", borderRadius: "6px", padding: "6px 16px", cursor: "pointer", fontSize: "12.5px", fontWeight: 600, fontFamily: "var(--font-inter)", opacity: sending ? 0.7 : 1 }}>
+            {step === "template" ? "Choose Template →" : step === "compose" ? "Select Recipients →" : step === "recipients" ? "Preview & Send →" : sending ? "Sending…" : `Send to ${recipientCount} contacts`}
+          </button>
+        </div>
+      </div>
+
+      {/* Main content */}
+      <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
+
+        {/* STEP: TEMPLATE SELECTION */}
+        {step === "template" && (
+          <div style={{ flex: 1, padding: "40px", overflow: "auto" }}>
+            <h2 style={{ fontSize: "22px", fontWeight: 300, color: "#fff", letterSpacing: "-0.03em", marginBottom: "8px" }}>Choose a template</h2>
+            <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.4)", marginBottom: "32px" }}>Select the type of email campaign for <strong style={{ color: "rgba(255,255,255,0.7)" }}>{listing.address}, {listing.suburb}</strong></p>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: "16px", maxWidth: "900px" }}>
+              {(Object.entries(EMAIL_CAMPAIGN_TEMPLATES) as [EmailTemplateId, (typeof EMAIL_CAMPAIGN_TEMPLATES)[EmailTemplateId]][]).map(([id, tpl]) => (
+                <button key={id} onClick={() => { setTemplateId(id); setSubject(tpl.subject(listing)); setStep("compose"); }} style={{ background: templateId === id ? "#fff" : "#1f2937", border: templateId === id ? "2px solid #3b82f6" : "1px solid #374151", borderRadius: "12px", padding: "24px 20px", cursor: "pointer", textAlign: "left", fontFamily: "var(--font-inter)", transition: "all 0.1s" }}>
+                  <div style={{ width: "36px", height: "36px", background: tpl.previewColor, borderRadius: "8px", marginBottom: "14px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <span style={{ fontSize: "9px", fontWeight: 800, color: "#fff", letterSpacing: "0.06em" }}>{tpl.badge.slice(0, 4)}</span>
+                  </div>
+                  <div style={{ fontSize: "14px", fontWeight: 700, color: templateId === id ? "#111827" : "#fff", marginBottom: "6px" }}>{tpl.label}</div>
+                  <div style={{ fontSize: "12px", color: templateId === id ? "#6b7280" : "rgba(255,255,255,0.4)", lineHeight: 1.5 }}>{tpl.subject(listing).slice(0, 60)}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* STEP: COMPOSE or CONFIRM — left edit panel + center email preview */}
+        {(step === "compose" || step === "confirm") && (
+          <>
+            <div style={{ width: "320px", flexShrink: 0, background: "#1f2937", borderRight: "1px solid #374151", overflowY: "auto", padding: "20px" }}>
+              <div style={{ fontSize: "11px", fontWeight: 700, color: "rgba(255,255,255,0.3)", letterSpacing: "0.08em", textTransform: "uppercase" as const, marginBottom: "16px" }}>Customise</div>
+              <div style={{ marginBottom: "16px" }}>
+                <label style={{ fontSize: "11.5px", fontWeight: 600, color: "rgba(255,255,255,0.6)", display: "block", marginBottom: "5px" }}>Subject Line</label>
+                <input value={subject} onChange={e => setSubject(e.target.value)} style={{ padding: "8px 10px", borderRadius: "7px", border: "1px solid #374151", fontSize: "12.5px", fontFamily: "var(--font-inter)", color: "#fff", background: "#111827", outline: "none", width: "100%", boxSizing: "border-box" as const }} />
+              </div>
+              <div style={{ marginBottom: "16px" }}>
+                <label style={{ fontSize: "11.5px", fontWeight: 600, color: "rgba(255,255,255,0.6)", display: "block", marginBottom: "5px" }}>Email Headline</label>
+                <input value={customHeadline} onChange={e => setCustomHeadline(e.target.value)} style={{ padding: "8px 10px", borderRadius: "7px", border: "1px solid #374151", fontSize: "12.5px", fontFamily: "var(--font-inter)", color: "#fff", background: "#111827", outline: "none", width: "100%", boxSizing: "border-box" as const }} />
+              </div>
+              <div style={{ marginBottom: "16px" }}>
+                <label style={{ fontSize: "11.5px", fontWeight: 600, color: "rgba(255,255,255,0.6)", display: "block", marginBottom: "5px" }}>Property Description</label>
+                <textarea value={customBody} onChange={e => setCustomBody(e.target.value)} rows={6} style={{ padding: "8px 10px", borderRadius: "7px", border: "1px solid #374151", fontSize: "12.5px", fontFamily: "var(--font-inter)", color: "#fff", background: "#111827", outline: "none", width: "100%", boxSizing: "border-box" as const, resize: "vertical" }} />
+              </div>
+              <div style={{ marginBottom: "16px" }}>
+                <label style={{ fontSize: "11.5px", fontWeight: 600, color: "rgba(255,255,255,0.6)", display: "block", marginBottom: "5px" }}>Agent Name</label>
+                <input value={agentCallout} onChange={e => setAgentCallout(e.target.value)} style={{ padding: "8px 10px", borderRadius: "7px", border: "1px solid #374151", fontSize: "12.5px", fontFamily: "var(--font-inter)", color: "#fff", background: "#111827", outline: "none", width: "100%", boxSizing: "border-box" as const }} />
+              </div>
+              <div style={{ marginBottom: "20px" }}>
+                <label style={{ fontSize: "11.5px", fontWeight: 600, color: "rgba(255,255,255,0.6)", display: "block", marginBottom: "5px" }}>Agent Phone</label>
+                <input value={agentPhone} onChange={e => setAgentPhone(e.target.value)} style={{ padding: "8px 10px", borderRadius: "7px", border: "1px solid #374151", fontSize: "12.5px", fontFamily: "var(--font-inter)", color: "#fff", background: "#111827", outline: "none", width: "100%", boxSizing: "border-box" as const }} />
+              </div>
+              <div style={{ fontSize: "11px", fontWeight: 700, color: "rgba(255,255,255,0.3)", letterSpacing: "0.08em", textTransform: "uppercase" as const, marginBottom: "12px" }}>Show / Hide Sections</div>
+              {[
+                { label: "Price & Specs", value: showPrice, set: setShowPrice },
+                { label: "Property Bio",  value: showBio,   set: setShowBio },
+                { label: "OFI Times",     value: showOfi,   set: setShowOfi },
+                { label: "Agent Card",    value: showAgent, set: setShowAgent },
+              ].map(({ label, value, set }) => (
+                <div key={label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid #374151" }}>
+                  <span style={{ fontSize: "12.5px", color: "rgba(255,255,255,0.6)" }}>{label}</span>
+                  <button onClick={() => set((v: boolean) => !v)} style={{ width: "36px", height: "20px", borderRadius: "10px", background: value ? "#3b82f6" : "#374151", border: "none", cursor: "pointer", position: "relative" as const, transition: "background 0.15s" }}>
+                    <div style={{ position: "absolute" as const, top: "2px", left: value ? "18px" : "2px", width: "16px", height: "16px", borderRadius: "50%", background: "#fff", transition: "left 0.15s" }} />
+                  </button>
+                </div>
+              ))}
+            </div>
+            <div style={{ flex: 1, overflow: "auto", padding: "32px", background: "#374151", display: "flex", justifyContent: "center" }}>
+              <div style={{ background: "#fff", borderRadius: "8px", overflow: "hidden", boxShadow: "0 8px 32px rgba(0,0,0,0.3)", width: "100%", maxWidth: "600px" }}>
+                <div style={{ background: "#f3f4f6", borderBottom: "1px solid #e5e7eb", padding: "10px 16px" }}>
+                  <div style={{ fontSize: "11px", color: "#6b7280", marginBottom: "3px" }}>From: <strong>REA Hub &lt;campaigns@reahub.com.au&gt;</strong></div>
+                  <div style={{ fontSize: "11px", color: "#6b7280", marginBottom: "3px" }}>To: <strong>{recipientCount} recipients</strong></div>
+                  <div style={{ fontSize: "11px", color: "#374151", fontWeight: 600 }}>Subject: {subject}</div>
+                </div>
+                {renderEmailPreview()}
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* STEP: RECIPIENTS */}
+        {step === "recipients" && (
+          <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
+            {/* Filter sidebar */}
+            <div style={{ width: "300px", flexShrink: 0, background: "#1f2937", borderRight: "1px solid #374151", overflowY: "auto", padding: "20px" }}>
+              <div style={{ fontSize: "11px", fontWeight: 700, color: "rgba(255,255,255,0.3)", letterSpacing: "0.08em", textTransform: "uppercase" as const, marginBottom: "16px" }}>Filter Recipients</div>
+              <div style={{ marginBottom: "20px" }}>
+                <label style={{ fontSize: "11.5px", fontWeight: 600, color: "rgba(255,255,255,0.6)", display: "block", marginBottom: "8px" }}>Preferred Suburbs</label>
+                <div style={{ display: "flex", flexDirection: "column", gap: "4px", maxHeight: "160px", overflowY: "auto" }}>
+                  {allSuburbs.map(sub => (
+                    <label key={sub} style={{ display: "flex", alignItems: "center", gap: "7px", cursor: "pointer", padding: "4px 0" }}>
+                      <input type="checkbox" checked={filterSuburbs.length === 0 || filterSuburbs.includes(sub)} onChange={e => {
+                        if (filterSuburbs.length === 0) {
+                          setFilterSuburbs(allSuburbs.filter(s => s !== sub));
+                        } else if (e.target.checked) {
+                          const next = [...filterSuburbs, sub];
+                          if (next.length === allSuburbs.length) setFilterSuburbs([]);
+                          else setFilterSuburbs(next);
+                        } else {
+                          setFilterSuburbs(filterSuburbs.filter(s => s !== sub));
+                        }
+                      }} style={{ accentColor: "#3b82f6" }} />
+                      <span style={{ fontSize: "12.5px", color: "rgba(255,255,255,0.7)" }}>{sub}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+              <div style={{ marginBottom: "20px" }}>
+                <label style={{ fontSize: "11.5px", fontWeight: 600, color: "rgba(255,255,255,0.6)", display: "block", marginBottom: "8px" }}>Bedrooms</label>
+                <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                  <select value={filterBedsMin} onChange={e => setFilterBedsMin(Number(e.target.value))} style={{ flex: 1, padding: "6px 8px", borderRadius: "6px", border: "1px solid #374151", fontSize: "12px", background: "#111827", color: "#fff", outline: "none" }}>
+                    {[0,1,2,3,4,5,6].map(n => <option key={n} value={n}>{n === 0 ? "Any" : n + "+"}</option>)}
+                  </select>
+                  <span style={{ color: "rgba(255,255,255,0.3)", fontSize: "12px" }}>to</span>
+                  <select value={filterBedsMax} onChange={e => setFilterBedsMax(Number(e.target.value))} style={{ flex: 1, padding: "6px 8px", borderRadius: "6px", border: "1px solid #374151", fontSize: "12px", background: "#111827", color: "#fff", outline: "none" }}>
+                    {[1,2,3,4,5,6,7,10].map(n => <option key={n} value={n}>{n === 10 ? "Any" : n}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div style={{ marginBottom: "20px" }}>
+                <label style={{ fontSize: "11.5px", fontWeight: 600, color: "rgba(255,255,255,0.6)", display: "block", marginBottom: "8px" }}>Budget Range</label>
+                <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                  <select value={filterBudgetMin} onChange={e => setFilterBudgetMin(Number(e.target.value))} style={{ flex: 1, padding: "6px 8px", borderRadius: "6px", border: "1px solid #374151", fontSize: "12px", background: "#111827", color: "#fff", outline: "none" }}>
+                    {([[0,"Any"],[500000,"$500K"],[750000,"$750K"],[1000000,"$1M"],[1250000,"$1.25M"],[1500000,"$1.5M"],[2000000,"$2M"]] as [number,string][]).map(([v,l]) => <option key={v} value={v}>{l}</option>)}
+                  </select>
+                  <span style={{ color: "rgba(255,255,255,0.3)", fontSize: "12px" }}>–</span>
+                  <select value={filterBudgetMax} onChange={e => setFilterBudgetMax(Number(e.target.value))} style={{ flex: 1, padding: "6px 8px", borderRadius: "6px", border: "1px solid #374151", fontSize: "12px", background: "#111827", color: "#fff", outline: "none" }}>
+                    {([[99999999,"Any"],[750000,"$750K"],[1000000,"$1M"],[1250000,"$1.25M"],[1500000,"$1.5M"],[2000000,"$2M"],[3000000,"$3M"]] as [number,string][]).map(([v,l]) => <option key={v} value={v}>{l}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div style={{ marginBottom: "20px" }}>
+                <label style={{ fontSize: "11.5px", fontWeight: 600, color: "rgba(255,255,255,0.6)", display: "block", marginBottom: "8px" }}>Contact Source</label>
+                {(["ofi","enquiry","database","referral"] as const).map((val) => {
+                  const lab = val === "ofi" ? "OFI Registrant" : val === "enquiry" ? "Online Enquiry" : val === "database" ? "Database" : "Referral";
+                  return (
+                    <label key={val} style={{ display: "flex", alignItems: "center", gap: "7px", cursor: "pointer", padding: "4px 0" }}>
+                      <input type="checkbox" checked={filterSources.includes(val)} onChange={e => setFilterSources(prev => e.target.checked ? [...prev, val] : prev.filter(s => s !== val))} style={{ accentColor: "#3b82f6" }} />
+                      <span style={{ fontSize: "12.5px", color: "rgba(255,255,255,0.7)" }}>{lab}</span>
+                    </label>
+                  );
+                })}
+              </div>
+              <div style={{ marginBottom: "20px" }}>
+                <label style={{ fontSize: "11.5px", fontWeight: 600, color: "rgba(255,255,255,0.6)", display: "block", marginBottom: "8px" }}>Buyer Type</label>
+                {(["owner-occupier","investor","first-home","upsizer","downsizer"] as const).map((val) => {
+                  const lab = val === "owner-occupier" ? "Owner Occupier" : val === "investor" ? "Investor" : val === "first-home" ? "First Home Buyer" : val === "upsizer" ? "Upsizer" : "Downsizer";
+                  return (
+                    <label key={val} style={{ display: "flex", alignItems: "center", gap: "7px", cursor: "pointer", padding: "4px 0" }}>
+                      <input type="checkbox" checked={filterBuyerTypes.includes(val)} onChange={e => setFilterBuyerTypes(prev => e.target.checked ? [...prev, val] : prev.filter(t => t !== val))} style={{ accentColor: "#3b82f6" }} />
+                      <span style={{ fontSize: "12.5px", color: "rgba(255,255,255,0.7)" }}>{lab}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+            {/* Contact list */}
+            <div style={{ flex: 1, overflowY: "auto", padding: "24px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+                <div>
+                  <span style={{ fontSize: "15px", fontWeight: 600, color: "#fff" }}>{filteredContacts.length} contacts match filters</span>
+                  <span style={{ fontSize: "12px", color: "rgba(255,255,255,0.4)", marginLeft: "10px" }}>{selectedContactIds.size} selected</span>
+                </div>
+                <button onClick={() => {
+                  if (selectedContactIds.size === filteredContacts.length) { setSelectedContactIds(new Set()); setSelectAllFiltered(false); }
+                  else { setSelectedContactIds(new Set(filteredContacts.map(c => c.id))); setSelectAllFiltered(true); }
+                }} style={{ background: "rgba(255,255,255,0.08)", border: "none", borderRadius: "6px", padding: "6px 14px", cursor: "pointer", color: "rgba(255,255,255,0.7)", fontSize: "12.5px", fontWeight: 600, fontFamily: "var(--font-inter)" }}>
+                  {selectedContactIds.size === filteredContacts.length ? "Deselect All" : "Select All"}
+                </button>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                {filteredContacts.map(c => {
+                  const selected = selectedContactIds.has(c.id);
+                  const srcColor: Record<string, string> = { ofi: "#3b82f6", enquiry: "#8b5cf6", database: "#6b7280", referral: "#16a34a" };
+                  const btColor: Record<string, string> = { investor: "#f59e0b", "first-home": "#10b981", upsizer: "#3b82f6", downsizer: "#8b5cf6", "owner-occupier": "#374151", unknown: "#9ca3af" };
+                  return (
+                    <div key={c.id} onClick={() => setSelectedContactIds(prev => { const n = new Set(prev); selected ? n.delete(c.id) : n.add(c.id); setSelectAllFiltered(false); return n; })} style={{ background: selected ? "rgba(59,130,246,0.15)" : "#1f2937", border: selected ? "1px solid rgba(59,130,246,0.4)" : "1px solid #374151", borderRadius: "10px", padding: "12px 16px", cursor: "pointer", display: "flex", alignItems: "center", gap: "12px" }}>
+                      <input type="checkbox" checked={selected} readOnly style={{ accentColor: "#3b82f6", flexShrink: 0 }} />
+                      <div style={{ width: "36px", height: "36px", borderRadius: "50%", background: "#374151", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                        <span style={{ fontSize: "13px", fontWeight: 700, color: "#fff" }}>{c.name.charAt(0)}</span>
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: "13px", fontWeight: 600, color: "#fff", marginBottom: "2px" }}>{c.name}</div>
+                        <div style={{ fontSize: "11.5px", color: "rgba(255,255,255,0.4)" }}>{c.email} · {c.phone}</div>
+                        <div style={{ display: "flex", gap: "5px", marginTop: "4px", flexWrap: "wrap" as const }}>
+                          <span style={{ fontSize: "10px", fontWeight: 600, background: "rgba(255,255,255,0.06)", color: srcColor[c.source] || "#9ca3af", padding: "1px 6px", borderRadius: "4px" }}>{c.source.toUpperCase()}</span>
+                          <span style={{ fontSize: "10px", fontWeight: 600, background: "rgba(255,255,255,0.06)", color: btColor[c.buyerType] || "#9ca3af", padding: "1px 6px", borderRadius: "4px" }}>{c.buyerType}</span>
+                          {c.suburbs.slice(0,2).map(s => <span key={s} style={{ fontSize: "10px", color: "rgba(255,255,255,0.35)", background: "rgba(255,255,255,0.05)", padding: "1px 6px", borderRadius: "4px" }}>{s}</span>)}
+                          <span style={{ fontSize: "10px", color: "rgba(255,255,255,0.35)" }}>${Math.round(c.budgetMin/1000)}K–{c.budgetMax >= 99999999 ? "Any" : Math.round(c.budgetMax/1000)+"K"} · {c.bedroomsMin}–{c.bedroomsMax} bed</span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+                {filteredContacts.length === 0 && (
+                  <div style={{ textAlign: "center", padding: "60px", color: "rgba(255,255,255,0.3)", fontSize: "13px" }}>No contacts match these filters</div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ─── Listing Detail View ──────────────────────────────────────────────────────
 
 function Toast({ msg, onDone }: { msg: string; onDone: () => void }) {
@@ -9394,38 +9816,14 @@ function CrmListingDetailView({ listing, staffRows, onBack }: {
     <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "calc(100vh - 56px)", overflow: "hidden" }}>
       {toastEl}
 
-      {/* Email Campaign Modal */}
+      {/* Email Campaign Builder */}
       {showEmailModal && (
-        <div style={{ position: "fixed" as const, inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={() => setShowEmailModal(false)}>
-          <div style={{ background: "#fff", borderRadius: "14px", padding: "28px", width: "520px", maxWidth: "90vw", boxShadow: "0 20px 60px rgba(0,0,0,0.18)" }} onClick={e => e.stopPropagation()}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-              <h3 style={{ fontSize: "15px", fontWeight: 700, color: "#111827", margin: 0 }}>Email Campaign</h3>
-              <button onClick={() => setShowEmailModal(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "#9ca3af", fontSize: "18px" }}>×</button>
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-              <div><label style={{ fontSize: "12px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "5px" }}>Template</label>
-                <select value={emailForm.template} onChange={e => setEmailForm(f => ({ ...f, template: e.target.value, subject: `${e.target.value}: ${listing.address}, ${listing.suburb}` }))} style={{ padding: "8px 10px", borderRadius: "7px", border: "1px solid #e5e7eb", fontSize: "13px", fontFamily: "var(--font-inter)", color: "#111827", outline: "none", width: "100%", boxSizing: "border-box" as const }}>
-                  {["New Listing Alert", "Open Home Invitation", "Price Reduction", "Just Listed", "Auction Reminder", "Under Offer Update", "Vendor Report"].map(t => <option key={t}>{t}</option>)}
-                </select>
-              </div>
-              <div><label style={{ fontSize: "12px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "5px" }}>Recipients</label>
-                <select value={emailForm.recipients} onChange={e => setEmailForm(f => ({ ...f, recipients: e.target.value }))} style={{ padding: "8px 10px", borderRadius: "7px", border: "1px solid #e5e7eb", fontSize: "13px", fontFamily: "var(--font-inter)", color: "#111827", outline: "none", width: "100%", boxSizing: "border-box" as const }}>
-                  {["Buyer Database", "Prospecting List", "OFI Attendees", "Vendor Only", "All Contacts"].map(r => <option key={r}>{r}</option>)}
-                </select>
-              </div>
-              <div><label style={{ fontSize: "12px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "5px" }}>Subject</label>
-                <input value={emailForm.subject} onChange={e => setEmailForm(f => ({ ...f, subject: e.target.value }))} style={{ padding: "8px 10px", borderRadius: "7px", border: "1px solid #e5e7eb", fontSize: "13px", fontFamily: "var(--font-inter)", color: "#111827", outline: "none", width: "100%", boxSizing: "border-box" as const }} />
-              </div>
-              <div><label style={{ fontSize: "12px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "5px" }}>Message Body</label>
-                <textarea value={emailForm.body} onChange={e => setEmailForm(f => ({ ...f, body: e.target.value }))} rows={4} style={{ padding: "8px 10px", borderRadius: "7px", border: "1px solid #e5e7eb", fontSize: "13px", fontFamily: "var(--font-inter)", color: "#111827", outline: "none", width: "100%", boxSizing: "border-box" as const, resize: "none" }} />
-              </div>
-              <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", marginTop: "4px" }}>
-                <button onClick={() => setShowEmailModal(false)} style={{ background: "#f3f4f6", color: "#374151", border: "none", borderRadius: "8px", padding: "8px 16px", fontSize: "13px", fontWeight: 600, cursor: "pointer", fontFamily: "var(--font-inter)" }}>Cancel</button>
-                <button onClick={() => { setShowEmailModal(false); showToast(`Email campaign "${emailForm.template}" queued for ${emailForm.recipients}`); }} style={{ background: "#111827", color: "#fff", border: "none", borderRadius: "8px", padding: "8px 16px", fontSize: "13px", fontWeight: 600, cursor: "pointer", fontFamily: "var(--font-inter)" }}>Send Campaign</button>
-              </div>
-            </div>
-          </div>
-        </div>
+        <EmailCampaignBuilder
+          listing={editMode ? editForm : listing}
+          contacts={DEMO_EMAIL_CONTACTS}
+          onClose={() => setShowEmailModal(false)}
+          onSent={msg => { setShowEmailModal(false); showToast(msg); }}
+        />
       )}
 
       {/* SMS Modal */}
@@ -9592,6 +9990,17 @@ const DEMO_LISTINGS: CrmListing[] = [
   { id: "dl3", address: "7 Blue Haven Cres", suburb: "Keiraville", owner: "Anne & David Walsh", price: "$980,000", displayPrice: "$960,000–$1,010,000", type: "sale", propertyType: "House", bedrooms: "3", bathrooms: "2", carSpaces: "1", landSize: "510", agent: "Sarah Mitchell", listedDate: "2026-07-22", status: "active", complianceSynced: false, portalStatus: { rea: "live", domain: "idle" } },
   { id: "dl4", address: "3 Illawarra Rd", suburb: "Figtree", owner: "Anne Walsh", price: "$620", displayPrice: "$620 per week", type: "rental", propertyType: "Unit / Apartment", bedrooms: "2", bathrooms: "1", carSpaces: "1", landSize: "", agent: "Tom Briggs", listedDate: "2026-07-28", status: "active", complianceSynced: true, portalStatus: { rea: "live", domain: "live" } },
   { id: "dl5", address: "90 Corrimal St", suburb: "Corrimal", owner: "Tom & Jan Mills", price: "$745,000", displayPrice: "Auction 16 Aug", type: "sale", propertyType: "House", bedrooms: "3", bathrooms: "1", carSpaces: "2", landSize: "480", agent: "Sarah Mitchell", listedDate: "2026-07-10", status: "active", complianceSynced: true, portalStatus: { rea: "live", domain: "live" } },
+];
+
+const DEMO_EMAIL_CONTACTS: EmailContact[] = [
+  { id: "c1", name: "Daniel Russo", email: "d.russo@email.com", phone: "0412 234 567", source: "ofi", buyerType: "owner-occupier", suburbs: ["Thirroul", "Austinmer", "Bulli"], bedroomsMin: 4, bedroomsMax: 5, budgetMin: 1400000, budgetMax: 1700000, enquiredListings: ["dl1"], ofiListings: ["dl1"], notes: "Keen on Thirroul strip. Pre-approved.", addedDate: "2026-07-26", tags: ["hot", "pre-approved"] },
+  { id: "c2", name: "Kylie Turner", email: "k.turner@email.com", phone: "0421 345 678", source: "ofi", buyerType: "upsizer", suburbs: ["Thirroul", "Wollongong", "Keiraville"], bedroomsMin: 4, bedroomsMax: 6, budgetMin: 1400000, budgetMax: 1800000, enquiredListings: ["dl1"], ofiListings: ["dl1"], notes: "Selling in Fairy Meadow. Timeline: 3 months.", addedDate: "2026-08-01", tags: ["hot"] },
+  { id: "c3", name: "Priya & Sam Sharma", email: "priya.sharma@email.com", phone: "0430 456 789", source: "enquiry", buyerType: "investor", suburbs: ["Wollongong", "Figtree", "Corrimal"], bedroomsMin: 2, bedroomsMax: 3, budgetMin: 600000, budgetMax: 900000, enquiredListings: ["dl2", "dl4"], ofiListings: [], notes: "Cash buyer. Looking for 4–5% yield.", addedDate: "2026-07-20", tags: ["investor", "cash-buyer"] },
+  { id: "c4", name: "James & Fiona Okafor", email: "j.okafor@email.com", phone: "0403 567 890", source: "database", buyerType: "first-home", suburbs: ["Keiraville", "Wollongong", "Gwynneville"], bedroomsMin: 3, bedroomsMax: 4, budgetMin: 850000, budgetMax: 1100000, enquiredListings: [], ofiListings: ["dl3"], notes: "FHB. Using FHOG. Flexible on timing.", addedDate: "2026-06-15", tags: ["first-home"] },
+  { id: "c5", name: "Mark Patterson", email: "m.patterson@email.com", phone: "0444 678 901", source: "ofi", buyerType: "downsizer", suburbs: ["Corrimal", "Wollongong", "Figtree"], bedroomsMin: 2, bedroomsMax: 3, budgetMin: 700000, budgetMax: 950000, enquiredListings: ["dl5"], ofiListings: ["dl5"], notes: "Retired. Wants single-level.", addedDate: "2026-07-10", tags: ["warm"] },
+  { id: "c6", name: "Rachel & Tom Nguyen", email: "r.nguyen@email.com", phone: "0455 789 012", source: "enquiry", buyerType: "upsizer", suburbs: ["Thirroul", "Bulli", "Woonona"], bedroomsMin: 4, bedroomsMax: 5, budgetMin: 1300000, budgetMax: 1600000, enquiredListings: ["dl1"], ofiListings: [], notes: "Relocating from Sydney. Need by Oct.", addedDate: "2026-07-30", tags: ["hot", "relocating"] },
+  { id: "c7", name: "Sophie Chen", email: "s.chen@email.com", phone: "0466 890 123", source: "database", buyerType: "investor", suburbs: ["Wollongong", "Corrimal", "Towradgi"], bedroomsMin: 2, bedroomsMax: 4, budgetMin: 750000, budgetMax: 1200000, enquiredListings: [], ofiListings: [], notes: "Portfolio buyer. Has 2 existing IPs.", addedDate: "2026-05-22", tags: ["investor"] },
+  { id: "c8", name: "Antonio & Maria De Luca", email: "a.deluca@email.com", phone: "0477 901 234", source: "referral", buyerType: "owner-occupier", suburbs: ["Keiraville", "Mount Ousley", "Gwynneville"], bedroomsMin: 3, bedroomsMax: 5, budgetMin: 900000, budgetMax: 1200000, enquiredListings: ["dl3"], ofiListings: ["dl3"], notes: "Referred by John Walsh. Inspect this weekend.", addedDate: "2026-07-22", tags: ["warm", "referral"] },
 ];
 
 function CrmActiveListingsPage({
@@ -12915,6 +13324,126 @@ function CrmPipelineForecastPage({ staffRows, crmListings }: { staffRows: StaffR
   );
 }
 
+// ─── CrmEmailMarketingPage ────────────────────────────────────────────────────
+
+function CrmEmailMarketingPage({ listings, contacts, onNavigate }: {
+  listings: CrmListing[];
+  contacts: EmailContact[];
+  onNavigate: (mod: string | null, sub: string | null) => void;
+}) {
+  void onNavigate;
+  const [campaigns, setCampaigns] = useState<CrmCampaign[]>([
+    { id: "cam1", name: "Just Listed — 22 Surf Parade",     templateId: "just-listed", listingId: "dl1", status: "sent",  recipientCount: 6, sentDate: "2026-07-15", subject: "New Listing: 22 Surf Parade, Thirroul" },
+    { id: "cam2", name: "Open Home — 22 Surf Parade",       templateId: "open-home",   listingId: "dl1", status: "sent",  recipientCount: 8, sentDate: "2026-08-04", subject: "Open Home This Weekend — 22 Surf Parade" },
+    { id: "cam3", name: "Just Listed — 14 Wentworth Ave",   templateId: "just-listed", listingId: "dl2", status: "sent",  recipientCount: 4, sentDate: "2026-07-19", subject: "New Listing: 14 Wentworth Ave, Wollongong" },
+    { id: "cam4", name: "Price Reduction — 7 Blue Haven Cres", templateId: "price-drop", listingId: "dl3", status: "draft", recipientCount: 0, subject: "Price Reduced — 7 Blue Haven Cres, Keiraville" },
+  ]);
+  const [showBuilder, setShowBuilder] = useState(false);
+  const [builderListing, setBuilderListing] = useState<CrmListing | null>(null);
+  const [pageToast, setPageToast] = useState<string | null>(null);
+
+  const statusStyle = (s: string): React.CSSProperties => {
+    if (s === "sent")      return { background: "#f0fdf4", color: "#16a34a" };
+    if (s === "scheduled") return { background: "#eff6ff", color: "#1d4ed8" };
+    return { background: "#f3f4f6", color: "#6b7280" };
+  };
+
+  return (
+    <div style={{ padding: "28px 36px", display: "flex", flexDirection: "column", gap: "20px" }}>
+      {pageToast && <Toast msg={pageToast} onDone={() => setPageToast(null)} />}
+      {showBuilder && builderListing && (
+        <EmailCampaignBuilder
+          listing={builderListing}
+          contacts={contacts}
+          onClose={() => { setShowBuilder(false); setBuilderListing(null); }}
+          onSent={msg => {
+            setPageToast(msg);
+            setShowBuilder(false);
+            setCampaigns(prev => [{
+              id: `cam${Date.now()}`,
+              name: `${EMAIL_CAMPAIGN_TEMPLATES["just-listed"].label} — ${builderListing.address}`,
+              templateId: "just-listed",
+              listingId: builderListing.id,
+              status: "sent",
+              recipientCount: contacts.length,
+              sentDate: new Date().toISOString().slice(0, 10),
+              subject: msg,
+            }, ...prev]);
+            setBuilderListing(null);
+          }}
+        />
+      )}
+
+      {/* Header */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div>
+          <h2 style={{ fontSize: "20px", fontWeight: 700, color: "#111827", margin: 0, letterSpacing: "-0.02em" }}>Email Marketing</h2>
+          <p style={{ fontSize: "13px", color: "#6b7280", margin: "4px 0 0" }}>Send campaigns to your buyer database</p>
+        </div>
+        <div style={{ display: "flex", gap: "8px" }}>
+          <select onChange={e => { const l = listings.find(x => x.id === e.target.value); if (l) { setBuilderListing(l); setShowBuilder(true); } }} defaultValue="" style={{ padding: "8px 12px", borderRadius: "8px", border: "1px solid #e5e7eb", fontSize: "13px", fontFamily: "var(--font-inter)", color: "#374151", background: "#fff", outline: "none", cursor: "pointer" }}>
+            <option value="" disabled>Select listing…</option>
+            {listings.map(l => <option key={l.id} value={l.id}>{l.address}, {l.suburb}</option>)}
+          </select>
+          <button onClick={() => { const l = listings[0] || null; if (l) { setBuilderListing(l); setShowBuilder(true); } }} style={{ padding: "8px 16px", background: "#111827", color: "#fff", border: "none", borderRadius: "8px", fontSize: "13px", fontWeight: 600, cursor: "pointer", fontFamily: "var(--font-inter)" }}>+ New Campaign</button>
+        </div>
+      </div>
+
+      {/* Stats strip */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px" }}>
+        {[
+          { label: "Total Sent",        value: campaigns.filter(c => c.status === "sent").length.toString() },
+          { label: "Total Recipients",  value: campaigns.reduce((s, c) => s + c.recipientCount, 0).toString() },
+          { label: "Contacts in DB",    value: contacts.length.toString() },
+          { label: "Drafts",            value: campaigns.filter(c => c.status === "draft").length.toString() },
+        ].map(({ label, value }) => (
+          <div key={label} style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: "12px", padding: "16px 20px", boxShadow: "0 1px 2px rgba(0,0,0,0.04)" }}>
+            <div style={{ fontSize: "11px", fontWeight: 700, color: "#9ca3af", textTransform: "uppercase" as const, letterSpacing: "0.07em", marginBottom: "4px" }}>{label}</div>
+            <div style={{ fontSize: "22px", fontWeight: 700, color: "#111827", letterSpacing: "-0.03em" }}>{value}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Campaigns table */}
+      <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: "12px", overflow: "hidden", boxShadow: "0 1px 2px rgba(0,0,0,0.04)" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <thead>
+            <tr>{["Campaign", "Template", "Listing", "Recipients", "Status", "Sent", ""].map(h => <th key={h} style={{ padding: "10px 16px", textAlign: "left", fontSize: "10.5px", fontWeight: 700, color: "#6b7280", letterSpacing: "0.07em", textTransform: "uppercase" as const, borderBottom: "1px solid #e5e7eb", background: "#fff" }}>{h}</th>)}</tr>
+          </thead>
+          <tbody>
+            {campaigns.map(c => {
+              const tpl = EMAIL_CAMPAIGN_TEMPLATES[c.templateId];
+              const listingRow = listings.find(l => l.id === c.listingId);
+              return (
+                <tr key={c.id} style={{ borderBottom: "1px solid #f3f4f6" }} onMouseEnter={e => (e.currentTarget.style.background = "#f9fafb")} onMouseLeave={e => (e.currentTarget.style.background = "")}>
+                  <td style={{ padding: "12px 16px", fontSize: "13px", color: "#111827", fontWeight: 600 }}>{c.name}</td>
+                  <td style={{ padding: "12px 16px" }}>
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", fontSize: "12px", fontWeight: 600, color: "#fff", background: tpl.previewColor, padding: "2px 8px", borderRadius: "4px" }}>{tpl.label}</span>
+                  </td>
+                  <td style={{ padding: "12px 16px", fontSize: "13px", color: "#374151" }}>{listingRow ? `${listingRow.address}, ${listingRow.suburb}` : "—"}</td>
+                  <td style={{ padding: "12px 16px", fontSize: "13px", color: "#374151", fontVariantNumeric: "tabular-nums" }}>{c.recipientCount > 0 ? c.recipientCount : "—"}</td>
+                  <td style={{ padding: "12px 16px" }}>
+                    <span style={{ ...statusStyle(c.status), padding: "3px 10px", borderRadius: "20px", fontSize: "11.5px", fontWeight: 700, textTransform: "capitalize" as const }}>{c.status}</span>
+                  </td>
+                  <td style={{ padding: "12px 16px", fontSize: "12.5px", color: "#6b7280" }}>{c.sentDate || "—"}</td>
+                  <td style={{ padding: "12px 16px" }}>
+                    {c.status === "draft" && listingRow && (
+                      <button onClick={() => { setBuilderListing(listingRow); setShowBuilder(true); }} style={{ padding: "5px 12px", background: "#111827", color: "#fff", border: "none", borderRadius: "6px", fontSize: "12px", fontWeight: 600, cursor: "pointer", fontFamily: "var(--font-inter)" }}>Edit & Send</button>
+                    )}
+                    {c.status === "sent" && (
+                      <span style={{ fontSize: "12px", color: "#9ca3af" }}>View →</span>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 // ─── CrmSubPage (router) ──────────────────────────────────────────────────────
 
 function CrmSubPage({ moduleId, submodule, crmListings, onAddListing, staffRows, agencyName, onNavigate }: {
@@ -13376,6 +13905,7 @@ function CrmSubPage({ moduleId, submodule, crmListings, onAddListing, staffRows,
   if (moduleId === "vendor")     return <CrmVendorHubPage staffRows={staffRows} />;
   if (moduleId === "pipeline")   return <CrmPipelineForecastPage staffRows={staffRows} crmListings={crmListings} />;
   if (moduleId === "marketing") return <CrmMarketingPage submodule={submodule} staffRows={staffRows} />;
+  if (moduleId === "email-marketing") return <CrmEmailMarketingPage listings={crmListings} contacts={DEMO_EMAIL_CONTACTS} onNavigate={(m, s) => onNavigate(m ?? "", s)} />;
   if (moduleId === "team") return <CrmTeamPage submodule={submodule} staffRows={staffRows} />;
 
   const sub = submodule ?? Object.keys(configs[moduleId] ?? {})[0] ?? "";
@@ -13886,6 +14416,7 @@ export default function DashboardPage() {
               { id: "prospecting", label: "Prospecting", icon: <svg width="15" height="15" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="8" r="3" stroke="currentColor" strokeWidth="1.4"/><path d="M9 1v2M9 13v2M1 8h2M13 8h2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/><path d="M9 11c-3 0-6 1.5-6 4h12c0-2.5-3-4-6-4z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/></svg>, children: ["Map View", "Radius Prospecting", "Who's Next", "Letter Drop", "Sequences", "Withdrawn & Expired"] },
               { id: "open-homes", label: "Open Homes", icon: <svg width="15" height="15" viewBox="0 0 18 18" fill="none"><path d="M2 9L9 2l7 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M4 7v9h4v-5h2v5h4V7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><circle cx="14" cy="4" r="2" fill="currentColor" opacity="0.3"/></svg>, children: ["This Weekend", "Schedule", "Attendees", "Follow-ups"] },
               { id: "vendor",     label: "Vendor Hub",  icon: <svg width="15" height="15" viewBox="0 0 18 18" fill="none"><rect x="2" y="4" width="14" height="11" rx="2" stroke="currentColor" strokeWidth="1.5"/><path d="M2 8h14" stroke="currentColor" strokeWidth="1.4"/><path d="M6 2v3M12 2v3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/><path d="M5 12h4M5 14.5h2" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>, children: ["All Vendors", "Reports", "Feedback", "Portal"] },
+              { id: "email-marketing", label: "Email Marketing", icon: <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><rect x="1" y="3" width="14" height="10" rx="2" stroke="currentColor" strokeWidth="1.3"/><path d="M1 5l7 5 7-5" stroke="currentColor" strokeWidth="1.3"/></svg>, children: ["Campaigns", "Templates", "Contacts"] },
               { id: "pipeline",   label: "Pipeline",    icon: <svg width="15" height="15" viewBox="0 0 18 18" fill="none"><path d="M2 14V8l3-3h8l3 3v6H2z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/><path d="M6 14v-4h6v4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/><path d="M2 9h14" stroke="currentColor" strokeWidth="1.3"/></svg>, children: ["Forecast", "Settlements", "Commission"] },
               { id: "calendar",    label: "Calendar",    icon: <svg width="15" height="15" viewBox="0 0 18 18" fill="none"><rect x="2" y="3" width="14" height="13" rx="2" stroke="currentColor" strokeWidth="1.5"/><path d="M2 7h14" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/><path d="M6 1v3M12 1v3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/><path d="M5 11h2M9 11h2M5 14h2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>, children: [] },
               { id: "meetings",   label: "Meetings",    icon: <svg width="15" height="15" viewBox="0 0 18 18" fill="none"><rect x="2" y="5" width="14" height="11" rx="2" stroke="currentColor" strokeWidth="1.5"/><path d="M6 5V3a1 1 0 012 0v2M10 5V3a1 1 0 012 0v2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/><path d="M5 10h8M5 13h5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>, children: ["Past Meetings", "New Meeting"] },
