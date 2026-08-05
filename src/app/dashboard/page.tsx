@@ -8695,26 +8695,26 @@ function EmailCampaignBuilder({
   };
 
   return (
-    <div style={{ position: "fixed" as const, inset: 0, background: "#111827", zIndex: 1001, display: "flex", flexDirection: "column" }}>
+    <div style={{ position: "fixed" as const, inset: 0, background: "#f9fafb", zIndex: 1001, display: "flex", flexDirection: "column" }}>
       {/* Top bar */}
-      <div style={{ height: "52px", background: "#1f2937", borderBottom: "1px solid #374151", display: "flex", alignItems: "center", padding: "0 24px", gap: "16px", flexShrink: 0 }}>
-        <button onClick={onClose} style={{ background: "rgba(255,255,255,0.08)", border: "none", borderRadius: "6px", padding: "5px 10px", cursor: "pointer", color: "rgba(255,255,255,0.7)", fontSize: "12px", fontWeight: 600, fontFamily: "var(--font-inter)", display: "flex", alignItems: "center", gap: "5px" }}>
+      <div style={{ height: "52px", background: "#fff", borderBottom: "1px solid #e5e7eb", display: "flex", alignItems: "center", padding: "0 24px", gap: "16px", flexShrink: 0 }}>
+        <button onClick={onClose} style={{ background: "#f3f4f6", border: "none", borderRadius: "6px", padding: "5px 10px", cursor: "pointer", color: "#374151", fontSize: "12px", fontWeight: 600, fontFamily: "var(--font-inter)", display: "flex", alignItems: "center", gap: "5px" }}>
           <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M10 3L5 8l5 5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
           Close
         </button>
         <div style={{ display: "flex", gap: "4px" }}>
           {(["template", "compose", "recipients", "confirm"] as const).map((s, i) => (
             <div key={s} style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-              <button onClick={() => { if (s !== "confirm" || step === "confirm") setStep(s); }} style={{ padding: "4px 12px", borderRadius: "6px", border: "none", background: step === s ? "#fff" : "rgba(255,255,255,0.08)", color: step === s ? "#111827" : "rgba(255,255,255,0.5)", fontSize: "12px", fontWeight: 600, cursor: "pointer", fontFamily: "var(--font-inter)" }}>
+              <button onClick={() => { if (s !== "confirm" || step === "confirm") setStep(s); }} style={{ padding: "4px 12px", borderRadius: "6px", border: "none", background: step === s ? "#111827" : "#f3f4f6", color: step === s ? "#fff" : "#6b7280", fontSize: "12px", fontWeight: 600, cursor: "pointer", fontFamily: "var(--font-inter)" }}>
                 {i + 1}. {s.charAt(0).toUpperCase() + s.slice(1)}
               </button>
-              {i < 3 && <span style={{ color: "rgba(255,255,255,0.2)", fontSize: "10px" }}>›</span>}
+              {i < 3 && <span style={{ color: "#d1d5db", fontSize: "10px" }}>›</span>}
             </div>
           ))}
         </div>
         <div style={{ marginLeft: "auto", display: "flex", gap: "8px", alignItems: "center" }}>
-          <span style={{ fontSize: "12px", color: "rgba(255,255,255,0.4)" }}>{recipientCount} recipient{recipientCount !== 1 ? "s" : ""}</span>
-          {step !== "template" && <button onClick={() => setStep(step === "compose" ? "template" : step === "recipients" ? "compose" : "recipients")} style={{ background: "rgba(255,255,255,0.08)", border: "none", borderRadius: "6px", padding: "6px 14px", cursor: "pointer", color: "rgba(255,255,255,0.7)", fontSize: "12.5px", fontWeight: 600, fontFamily: "var(--font-inter)" }}>Back</button>}
+          <span style={{ fontSize: "12px", color: "#6b7280" }}>{recipientCount} recipient{recipientCount !== 1 ? "s" : ""}</span>
+          {step !== "template" && <button onClick={() => setStep(step === "compose" ? "template" : step === "recipients" ? "compose" : "recipients")} style={{ background: "#f3f4f6", border: "none", borderRadius: "6px", padding: "6px 14px", cursor: "pointer", color: "#374151", fontSize: "12.5px", fontWeight: 600, fontFamily: "var(--font-inter)" }}>Back</button>}
           <button onClick={() => {
             if (step === "template") setStep("compose");
             else if (step === "compose") setStep("recipients");
@@ -8723,7 +8723,7 @@ function EmailCampaignBuilder({
               setSending(true);
               setTimeout(() => { setSending(false); onSent(`Campaign "${subject}" sent to ${recipientCount} recipients`); onClose(); }, 1200);
             }
-          }} style={{ background: step === "confirm" ? "#16a34a" : "#3b82f6", color: "#fff", border: "none", borderRadius: "6px", padding: "6px 16px", cursor: "pointer", fontSize: "12.5px", fontWeight: 600, fontFamily: "var(--font-inter)", opacity: sending ? 0.7 : 1 }}>
+          }} style={{ background: step === "confirm" ? "#16a34a" : "#111827", color: "#fff", border: "none", borderRadius: "6px", padding: "6px 16px", cursor: "pointer", fontSize: "12.5px", fontWeight: 600, fontFamily: "var(--font-inter)", opacity: sending ? 0.7 : 1 }}>
             {step === "template" ? "Choose Template →" : step === "compose" ? "Select Recipients →" : step === "recipients" ? "Preview & Send →" : sending ? "Sending…" : `Send to ${recipientCount} contacts`}
           </button>
         </div>
@@ -8735,16 +8735,16 @@ function EmailCampaignBuilder({
         {/* STEP: TEMPLATE SELECTION */}
         {step === "template" && (
           <div style={{ flex: 1, padding: "40px", overflow: "auto" }}>
-            <h2 style={{ fontSize: "22px", fontWeight: 300, color: "#fff", letterSpacing: "-0.03em", marginBottom: "8px" }}>Choose a template</h2>
-            <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.4)", marginBottom: "32px" }}>Select the type of email campaign for <strong style={{ color: "rgba(255,255,255,0.7)" }}>{listing.address}, {listing.suburb}</strong></p>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: "16px", maxWidth: "900px" }}>
+            <h2 style={{ fontSize: "22px", fontWeight: 700, color: "#111827", letterSpacing: "-0.02em", marginBottom: "6px" }}>Choose a template</h2>
+            <p style={{ fontSize: "13px", color: "#6b7280", marginBottom: "32px" }}>Select the campaign type for <strong style={{ color: "#111827" }}>{listing.address}, {listing.suburb}</strong></p>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: "12px", maxWidth: "900px" }}>
               {(Object.entries(EMAIL_CAMPAIGN_TEMPLATES) as [EmailTemplateId, (typeof EMAIL_CAMPAIGN_TEMPLATES)[EmailTemplateId]][]).map(([id, tpl]) => (
-                <button key={id} onClick={() => { setTemplateId(id); setSubject(tpl.subject(listing)); setStep("compose"); }} style={{ background: templateId === id ? "#fff" : "#1f2937", border: templateId === id ? "2px solid #3b82f6" : "1px solid #374151", borderRadius: "12px", padding: "24px 20px", cursor: "pointer", textAlign: "left", fontFamily: "var(--font-inter)", transition: "all 0.1s" }}>
-                  <div style={{ width: "36px", height: "36px", background: tpl.previewColor, borderRadius: "8px", marginBottom: "14px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <button key={id} onClick={() => { setTemplateId(id); setSubject(tpl.subject(listing)); setStep("compose"); }} style={{ background: templateId === id ? "#fff" : "#fff", border: templateId === id ? `2px solid ${tpl.previewColor}` : "1px solid #e5e7eb", borderRadius: "12px", padding: "20px 18px", cursor: "pointer", textAlign: "left", fontFamily: "var(--font-inter)", boxShadow: templateId === id ? `0 0 0 3px ${tpl.previewColor}22` : "0 1px 2px rgba(0,0,0,0.04)", transition: "all 0.1s" }}>
+                  <div style={{ width: "32px", height: "32px", background: tpl.previewColor, borderRadius: "8px", marginBottom: "12px", display: "flex", alignItems: "center", justifyContent: "center" }}>
                     <span style={{ fontSize: "9px", fontWeight: 800, color: "#fff", letterSpacing: "0.06em" }}>{tpl.badge.slice(0, 4)}</span>
                   </div>
-                  <div style={{ fontSize: "14px", fontWeight: 700, color: templateId === id ? "#111827" : "#fff", marginBottom: "6px" }}>{tpl.label}</div>
-                  <div style={{ fontSize: "12px", color: templateId === id ? "#6b7280" : "rgba(255,255,255,0.4)", lineHeight: 1.5 }}>{tpl.subject(listing).slice(0, 60)}</div>
+                  <div style={{ fontSize: "14px", fontWeight: 700, color: "#111827", marginBottom: "4px" }}>{tpl.label}</div>
+                  <div style={{ fontSize: "11.5px", color: "#6b7280", lineHeight: 1.5 }}>{tpl.subject(listing).slice(0, 55)}</div>
                 </button>
               ))}
             </div>
@@ -8754,46 +8754,46 @@ function EmailCampaignBuilder({
         {/* STEP: COMPOSE or CONFIRM — left edit panel + center email preview */}
         {(step === "compose" || step === "confirm") && (
           <>
-            <div style={{ width: "320px", flexShrink: 0, background: "#1f2937", borderRight: "1px solid #374151", overflowY: "auto", padding: "20px" }}>
-              <div style={{ fontSize: "11px", fontWeight: 700, color: "rgba(255,255,255,0.3)", letterSpacing: "0.08em", textTransform: "uppercase" as const, marginBottom: "16px" }}>Customise</div>
-              <div style={{ marginBottom: "16px" }}>
-                <label style={{ fontSize: "11.5px", fontWeight: 600, color: "rgba(255,255,255,0.6)", display: "block", marginBottom: "5px" }}>Subject Line</label>
-                <input value={subject} onChange={e => setSubject(e.target.value)} style={{ padding: "8px 10px", borderRadius: "7px", border: "1px solid #374151", fontSize: "12.5px", fontFamily: "var(--font-inter)", color: "#fff", background: "#111827", outline: "none", width: "100%", boxSizing: "border-box" as const }} />
+            <div style={{ width: "300px", flexShrink: 0, background: "#fff", borderRight: "1px solid #e5e7eb", overflowY: "auto", padding: "20px" }}>
+              <div style={{ fontSize: "11px", fontWeight: 700, color: "#9ca3af", letterSpacing: "0.08em", textTransform: "uppercase" as const, marginBottom: "16px" }}>Customise</div>
+              <div style={{ marginBottom: "14px" }}>
+                <label style={{ fontSize: "11.5px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "5px" }}>Subject Line</label>
+                <input value={subject} onChange={e => setSubject(e.target.value)} style={{ padding: "8px 10px", borderRadius: "7px", border: "1px solid #e5e7eb", fontSize: "12.5px", fontFamily: "var(--font-inter)", color: "#111827", background: "#fff", outline: "none", width: "100%", boxSizing: "border-box" as const }} />
               </div>
-              <div style={{ marginBottom: "16px" }}>
-                <label style={{ fontSize: "11.5px", fontWeight: 600, color: "rgba(255,255,255,0.6)", display: "block", marginBottom: "5px" }}>Email Headline</label>
-                <input value={customHeadline} onChange={e => setCustomHeadline(e.target.value)} style={{ padding: "8px 10px", borderRadius: "7px", border: "1px solid #374151", fontSize: "12.5px", fontFamily: "var(--font-inter)", color: "#fff", background: "#111827", outline: "none", width: "100%", boxSizing: "border-box" as const }} />
+              <div style={{ marginBottom: "14px" }}>
+                <label style={{ fontSize: "11.5px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "5px" }}>Email Headline</label>
+                <input value={customHeadline} onChange={e => setCustomHeadline(e.target.value)} style={{ padding: "8px 10px", borderRadius: "7px", border: "1px solid #e5e7eb", fontSize: "12.5px", fontFamily: "var(--font-inter)", color: "#111827", background: "#fff", outline: "none", width: "100%", boxSizing: "border-box" as const }} />
               </div>
-              <div style={{ marginBottom: "16px" }}>
-                <label style={{ fontSize: "11.5px", fontWeight: 600, color: "rgba(255,255,255,0.6)", display: "block", marginBottom: "5px" }}>Property Description</label>
-                <textarea value={customBody} onChange={e => setCustomBody(e.target.value)} rows={6} style={{ padding: "8px 10px", borderRadius: "7px", border: "1px solid #374151", fontSize: "12.5px", fontFamily: "var(--font-inter)", color: "#fff", background: "#111827", outline: "none", width: "100%", boxSizing: "border-box" as const, resize: "vertical" }} />
+              <div style={{ marginBottom: "14px" }}>
+                <label style={{ fontSize: "11.5px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "5px" }}>Property Description</label>
+                <textarea value={customBody} onChange={e => setCustomBody(e.target.value)} rows={6} style={{ padding: "8px 10px", borderRadius: "7px", border: "1px solid #e5e7eb", fontSize: "12.5px", fontFamily: "var(--font-inter)", color: "#111827", background: "#fff", outline: "none", width: "100%", boxSizing: "border-box" as const, resize: "vertical" }} />
               </div>
-              <div style={{ marginBottom: "16px" }}>
-                <label style={{ fontSize: "11.5px", fontWeight: 600, color: "rgba(255,255,255,0.6)", display: "block", marginBottom: "5px" }}>Agent Name</label>
-                <input value={agentCallout} onChange={e => setAgentCallout(e.target.value)} style={{ padding: "8px 10px", borderRadius: "7px", border: "1px solid #374151", fontSize: "12.5px", fontFamily: "var(--font-inter)", color: "#fff", background: "#111827", outline: "none", width: "100%", boxSizing: "border-box" as const }} />
+              <div style={{ marginBottom: "14px" }}>
+                <label style={{ fontSize: "11.5px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "5px" }}>Agent Name</label>
+                <input value={agentCallout} onChange={e => setAgentCallout(e.target.value)} style={{ padding: "8px 10px", borderRadius: "7px", border: "1px solid #e5e7eb", fontSize: "12.5px", fontFamily: "var(--font-inter)", color: "#111827", background: "#fff", outline: "none", width: "100%", boxSizing: "border-box" as const }} />
               </div>
               <div style={{ marginBottom: "20px" }}>
-                <label style={{ fontSize: "11.5px", fontWeight: 600, color: "rgba(255,255,255,0.6)", display: "block", marginBottom: "5px" }}>Agent Phone</label>
-                <input value={agentPhone} onChange={e => setAgentPhone(e.target.value)} style={{ padding: "8px 10px", borderRadius: "7px", border: "1px solid #374151", fontSize: "12.5px", fontFamily: "var(--font-inter)", color: "#fff", background: "#111827", outline: "none", width: "100%", boxSizing: "border-box" as const }} />
+                <label style={{ fontSize: "11.5px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "5px" }}>Agent Phone</label>
+                <input value={agentPhone} onChange={e => setAgentPhone(e.target.value)} style={{ padding: "8px 10px", borderRadius: "7px", border: "1px solid #e5e7eb", fontSize: "12.5px", fontFamily: "var(--font-inter)", color: "#111827", background: "#fff", outline: "none", width: "100%", boxSizing: "border-box" as const }} />
               </div>
-              <div style={{ fontSize: "11px", fontWeight: 700, color: "rgba(255,255,255,0.3)", letterSpacing: "0.08em", textTransform: "uppercase" as const, marginBottom: "12px" }}>Show / Hide Sections</div>
+              <div style={{ fontSize: "11px", fontWeight: 700, color: "#9ca3af", letterSpacing: "0.08em", textTransform: "uppercase" as const, marginBottom: "12px" }}>Show / Hide Sections</div>
               {[
                 { label: "Price & Specs", value: showPrice, set: setShowPrice },
                 { label: "Property Bio",  value: showBio,   set: setShowBio },
                 { label: "OFI Times",     value: showOfi,   set: setShowOfi },
                 { label: "Agent Card",    value: showAgent, set: setShowAgent },
               ].map(({ label, value, set }) => (
-                <div key={label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid #374151" }}>
-                  <span style={{ fontSize: "12.5px", color: "rgba(255,255,255,0.6)" }}>{label}</span>
-                  <button onClick={() => set((v: boolean) => !v)} style={{ width: "36px", height: "20px", borderRadius: "10px", background: value ? "#3b82f6" : "#374151", border: "none", cursor: "pointer", position: "relative" as const, transition: "background 0.15s" }}>
+                <div key={label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid #f3f4f6" }}>
+                  <span style={{ fontSize: "12.5px", color: "#374151" }}>{label}</span>
+                  <button onClick={() => set((v: boolean) => !v)} style={{ width: "36px", height: "20px", borderRadius: "10px", background: value ? "#111827" : "#e5e7eb", border: "none", cursor: "pointer", position: "relative" as const, transition: "background 0.15s" }}>
                     <div style={{ position: "absolute" as const, top: "2px", left: value ? "18px" : "2px", width: "16px", height: "16px", borderRadius: "50%", background: "#fff", transition: "left 0.15s" }} />
                   </button>
                 </div>
               ))}
             </div>
-            <div style={{ flex: 1, overflow: "auto", padding: "32px", background: "#374151", display: "flex", justifyContent: "center" }}>
-              <div style={{ background: "#fff", borderRadius: "8px", overflow: "hidden", boxShadow: "0 8px 32px rgba(0,0,0,0.3)", width: "100%", maxWidth: "600px" }}>
-                <div style={{ background: "#f3f4f6", borderBottom: "1px solid #e5e7eb", padding: "10px 16px" }}>
+            <div style={{ flex: 1, overflow: "auto", padding: "32px", background: "#f3f4f6", display: "flex", justifyContent: "center" }}>
+              <div style={{ background: "#fff", borderRadius: "8px", overflow: "hidden", boxShadow: "0 2px 12px rgba(0,0,0,0.08)", width: "100%", maxWidth: "600px" }}>
+                <div style={{ background: "#f9fafb", borderBottom: "1px solid #e5e7eb", padding: "10px 16px" }}>
                   <div style={{ fontSize: "11px", color: "#6b7280", marginBottom: "3px" }}>From: <strong>REA Hub &lt;campaigns@reahub.com.au&gt;</strong></div>
                   <div style={{ fontSize: "11px", color: "#6b7280", marginBottom: "3px" }}>To: <strong>{recipientCount} recipients</strong></div>
                   <div style={{ fontSize: "11px", color: "#374151", fontWeight: 600 }}>Subject: {subject}</div>
@@ -8808,10 +8808,10 @@ function EmailCampaignBuilder({
         {step === "recipients" && (
           <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
             {/* Filter sidebar */}
-            <div style={{ width: "300px", flexShrink: 0, background: "#1f2937", borderRight: "1px solid #374151", overflowY: "auto", padding: "20px" }}>
-              <div style={{ fontSize: "11px", fontWeight: 700, color: "rgba(255,255,255,0.3)", letterSpacing: "0.08em", textTransform: "uppercase" as const, marginBottom: "16px" }}>Filter Recipients</div>
+            <div style={{ width: "280px", flexShrink: 0, background: "#fff", borderRight: "1px solid #e5e7eb", overflowY: "auto", padding: "20px" }}>
+              <div style={{ fontSize: "11px", fontWeight: 700, color: "#9ca3af", letterSpacing: "0.08em", textTransform: "uppercase" as const, marginBottom: "16px" }}>Filter Recipients</div>
               <div style={{ marginBottom: "20px" }}>
-                <label style={{ fontSize: "11.5px", fontWeight: 600, color: "rgba(255,255,255,0.6)", display: "block", marginBottom: "8px" }}>Preferred Suburbs</label>
+                <label style={{ fontSize: "11.5px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "8px" }}>Preferred Suburbs</label>
                 <div style={{ display: "flex", flexDirection: "column", gap: "4px", maxHeight: "160px", overflowY: "auto" }}>
                   {allSuburbs.map(sub => (
                     <label key={sub} style={{ display: "flex", alignItems: "center", gap: "7px", cursor: "pointer", padding: "4px 0" }}>
@@ -8825,72 +8825,72 @@ function EmailCampaignBuilder({
                         } else {
                           setFilterSuburbs(filterSuburbs.filter(s => s !== sub));
                         }
-                      }} style={{ accentColor: "#3b82f6" }} />
-                      <span style={{ fontSize: "12.5px", color: "rgba(255,255,255,0.7)" }}>{sub}</span>
+                      }} style={{ accentColor: "#111827" }} />
+                      <span style={{ fontSize: "12.5px", color: "#374151" }}>{sub}</span>
                     </label>
                   ))}
                 </div>
               </div>
               <div style={{ marginBottom: "20px" }}>
-                <label style={{ fontSize: "11.5px", fontWeight: 600, color: "rgba(255,255,255,0.6)", display: "block", marginBottom: "8px" }}>Bedrooms</label>
+                <label style={{ fontSize: "11.5px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "8px" }}>Bedrooms</label>
                 <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-                  <select value={filterBedsMin} onChange={e => setFilterBedsMin(Number(e.target.value))} style={{ flex: 1, padding: "6px 8px", borderRadius: "6px", border: "1px solid #374151", fontSize: "12px", background: "#111827", color: "#fff", outline: "none" }}>
+                  <select value={filterBedsMin} onChange={e => setFilterBedsMin(Number(e.target.value))} style={{ flex: 1, padding: "6px 8px", borderRadius: "6px", border: "1px solid #e5e7eb", fontSize: "12px", background: "#fff", color: "#374151", outline: "none" }}>
                     {[0,1,2,3,4,5,6].map(n => <option key={n} value={n}>{n === 0 ? "Any" : n + "+"}</option>)}
                   </select>
-                  <span style={{ color: "rgba(255,255,255,0.3)", fontSize: "12px" }}>to</span>
-                  <select value={filterBedsMax} onChange={e => setFilterBedsMax(Number(e.target.value))} style={{ flex: 1, padding: "6px 8px", borderRadius: "6px", border: "1px solid #374151", fontSize: "12px", background: "#111827", color: "#fff", outline: "none" }}>
+                  <span style={{ color: "#9ca3af", fontSize: "12px" }}>to</span>
+                  <select value={filterBedsMax} onChange={e => setFilterBedsMax(Number(e.target.value))} style={{ flex: 1, padding: "6px 8px", borderRadius: "6px", border: "1px solid #e5e7eb", fontSize: "12px", background: "#fff", color: "#374151", outline: "none" }}>
                     {[1,2,3,4,5,6,7,10].map(n => <option key={n} value={n}>{n === 10 ? "Any" : n}</option>)}
                   </select>
                 </div>
               </div>
               <div style={{ marginBottom: "20px" }}>
-                <label style={{ fontSize: "11.5px", fontWeight: 600, color: "rgba(255,255,255,0.6)", display: "block", marginBottom: "8px" }}>Budget Range</label>
+                <label style={{ fontSize: "11.5px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "8px" }}>Budget Range</label>
                 <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-                  <select value={filterBudgetMin} onChange={e => setFilterBudgetMin(Number(e.target.value))} style={{ flex: 1, padding: "6px 8px", borderRadius: "6px", border: "1px solid #374151", fontSize: "12px", background: "#111827", color: "#fff", outline: "none" }}>
+                  <select value={filterBudgetMin} onChange={e => setFilterBudgetMin(Number(e.target.value))} style={{ flex: 1, padding: "6px 8px", borderRadius: "6px", border: "1px solid #e5e7eb", fontSize: "12px", background: "#fff", color: "#374151", outline: "none" }}>
                     {([[0,"Any"],[500000,"$500K"],[750000,"$750K"],[1000000,"$1M"],[1250000,"$1.25M"],[1500000,"$1.5M"],[2000000,"$2M"]] as [number,string][]).map(([v,l]) => <option key={v} value={v}>{l}</option>)}
                   </select>
-                  <span style={{ color: "rgba(255,255,255,0.3)", fontSize: "12px" }}>–</span>
-                  <select value={filterBudgetMax} onChange={e => setFilterBudgetMax(Number(e.target.value))} style={{ flex: 1, padding: "6px 8px", borderRadius: "6px", border: "1px solid #374151", fontSize: "12px", background: "#111827", color: "#fff", outline: "none" }}>
+                  <span style={{ color: "#9ca3af", fontSize: "12px" }}>–</span>
+                  <select value={filterBudgetMax} onChange={e => setFilterBudgetMax(Number(e.target.value))} style={{ flex: 1, padding: "6px 8px", borderRadius: "6px", border: "1px solid #e5e7eb", fontSize: "12px", background: "#fff", color: "#374151", outline: "none" }}>
                     {([[99999999,"Any"],[750000,"$750K"],[1000000,"$1M"],[1250000,"$1.25M"],[1500000,"$1.5M"],[2000000,"$2M"],[3000000,"$3M"]] as [number,string][]).map(([v,l]) => <option key={v} value={v}>{l}</option>)}
                   </select>
                 </div>
               </div>
               <div style={{ marginBottom: "20px" }}>
-                <label style={{ fontSize: "11.5px", fontWeight: 600, color: "rgba(255,255,255,0.6)", display: "block", marginBottom: "8px" }}>Contact Source</label>
+                <label style={{ fontSize: "11.5px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "8px" }}>Contact Source</label>
                 {(["ofi","enquiry","database","referral"] as const).map((val) => {
                   const lab = val === "ofi" ? "OFI Registrant" : val === "enquiry" ? "Online Enquiry" : val === "database" ? "Database" : "Referral";
                   return (
                     <label key={val} style={{ display: "flex", alignItems: "center", gap: "7px", cursor: "pointer", padding: "4px 0" }}>
-                      <input type="checkbox" checked={filterSources.includes(val)} onChange={e => setFilterSources(prev => e.target.checked ? [...prev, val] : prev.filter(s => s !== val))} style={{ accentColor: "#3b82f6" }} />
-                      <span style={{ fontSize: "12.5px", color: "rgba(255,255,255,0.7)" }}>{lab}</span>
+                      <input type="checkbox" checked={filterSources.includes(val)} onChange={e => setFilterSources(prev => e.target.checked ? [...prev, val] : prev.filter(s => s !== val))} style={{ accentColor: "#111827" }} />
+                      <span style={{ fontSize: "12.5px", color: "#374151" }}>{lab}</span>
                     </label>
                   );
                 })}
               </div>
               <div style={{ marginBottom: "20px" }}>
-                <label style={{ fontSize: "11.5px", fontWeight: 600, color: "rgba(255,255,255,0.6)", display: "block", marginBottom: "8px" }}>Buyer Type</label>
+                <label style={{ fontSize: "11.5px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "8px" }}>Buyer Type</label>
                 {(["owner-occupier","investor","first-home","upsizer","downsizer"] as const).map((val) => {
                   const lab = val === "owner-occupier" ? "Owner Occupier" : val === "investor" ? "Investor" : val === "first-home" ? "First Home Buyer" : val === "upsizer" ? "Upsizer" : "Downsizer";
                   return (
                     <label key={val} style={{ display: "flex", alignItems: "center", gap: "7px", cursor: "pointer", padding: "4px 0" }}>
-                      <input type="checkbox" checked={filterBuyerTypes.includes(val)} onChange={e => setFilterBuyerTypes(prev => e.target.checked ? [...prev, val] : prev.filter(t => t !== val))} style={{ accentColor: "#3b82f6" }} />
-                      <span style={{ fontSize: "12.5px", color: "rgba(255,255,255,0.7)" }}>{lab}</span>
+                      <input type="checkbox" checked={filterBuyerTypes.includes(val)} onChange={e => setFilterBuyerTypes(prev => e.target.checked ? [...prev, val] : prev.filter(t => t !== val))} style={{ accentColor: "#111827" }} />
+                      <span style={{ fontSize: "12.5px", color: "#374151" }}>{lab}</span>
                     </label>
                   );
                 })}
               </div>
             </div>
             {/* Contact list */}
-            <div style={{ flex: 1, overflowY: "auto", padding: "24px" }}>
+            <div style={{ flex: 1, overflowY: "auto", padding: "24px", background: "#f9fafb" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
                 <div>
-                  <span style={{ fontSize: "15px", fontWeight: 600, color: "#fff" }}>{filteredContacts.length} contacts match filters</span>
-                  <span style={{ fontSize: "12px", color: "rgba(255,255,255,0.4)", marginLeft: "10px" }}>{selectedContactIds.size} selected</span>
+                  <span style={{ fontSize: "15px", fontWeight: 600, color: "#111827" }}>{filteredContacts.length} contacts match filters</span>
+                  <span style={{ fontSize: "12px", color: "#6b7280", marginLeft: "10px" }}>{selectedContactIds.size} selected</span>
                 </div>
                 <button onClick={() => {
                   if (selectedContactIds.size === filteredContacts.length) { setSelectedContactIds(new Set()); setSelectAllFiltered(false); }
                   else { setSelectedContactIds(new Set(filteredContacts.map(c => c.id))); setSelectAllFiltered(true); }
-                }} style={{ background: "rgba(255,255,255,0.08)", border: "none", borderRadius: "6px", padding: "6px 14px", cursor: "pointer", color: "rgba(255,255,255,0.7)", fontSize: "12.5px", fontWeight: 600, fontFamily: "var(--font-inter)" }}>
+                }} style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: "6px", padding: "6px 14px", cursor: "pointer", color: "#374151", fontSize: "12.5px", fontWeight: 600, fontFamily: "var(--font-inter)" }}>
                   {selectedContactIds.size === filteredContacts.length ? "Deselect All" : "Select All"}
                 </button>
               </div>
@@ -8900,26 +8900,26 @@ function EmailCampaignBuilder({
                   const srcColor: Record<string, string> = { ofi: "#3b82f6", enquiry: "#8b5cf6", database: "#6b7280", referral: "#16a34a" };
                   const btColor: Record<string, string> = { investor: "#f59e0b", "first-home": "#10b981", upsizer: "#3b82f6", downsizer: "#8b5cf6", "owner-occupier": "#374151", unknown: "#9ca3af" };
                   return (
-                    <div key={c.id} onClick={() => setSelectedContactIds(prev => { const n = new Set(prev); selected ? n.delete(c.id) : n.add(c.id); setSelectAllFiltered(false); return n; })} style={{ background: selected ? "rgba(59,130,246,0.15)" : "#1f2937", border: selected ? "1px solid rgba(59,130,246,0.4)" : "1px solid #374151", borderRadius: "10px", padding: "12px 16px", cursor: "pointer", display: "flex", alignItems: "center", gap: "12px" }}>
-                      <input type="checkbox" checked={selected} readOnly style={{ accentColor: "#3b82f6", flexShrink: 0 }} />
-                      <div style={{ width: "36px", height: "36px", borderRadius: "50%", background: "#374151", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                        <span style={{ fontSize: "13px", fontWeight: 700, color: "#fff" }}>{c.name.charAt(0)}</span>
+                    <div key={c.id} onClick={() => setSelectedContactIds(prev => { const n = new Set(prev); selected ? n.delete(c.id) : n.add(c.id); setSelectAllFiltered(false); return n; })} style={{ background: selected ? "#eff6ff" : "#fff", border: selected ? "1px solid #bfdbfe" : "1px solid #e5e7eb", borderRadius: "10px", padding: "12px 16px", cursor: "pointer", display: "flex", alignItems: "center", gap: "12px" }}>
+                      <input type="checkbox" checked={selected} readOnly style={{ accentColor: "#111827", flexShrink: 0 }} />
+                      <div style={{ width: "36px", height: "36px", borderRadius: "50%", background: "#e5e7eb", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                        <span style={{ fontSize: "13px", fontWeight: 700, color: "#374151" }}>{c.name.charAt(0)}</span>
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: "13px", fontWeight: 600, color: "#fff", marginBottom: "2px" }}>{c.name}</div>
-                        <div style={{ fontSize: "11.5px", color: "rgba(255,255,255,0.4)" }}>{c.email} · {c.phone}</div>
+                        <div style={{ fontSize: "13px", fontWeight: 600, color: "#111827", marginBottom: "2px" }}>{c.name}</div>
+                        <div style={{ fontSize: "11.5px", color: "#6b7280" }}>{c.email} · {c.phone}</div>
                         <div style={{ display: "flex", gap: "5px", marginTop: "4px", flexWrap: "wrap" as const }}>
-                          <span style={{ fontSize: "10px", fontWeight: 600, background: "rgba(255,255,255,0.06)", color: srcColor[c.source] || "#9ca3af", padding: "1px 6px", borderRadius: "4px" }}>{c.source.toUpperCase()}</span>
-                          <span style={{ fontSize: "10px", fontWeight: 600, background: "rgba(255,255,255,0.06)", color: btColor[c.buyerType] || "#9ca3af", padding: "1px 6px", borderRadius: "4px" }}>{c.buyerType}</span>
-                          {c.suburbs.slice(0,2).map(s => <span key={s} style={{ fontSize: "10px", color: "rgba(255,255,255,0.35)", background: "rgba(255,255,255,0.05)", padding: "1px 6px", borderRadius: "4px" }}>{s}</span>)}
-                          <span style={{ fontSize: "10px", color: "rgba(255,255,255,0.35)" }}>${Math.round(c.budgetMin/1000)}K–{c.budgetMax >= 99999999 ? "Any" : Math.round(c.budgetMax/1000)+"K"} · {c.bedroomsMin}–{c.bedroomsMax} bed</span>
+                          <span style={{ fontSize: "10px", fontWeight: 600, background: "#eff6ff", color: srcColor[c.source] || "#9ca3af", padding: "1px 6px", borderRadius: "4px" }}>{c.source.toUpperCase()}</span>
+                          <span style={{ fontSize: "10px", fontWeight: 600, background: "#f3f4f6", color: btColor[c.buyerType] || "#9ca3af", padding: "1px 6px", borderRadius: "4px" }}>{c.buyerType}</span>
+                          {c.suburbs.slice(0,2).map(s => <span key={s} style={{ fontSize: "10px", color: "#9ca3af", background: "#f3f4f6", padding: "1px 6px", borderRadius: "4px" }}>{s}</span>)}
+                          <span style={{ fontSize: "10px", color: "#9ca3af" }}>${Math.round(c.budgetMin/1000)}K–{c.budgetMax >= 99999999 ? "Any" : Math.round(c.budgetMax/1000)+"K"} · {c.bedroomsMin}–{c.bedroomsMax} bed</span>
                         </div>
                       </div>
                     </div>
                   );
                 })}
                 {filteredContacts.length === 0 && (
-                  <div style={{ textAlign: "center", padding: "60px", color: "rgba(255,255,255,0.3)", fontSize: "13px" }}>No contacts match these filters</div>
+                  <div style={{ textAlign: "center", padding: "60px", color: "#9ca3af", fontSize: "13px" }}>No contacts match these filters</div>
                 )}
               </div>
             </div>
