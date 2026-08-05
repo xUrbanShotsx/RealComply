@@ -37,8 +37,11 @@ export default function Nav() {
         }}
       >
         {/* Logo */}
-        <a href="/" style={{ display: "flex", alignItems: "center" }}>
-          <img src="/RealComply (2000 x 1000 px).png" alt="RealComply" style={{ height: "52px", width: "auto", objectFit: "contain", mixBlendMode: "multiply" }} />
+        <a href="/" style={{ display: "flex", alignItems: "center", gap: "8px", textDecoration: "none" }}>
+          <div style={{ width: "28px", height: "28px", background: "var(--s-primary)", borderRadius: "7px", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 12V5l6-3 6 3v7l-6 3-6-3z" stroke="white" strokeWidth="1.3" strokeLinejoin="round"/><path d="M8 2v13M2 5l6 3 6-3" stroke="white" strokeWidth="1.3" strokeLinejoin="round"/></svg>
+          </div>
+          <span style={{ fontSize: "16px", fontWeight: 700, color: "var(--s-ink)", letterSpacing: "-0.02em", fontFamily: "var(--font-inter), system-ui, sans-serif" }}>REA Hub</span>
         </a>
 
         {/* Desktop links */}
@@ -47,8 +50,8 @@ export default function Nav() {
           className="nav-links"
         >
           {[
-            { label: "Product", href: "#product" },
-            { label: "Features", href: "#features" },
+            { label: "Compliance", href: "#features" },
+            { label: "CRM", href: "#crm" },
             { label: "Pricing", href: "#pricing" },
           ].map(({ label, href }) => (
             <a
@@ -138,8 +141,8 @@ export default function Nav() {
         >
           <div style={{ padding: "16px 24px 24px", display: "flex", flexDirection: "column", gap: "16px" }}>
             {[
-              { label: "Product", href: "#product" },
-              { label: "Features", href: "#features" },
+              { label: "Compliance", href: "#features" },
+              { label: "CRM", href: "#crm" },
               { label: "Pricing", href: "#pricing" },
             ].map(({ label, href }) => (
               <a

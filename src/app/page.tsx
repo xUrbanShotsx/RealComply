@@ -13,11 +13,11 @@ export default function Home() {
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
-    name: "RealComply",
+    name: "REA Hub",
     applicationCategory: "BusinessApplication",
     operatingSystem: "Web",
     description:
-      "Compliance platform for Australian real estate agencies. CPD tracking, trust accounting, AML due diligence, audit readiness, and policy management.",
+      "CRM and compliance platform for Australian real estate agencies. Listings, pipeline, prospecting, CPD tracking, trust accounting, AML, and audit readiness.",
     url: "https://realcomply.com.au",
     offers: [
       { "@type": "Offer", price: "129", priceCurrency: "AUD", name: "Essentials" },
@@ -26,7 +26,7 @@ export default function Home() {
     ],
     publisher: {
       "@type": "Organization",
-      name: "RealComply Pty Ltd",
+      name: "REA Hub Pty Ltd",
       url: "https://realcomply.com.au",
       areaServed: "AU",
     },

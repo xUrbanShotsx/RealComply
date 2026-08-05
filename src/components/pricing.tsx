@@ -3,14 +3,16 @@
 import { useReveal } from "@/hooks/use-reveal";
 
 const sharedFeatures = [
+  "Active listings & pipeline CRM",
+  "Prospecting & lead management",
+  "Vendor hub & reporting",
+  "Open home scheduling & attendees",
+  "Offers & contract management",
   "CPD & licence tracking",
   "Trust account checklists",
   "Policies & procedures library",
   "Marketing tracking per listing",
-  "Complaints & incident registers",
-  "Full audit readiness suite",
-  "Legislative update alerts",
-  "Priority support",
+  "Audit readiness & compliance score",
 ];
 
 const plans = [
@@ -75,7 +77,7 @@ export default function Pricing() {
             Straightforward pricing
           </h2>
           <p style={{ fontSize: "17px", color: "var(--s-ink-mute)", lineHeight: 1.7, margin: "0 auto 32px" }}>
-            No per-user fees. No per-property charges. One flat rate per office, per month.
+            CRM + compliance, bundled. No per-user fees. No per-property charges. One flat rate per office, per month.
           </p>
         </div>
 

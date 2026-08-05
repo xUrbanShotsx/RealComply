@@ -40,11 +40,14 @@ export default function Footer() {
 
           {/* Brand */}
           <div>
-            <div style={{ marginBottom: "20px" }}>
-              <img src="/RealComply (2000 x 1000 px).png" alt="RealComply" style={{ height: "52px", width: "auto", objectFit: "contain", mixBlendMode: "multiply" }} />
+            <div style={{ marginBottom: "20px", display: "flex", alignItems: "center", gap: "8px" }}>
+              <div style={{ width: "28px", height: "28px", background: "var(--s-primary)", borderRadius: "7px", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 12V5l6-3 6 3v7l-6 3-6-3z" stroke="white" strokeWidth="1.3" strokeLinejoin="round"/><path d="M8 2v13M2 5l6 3 6-3" stroke="white" strokeWidth="1.3" strokeLinejoin="round"/></svg>
+              </div>
+              <span style={{ fontSize: "17px", fontWeight: 700, color: "var(--rc-ink)", letterSpacing: "-0.02em", fontFamily: "var(--font-inter), system-ui, sans-serif" }}>REA Hub</span>
             </div>
             <p style={{ fontSize: "14px", color: "var(--rc-muted)", lineHeight: 1.75, maxWidth: "280px" }}>
-              The compliance platform built for Australian real estate businesses. CPD, trust accounting, AML, audit readiness — one place.
+              CRM and compliance for Australian real estate agencies. Listings, pipeline, prospecting, CPD, trust accounting, and audit readiness — one platform.
             </p>
             <p style={{ fontSize: "12px", color: "var(--rc-faint)", marginTop: "20px" }}>
               ABN 42 640 098 221 · Sydney, NSW
@@ -77,7 +80,7 @@ export default function Footer() {
 
         <div style={{ borderTop: "1px solid var(--rc-border)", paddingTop: "28px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px" }}>
           <p style={{ fontSize: "13px", color: "var(--rc-faint)", maxWidth: "none" }}>
-            © {year} RealComply Pty Ltd. All rights reserved.
+            © {year} REA Hub Pty Ltd. All rights reserved.
           </p>
           <p style={{ fontSize: "13px", color: "var(--rc-faint)", maxWidth: "none" }}>
             Built for Australian real estate · Not legal advice

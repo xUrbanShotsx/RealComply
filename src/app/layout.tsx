@@ -24,18 +24,18 @@ const barlow = Barlow({
 });
 
 export const metadata: Metadata = {
-  title: "RealComply — Compliance Software for Australian Real Estate Agencies",
+  title: "REA Hub — CRM & Compliance for Australian Real Estate",
   description:
-    "The compliance platform purpose-built for Australian real estate. CPD tracking, trust accounting compliance, AML due diligence, audit readiness, and policy management — one platform, zero surprises at audit.",
+    "The CRM and compliance platform purpose-built for Australian real estate. Listings, pipeline, prospecting, CPD tracking, trust accounting, AML, and audit readiness — one platform.",
   keywords:
     "real estate compliance software australia, CPD tracking NSW, trust accounting compliance software, AUSTRAC AML real estate, NSW Fair Trading compliance, real estate audit software australia, property stock agents act compliance",
-  authors: [{ name: "RealComply" }],
+  authors: [{ name: "REA Hub" }],
   openGraph: {
-    title: "RealComply — Compliance Software for Australian Real Estate",
+    title: "REA Hub — Compliance Software for Australian Real Estate",
     description:
       "CPD tracking, trust accounting, AML compliance, audit readiness — built for Australian real estate offices.",
     url: "https://realcomply.com.au",
-    siteName: "RealComply",
+    siteName: "REA Hub",
     type: "website",
     locale: "en_AU",
     images: [
@@ -43,13 +43,13 @@ export const metadata: Metadata = {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "RealComply — Australian Real Estate Compliance Platform",
+        alt: "REA Hub — Australian Real Estate Compliance Platform",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "RealComply — Compliance Software for Australian Real Estate",
+    title: "REA Hub — Compliance Software for Australian Real Estate",
     description:
       "CPD tracking, trust accounting, AML, audit readiness — built for Australian real estate offices.",
     images: ["/og-image.png"],

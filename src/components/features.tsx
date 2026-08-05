@@ -524,8 +524,141 @@ function ShowcaseSection({
   );
 }
 
+/* ─── CRM Listings mockup ─── */
+function CrmListingsMockup() {
+  const listings = [
+    { address: "22 Surf Parade", suburb: "Thirroul", price: "Offers Over $1,550,000", dom: "22d", status: "Active", rea: true, domain: true },
+    { address: "14 Wentworth Ave", suburb: "Wollongong", price: "Guide $1,200,000–$1,280,000", dom: "18d", status: "Active", rea: true, domain: false },
+    { address: "7 Blue Haven Cres", suburb: "Keiraville", price: "$960,000–$1,010,000", dom: "14d", status: "Under Offer", rea: true, domain: true },
+  ];
+  return (
+    <MockupFrame title="CRM — Active Listings">
+      <div style={{ marginBottom: "12px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <span style={{ fontSize: "13px", fontWeight: 600, color: "#0d253d" }}>Active Listings</span>
+        <span style={{ fontSize: "11px", background: "rgba(34,197,94,0.10)", color: "#16a34a", padding: "2px 10px", borderRadius: "9999px", fontWeight: 600 }}>3 live</span>
+      </div>
+      {listings.map(({ address, suburb, price, dom, status, rea, domain }) => (
+        <div key={address} style={{ padding: "10px 12px", background: "#ffffff", borderRadius: "8px", border: "1px solid #e3e8ee", marginBottom: "8px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "4px" }}>
+            <div>
+              <div style={{ fontSize: "12.5px", fontWeight: 600, color: "#0d253d" }}>{address}</div>
+              <div style={{ fontSize: "11px", color: "#8898aa" }}>{suburb}</div>
+            </div>
+            <span style={{ fontSize: "10px", padding: "2px 8px", borderRadius: "9999px", background: status === "Under Offer" ? "rgba(245,158,11,0.10)" : "rgba(34,197,94,0.10)", color: status === "Under Offer" ? "#b45309" : "#16a34a", fontWeight: 600, whiteSpace: "nowrap" }}>{status}</span>
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <span style={{ fontSize: "11px", color: "#273951", fontWeight: 500 }}>{price}</span>
+            <div style={{ display: "flex", gap: "4px", alignItems: "center" }}>
+              <span style={{ fontSize: "10px", color: "#8898aa" }}>{dom}</span>
+              <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: rea ? "#22c55e" : "#e3e8ee", display: "inline-block" }} title="REA" />
+              <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: domain ? "#22c55e" : "#e3e8ee", display: "inline-block" }} title="Domain" />
+            </div>
+          </div>
+        </div>
+      ))}
+    </MockupFrame>
+  );
+}
+
+/* ─── CRM Pipeline mockup ─── */
+function CrmPipelineMockup() {
+  const stages = [
+    { label: "Prospecting", count: 14, gci: "$0", pct: 25 },
+    { label: "Appraisals", count: 8, gci: "$96K", pct: 42 },
+    { label: "Listing Presentations", count: 5, gci: "$180K", pct: 60 },
+    { label: "Listed", count: 12, gci: "$348K", pct: 85 },
+    { label: "Under Offer", count: 3, gci: "$126K", pct: 95 },
+    { label: "Settled", count: 7, gci: "$292K", pct: 100 },
+  ];
+  return (
+    <MockupFrame title="Pipeline Forecast — FY 2026">
+      <div style={{ marginBottom: "12px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <span style={{ fontSize: "13px", fontWeight: 600, color: "#0d253d" }}>Pipeline Forecast</span>
+        <span style={{ fontSize: "11px", color: "#8898aa" }}>GCI Target: $480K</span>
+      </div>
+      {stages.map(({ label, count, gci, pct }) => (
+        <div key={label} style={{ marginBottom: "8px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "3px" }}>
+            <span style={{ fontSize: "11.5px", color: "#273951" }}>{label} <span style={{ color: "#8898aa" }}>({count})</span></span>
+            <span style={{ fontSize: "11.5px", fontWeight: 600, color: "#0d253d", fontVariantNumeric: "tabular-nums" }}>{gci}</span>
+          </div>
+          <div style={{ height: "4px", background: "#eef1f5", borderRadius: "9999px", overflow: "hidden" }}>
+            <div style={{ height: "100%", width: `${pct}%`, background: pct >= 80 ? "#533afd" : pct >= 50 ? "#3b82f6" : "#94a3b8", borderRadius: "9999px" }} />
+          </div>
+        </div>
+      ))}
+    </MockupFrame>
+  );
+}
+
+/* ─── CRM Prospecting mockup ─── */
+function CrmProspectingMockup() {
+  const leads = [
+    { name: "J. Patterson", type: "Withdrawn listing", days: "3d ago", temp: "Hot", color: "#dc2626", bg: "rgba(220,38,38,0.08)" },
+    { name: "M. & S. Tran", type: "Expired listing", days: "5d ago", temp: "Hot", color: "#dc2626", bg: "rgba(220,38,38,0.08)" },
+    { name: "R. Deluca", type: "Market appraisal", days: "8d ago", temp: "Warm", color: "#b45309", bg: "rgba(245,158,11,0.08)" },
+    { name: "Nguyen Family", type: "Database — owner", days: "12d ago", temp: "Warm", color: "#b45309", bg: "rgba(245,158,11,0.08)" },
+    { name: "A. Fitzgerald", type: "OFI attendee", days: "14d ago", temp: "Cold", color: "#6b7280", bg: "#f3f4f6" },
+  ];
+  return (
+    <MockupFrame title="Prospecting — Active Leads">
+      <div style={{ marginBottom: "12px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <span style={{ fontSize: "13px", fontWeight: 600, color: "#0d253d" }}>Active Leads</span>
+        <span style={{ fontSize: "11px", background: "rgba(220,38,38,0.08)", color: "#dc2626", padding: "2px 10px", borderRadius: "9999px", fontWeight: 600 }}>2 Hot</span>
+      </div>
+      {leads.map(({ name, type, days, temp, color, bg }) => (
+        <div key={name} style={{ display: "flex", alignItems: "center", padding: "8px 10px", borderRadius: "8px", background: "#ffffff", border: "1px solid #e3e8ee", marginBottom: "6px", gap: "10px" }}>
+          <div style={{ width: "28px", height: "28px", borderRadius: "50%", background: bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <span style={{ fontSize: "10px", fontWeight: 700, color }}>{temp[0]}</span>
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: "12px", fontWeight: 600, color: "#0d253d" }}>{name}</div>
+            <div style={{ fontSize: "10.5px", color: "#8898aa" }}>{type} · {days}</div>
+          </div>
+          <span style={{ fontSize: "10px", padding: "2px 8px", borderRadius: "9999px", background: bg, color, fontWeight: 600 }}>{temp}</span>
+        </div>
+      ))}
+    </MockupFrame>
+  );
+}
+
+/* ─── CRM feature data ─── */
+const crmShowcases = [
+  {
+    id: "listings",
+    badge: "Active Listings",
+    heading: "Every listing, managed in one place.",
+    body: "Add listings with full property details, marketing copy, OFI schedules, vendor contacts, and portal sync status. View offers, contracts, and commission in a structured 9-tab property record — modelled on what agents actually need.",
+    legislation: "Listings sync compliance records automatically. Agency agreements, vendor authority, and marketing obligations tracked per property.",
+    flip: false,
+    Mockup: CrmListingsMockup,
+    bg: "#ffffff",
+  },
+  {
+    id: "prospecting",
+    badge: "Prospecting",
+    heading: "Never lose track of a lead.",
+    body: "Track every prospect — withdrawn listings, expired properties, OFI attendees, database owners — with hot/warm/cold temperature scoring. Automated follow-up queues and AI-assisted outreach keep you front of mind before the listing goes to anyone else.",
+    legislation: "Integrated with REA Hub compliance: prospecting records tie back to your agency's client contact obligations under the Property and Stock Agents Act.",
+    flip: true,
+    Mockup: CrmProspectingMockup,
+    bg: "#f6f9fc",
+  },
+  {
+    id: "pipeline",
+    badge: "Pipeline & Commission",
+    heading: "See your GCI before it lands.",
+    body: "A live pipeline from prospecting through to settlement. Track estimated GCI at each stage, commission splits, settlement dates, and YTD performance — so your principal always knows where the office stands.",
+    legislation: "Commission and management rate records feed directly into your trust accounting compliance obligations.",
+    flip: false,
+    Mockup: CrmPipelineMockup,
+    bg: "#ffffff",
+  },
+];
+
 export default function Features() {
   const headerRef = useReveal(0.1);
+  const crmHeaderRef = useReveal(0.1);
 
   return (
     <div id="features">
@@ -547,7 +680,7 @@ export default function Features() {
               marginBottom: "20px",
             }}
           >
-            Every obligation.
+            Every compliance obligation.
             <br />
             One platform.
           </h2>
@@ -559,16 +692,51 @@ export default function Features() {
               maxWidth: "520px",
             }}
           >
-            Australian real estate compliance is multi-layered and state-specific. RealComply was
+            Australian real estate compliance is multi-layered and state-specific. REA Hub was
             built around it — not adapted from a generic tool.
           </p>
         </div>
       </section>
 
-      {/* Alternating showcases */}
+      {/* Alternating compliance showcases */}
       {showcases.map((s) => (
         <ShowcaseSection key={s.id} {...s} />
       ))}
+
+      {/* ── CRM section ── */}
+      <div id="crm">
+        <section style={{ background: "#1c1e54", padding: "100px 24px 60px" }}>
+          <div
+            ref={crmHeaderRef as React.RefObject<HTMLDivElement>}
+            className="reveal"
+            style={{ maxWidth: "1200px", margin: "0 auto" }}
+          >
+            <span style={{ display: "inline-block", fontSize: "12px", fontWeight: 500, color: "rgba(185,185,249,0.9)", marginBottom: "20px", background: "rgba(83,58,253,0.30)", padding: "4px 12px", borderRadius: "9999px" }}>CRM</span>
+            <h2
+              style={{
+                fontFamily: "var(--font-inter), system-ui, sans-serif",
+                fontSize: "clamp(2rem, 4vw, 3.2rem)",
+                fontWeight: 300,
+                color: "white",
+                letterSpacing: "-0.04em",
+                lineHeight: 1.05,
+                marginBottom: "20px",
+              }}
+            >
+              The CRM built for
+              <br />
+              <span style={{ color: "#b9b9f9" }}>real estate principals.</span>
+            </h2>
+            <p style={{ fontSize: "17px", color: "rgba(255,255,255,0.50)", lineHeight: 1.7, maxWidth: "520px" }}>
+              Listings, prospecting, pipeline, vendor reporting, and open home management — all in one place. No spreadsheets. No context-switching.
+            </p>
+          </div>
+        </section>
+
+        {crmShowcases.map((s) => (
+          <ShowcaseSection key={s.id} {...s} />
+        ))}
+      </div>
 
       <style>{`
         @media (max-width: 900px) {

@@ -41,9 +41,9 @@ export default function CtaSection() {
             marginBottom: "24px",
           }}
         >
-          Stop worrying about compliance.
+          Your CRM. Your compliance.
           <br />
-          <span style={{ color: "#b9b9f9" }}>Start running your business.</span>
+          <span style={{ color: "#b9b9f9" }}>One platform.</span>
         </h2>
         <p
           style={{
@@ -55,8 +55,7 @@ export default function CtaSection() {
             fontWeight: 300,
           }}
         >
-          Join 200+ Australian real estate offices that have made compliance a solved problem.
-          Audit-ready from day one.
+          Join Australian real estate offices that run their listings, pipeline, and compliance from a single place. Audit-ready from day one.
         </p>
 
         <div

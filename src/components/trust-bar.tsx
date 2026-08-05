@@ -1,18 +1,21 @@
 "use client";
 
 const pillars = [
-  "Property & Stock Agents Act 2002",
+  "Active Listings & Pipeline",
   "CPD & Licence Tracking",
-  "Listing Marketing Compliance",
+  "Prospecting & Lead Management",
   "Trust Accounting Legislation",
-  "NSW Fair Trading Standards",
+  "Vendor Hub & Reporting",
   "PSBA Audit Framework",
-  "Property Prospecting Records",
+  "Open Home Management",
   "Policies & Procedures",
-  "Audit Readiness",
-  "Certificate of Registration",
-  "Buyers Agency Compliance",
-  "Strata Management Obligations",
+  "Commission & GCI Tracking",
+  "Property & Stock Agents Act 2002",
+  "Compliance Score & Audit Pack",
+  "NSW Fair Trading Standards",
+  "Offers & Contract Management",
+  "AML Due Diligence",
+  "CRM Dashboard & Pipeline",
 ];
 
 export default function TrustBar() {
