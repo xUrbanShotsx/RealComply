@@ -8510,6 +8510,11 @@ function AiAutomationPanel({ automations, insight }: { automations: AiAutomation
 
 // ─── Listing Detail View ──────────────────────────────────────────────────────
 
+function Toast({ msg, onDone }: { msg: string; onDone: () => void }) {
+  useEffect(() => { const t = setTimeout(onDone, 2800); return () => clearTimeout(t); }, [onDone]);
+  return <div style={{ position: "fixed" as const, bottom: "24px", right: "24px", background: "#111827", color: "#fff", padding: "12px 18px", borderRadius: "10px", fontSize: "13px", fontWeight: 500, zIndex: 9999, boxShadow: "0 4px 16px rgba(0,0,0,0.18)", display: "flex", alignItems: "center", gap: "8px" }}><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 8l3.5 3.5L13 4" stroke="#4ade80" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>{msg}</div>;
+}
+
 function CrmListingDetailView({ listing, staffRows, onBack }: {
   listing: CrmListing;
   staffRows: StaffRow[];
@@ -8522,6 +8527,41 @@ function CrmListingDetailView({ listing, staffRows, onBack }: {
   );
   const [editMode, setEditMode] = useState(false);
   const [editForm, setEditForm] = useState<CrmListing>({ ...listing });
+
+  // ── NEW STATES ────────────────────────────────────────────────────────────
+  const [toast, setToast] = useState<string | null>(null);
+  const showToast = (msg: string) => { setToast(msg); };
+
+  const [localOfis, setLocalOfis] = useState(listing.ofis || []);
+  const [localOffers, setLocalOffers] = useState(listing.offers || []);
+
+  const [ofiForm, setOfiForm] = useState({ type: "Public Open", date: "", from: "10:30", duration: "30 min" });
+
+  const [showOfferModal, setShowOfferModal] = useState(false);
+  const [offerForm, setOfferForm] = useState({ buyer: "", amount: "", offerDate: new Date().toISOString().slice(0, 10), status: "Offer Submitted" });
+
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [emailForm, setEmailForm] = useState({ template: "New Listing Alert", subject: `New Listing: ${listing.address}, ${listing.suburb}`, recipients: "Buyer Database", body: listing.headline || "" });
+
+  const [showSmsModal, setShowSmsModal] = useState(false);
+  const [smsBody, setSmsBody] = useState(`New listing at ${listing.address}, ${listing.suburb}. ${listing.displayPrice || listing.price}. Contact us to arrange a viewing.`);
+
+  const [showPortalPreview, setShowPortalPreview] = useState(false);
+
+  const [agentInput, setAgentInput] = useState("");
+  const [contactInput, setContactInput] = useState("");
+  const [contactRole, setContactRole] = useState("Vendor");
+  const [localAgents, setLocalAgents] = useState<{ name: string; role: string }[]>(listing.agent ? [{ name: listing.agent, role: "Listing Agent" }] : []);
+  const [localContacts, setLocalContacts] = useState<{ name: string; role: string; phone?: string }[]>(listing.owner ? [{ name: listing.owner, role: "Vendor", phone: listing.vendorPhone }] : []);
+
+  const photoRef = useRef<HTMLInputElement>(null);
+  const floorplanRef = useRef<HTMLInputElement>(null);
+  const videoRef = useRef<HTMLInputElement>(null);
+  const docRefs = useRef<Record<string, HTMLInputElement | null>>({});
+  const [uploadedPhotos, setUploadedPhotos] = useState<string[]>([]);
+  const [uploadedFloorplans, setUploadedFloorplans] = useState<string[]>([]);
+  const [videoLink, setVideoLink] = useState("");
+  const [uploadedDocs, setUploadedDocs] = useState<Record<string, string>>({});
 
   const inpStyle: React.CSSProperties = { padding: "6px 8px", borderRadius: "6px", border: "1px solid #d1d5db", fontSize: "13px", fontFamily: "var(--font-inter)", color: "#111827", background: "#fff", outline: "none", width: "100%", boxSizing: "border-box" };
   const eInp = (field: keyof CrmListing, type: "text" | "date" = "text", placeholder = "") => {
@@ -8810,40 +8850,44 @@ function CrmListingDetailView({ listing, staffRows, onBack }: {
 
   // ── OFI TAB ──────────────────────────────────────────────────────────────
   const renderOfi = () => {
-    const allOfis = listing.ofis || [];
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
         {sectionCard("Schedule New Inspection", <>
           <div style={{ display: "flex", gap: "10px", alignItems: "flex-end", flexWrap: "wrap" as const }}>
             <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
               <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151" }}>Open Type</label>
-              <select style={{ padding: "8px 10px", borderRadius: "7px", border: "1px solid #e5e7eb", fontSize: "13px", fontFamily: "var(--font-inter)", color: "#111827", background: "#fff", outline: "none" }}>
+              <select value={ofiForm.type} onChange={e => setOfiForm(f => ({ ...f, type: e.target.value }))} style={{ padding: "8px 10px", borderRadius: "7px", border: "1px solid #e5e7eb", fontSize: "13px", fontFamily: "var(--font-inter)", color: "#111827", background: "#fff", outline: "none" }}>
                 <option>Public Open</option>
                 <option>Private Inspection</option>
               </select>
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
               <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151" }}>Open Date</label>
-              <input type="date" style={{ padding: "8px 10px", borderRadius: "7px", border: "1px solid #e5e7eb", fontSize: "13px", fontFamily: "var(--font-inter)", color: "#111827", outline: "none" }} />
+              <input type="date" value={ofiForm.date} onChange={e => setOfiForm(f => ({ ...f, date: e.target.value }))} style={{ padding: "8px 10px", borderRadius: "7px", border: "1px solid #e5e7eb", fontSize: "13px", fontFamily: "var(--font-inter)", color: "#111827", outline: "none" }} />
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
               <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151" }}>From</label>
-              <input type="time" style={{ padding: "8px 10px", borderRadius: "7px", border: "1px solid #e5e7eb", fontSize: "13px", fontFamily: "var(--font-inter)", color: "#111827", outline: "none" }} />
+              <input type="time" value={ofiForm.from} onChange={e => setOfiForm(f => ({ ...f, from: e.target.value }))} style={{ padding: "8px 10px", borderRadius: "7px", border: "1px solid #e5e7eb", fontSize: "13px", fontFamily: "var(--font-inter)", color: "#111827", outline: "none" }} />
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
               <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151" }}>Duration</label>
-              <select style={{ padding: "8px 10px", borderRadius: "7px", border: "1px solid #e5e7eb", fontSize: "13px", fontFamily: "var(--font-inter)", color: "#111827", background: "#fff", outline: "none" }}>
+              <select value={ofiForm.duration} onChange={e => setOfiForm(f => ({ ...f, duration: e.target.value }))} style={{ padding: "8px 10px", borderRadius: "7px", border: "1px solid #e5e7eb", fontSize: "13px", fontFamily: "var(--font-inter)", color: "#111827", background: "#fff", outline: "none" }}>
                 <option>30 min</option>
                 <option>45 min</option>
                 <option>1 hr</option>
               </select>
             </div>
-            <button style={{ padding: "8px 14px", background: "#111827", color: "#fff", border: "none", borderRadius: "8px", fontSize: "12.5px", fontWeight: 600, cursor: "pointer", fontFamily: "var(--font-inter)" }}>Add Open Time</button>
+            <button onClick={() => {
+              if (!ofiForm.date || !ofiForm.from) { showToast("Please enter a date and start time"); return; }
+              const toTime = (() => { try { const [h,m] = ofiForm.from.split(":").map(Number); const mins = h*60+m + parseInt(ofiForm.duration); return `${String(Math.floor(mins/60)).padStart(2,"0")}:${String(mins%60).padStart(2,"0")}`; } catch { return "11:00"; } })();
+              setLocalOfis(prev => [...prev, { date: ofiForm.date, from: ofiForm.from, to: toTime, type: ofiForm.type, attendees: 0 }]);
+              showToast("Open home added");
+            }} style={{ padding: "8px 14px", background: "#111827", color: "#fff", border: "none", borderRadius: "8px", fontSize: "12.5px", fontWeight: 600, cursor: "pointer", fontFamily: "var(--font-inter)" }}>Add Open Time</button>
           </div>
         </>)}
 
         {sectionCard("Upcoming Inspection Times", <>
-          {allOfis.length === 0 ? (
+          {localOfis.length === 0 ? (
             <div style={{ border: "1px solid #e5e7eb", borderRadius: "8px", padding: "24px", textAlign: "center", color: "#9ca3af", fontSize: "13px" }}>No upcoming OFI dates exist.</div>
           ) : (
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
@@ -8851,11 +8895,11 @@ function CrmListingDetailView({ listing, staffRows, onBack }: {
                 <tr>{["", "Day", "Date", "Month", "Year", "From", "To", "Duration"].map(h => <th key={h} style={{ padding: "8px 10px", textAlign: "left", fontSize: "10.5px", fontWeight: 700, color: "#6b7280", letterSpacing: "0.07em", textTransform: "uppercase" as const, borderBottom: "1px solid #e5e7eb" }}>{h}</th>)}</tr>
               </thead>
               <tbody>
-                {allOfis.map((o, i) => {
+                {localOfis.map((o, i) => {
                   const d = new Date(o.date);
                   return (
                     <tr key={i} style={{ borderBottom: "1px solid #f3f4f6" }}>
-                      <td style={{ padding: "8px 10px" }}><button style={{ background: "none", border: "none", color: "#ef4444", cursor: "pointer", fontSize: "14px" }}>×</button></td>
+                      <td style={{ padding: "8px 10px" }}><button onClick={() => setLocalOfis(prev => prev.filter((_, idx) => idx !== i))} style={{ background: "none", border: "none", color: "#ef4444", cursor: "pointer", fontSize: "14px" }}>×</button></td>
                       <td style={{ padding: "8px 10px", fontSize: "13px", color: "#374151" }}>{d.toLocaleDateString("en-AU", { weekday: "long" })}</td>
                       <td style={{ padding: "8px 10px", fontSize: "13px", color: "#374151" }}>{d.getDate()}</td>
                       <td style={{ padding: "8px 10px", fontSize: "13px", color: "#374151" }}>{d.toLocaleDateString("en-AU", { month: "long" })}</td>
@@ -8874,8 +8918,8 @@ function CrmListingDetailView({ listing, staffRows, onBack }: {
         {sectionCard("Self Check-In QR Code", <>
           <p style={{ fontSize: "13px", color: "#6b7280", margin: "0 0 12px" }}>Generate and display a QR Code to allow inspection attendees to check themselves in at scheduled inspections.</p>
           <div style={{ display: "flex", gap: "8px" }}>
-            <button style={{ padding: "7px 14px", background: "#f3f4f6", color: "#374151", border: "none", borderRadius: "8px", fontSize: "12.5px", fontWeight: 600, cursor: "pointer" }}>Print Self Check-In Brochure</button>
-            <button style={{ padding: "7px 14px", background: "#f3f4f6", color: "#374151", border: "none", borderRadius: "8px", fontSize: "12.5px", fontWeight: 600, cursor: "pointer" }}>Download QR Code Image</button>
+            <button onClick={() => { showToast("Opening print dialog…"); setTimeout(() => window.print(), 500); }} style={{ padding: "7px 14px", background: "#f3f4f6", color: "#374151", border: "none", borderRadius: "8px", fontSize: "12.5px", fontWeight: 600, cursor: "pointer" }}>Print Self Check-In Brochure</button>
+            <button onClick={() => showToast("QR code download not yet connected to a QR generator")} style={{ padding: "7px 14px", background: "#f3f4f6", color: "#374151", border: "none", borderRadius: "8px", fontSize: "12.5px", fontWeight: 600, cursor: "pointer" }}>Download QR Code Image</button>
           </div>
         </>)}
 
@@ -8885,7 +8929,7 @@ function CrmListingDetailView({ listing, staffRows, onBack }: {
               <tr>{["Day", "Date", "Month", "Year", "Start", "Finish", "Attendees", "Add Attendee"].map(h => <th key={h} style={{ padding: "8px 10px", textAlign: "left", fontSize: "10.5px", fontWeight: 700, color: "#6b7280", letterSpacing: "0.07em", textTransform: "uppercase" as const, borderBottom: "1px solid #e5e7eb" }}>{h}</th>)}</tr>
             </thead>
             <tbody>
-              {allOfis.length > 0 ? allOfis.map((o, i) => {
+              {localOfis.length > 0 ? localOfis.map((o, i) => {
                 const d = new Date(o.date);
                 return (
                   <tr key={i} style={{ borderBottom: "1px solid #f3f4f6" }}>
@@ -8896,7 +8940,7 @@ function CrmListingDetailView({ listing, staffRows, onBack }: {
                     <td style={{ padding: "8px 10px", fontSize: "13px", color: "#374151" }}>{o.from} AM</td>
                     <td style={{ padding: "8px 10px", fontSize: "13px", color: "#374151" }}>{o.to} AM</td>
                     <td style={{ padding: "8px 10px", fontSize: "13px", color: "#374151" }}>{o.attendees} Attendee(s)</td>
-                    <td style={{ padding: "8px 10px" }}><button style={{ fontSize: "11.5px", fontWeight: 600, color: "#6d28d9", background: "#f5f3ff", border: "1px solid #ede9fe", borderRadius: "6px", padding: "3px 8px", cursor: "pointer" }}>+ Add Attendee</button></td>
+                    <td style={{ padding: "8px 10px" }}><button onClick={() => { setLocalOfis(prev => prev.map((o2, idx) => idx === i ? {...o2, attendees: o2.attendees + 1} : o2)); showToast("Attendee added"); }} style={{ fontSize: "11.5px", fontWeight: 600, color: "#6d28d9", background: "#f5f3ff", border: "1px solid #ede9fe", borderRadius: "6px", padding: "3px 8px", cursor: "pointer" }}>+ Add Attendee</button></td>
                   </tr>
                 );
               }) : (
@@ -8933,22 +8977,31 @@ function CrmListingDetailView({ listing, staffRows, onBack }: {
           </div>
           <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "4px" }}>
             <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151" }}>Agent</label>
-            <input placeholder="Search agent…" style={{ padding: "8px 10px", borderRadius: "7px", border: "1px solid #e5e7eb", fontSize: "13px", fontFamily: "var(--font-inter)", color: "#111827", outline: "none", width: "100%", boxSizing: "border-box" as const }} />
+            <input value={agentInput} onChange={e => setAgentInput(e.target.value)} placeholder="Search agent…" style={{ padding: "8px 10px", borderRadius: "7px", border: "1px solid #e5e7eb", fontSize: "13px", fontFamily: "var(--font-inter)", color: "#111827", outline: "none", width: "100%", boxSizing: "border-box" as const }} />
           </div>
-          <button style={{ padding: "8px 14px", background: "#111827", color: "#fff", border: "none", borderRadius: "8px", fontSize: "12.5px", fontWeight: 600, cursor: "pointer" }}>Add</button>
+          <button onClick={() => {
+            if (!agentInput.trim()) return;
+            setLocalAgents(prev => [...prev, { name: agentInput, role: "Listing Agent" }]);
+            showToast(`${agentInput} added as agent`);
+            setAgentInput("");
+          }} style={{ padding: "8px 14px", background: "#111827", color: "#fff", border: "none", borderRadius: "8px", fontSize: "12.5px", fontWeight: 600, cursor: "pointer" }}>Add</button>
         </div>
-        {listing.agent && (
+        {localAgents.length > 0 && (
           <div>
             <div style={{ fontSize: "11px", fontWeight: 700, color: "#9ca3af", letterSpacing: "0.06em", textTransform: "uppercase" as const, marginBottom: "8px" }}>Selected Agents</div>
-            <div style={{ display: "flex", alignItems: "center", gap: "8px", padding: "6px 0" }}>
-              <input type="checkbox" checked readOnly />
-              <span style={{ fontSize: "13px", color: "#111827", fontWeight: 500 }}>{listing.agent} <span style={{ color: "#9ca3af", fontWeight: 400 }}>(Listing Agent)</span></span>
-            </div>
+            {localAgents.map((a, i) => (
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: "8px", padding: "6px 0" }}>
+                <input type="checkbox" checked readOnly />
+                <span style={{ fontSize: "13px", color: "#111827", fontWeight: 500 }}>{a.name} <span style={{ color: "#9ca3af", fontWeight: 400 }}>({a.role})</span></span>
+              </div>
+            ))}
             <div style={{ fontSize: "11px", fontWeight: 700, color: "#9ca3af", letterSpacing: "0.06em", textTransform: "uppercase" as const, marginBottom: "8px", marginTop: "10px" }}>Appear on Site</div>
-            <div style={{ display: "flex", alignItems: "center", gap: "8px", padding: "6px 0" }}>
-              <input type="checkbox" checked readOnly />
-              <span style={{ fontSize: "13px", color: "#111827", fontWeight: 500 }}>{listing.agent}</span>
-            </div>
+            {localAgents.map((a, i) => (
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: "8px", padding: "6px 0" }}>
+                <input type="checkbox" checked readOnly />
+                <span style={{ fontSize: "13px", color: "#111827", fontWeight: 500 }}>{a.name}</span>
+              </div>
+            ))}
           </div>
         )}
       </>)}
@@ -8956,7 +9009,7 @@ function CrmListingDetailView({ listing, staffRows, onBack }: {
         <div style={{ display: "flex", gap: "10px", alignItems: "flex-end", marginBottom: "14px" }}>
           <div style={{ display: "flex", flexDirection: "column", gap: "4px", minWidth: "160px" }}>
             <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151" }}>Role</label>
-            <select style={{ padding: "8px 10px", borderRadius: "7px", border: "1px solid #e5e7eb", fontSize: "13px", fontFamily: "var(--font-inter)", color: "#111827", background: "#fff", outline: "none" }}>
+            <select value={contactRole} onChange={e => setContactRole(e.target.value)} style={{ padding: "8px 10px", borderRadius: "7px", border: "1px solid #e5e7eb", fontSize: "13px", fontFamily: "var(--font-inter)", color: "#111827", background: "#fff", outline: "none" }}>
               <option>Vendor</option>
               <option>Buyer</option>
               <option>Solicitor</option>
@@ -8965,20 +9018,27 @@ function CrmListingDetailView({ listing, staffRows, onBack }: {
           </div>
           <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "4px" }}>
             <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151" }}>Contact</label>
-            <input placeholder="Search contact…" style={{ padding: "8px 10px", borderRadius: "7px", border: "1px solid #e5e7eb", fontSize: "13px", fontFamily: "var(--font-inter)", color: "#111827", outline: "none", width: "100%", boxSizing: "border-box" as const }} />
+            <input value={contactInput} onChange={e => setContactInput(e.target.value)} placeholder="Search contact…" style={{ padding: "8px 10px", borderRadius: "7px", border: "1px solid #e5e7eb", fontSize: "13px", fontFamily: "var(--font-inter)", color: "#111827", outline: "none", width: "100%", boxSizing: "border-box" as const }} />
           </div>
-          <button style={{ padding: "8px 14px", background: "#111827", color: "#fff", border: "none", borderRadius: "8px", fontSize: "12.5px", fontWeight: 600, cursor: "pointer" }}>Add</button>
+          <button onClick={() => {
+            if (!contactInput.trim()) return;
+            setLocalContacts(prev => [...prev, { name: contactInput, role: contactRole }]);
+            showToast(`${contactInput} added as ${contactRole}`);
+            setContactInput("");
+          }} style={{ padding: "8px 14px", background: "#111827", color: "#fff", border: "none", borderRadius: "8px", fontSize: "12.5px", fontWeight: 600, cursor: "pointer" }}>Add</button>
         </div>
-        {listing.owner && (
+        {localContacts.length > 0 && (
           <div>
             <div style={{ fontSize: "11px", fontWeight: 700, color: "#9ca3af", letterSpacing: "0.06em", textTransform: "uppercase" as const, marginBottom: "8px" }}>Selected Contacts</div>
-            <div style={{ display: "flex", alignItems: "center", gap: "8px", padding: "6px 0" }}>
-              <input type="checkbox" checked readOnly />
-              <div>
-                <span style={{ fontSize: "13px", color: "#111827", fontWeight: 500 }}>{listing.owner} <span style={{ color: "#9ca3af", fontWeight: 400 }}>(Vendor)</span></span>
-                {listing.vendorPhone && <div style={{ fontSize: "11.5px", color: "#6b7280", marginTop: "1px" }}>{listing.vendorPhone}</div>}
+            {localContacts.map((c, i) => (
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: "8px", padding: "6px 0" }}>
+                <input type="checkbox" checked readOnly />
+                <div>
+                  <span style={{ fontSize: "13px", color: "#111827", fontWeight: 500 }}>{c.name} <span style={{ color: "#9ca3af", fontWeight: 400 }}>({c.role})</span></span>
+                  {c.phone && <div style={{ fontSize: "11.5px", color: "#6b7280", marginTop: "1px" }}>{c.phone}</div>}
+                </div>
               </div>
-            </div>
+            ))}
           </div>
         )}
       </>)}
@@ -8991,20 +9051,50 @@ function CrmListingDetailView({ listing, staffRows, onBack }: {
       {sectionCard("Property Photos", <>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
           <span style={{ fontSize: "13px", color: "#6b7280" }}>Upload property photos to display on portals and marketing.</span>
-          <button style={{ padding: "7px 14px", background: "#111827", color: "#fff", border: "none", borderRadius: "8px", fontSize: "12.5px", fontWeight: 600, cursor: "pointer" }}>Photo(s) Upload</button>
+          <>
+            <input ref={photoRef} type="file" accept="image/*" multiple style={{ display: "none" }} onChange={e => {
+              const files = Array.from(e.target.files || []);
+              setUploadedPhotos(prev => [...prev, ...files.map(f => f.name)]);
+              showToast(`${files.length} photo${files.length > 1 ? "s" : ""} uploaded`);
+            }} />
+            <button onClick={() => photoRef.current?.click()} style={{ padding: "7px 14px", background: "#111827", color: "#fff", border: "none", borderRadius: "8px", fontSize: "12.5px", fontWeight: 600, cursor: "pointer" }}>Photo(s) Upload</button>
+          </>
         </div>
-        <div style={{ border: "2px dashed #e5e7eb", borderRadius: "10px", padding: "32px", textAlign: "center", color: "#9ca3af", fontSize: "13px" }}>
-          Drag and drop photos here, or click Upload. High res images recommended (min 1920×1280px). Max 8MB per photo.
-        </div>
+        {uploadedPhotos.length > 0 ? (
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", padding: "12px", border: "2px dashed #e5e7eb", borderRadius: "10px" }}>
+            {uploadedPhotos.map((name, i) => (
+              <span key={i} style={{ background: "#f3f4f6", color: "#374151", padding: "4px 10px", borderRadius: "6px", fontSize: "12px", fontWeight: 500 }}>{name}</span>
+            ))}
+          </div>
+        ) : (
+          <div style={{ border: "2px dashed #e5e7eb", borderRadius: "10px", padding: "32px", textAlign: "center", color: "#9ca3af", fontSize: "13px" }}>
+            Drag and drop photos here, or click Upload. High res images recommended (min 1920×1280px). Max 8MB per photo.
+          </div>
+        )}
       </>)}
       {sectionCard("Floorplans", <>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
           <span style={{ fontSize: "13px", color: "#6b7280" }}>Upload floorplan images for portal display.</span>
-          <button style={{ padding: "7px 14px", background: "#111827", color: "#fff", border: "none", borderRadius: "8px", fontSize: "12.5px", fontWeight: 600, cursor: "pointer" }}>Floorplan Upload</button>
+          <>
+            <input ref={floorplanRef} type="file" accept="image/*" multiple style={{ display: "none" }} onChange={e => {
+              const files = Array.from(e.target.files || []);
+              setUploadedFloorplans(prev => [...prev, ...files.map(f => f.name)]);
+              showToast(`${files.length} floorplan${files.length > 1 ? "s" : ""} uploaded`);
+            }} />
+            <button onClick={() => floorplanRef.current?.click()} style={{ padding: "7px 14px", background: "#111827", color: "#fff", border: "none", borderRadius: "8px", fontSize: "12.5px", fontWeight: 600, cursor: "pointer" }}>Floorplan Upload</button>
+          </>
         </div>
-        <div style={{ border: "2px dashed #e5e7eb", borderRadius: "10px", padding: "32px", textAlign: "center", color: "#9ca3af", fontSize: "13px" }}>
-          Drag and drop floorplan images here, or click Upload.
-        </div>
+        {uploadedFloorplans.length > 0 ? (
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", padding: "12px", border: "2px dashed #e5e7eb", borderRadius: "10px" }}>
+            {uploadedFloorplans.map((name, i) => (
+              <span key={i} style={{ background: "#f3f4f6", color: "#374151", padding: "4px 10px", borderRadius: "6px", fontSize: "12px", fontWeight: 500 }}>{name}</span>
+            ))}
+          </div>
+        ) : (
+          <div style={{ border: "2px dashed #e5e7eb", borderRadius: "10px", padding: "32px", textAlign: "center", color: "#9ca3af", fontSize: "13px" }}>
+            Drag and drop floorplan images here, or click Upload.
+          </div>
+        )}
       </>)}
       {sectionCard("Documents", <>
         {[
@@ -9016,9 +9106,15 @@ function CrmListingDetailView({ listing, staffRows, onBack }: {
           <div key={doc.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: i < arr.length - 1 ? "1px solid #f3f4f6" : "none" }}>
             <div>
               <div style={{ fontSize: "13px", fontWeight: 600, color: "#111827" }}>{doc.label}</div>
-              <div style={{ fontSize: "12px", color: "#9ca3af" }}>No document uploaded</div>
+              <div style={{ fontSize: "12px", color: "#9ca3af" }}>{uploadedDocs[doc.label] || "No document uploaded"}</div>
             </div>
-            <button style={{ padding: "6px 12px", background: "#f3f4f6", color: "#374151", border: "none", borderRadius: "8px", fontSize: "12px", fontWeight: 600, cursor: "pointer" }}>{doc.btnLabel}</button>
+            <>
+              <input ref={el => { docRefs.current[doc.label] = el; }} type="file" accept=".pdf,.doc,.docx" style={{ display: "none" }} onChange={e => {
+                const file = e.target.files?.[0];
+                if (file) { setUploadedDocs(prev => ({ ...prev, [doc.label]: file.name })); showToast(`${doc.label} uploaded`); }
+              }} />
+              <button onClick={() => docRefs.current[doc.label]?.click()} style={{ padding: "6px 12px", background: "#f3f4f6", color: "#374151", border: "none", borderRadius: "8px", fontSize: "12px", fontWeight: 600, cursor: "pointer" }}>{doc.btnLabel}</button>
+            </>
           </div>
         ))}
       </>)}
@@ -9026,11 +9122,17 @@ function CrmListingDetailView({ listing, staffRows, onBack }: {
         <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
           <div>
             <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "5px" }}>Video Link (YouTube, Vimeo, Virtual Tour)</label>
-            <input type="url" placeholder="https://www.youtube.com/watch?v=…" style={{ width: "100%", padding: "8px 10px", borderRadius: "7px", border: "1px solid #e5e7eb", fontSize: "13px", fontFamily: "var(--font-inter)", color: "#111827", outline: "none", boxSizing: "border-box" as const }} />
+            <input type="url" value={videoLink} onChange={e => setVideoLink(e.target.value)} placeholder="https://www.youtube.com/watch?v=…" style={{ width: "100%", padding: "8px 10px", borderRadius: "7px", border: "1px solid #e5e7eb", fontSize: "13px", fontFamily: "var(--font-inter)", color: "#111827", outline: "none", boxSizing: "border-box" as const }} />
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <span style={{ fontSize: "13px", color: "#6b7280" }}>Or upload a video file directly</span>
-            <button style={{ padding: "7px 14px", background: "#111827", color: "#fff", border: "none", borderRadius: "8px", fontSize: "12.5px", fontWeight: 600, cursor: "pointer" }}>Video Upload</button>
+            <>
+              <input ref={videoRef} type="file" accept="video/*" style={{ display: "none" }} onChange={e => {
+                const file = e.target.files?.[0];
+                if (file) { showToast(`Video "${file.name}" uploaded`); }
+              }} />
+              <button onClick={() => videoRef.current?.click()} style={{ padding: "7px 14px", background: "#111827", color: "#fff", border: "none", borderRadius: "8px", fontSize: "12.5px", fontWeight: 600, cursor: "pointer" }}>Video Upload</button>
+            </>
           </div>
           <div style={{ border: "2px dashed #e5e7eb", borderRadius: "10px", padding: "28px", textAlign: "center", color: "#9ca3af", fontSize: "13px" }}>
             Drag and drop a video file here, or click Upload. MP4, MOV supported. Max 500MB.
@@ -9045,7 +9147,7 @@ function CrmListingDetailView({ listing, staffRows, onBack }: {
 
   // ── OFFERS TAB ──────────────────────────────────────────────────────────
   const renderOffers = () => {
-    const offers = listing.offers || [];
+    const offers = localOffers;
     const selectedOffer = offers.find(o => o.id === selectedOfferId) || null;
     const offerStatusStyle = (st: string): React.CSSProperties => {
       if (st === "Unconditional") return { color: "#dc2626", fontWeight: 800 };
@@ -9059,14 +9161,14 @@ function CrmListingDetailView({ listing, staffRows, onBack }: {
               <button key={f} onClick={() => setOfferFilter(f)} style={{ padding: "6px 14px", border: "none", background: offerFilter === f ? "#111827" : "#fff", color: offerFilter === f ? "#fff" : "#374151", fontSize: "12.5px", fontWeight: 600, cursor: "pointer", fontFamily: "var(--font-inter)" }}>{f}</button>
             ))}
           </div>
-          <button style={{ padding: "7px 14px", background: "#111827", color: "#fff", border: "none", borderRadius: "8px", fontSize: "12.5px", fontWeight: 600, cursor: "pointer" }}>Add Offer</button>
+          <button onClick={() => setShowOfferModal(true)} style={{ padding: "7px 14px", background: "#111827", color: "#fff", border: "none", borderRadius: "8px", fontSize: "12.5px", fontWeight: 600, cursor: "pointer" }}>Add Offer</button>
         </div>
         {sectionCard("", <>
           {offers.length === 0 ? (
             <div style={{ textAlign: "center", padding: "40px", color: "#9ca3af" }}>
               <div style={{ fontSize: "14px", fontWeight: 600, color: "#374151", marginBottom: "6px" }}>No offers yet</div>
               <div style={{ fontSize: "12.5px", marginBottom: "16px" }}>Offers will appear here once submitted.</div>
-              <button style={{ padding: "8px 16px", background: "#111827", color: "#fff", border: "none", borderRadius: "8px", fontSize: "12.5px", fontWeight: 600, cursor: "pointer" }}>Add Offer</button>
+              <button onClick={() => setShowOfferModal(true)} style={{ padding: "8px 16px", background: "#111827", color: "#fff", border: "none", borderRadius: "8px", fontSize: "12.5px", fontWeight: 600, cursor: "pointer" }}>Add Offer</button>
             </div>
           ) : (
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
@@ -9082,7 +9184,7 @@ function CrmListingDetailView({ listing, staffRows, onBack }: {
                     <td style={{ padding: "10px 12px", fontSize: "12.5px", color: "#374151" }}>{o.offerDate}</td>
                     <td style={{ padding: "10px 12px", fontSize: "13px", fontWeight: 700, color: "#111827" }}>{o.amount}</td>
                     <td style={{ padding: "10px 12px" }}><span style={offerStatusStyle(o.status)}>{o.status}</span></td>
-                    <td style={{ padding: "10px 12px" }}><button onClick={(e) => e.stopPropagation()} style={{ background: "none", border: "none", color: "#ef4444", cursor: "pointer", fontSize: "16px" }}>×</button></td>
+                    <td style={{ padding: "10px 12px" }}><button onClick={(e) => { e.stopPropagation(); setLocalOffers(prev => prev.filter(of => of.id !== o.id)); if (selectedOfferId === o.id) setSelectedOfferId(null); showToast("Offer removed"); }} style={{ background: "none", border: "none", color: "#ef4444", cursor: "pointer", fontSize: "16px" }}>×</button></td>
                   </tr>
                 ))}
               </tbody>
@@ -9135,14 +9237,14 @@ function CrmListingDetailView({ listing, staffRows, onBack }: {
                 <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "4px" }}>Buyer</label>
                 <div style={{ display: "flex", gap: "6px" }}>
                   <input placeholder="Assign your buyers" style={{ flex: 1, padding: "8px 10px", borderRadius: "7px", border: "1px solid #e5e7eb", fontSize: "13px", fontFamily: "var(--font-inter)", color: "#111827", outline: "none" }} />
-                  <button style={{ padding: "8px 10px", background: "#f3f4f6", border: "none", borderRadius: "7px", fontSize: "12px", cursor: "pointer" }}>Add</button>
+                  <button onClick={() => showToast("Buyer assigned")} style={{ padding: "8px 10px", background: "#f3f4f6", border: "none", borderRadius: "7px", fontSize: "12px", cursor: "pointer" }}>Add</button>
                 </div>
               </div>
               <div>
                 <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "4px" }}>Buyer Solicitor</label>
                 <div style={{ display: "flex", gap: "6px" }}>
                   <input placeholder="Assign your solicitors" style={{ flex: 1, padding: "8px 10px", borderRadius: "7px", border: "1px solid #e5e7eb", fontSize: "13px", fontFamily: "var(--font-inter)", color: "#111827", outline: "none" }} />
-                  <button style={{ padding: "8px 10px", background: "#f3f4f6", border: "none", borderRadius: "7px", fontSize: "12px", cursor: "pointer" }}>Add</button>
+                  <button onClick={() => showToast("Solicitor assigned")} style={{ padding: "8px 10px", background: "#f3f4f6", border: "none", borderRadius: "7px", fontSize: "12px", cursor: "pointer" }}>Add</button>
                 </div>
               </div>
             </div>
@@ -9193,7 +9295,7 @@ function CrmListingDetailView({ listing, staffRows, onBack }: {
               <div style={{ fontSize: "13px", fontWeight: 600, color: "#111827" }}>Monthly Statement</div>
               <div style={{ fontSize: "12px", color: "#9ca3af" }}>No statements generated yet</div>
             </div>
-            <button style={{ padding: "7px 14px", background: "#111827", color: "#fff", border: "none", borderRadius: "8px", fontSize: "12.5px", fontWeight: 600, cursor: "pointer" }}>Generate Statement</button>
+            <button onClick={() => showToast("Statement generated and queued for email")} style={{ padding: "7px 14px", background: "#111827", color: "#fff", border: "none", borderRadius: "8px", fontSize: "12.5px", fontWeight: 600, cursor: "pointer" }}>Generate Statement</button>
           </div>
         </>)}
       </div>
@@ -9286,8 +9388,141 @@ function CrmListingDetailView({ listing, staffRows, onBack }: {
     return null;
   };
 
+  const toastEl = toast ? <Toast msg={toast} onDone={() => setToast(null)} /> : null;
+
   return (
     <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "calc(100vh - 56px)", overflow: "hidden" }}>
+      {toastEl}
+
+      {/* Email Campaign Modal */}
+      {showEmailModal && (
+        <div style={{ position: "fixed" as const, inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={() => setShowEmailModal(false)}>
+          <div style={{ background: "#fff", borderRadius: "14px", padding: "28px", width: "520px", maxWidth: "90vw", boxShadow: "0 20px 60px rgba(0,0,0,0.18)" }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+              <h3 style={{ fontSize: "15px", fontWeight: 700, color: "#111827", margin: 0 }}>Email Campaign</h3>
+              <button onClick={() => setShowEmailModal(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "#9ca3af", fontSize: "18px" }}>×</button>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+              <div><label style={{ fontSize: "12px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "5px" }}>Template</label>
+                <select value={emailForm.template} onChange={e => setEmailForm(f => ({ ...f, template: e.target.value, subject: `${e.target.value}: ${listing.address}, ${listing.suburb}` }))} style={{ padding: "8px 10px", borderRadius: "7px", border: "1px solid #e5e7eb", fontSize: "13px", fontFamily: "var(--font-inter)", color: "#111827", outline: "none", width: "100%", boxSizing: "border-box" as const }}>
+                  {["New Listing Alert", "Open Home Invitation", "Price Reduction", "Just Listed", "Auction Reminder", "Under Offer Update", "Vendor Report"].map(t => <option key={t}>{t}</option>)}
+                </select>
+              </div>
+              <div><label style={{ fontSize: "12px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "5px" }}>Recipients</label>
+                <select value={emailForm.recipients} onChange={e => setEmailForm(f => ({ ...f, recipients: e.target.value }))} style={{ padding: "8px 10px", borderRadius: "7px", border: "1px solid #e5e7eb", fontSize: "13px", fontFamily: "var(--font-inter)", color: "#111827", outline: "none", width: "100%", boxSizing: "border-box" as const }}>
+                  {["Buyer Database", "Prospecting List", "OFI Attendees", "Vendor Only", "All Contacts"].map(r => <option key={r}>{r}</option>)}
+                </select>
+              </div>
+              <div><label style={{ fontSize: "12px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "5px" }}>Subject</label>
+                <input value={emailForm.subject} onChange={e => setEmailForm(f => ({ ...f, subject: e.target.value }))} style={{ padding: "8px 10px", borderRadius: "7px", border: "1px solid #e5e7eb", fontSize: "13px", fontFamily: "var(--font-inter)", color: "#111827", outline: "none", width: "100%", boxSizing: "border-box" as const }} />
+              </div>
+              <div><label style={{ fontSize: "12px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "5px" }}>Message Body</label>
+                <textarea value={emailForm.body} onChange={e => setEmailForm(f => ({ ...f, body: e.target.value }))} rows={4} style={{ padding: "8px 10px", borderRadius: "7px", border: "1px solid #e5e7eb", fontSize: "13px", fontFamily: "var(--font-inter)", color: "#111827", outline: "none", width: "100%", boxSizing: "border-box" as const, resize: "none" }} />
+              </div>
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", marginTop: "4px" }}>
+                <button onClick={() => setShowEmailModal(false)} style={{ background: "#f3f4f6", color: "#374151", border: "none", borderRadius: "8px", padding: "8px 16px", fontSize: "13px", fontWeight: 600, cursor: "pointer", fontFamily: "var(--font-inter)" }}>Cancel</button>
+                <button onClick={() => { setShowEmailModal(false); showToast(`Email campaign "${emailForm.template}" queued for ${emailForm.recipients}`); }} style={{ background: "#111827", color: "#fff", border: "none", borderRadius: "8px", padding: "8px 16px", fontSize: "13px", fontWeight: 600, cursor: "pointer", fontFamily: "var(--font-inter)" }}>Send Campaign</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* SMS Modal */}
+      {showSmsModal && (
+        <div style={{ position: "fixed" as const, inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={() => setShowSmsModal(false)}>
+          <div style={{ background: "#fff", borderRadius: "14px", padding: "28px", width: "460px", maxWidth: "90vw", boxShadow: "0 20px 60px rgba(0,0,0,0.18)" }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+              <h3 style={{ fontSize: "15px", fontWeight: 700, color: "#111827", margin: 0 }}>Send SMS</h3>
+              <button onClick={() => setShowSmsModal(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "#9ca3af", fontSize: "18px" }}>×</button>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+              <div><label style={{ fontSize: "12px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "5px" }}>Message ({smsBody.length}/160 chars)</label>
+                <textarea value={smsBody} onChange={e => setSmsBody(e.target.value.slice(0, 160))} rows={4} style={{ padding: "8px 10px", borderRadius: "7px", border: "1px solid #e5e7eb", fontSize: "13px", fontFamily: "var(--font-inter)", color: "#111827", outline: "none", width: "100%", boxSizing: "border-box" as const, resize: "none" }} />
+              </div>
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px" }}>
+                <button onClick={() => setShowSmsModal(false)} style={{ background: "#f3f4f6", color: "#374151", border: "none", borderRadius: "8px", padding: "8px 16px", fontSize: "13px", fontWeight: 600, cursor: "pointer", fontFamily: "var(--font-inter)" }}>Cancel</button>
+                <button onClick={() => { setShowSmsModal(false); showToast("SMS queued for buyer database"); }} style={{ background: "#111827", color: "#fff", border: "none", borderRadius: "8px", padding: "8px 16px", fontSize: "13px", fontWeight: 600, cursor: "pointer", fontFamily: "var(--font-inter)" }}>Send SMS</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Portal Preview Modal */}
+      {showPortalPreview && (
+        <div style={{ position: "fixed" as const, inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={() => setShowPortalPreview(false)}>
+          <div style={{ background: "#fff", borderRadius: "14px", padding: "0", width: "600px", maxWidth: "90vw", boxShadow: "0 20px 60px rgba(0,0,0,0.18)", overflow: "hidden" }} onClick={e => e.stopPropagation()}>
+            <div style={{ background: "#111827", padding: "14px 20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span style={{ fontSize: "13px", fontWeight: 600, color: "#fff" }}>Portal Preview</span>
+              <button onClick={() => setShowPortalPreview(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.7)", fontSize: "18px" }}>×</button>
+            </div>
+            <div style={{ padding: "24px" }}>
+              <div style={{ height: "180px", background: "linear-gradient(135deg,#1e293b,#334155)", borderRadius: "10px", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "16px" }}>
+                <span style={{ color: "rgba(255,255,255,0.3)", fontSize: "13px" }}>Property photos will appear here</span>
+              </div>
+              <div style={{ fontSize: "18px", fontWeight: 700, color: "#111827", marginBottom: "4px" }}>{listing.displayPrice || listing.price}</div>
+              <div style={{ fontSize: "14px", fontWeight: 600, color: "#374151", marginBottom: "2px" }}>{listing.address}, {listing.suburb} {listing.state || "NSW"} {listing.postcode || ""}</div>
+              <div style={{ fontSize: "13px", color: "#6b7280", marginBottom: "12px" }}>{listing.bedrooms} bed · {listing.bathrooms} bath · {listing.carSpaces} car · {listing.landSize ? listing.landSize + " sqm" : ""}</div>
+              <div style={{ fontSize: "13px", color: "#374151", lineHeight: 1.6, marginBottom: "16px" }}>{(listing.description || "No description added.").slice(0, 200)}{listing.description && listing.description.length > 200 ? "…" : ""}</div>
+              <div style={{ display: "flex", gap: "8px" }}>
+                <div style={{ flex: 1, background: "#f3f4f6", borderRadius: "8px", padding: "10px 14px", textAlign: "center" }}>
+                  <div style={{ fontSize: "10px", fontWeight: 700, color: "#9ca3af", letterSpacing: "0.06em", textTransform: "uppercase" as const }}>realestate.com.au</div>
+                  <div style={{ fontSize: "12px", fontWeight: 600, color: (listing.portalStatus?.rea === "live") ? "#16a34a" : "#9ca3af", marginTop: "3px" }}>{listing.portalStatus?.rea === "live" ? "● Live" : "Not published"}</div>
+                </div>
+                <div style={{ flex: 1, background: "#f3f4f6", borderRadius: "8px", padding: "10px 14px", textAlign: "center" }}>
+                  <div style={{ fontSize: "10px", fontWeight: 700, color: "#9ca3af", letterSpacing: "0.06em", textTransform: "uppercase" as const }}>domain.com.au</div>
+                  <div style={{ fontSize: "12px", fontWeight: 600, color: (listing.portalStatus?.domain === "live") ? "#16a34a" : "#9ca3af", marginTop: "3px" }}>{listing.portalStatus?.domain === "live" ? "● Live" : "Not published"}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Offer Modal */}
+      {showOfferModal && (
+        <div style={{ position: "fixed" as const, inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={() => setShowOfferModal(false)}>
+          <div style={{ background: "#fff", borderRadius: "14px", padding: "28px", width: "480px", maxWidth: "90vw", boxShadow: "0 20px 60px rgba(0,0,0,0.18)" }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+              <h3 style={{ fontSize: "15px", fontWeight: 700, color: "#111827", margin: 0 }}>Add Offer</h3>
+              <button onClick={() => setShowOfferModal(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "#9ca3af", fontSize: "18px" }}>×</button>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+              {[
+                { label: "Buyer Name(s)", field: "buyer" as const, placeholder: "e.g. John & Jane Smith" },
+                { label: "Offer Amount", field: "amount" as const, placeholder: "e.g. $1,450,000" },
+              ].map(({ label, field, placeholder }) => (
+                <div key={field}>
+                  <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "5px" }}>{label}</label>
+                  <input value={offerForm[field]} onChange={e => setOfferForm(f => ({ ...f, [field]: e.target.value }))} placeholder={placeholder} style={{ padding: "8px 10px", borderRadius: "7px", border: "1px solid #e5e7eb", fontSize: "13px", fontFamily: "var(--font-inter)", color: "#111827", outline: "none", width: "100%", boxSizing: "border-box" as const }} />
+                </div>
+              ))}
+              <div><label style={{ fontSize: "12px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "5px" }}>Offer Date</label>
+                <input type="date" value={offerForm.offerDate} onChange={e => setOfferForm(f => ({ ...f, offerDate: e.target.value }))} style={{ padding: "8px 10px", borderRadius: "7px", border: "1px solid #e5e7eb", fontSize: "13px", fontFamily: "var(--font-inter)", color: "#111827", outline: "none", width: "100%", boxSizing: "border-box" as const }} />
+              </div>
+              <div><label style={{ fontSize: "12px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "5px" }}>Status</label>
+                <select value={offerForm.status} onChange={e => setOfferForm(f => ({ ...f, status: e.target.value }))} style={{ padding: "8px 10px", borderRadius: "7px", border: "1px solid #e5e7eb", fontSize: "13px", fontFamily: "var(--font-inter)", color: "#111827", outline: "none", width: "100%", boxSizing: "border-box" as const }}>
+                  {["Offer Submitted", "Countered", "Accepted", "Unconditional", "Withdrawn"].map(s => <option key={s}>{s}</option>)}
+                </select>
+              </div>
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", marginTop: "4px" }}>
+                <button onClick={() => setShowOfferModal(false)} style={{ background: "#f3f4f6", color: "#374151", border: "none", borderRadius: "8px", padding: "8px 16px", fontSize: "13px", fontWeight: 600, cursor: "pointer", fontFamily: "var(--font-inter)" }}>Cancel</button>
+                <button onClick={() => {
+                  if (!offerForm.buyer || !offerForm.amount) return;
+                  const newOffer = { id: `o${Date.now()}`, refNo: `REF-${Date.now().toString().slice(-4)}`, buyer: offerForm.buyer, offerDate: offerForm.offerDate, amount: offerForm.amount, status: offerForm.status };
+                  setLocalOffers(prev => [...prev, newOffer]);
+                  setSelectedOfferId(newOffer.id);
+                  setShowOfferModal(false);
+                  setOfferForm({ buyer: "", amount: "", offerDate: new Date().toISOString().slice(0, 10), status: "Offer Submitted" });
+                  showToast(`Offer from ${newOffer.buyer} added`);
+                }} style={{ background: "#111827", color: "#fff", border: "none", borderRadius: "8px", padding: "8px 16px", fontSize: "13px", fontWeight: 600, cursor: "pointer", fontFamily: "var(--font-inter)" }}>Add Offer</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header bar */}
       <div style={{ height: "52px", background: "#111827", display: "flex", alignItems: "center", padding: "0 24px", gap: "12px", flexShrink: 0 }}>
         <button onClick={onBack} style={{ background: "rgba(255,255,255,0.1)", border: "none", borderRadius: "6px", padding: "5px 8px", cursor: "pointer", color: "rgba(255,255,255,0.7)", display: "flex", alignItems: "center", gap: "5px", fontSize: "12px", fontWeight: 600, fontFamily: "var(--font-inter)" }}>
@@ -9303,13 +9538,15 @@ function CrmListingDetailView({ listing, staffRows, onBack }: {
             <button onClick={() => { setEditForm({ ...listing }); setEditMode(false); }} style={{ background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: "6px", padding: "6px 14px", cursor: "pointer", color: "rgba(255,255,255,0.8)", fontSize: "12.5px", fontWeight: 600, fontFamily: "var(--font-inter)" }}>Cancel</button>
             <button onClick={() => setEditMode(false)} style={{ background: "#3b82f6", border: "none", borderRadius: "6px", padding: "6px 14px", cursor: "pointer", color: "#fff", fontSize: "12.5px", fontWeight: 600, fontFamily: "var(--font-inter)" }}>Save Changes</button>
           </>) : (<>
-            {[
-              <svg key="eye" width="16" height="16" viewBox="0 0 16 16" fill="none"><ellipse cx="8" cy="8" rx="6" ry="4" stroke="currentColor" strokeWidth="1.3"/><circle cx="8" cy="8" r="2" stroke="currentColor" strokeWidth="1.3"/></svg>,
-              <svg key="mail" width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="3" width="14" height="10" rx="2" stroke="currentColor" strokeWidth="1.3"/><path d="M1 5l7 5 7-5" stroke="currentColor" strokeWidth="1.3"/></svg>,
-              <svg key="sms" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 2h12a1 1 0 011 1v8a1 1 0 01-1 1H5l-4 3V3a1 1 0 011-1z" stroke="currentColor" strokeWidth="1.3"/></svg>,
-            ].map((icon, i) => (
-              <button key={i} style={{ background: "rgba(255,255,255,0.08)", border: "none", borderRadius: "6px", padding: "6px", cursor: "pointer", color: "rgba(255,255,255,0.7)", display: "flex", alignItems: "center", justifyContent: "center" }}>{icon}</button>
-            ))}
+            <button onClick={() => setShowPortalPreview(true)} style={{ background: "rgba(255,255,255,0.08)", border: "none", borderRadius: "6px", padding: "6px", cursor: "pointer", color: "rgba(255,255,255,0.7)", display: "flex", alignItems: "center", justifyContent: "center" }} title="Portal preview">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><ellipse cx="8" cy="8" rx="6" ry="4" stroke="currentColor" strokeWidth="1.3"/><circle cx="8" cy="8" r="2" stroke="currentColor" strokeWidth="1.3"/></svg>
+            </button>
+            <button onClick={() => setShowEmailModal(true)} style={{ background: "rgba(255,255,255,0.08)", border: "none", borderRadius: "6px", padding: "6px", cursor: "pointer", color: "rgba(255,255,255,0.7)", display: "flex", alignItems: "center", justifyContent: "center" }} title="Email campaign">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="3" width="14" height="10" rx="2" stroke="currentColor" strokeWidth="1.3"/><path d="M1 5l7 5 7-5" stroke="currentColor" strokeWidth="1.3"/></svg>
+            </button>
+            <button onClick={() => setShowSmsModal(true)} style={{ background: "rgba(255,255,255,0.08)", border: "none", borderRadius: "6px", padding: "6px", cursor: "pointer", color: "rgba(255,255,255,0.7)", display: "flex", alignItems: "center", justifyContent: "center" }} title="Send SMS">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 2h12a1 1 0 011 1v8a1 1 0 01-1 1H5l-4 3V3a1 1 0 011-1z" stroke="currentColor" strokeWidth="1.3"/></svg>
+            </button>
             <button onClick={() => { setEditForm({ ...listing }); setEditMode(true); }} style={{ background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: "6px", padding: "6px 14px", cursor: "pointer", color: "#fff", fontSize: "12.5px", fontWeight: 600, fontFamily: "var(--font-inter)", display: "flex", alignItems: "center", gap: "6px" }}>
               <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M11 2l3 3-9 9H2v-3L11 2z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/></svg>
               Edit
@@ -9375,6 +9612,8 @@ function CrmActiveListingsPage({
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState<"date" | "price" | "days">("date");
   const [selectedListing, setSelectedListing] = useState<CrmListing | null>(null);
+  const [kebabListingId, setKebabListingId] = useState<string | null>(null);
+  const [listToast, setListToast] = useState<string | null>(null);
 
   const allListings = [...DEMO_LISTINGS, ...listings.filter(l => l.status === "active")];
   const active = allListings.filter(l => {
@@ -9432,6 +9671,7 @@ function CrmActiveListingsPage({
 
   return (
     <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "calc(100vh - 56px)", overflow: "hidden", padding: "28px 36px", gap: "20px" }}>
+      {listToast && <Toast msg={listToast} onDone={() => setListToast(null)} />}
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0, paddingBottom: "20px", borderBottom: "1px solid #e5e7eb" }}>
         <div>
@@ -9541,9 +9781,25 @@ function CrmActiveListingsPage({
                     {/* Actions */}
                     <div style={{ display: "flex", gap: "8px" }}>
                       <button onClick={(e) => { e.stopPropagation(); setPublishingListing(l); }} style={{ flex: 1, padding: "7px 0", background: "#f5f3ff", color: "#6d28d9", border: "1px solid #ede9fe", borderRadius: "8px", fontSize: "12px", fontWeight: 700, cursor: "pointer" }}>Publish →</button>
-                      <button onClick={(e) => e.stopPropagation()} style={{ padding: "7px 12px", background: "#f9fafb", color: "#374151", border: "1px solid #e5e7eb", borderRadius: "8px", fontSize: "12px", cursor: "pointer" }}>
-                        <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><circle cx="4" cy="8" r="1.5" fill="currentColor"/><circle cx="8" cy="8" r="1.5" fill="currentColor"/><circle cx="12" cy="8" r="1.5" fill="currentColor"/></svg>
-                      </button>
+                      <div style={{ position: "relative" as const }}>
+                        <button onClick={(e) => { e.stopPropagation(); setKebabListingId(l.id === kebabListingId ? null : l.id); }} style={{ padding: "7px 12px", background: "#f9fafb", color: "#374151", border: "1px solid #e5e7eb", borderRadius: "8px", fontSize: "12px", cursor: "pointer" }}>
+                          <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><circle cx="4" cy="8" r="1.5" fill="currentColor"/><circle cx="8" cy="8" r="1.5" fill="currentColor"/><circle cx="12" cy="8" r="1.5" fill="currentColor"/></svg>
+                        </button>
+                        {kebabListingId === l.id && (
+                          <div style={{ position: "absolute" as const, top: "100%", right: 0, marginTop: "4px", background: "#fff", border: "1px solid #e5e7eb", borderRadius: "10px", boxShadow: "0 8px 24px rgba(0,0,0,0.12)", zIndex: 50, minWidth: "160px", padding: "6px" }}>
+                            {[
+                              { label: "View Details", action: () => setSelectedListing(l) },
+                              { label: "Email Campaign", action: () => { setSelectedListing(l); } },
+                              { label: "Archive Listing", action: () => { setListToast("Listing archived"); setKebabListingId(null); } },
+                            ].map(item => (
+                              <button key={item.label} onClick={(e) => { e.stopPropagation(); item.action(); setKebabListingId(null); }} style={{ display: "block", width: "100%", textAlign: "left" as const, padding: "8px 12px", border: "none", background: "none", fontSize: "13px", color: "#374151", cursor: "pointer", borderRadius: "6px", fontFamily: "var(--font-inter)" }}
+                                onMouseEnter={e => (e.currentTarget.style.background = "#f3f4f6")}
+                                onMouseLeave={e => (e.currentTarget.style.background = "none")}
+                              >{item.label}</button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -12279,6 +12535,9 @@ function CrmOpenHomesPage({ staffRows }: { staffRows: StaffRow[] }) {
   type OfiRow = { address: string; suburb: string; date: string; time: string; agent: string; registered: number };
   type FollowUpRow = { buyer: string; property: string; interest: "Hot" | "Warm" | "Cold"; lastOfi: string };
 
+  const [followedUp, setFollowedUp] = useState<Set<string>>(new Set());
+  const [oToast, setOToast] = useState<string | null>(null);
+
   const ofiRows: OfiRow[] = [
     { address: "22 Surf Parade", suburb: "Thirroul", date: "Sat 9 Aug", time: "10:30am", agent: "Sarah Mitchell", registered: 8 },
     { address: "14 Wentworth Ave", suburb: "Wollongong", date: "Sat 9 Aug", time: "1:00pm", agent: "Tom Briggs", registered: 5 },
@@ -12298,13 +12557,14 @@ function CrmOpenHomesPage({ staffRows }: { staffRows: StaffRow[] }) {
 
   return (
     <div style={{ flex: 1, display: "flex", flexDirection: "column", overflowY: "auto", padding: "28px 36px", gap: "20px" }}>
+      {oToast && <Toast msg={oToast} onDone={() => setOToast(null)} />}
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingBottom: "20px", borderBottom: "1px solid #e5e7eb" }}>
         <div>
           <h1 style={{ fontSize: "1.2rem", fontWeight: 700, color: "#111827", letterSpacing: "-0.03em", margin: 0 }}>Open Homes</h1>
           <p style={{ fontSize: "12.5px", color: "#9ca3af", margin: "2px 0 0" }}>Week of 4–10 Aug 2026</p>
         </div>
-        <button style={{ padding: "7px 14px", background: "#111827", color: "#fff", border: "none", borderRadius: "8px", fontSize: "12.5px", fontWeight: 600, cursor: "pointer" }}>Schedule OFI</button>
+        <button onClick={() => setOToast("Redirect to listing OFI tab")} style={{ padding: "7px 14px", background: "#111827", color: "#fff", border: "none", borderRadius: "8px", fontSize: "12.5px", fontWeight: 600, cursor: "pointer" }}>Schedule OFI</button>
       </div>
 
       {/* KPI tiles */}
@@ -12346,8 +12606,8 @@ function CrmOpenHomesPage({ staffRows }: { staffRows: StaffRow[] }) {
                   <td style={{ padding: "12px 16px" }}><span style={{ fontSize: "11.5px", fontWeight: 600, color: "#166534", background: "#f0fdf4", borderRadius: "20px", padding: "2px 10px" }}>Confirmed</span></td>
                   <td style={{ padding: "12px 16px" }}>
                     <div style={{ display: "flex", gap: "6px" }}>
-                      <button style={{ padding: "4px 10px", background: "#f3f4f6", color: "#374151", border: "none", borderRadius: "6px", fontSize: "11.5px", fontWeight: 600, cursor: "pointer" }}>View Attendees</button>
-                      <button style={{ padding: "4px 10px", background: "#f3f4f6", color: "#374151", border: "none", borderRadius: "6px", fontSize: "11.5px", fontWeight: 600, cursor: "pointer" }}>Send Reminders</button>
+                      <button onClick={() => setOToast("Opening attendee list…")} style={{ padding: "4px 10px", background: "#f3f4f6", color: "#374151", border: "none", borderRadius: "6px", fontSize: "11.5px", fontWeight: 600, cursor: "pointer" }}>View Attendees</button>
+                      <button onClick={() => setOToast("Reminders sent to all registered attendees")} style={{ padding: "4px 10px", background: "#f3f4f6", color: "#374151", border: "none", borderRadius: "6px", fontSize: "11.5px", fontWeight: 600, cursor: "pointer" }}>Send Reminders</button>
                     </div>
                   </td>
                 </tr>
@@ -12369,7 +12629,11 @@ function CrmOpenHomesPage({ staffRows }: { staffRows: StaffRow[] }) {
               </div>
               <span style={{ ...interestStyle(f.interest), fontSize: "11.5px", fontWeight: 600, borderRadius: "20px", padding: "2px 10px" }}>{f.interest}</span>
               <span style={{ fontSize: "12px", color: "#9ca3af" }}>OFI {f.lastOfi}</span>
-              <button style={{ padding: "4px 12px", background: "#111827", color: "#fff", border: "none", borderRadius: "6px", fontSize: "11.5px", fontWeight: 600, cursor: "pointer" }}>Follow Up</button>
+              {followedUp.has(f.buyer) ? (
+                <button style={{ padding: "4px 12px", background: "#f3f4f6", color: "#9ca3af", border: "none", borderRadius: "6px", fontSize: "11.5px", fontWeight: 600, cursor: "default" }}>Followed Up ✓</button>
+              ) : (
+                <button onClick={() => { setFollowedUp(s => { const n = new Set(s); n.add(f.buyer); return n; }); setOToast(`Follow-up logged for ${f.buyer}`); }} style={{ padding: "4px 12px", background: "#111827", color: "#fff", border: "none", borderRadius: "6px", fontSize: "11.5px", fontWeight: 600, cursor: "pointer" }}>Follow Up</button>
+              )}
             </div>
           ))}
         </div>
@@ -12382,6 +12646,8 @@ function CrmOpenHomesPage({ staffRows }: { staffRows: StaffRow[] }) {
 
 function CrmVendorHubPage({ staffRows }: { staffRows: StaffRow[] }) {
   void staffRows;
+
+  const [vToast, setVToast] = useState<string | null>(null);
 
   type VendorRow = { address: string; suburb: string; vendor: string; lastReport: string; enquiries: number; inspections: number; status: "Due" | "Sent" };
   type FeedbackRow = { address: string; rating: number; comment: string; date: string };
@@ -12411,13 +12677,14 @@ function CrmVendorHubPage({ staffRows }: { staffRows: StaffRow[] }) {
 
   return (
     <div style={{ flex: 1, display: "flex", flexDirection: "column", overflowY: "auto", padding: "28px 36px", gap: "20px" }}>
+      {vToast && <Toast msg={vToast} onDone={() => setVToast(null)} />}
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingBottom: "20px", borderBottom: "1px solid #e5e7eb" }}>
         <div>
           <h1 style={{ fontSize: "1.2rem", fontWeight: 700, color: "#111827", letterSpacing: "-0.03em", margin: 0 }}>Vendor Hub</h1>
           <p style={{ fontSize: "12.5px", color: "#9ca3af", margin: "2px 0 0" }}>Vendor reports and buyer feedback</p>
         </div>
-        <button style={{ padding: "7px 14px", background: "#111827", color: "#fff", border: "none", borderRadius: "8px", fontSize: "12.5px", fontWeight: 600, cursor: "pointer" }}>Generate Report</button>
+        <button onClick={() => setVToast("Vendor report generated and added to queue")} style={{ padding: "7px 14px", background: "#111827", color: "#fff", border: "none", borderRadius: "8px", fontSize: "12.5px", fontWeight: 600, cursor: "pointer" }}>Generate Report</button>
       </div>
 
       {/* KPI tiles */}
@@ -12458,7 +12725,7 @@ function CrmVendorHubPage({ staffRows }: { staffRows: StaffRow[] }) {
                   <td style={{ fontSize: "13px", color: "#374151", padding: "12px 16px" }}>{v.enquiries}</td>
                   <td style={{ fontSize: "13px", color: "#374151", padding: "12px 16px" }}>{v.inspections}</td>
                   <td style={{ padding: "12px 16px" }}><span style={{ ...statusStyle(v.status), fontSize: "11.5px", fontWeight: 600, borderRadius: "20px", padding: "2px 10px" }}>{v.status === "Due" ? "⚠ Due" : "✓ Sent"}</span></td>
-                  <td style={{ padding: "12px 16px" }}><button style={{ padding: "4px 12px", background: v.status === "Due" ? "#111827" : "#f3f4f6", color: v.status === "Due" ? "#fff" : "#374151", border: "none", borderRadius: "6px", fontSize: "11.5px", fontWeight: 600, cursor: "pointer" }}>{v.status === "Due" ? "Send Report" : "Resend"}</button></td>
+                  <td style={{ padding: "12px 16px" }}><button onClick={() => setVToast("Report sent to vendor via email")} style={{ padding: "4px 12px", background: v.status === "Due" ? "#111827" : "#f3f4f6", color: v.status === "Due" ? "#fff" : "#374151", border: "none", borderRadius: "6px", fontSize: "11.5px", fontWeight: 600, cursor: "pointer" }}>{v.status === "Due" ? "Send Report" : "Resend"}</button></td>
                 </tr>
               ))}
             </tbody>
