@@ -8520,6 +8520,25 @@ function CrmListingDetailView({ listing, staffRows, onBack }: {
   const [selectedOfferId, setSelectedOfferId] = useState<string | null>(
     listing.offers && listing.offers.length > 0 ? listing.offers[0].id : null
   );
+  const [editMode, setEditMode] = useState(false);
+  const [editForm, setEditForm] = useState<CrmListing>({ ...listing });
+
+  const inpStyle: React.CSSProperties = { padding: "6px 8px", borderRadius: "6px", border: "1px solid #d1d5db", fontSize: "13px", fontFamily: "var(--font-inter)", color: "#111827", background: "#fff", outline: "none", width: "100%", boxSizing: "border-box" };
+  const eInp = (field: keyof CrmListing, type: "text" | "date" = "text", placeholder = "") => {
+    const raw = editForm[field] as string | undefined;
+    if (!editMode) return <span style={{ fontSize: "13px", color: "#111827", fontWeight: 600 }}>{(listing[field] as string) || "—"}</span>;
+    return <input type={type} value={raw || ""} placeholder={placeholder} onChange={e => setEditForm(f => ({ ...f, [field]: e.target.value }))} style={inpStyle} />;
+  };
+  const eSel = (field: keyof CrmListing, options: string[]) => {
+    const raw = editForm[field] as string | undefined;
+    if (!editMode) return <span style={{ fontSize: "13px", color: "#111827", fontWeight: 600 }}>{(listing[field] as string) || options[0]}</span>;
+    return <select value={raw || options[0]} onChange={e => setEditForm(f => ({ ...f, [field]: e.target.value }))} style={inpStyle}>{options.map(o => <option key={o}>{o}</option>)}</select>;
+  };
+  const eTxt = (field: keyof CrmListing, placeholder = "", rows = 4) => {
+    const raw = editForm[field] as string | undefined;
+    if (!editMode) return <div style={{ fontSize: "13px", color: "#374151", lineHeight: 1.6, whiteSpace: "pre-wrap" }}>{(listing[field] as string) || "—"}</div>;
+    return <textarea value={raw || ""} placeholder={placeholder} rows={rows} onChange={e => setEditForm(f => ({ ...f, [field]: e.target.value }))} style={{ ...inpStyle, resize: "none", lineHeight: 1.6 }} />;
+  };
 
   const statusLabel: Record<string, string> = { active: "Active", "under-offer": "Under Offer", sold: "Sold", leased: "Leased", archived: "Archived" };
   const statusBadgeStyle = (st: string): React.CSSProperties => {
@@ -8538,7 +8557,7 @@ function CrmListingDetailView({ listing, staffRows, onBack }: {
     { key: "contacts", label: "Agents & Contacts" },
     { key: "resources", label: "Resources" },
     { key: "offers", label: "Offers/Contracts" },
-    { key: "commission", label: "Commission" },
+    { key: "commission", label: listing.type === "rental" ? "Management" : "Commission" },
   ];
 
   const dRow = (label: string, value: React.ReactNode, last = false): React.ReactNode => (
@@ -8657,27 +8676,28 @@ function CrmListingDetailView({ listing, staffRows, onBack }: {
   // ── GENERAL TAB ──────────────────────────────────────────────────────────
   const renderGeneral = () => {
     const gRow = (label: string, value: React.ReactNode, last = false) => (
-      <div style={{ display: "grid", gridTemplateColumns: "160px 1fr", padding: "10px 0", borderBottom: last ? "none" : "1px solid #f3f4f6", alignItems: "center" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "160px 1fr", padding: "10px 0", borderBottom: last ? "none" : "1px solid #f3f4f6", alignItems: "center", gap: "8px" }}>
         <span style={{ fontSize: "13px", color: "#6b7280", fontWeight: 500 }}>{label}</span>
-        <span style={{ fontSize: "13px", color: "#111827", fontWeight: 600 }}>{value}</span>
+        <div>{value}</div>
       </div>
     );
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+        {editMode && <div style={{ background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: "8px", padding: "10px 14px", fontSize: "12.5px", color: "#1d4ed8", fontWeight: 500 }}>Edit mode active — make changes below then click Save Changes.</div>}
         {sectionCard("Property Classification", <>
           {gRow("Status", <span style={statusBadgeStyle(listing.status)}>{statusLabel[listing.status] || listing.status}</span>)}
           {gRow("For Sale/Lease", <span style={{ background: listing.type === "sale" ? "#f0fdf4" : "#eff6ff", color: listing.type === "sale" ? "#166534" : "#1d4ed8", padding: "2px 8px", borderRadius: "6px", fontSize: "12px", fontWeight: 700 }}>{listing.type === "sale" ? "For Sale" : "For Lease"}</span>)}
           {gRow("Type", "Residential")}
-          {gRow("Category", listing.propertyType || "—")}
-          {gRow("Sale Method", listing.saleMethod || "Private Treaty")}
-          {gRow("Authority", listing.authority || "Exclusive", true)}
+          {gRow("Category", eSel("propertyType", ["House", "Unit / Apartment", "Townhouse", "Land", "Rural", "Commercial", "Other"]))}
+          {gRow("Sale Method", eSel("saleMethod", ["Private Treaty", "Auction", "Expression of Interest", "Tender"]))}
+          {gRow("Authority", eSel("authority", ["Exclusive", "Open Agency", "Conjunction"]), true)}
         </>)}
         {sectionCard("Address", <>
-          {gRow("Street Address", listing.address)}
-          {gRow("Suburb", listing.suburb)}
-          {gRow("State", listing.state || "NSW")}
-          {gRow("Postcode", listing.postcode || "—")}
-          {gRow("Full Display Address", `${listing.address}, ${listing.suburb} ${listing.state || "NSW"} ${listing.postcode || ""}`.trim(), true)}
+          {gRow("Street Address", eInp("address", "text", "e.g. 22 Surf Parade"))}
+          {gRow("Suburb", eInp("suburb", "text", "e.g. Thirroul"))}
+          {gRow("State", eSel("state", ["NSW", "VIC", "QLD", "WA", "SA", "TAS", "ACT", "NT"]))}
+          {gRow("Postcode", eInp("postcode", "text", "e.g. 2515"))}
+          {gRow("Full Display Address", <span style={{ fontSize: "13px", color: "#111827", fontWeight: 600 }}>{`${editMode ? editForm.address : listing.address}, ${editMode ? editForm.suburb : listing.suburb} ${editMode ? (editForm.state || "NSW") : (listing.state || "NSW")} ${editMode ? (editForm.postcode || "") : (listing.postcode || "")}`.trim()}</span>, true)}
         </>)}
         {sectionCard("Options", <>
           <div style={{ display: "flex", gap: "10px" }}>
@@ -8689,78 +8709,99 @@ function CrmListingDetailView({ listing, staffRows, onBack }: {
     );
   };
 
-  // ── FOR SALE TAB ──────────────────────────────────────────────────────────
-  const renderForSale = () => (
-    <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
-        {sectionCard("Listing Dates & Pricing", <>
-          {dRow("Listing Date", listing.listedDate)}
-          {dRow("Agency Expiry", listing.agencyExpiry || "—")}
-          {dRow("Expected On Market", "—")}
-          {dRow("Search Price", listing.searchPrice ? "$" + listing.searchPrice : "—")}
-          {dRow("Display Price", listing.displayPrice || "—")}
-          {dRow("Quote Price", listing.quotePrice || "—")}
-          {dRow("GST", "Not Applicable", true)}
-        </>)}
-        {sectionCard("Rates & Charges", <>
-          {dRow("Water Rates", listing.waterRates ? `$${listing.waterRates} per quarter` : "—")}
-          {dRow("Council Rates", listing.councilRates ? `$${listing.councilRates} per quarter` : "—")}
-          {dRow("Land Tax", "—")}
-          {dRow("Strata Admin Fund", "—")}
-          {dRow("Strata Sinking Fund", "—")}
-          {dRow("Total Outgoings", "0 per year", true)}
+  // ── FOR SALE / FOR RENT TAB ──────────────────────────────────────────────
+  const renderForSale = () => {
+    const eRow = (label: string, node: React.ReactNode, last = false) => (
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: last ? "none" : "1px solid #f9fafb", gap: "12px" }}>
+        <span style={{ fontSize: "11.5px", color: "#9ca3af", fontWeight: 500, flexShrink: 0 }}>{label}</span>
+        <div style={{ minWidth: editMode ? "160px" : "auto", textAlign: editMode ? "left" : "right" }}>{node}</div>
+      </div>
+    );
+    if (listing.type === "rental") return (
+      <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+        {sectionCard("Rental Details", <>
+          {eRow("Weekly Rent", eInp("price", "text", "$620"))}
+          {eRow("Display Rent", eInp("displayPrice", "text", "$620 per week"))}
+          {eRow("Bond", eInp("bond", "text", "$2,480"))}
+          {eRow("Available Date", eInp("availableDate", "date"))}
+          {eRow("Lease Term", eSel("leaseTerm", ["6 months", "12 months", "24 months", "Month to Month"]))}
+          {eRow("Pets Allowed", eSel("petsAllowed", ["No", "Yes", "By Negotiation"]))}
+          {eRow("Furnished", eSel("furnished", ["Unfurnished", "Furnished", "Partially Furnished"]), true)}
         </>)}
       </div>
-      {sectionCard("Investment Details", <>
-        {dRow("Investment?", "No")}
-        {dRow("Lease Potential", "—")}
-        {dRow("Return %", "—")}
-        {dRow("Tenanted?", "No", true)}
-      </>)}
-    </div>
-  );
+    );
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+          {sectionCard("Listing Dates & Pricing", <>
+            {eRow("Listing Date", eInp("listedDate", "date"))}
+            {eRow("Agency Expiry", eInp("agencyExpiry", "date"))}
+            {eRow("Search Price", eInp("searchPrice", "text", "1550000"))}
+            {eRow("Display Price", eInp("displayPrice", "text", "Offers Over $1,550,000"))}
+            {eRow("Quote Price", eInp("quotePrice", "text", "$1,550,000 – $1,650,000"))}
+            {eRow("Sale Price", eInp("price", "text", "$1,580,000"))}
+            {eRow("GST", "Not Applicable", true)}
+          </>)}
+          {sectionCard("Rates & Charges", <>
+            {eRow("Water Rates ($/qtr)", eInp("waterRates", "text", "320"))}
+            {eRow("Council Rates ($/qtr)", eInp("councilRates", "text", "620"))}
+            {eRow("Land Tax", "—")}
+            {eRow("Strata Admin Fund", "—")}
+            {eRow("Strata Sinking Fund", "—")}
+            {eRow("Total Outgoings", "0 per year", true)}
+          </>)}
+        </div>
+        {sectionCard("Investment Details", <>
+          {eRow("Investment?", "No")}
+          {eRow("Lease Potential", "—")}
+          {eRow("Return %", "—")}
+          {eRow("Tenanted?", "No", true)}
+        </>)}
+      </div>
+    );
+  };
 
   // ── FEATURES TAB ──────────────────────────────────────────────────────────
   const renderFeatures = () => {
-    const descLen = (listing.description || "").length;
-    const attrs: { label: string; val: string }[] = [
-      { label: "Bedrooms", val: listing.bedrooms || "—" },
-      { label: "Bathrooms", val: listing.bathrooms || "—" },
-      { label: "Lounge Rooms", val: listing.loungeRooms || "—" },
-      { label: "Toilets", val: listing.toilets || "—" },
-      { label: "Pools", val: "—" },
-      { label: "Garages", val: listing.garages || "—" },
-      { label: "Carports", val: "—" },
-      { label: "Car Spaces", val: listing.carSpaces || "—" },
-      { label: "Land Size", val: listing.landSize ? listing.landSize + " sqm" : "—" },
-      { label: "Home Size", val: listing.homeSize ? listing.homeSize + " sqm" : "—" },
-      { label: "Frontage", val: "—" },
-      { label: "Construction", val: "—" },
-      { label: "Energy Rating", val: "—" },
-    ];
+    const descLen = (editMode ? (editForm.description || "") : (listing.description || "")).length;
+    const aInp = (field: keyof CrmListing, label: string) => (
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "7px 6px", borderBottom: "1px solid #f3f4f6", gap: "8px" }}>
+        <span style={{ fontSize: "12.5px", color: "#6b7280", flexShrink: 0 }}>{label}</span>
+        {editMode
+          ? <input value={(editForm[field] as string) || ""} onChange={e => setEditForm(f => ({ ...f, [field]: e.target.value }))} style={{ width: "80px", padding: "4px 7px", borderRadius: "5px", border: "1px solid #d1d5db", fontSize: "12.5px", fontFamily: "var(--font-inter)", color: "#111827", textAlign: "right", outline: "none" }} />
+          : <span style={{ fontSize: "12.5px", fontWeight: 600, color: "#111827" }}>{(listing[field] as string) || "—"}</span>}
+      </div>
+    );
     return (
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
         {sectionCard("Marketing Copy", <>
           <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
             <div>
               <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "5px" }}>Main Headline</label>
-              <textarea readOnly value={listing.headline || ""} placeholder="Add main headline…" style={{ width: "100%", height: "80px", padding: "8px 10px", borderRadius: "7px", border: "1px solid #e5e7eb", fontSize: "13px", fontFamily: "var(--font-inter)", color: "#111827", resize: "none", boxSizing: "border-box" as const, outline: "none" }} />
+              <textarea readOnly={!editMode} value={editMode ? (editForm.headline || "") : (listing.headline || "")} placeholder="Add main headline…" onChange={e => setEditForm(f => ({ ...f, headline: e.target.value }))} style={{ width: "100%", height: "80px", padding: "8px 10px", borderRadius: "7px", border: "1px solid #e5e7eb", fontSize: "13px", fontFamily: "var(--font-inter)", color: "#111827", resize: "none", boxSizing: "border-box" as const, outline: "none", background: editMode ? "#fff" : "#f9fafb" }} />
             </div>
             <div>
               <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "5px" }}>Property Description</label>
-              <textarea readOnly value={listing.description || ""} placeholder="Add property description…" style={{ width: "100%", height: "180px", padding: "8px 10px", borderRadius: "7px", border: "1px solid #e5e7eb", fontSize: "13px", fontFamily: "var(--font-inter)", color: "#111827", resize: "none", boxSizing: "border-box" as const, outline: "none" }} />
+              <textarea readOnly={!editMode} value={editMode ? (editForm.description || "") : (listing.description || "")} placeholder="Add property description…" onChange={e => setEditForm(f => ({ ...f, description: e.target.value }))} style={{ width: "100%", height: "180px", padding: "8px 10px", borderRadius: "7px", border: "1px solid #e5e7eb", fontSize: "13px", fontFamily: "var(--font-inter)", color: "#111827", resize: "none", boxSizing: "border-box" as const, outline: "none", background: editMode ? "#fff" : "#f9fafb" }} />
               <div style={{ fontSize: "11.5px", color: "#9ca3af", marginTop: "4px" }}>Characters: {descLen} / 6000</div>
             </div>
           </div>
         </>)}
         {sectionCard("Property Attributes", <>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0" }}>
-            {attrs.map((a, i) => (
-              <div key={a.label} style={{ display: "flex", justifyContent: "space-between", padding: "8px 6px", borderBottom: "1px solid #f3f4f6" }}>
-                <span style={{ fontSize: "12.5px", color: "#6b7280" }}>{a.label}</span>
-                <span style={{ fontSize: "12.5px", fontWeight: 600, color: "#111827" }}>{a.val}</span>
-              </div>
-            ))}
+            {aInp("bedrooms", "Bedrooms")}
+            {aInp("bathrooms", "Bathrooms")}
+            {aInp("loungeRooms", "Lounge Rooms")}
+            {aInp("toilets", "Toilets")}
+            <div style={{ display: "flex", justifyContent: "space-between", padding: "7px 6px", borderBottom: "1px solid #f3f4f6" }}><span style={{ fontSize: "12.5px", color: "#6b7280" }}>Pools</span><span style={{ fontSize: "12.5px", fontWeight: 600, color: "#111827" }}>—</span></div>
+            {aInp("garages", "Garages")}
+            <div style={{ display: "flex", justifyContent: "space-between", padding: "7px 6px", borderBottom: "1px solid #f3f4f6" }}><span style={{ fontSize: "12.5px", color: "#6b7280" }}>Carports</span><span style={{ fontSize: "12.5px", fontWeight: 600, color: "#111827" }}>—</span></div>
+            {aInp("carSpaces", "Car Spaces")}
+            {aInp("landSize", "Land Size (sqm)")}
+            {aInp("homeSize", "Home Size (sqm)")}
+            <div style={{ display: "flex", justifyContent: "space-between", padding: "7px 6px", borderBottom: "1px solid #f3f4f6" }}><span style={{ fontSize: "12.5px", color: "#6b7280" }}>Frontage</span><span style={{ fontSize: "12.5px", fontWeight: 600, color: "#111827" }}>—</span></div>
+            <div style={{ display: "flex", justifyContent: "space-between", padding: "7px 6px", borderBottom: "1px solid #f3f4f6" }}><span style={{ fontSize: "12.5px", color: "#6b7280" }}>Construction</span><span style={{ fontSize: "12.5px", fontWeight: 600, color: "#111827" }}>—</span></div>
+            <div style={{ display: "flex", justifyContent: "space-between", padding: "7px 6px" }}><span style={{ fontSize: "12.5px", color: "#6b7280" }}>Energy Rating</span><span style={{ fontSize: "12.5px", fontWeight: 600, color: "#111827" }}>—</span></div>
           </div>
         </>)}
       </div>
@@ -8981,8 +9022,23 @@ function CrmListingDetailView({ listing, staffRows, onBack }: {
           </div>
         ))}
       </>)}
+      {sectionCard("Video", <>
+        <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+          <div>
+            <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "5px" }}>Video Link (YouTube, Vimeo, Virtual Tour)</label>
+            <input type="url" placeholder="https://www.youtube.com/watch?v=…" style={{ width: "100%", padding: "8px 10px", borderRadius: "7px", border: "1px solid #e5e7eb", fontSize: "13px", fontFamily: "var(--font-inter)", color: "#111827", outline: "none", boxSizing: "border-box" as const }} />
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <span style={{ fontSize: "13px", color: "#6b7280" }}>Or upload a video file directly</span>
+            <button style={{ padding: "7px 14px", background: "#111827", color: "#fff", border: "none", borderRadius: "8px", fontSize: "12.5px", fontWeight: 600, cursor: "pointer" }}>Video Upload</button>
+          </div>
+          <div style={{ border: "2px dashed #e5e7eb", borderRadius: "10px", padding: "28px", textAlign: "center", color: "#9ca3af", fontSize: "13px" }}>
+            Drag and drop a video file here, or click Upload. MP4, MOV supported. Max 500MB.
+          </div>
+        </div>
+      </>)}
       {sectionCard("Links", <>
-        <textarea placeholder="Add portal URLs, virtual tour links, video links…" style={{ width: "100%", height: "80px", padding: "8px 10px", borderRadius: "7px", border: "1px solid #e5e7eb", fontSize: "13px", fontFamily: "var(--font-inter)", color: "#111827", resize: "none", boxSizing: "border-box" as const, outline: "none" }} />
+        <textarea placeholder="Add portal URLs, virtual tour links, external video links…" style={{ width: "100%", height: "80px", padding: "8px 10px", borderRadius: "7px", border: "1px solid #e5e7eb", fontSize: "13px", fontFamily: "var(--font-inter)", color: "#111827", resize: "none", boxSizing: "border-box" as const, outline: "none" }} />
       </>)}
     </div>
   );
@@ -9097,6 +9153,53 @@ function CrmListingDetailView({ listing, staffRows, onBack }: {
   };
 
   // ── COMMISSION TAB ──────────────────────────────────────────────────────────
+  // ── MANAGEMENT TAB (rental only) ─────────────────────────────────────────
+  const renderManagement = () => {
+    const weeklyRent = parseFloat((listing.price || "").replace(/[^0-9.]/g, ""));
+    const mgmtRate = parseFloat((editMode ? (editForm.commissionRate || "8") : (listing.commissionRate || "8")));
+    const weeklyFee = (!isNaN(weeklyRent) && !isNaN(mgmtRate)) ? weeklyRent * mgmtRate / 100 : null;
+    const annualFee = weeklyFee ? weeklyFee * 52 : null;
+    const fmtC = (n: number) => "$" + n.toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const mRow = (label: string, value: React.ReactNode, last = false) => (
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: last ? "none" : "1px solid #f3f4f6" }}>
+        <span style={{ fontSize: "13px", color: "#6b7280", fontWeight: 500 }}>{label}</span>
+        <div style={{ textAlign: "right" }}>{value}</div>
+      </div>
+    );
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+        {sectionCard("Management Rate", <>
+          {mRow("Property Address", <span style={{ fontWeight: 600, color: "#111827", fontSize: "13px" }}>{listing.address}, {listing.suburb}</span>)}
+          {mRow("Landlord", <span style={{ fontWeight: 600, color: "#111827", fontSize: "13px" }}>{listing.owner || "—"}</span>)}
+          {mRow("Property Manager", <span style={{ fontWeight: 600, color: "#111827", fontSize: "13px" }}>{listing.agent || "—"}</span>)}
+          {mRow("Weekly Rent", <span style={{ fontWeight: 600, color: "#111827", fontSize: "13px" }}>{listing.price ? `${listing.price} pw` : "—"}</span>)}
+          {mRow("Management Rate (%)", editMode
+            ? <input type="text" value={editForm.commissionRate || ""} onChange={e => setEditForm(f => ({ ...f, commissionRate: e.target.value }))} placeholder="8" style={{ width: "100px", padding: "6px 8px", borderRadius: "6px", border: "1px solid #d1d5db", fontSize: "13px", fontFamily: "var(--font-inter)", textAlign: "right", outline: "none" }} />
+            : <span style={{ fontWeight: 700, color: "#111827", fontSize: "15px" }}>{listing.commissionRate || "8"}%</span>
+          )}
+          {mRow("Weekly Management Fee", <span style={{ fontWeight: 600, color: "#111827", fontSize: "13px" }}>{weeklyFee ? fmtC(weeklyFee) : "—"}</span>)}
+          {mRow("Annual Management Fee (est.)", <span style={{ fontWeight: 700, color: "#111827", fontSize: "14px" }}>{annualFee ? fmtC(annualFee) : "—"}</span>, true)}
+        </>)}
+        {sectionCard("Additional Fees", <>
+          {mRow("Letting Fee", "1 week rent (+ GST)")}
+          {mRow("Lease Renewal Fee", "0.5 weeks rent (+ GST)")}
+          {mRow("Routine Inspection Fee", "$0.00")}
+          {mRow("Tribunal Attendance Fee", "$110.00 per hour")}
+          {mRow("NCAT Filing Fee", "At cost", true)}
+        </>)}
+        {sectionCard("Landlord Statement", <>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div>
+              <div style={{ fontSize: "13px", fontWeight: 600, color: "#111827" }}>Monthly Statement</div>
+              <div style={{ fontSize: "12px", color: "#9ca3af" }}>No statements generated yet</div>
+            </div>
+            <button style={{ padding: "7px 14px", background: "#111827", color: "#fff", border: "none", borderRadius: "8px", fontSize: "12.5px", fontWeight: 600, cursor: "pointer" }}>Generate Statement</button>
+          </div>
+        </>)}
+      </div>
+    );
+  };
+
   const renderCommission = () => {
     const comm = calcComm();
     const offers = listing.offers || [];
@@ -9179,7 +9282,7 @@ function CrmListingDetailView({ listing, staffRows, onBack }: {
     if (tab === "contacts") return renderContacts();
     if (tab === "resources") return renderResources();
     if (tab === "offers") return renderOffers();
-    if (tab === "commission") return renderCommission();
+    if (tab === "commission") return listing.type === "rental" ? renderManagement() : renderCommission();
     return null;
   };
 
@@ -9196,16 +9299,22 @@ function CrmListingDetailView({ listing, staffRows, onBack }: {
           <span style={statusBadgeStyle(listing.status)}>{statusLabel[listing.status] || listing.status}</span>
         </div>
         <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
-          {[
-            <svg key="eye" width="16" height="16" viewBox="0 0 16 16" fill="none"><ellipse cx="8" cy="8" rx="6" ry="4" stroke="currentColor" strokeWidth="1.3"/><circle cx="8" cy="8" r="2" stroke="currentColor" strokeWidth="1.3"/></svg>,
-            <svg key="mail" width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="3" width="14" height="10" rx="2" stroke="currentColor" strokeWidth="1.3"/><path d="M1 5l7 5 7-5" stroke="currentColor" strokeWidth="1.3"/></svg>,
-            <svg key="sms" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 2h12a1 1 0 011 1v8a1 1 0 01-1 1H5l-4 3V3a1 1 0 011-1z" stroke="currentColor" strokeWidth="1.3"/></svg>,
-            <svg key="edit" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M11 2l3 3-9 9H2v-3L11 2z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/></svg>,
-          ].map((icon, i) => (
-            <button key={i} style={{ background: "rgba(255,255,255,0.08)", border: "none", borderRadius: "6px", padding: "6px", cursor: "pointer", color: "rgba(255,255,255,0.7)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              {icon}
+          {editMode ? (<>
+            <button onClick={() => { setEditForm({ ...listing }); setEditMode(false); }} style={{ background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: "6px", padding: "6px 14px", cursor: "pointer", color: "rgba(255,255,255,0.8)", fontSize: "12.5px", fontWeight: 600, fontFamily: "var(--font-inter)" }}>Cancel</button>
+            <button onClick={() => setEditMode(false)} style={{ background: "#3b82f6", border: "none", borderRadius: "6px", padding: "6px 14px", cursor: "pointer", color: "#fff", fontSize: "12.5px", fontWeight: 600, fontFamily: "var(--font-inter)" }}>Save Changes</button>
+          </>) : (<>
+            {[
+              <svg key="eye" width="16" height="16" viewBox="0 0 16 16" fill="none"><ellipse cx="8" cy="8" rx="6" ry="4" stroke="currentColor" strokeWidth="1.3"/><circle cx="8" cy="8" r="2" stroke="currentColor" strokeWidth="1.3"/></svg>,
+              <svg key="mail" width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="3" width="14" height="10" rx="2" stroke="currentColor" strokeWidth="1.3"/><path d="M1 5l7 5 7-5" stroke="currentColor" strokeWidth="1.3"/></svg>,
+              <svg key="sms" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 2h12a1 1 0 011 1v8a1 1 0 01-1 1H5l-4 3V3a1 1 0 011-1z" stroke="currentColor" strokeWidth="1.3"/></svg>,
+            ].map((icon, i) => (
+              <button key={i} style={{ background: "rgba(255,255,255,0.08)", border: "none", borderRadius: "6px", padding: "6px", cursor: "pointer", color: "rgba(255,255,255,0.7)", display: "flex", alignItems: "center", justifyContent: "center" }}>{icon}</button>
+            ))}
+            <button onClick={() => { setEditForm({ ...listing }); setEditMode(true); }} style={{ background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: "6px", padding: "6px 14px", cursor: "pointer", color: "#fff", fontSize: "12.5px", fontWeight: 600, fontFamily: "var(--font-inter)", display: "flex", alignItems: "center", gap: "6px" }}>
+              <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M11 2l3 3-9 9H2v-3L11 2z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/></svg>
+              Edit
             </button>
-          ))}
+          </>)}
         </div>
       </div>
 
