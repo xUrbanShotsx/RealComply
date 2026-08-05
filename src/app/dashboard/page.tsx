@@ -123,6 +123,27 @@ type CrmListing = {
   complianceSynced: boolean;
   // portal publishing
   portalStatus?: Record<string, "idle" | "pending" | "live">;
+  // Extended listing detail fields
+  headline?: string;
+  description?: string;
+  quotePrice?: string;
+  searchPrice?: string;
+  saleMethod?: string;
+  authority?: string;
+  agencyExpiry?: string;
+  state?: string;
+  postcode?: string;
+  homeSize?: string;
+  loungeRooms?: string;
+  garages?: string;
+  toilets?: string;
+  waterRates?: string;
+  councilRates?: string;
+  vendorPhone?: string;
+  vendorEmail?: string;
+  commissionRate?: string;
+  ofis?: { date: string; from: string; to: string; type: string; attendees: number }[];
+  offers?: { id: string; refNo: string; buyer: string; offerDate: string; amount: string; status: string; contractDate?: string; unconditionalDate?: string; deposit?: string }[];
 };
 
 type CrmContact = {
@@ -8487,6 +8508,725 @@ function AiAutomationPanel({ automations, insight }: { automations: AiAutomation
   );
 }
 
+// ─── Listing Detail View ──────────────────────────────────────────────────────
+
+function CrmListingDetailView({ listing, staffRows, onBack }: {
+  listing: CrmListing;
+  staffRows: StaffRow[];
+  onBack: () => void;
+}) {
+  const [tab, setTab] = useState("overview");
+  const [offerFilter, setOfferFilter] = useState("All");
+  const [selectedOfferId, setSelectedOfferId] = useState<string | null>(
+    listing.offers && listing.offers.length > 0 ? listing.offers[0].id : null
+  );
+
+  const statusLabel: Record<string, string> = { active: "Active", "under-offer": "Under Offer", sold: "Sold", leased: "Leased", archived: "Archived" };
+  const statusBadgeStyle = (st: string): React.CSSProperties => {
+    if (st === "active") return { background: "#f0fdf4", color: "#166534", padding: "3px 10px", borderRadius: "20px", fontSize: "11.5px", fontWeight: 700 };
+    if (st === "under-offer") return { background: "#fffbeb", color: "#92400e", padding: "3px 10px", borderRadius: "20px", fontSize: "11.5px", fontWeight: 700 };
+    if (st === "sold") return { background: "#fef2f2", color: "#991b1b", padding: "3px 10px", borderRadius: "20px", fontSize: "11.5px", fontWeight: 700 };
+    return { background: "#f3f4f6", color: "#374151", padding: "3px 10px", borderRadius: "20px", fontSize: "11.5px", fontWeight: 700 };
+  };
+
+  const tabs = [
+    { key: "overview", label: "Overview" },
+    { key: "general", label: "General" },
+    { key: "forsale", label: listing.type === "rental" ? "For Rent" : "For Sale" },
+    { key: "features", label: "Features" },
+    { key: "ofi", label: "OFI" },
+    { key: "contacts", label: "Agents & Contacts" },
+    { key: "resources", label: "Resources" },
+    { key: "offers", label: "Offers/Contracts" },
+    { key: "commission", label: "Commission" },
+  ];
+
+  const dRow = (label: string, value: React.ReactNode, last = false): React.ReactNode => (
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: last ? "none" : "1px solid #f9fafb" }}>
+      <span style={{ fontSize: "11.5px", color: "#9ca3af", fontWeight: 500 }}>{label}</span>
+      <span style={{ fontSize: "13px", color: "#111827", fontWeight: 600, textAlign: "right" }}>{value}</span>
+    </div>
+  );
+
+  const sectionCard = (title: string, children: React.ReactNode, style?: React.CSSProperties) => (
+    <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: "12px", padding: "18px 20px", boxShadow: "0 1px 2px rgba(0,0,0,0.04)", ...style }}>
+      {title && <div style={{ fontSize: "13.5px", fontWeight: 700, color: "#111827", marginBottom: "12px" }}>{title}</div>}
+      {children}
+    </div>
+  );
+
+  const calcComm = () => {
+    try {
+      const saleNum = parseFloat(listing.price.replace(/[^0-9.]/g, ""));
+      const rate = parseFloat(listing.commissionRate || "1.5");
+      if (isNaN(saleNum) || isNaN(rate)) return null;
+      const exGST = saleNum * rate / 100;
+      const gst = exGST * 0.1;
+      const incGST = exGST + gst;
+      return { exGST, gst, incGST };
+    } catch { return null; }
+  };
+
+  const fmtCurrency = (n: number) => "$" + n.toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  const daysOnMarket = () => {
+    const d = new Date(listing.listedDate);
+    const now = new Date();
+    return Math.floor((now.getTime() - d.getTime()) / 86400000);
+  };
+
+  // ── OVERVIEW TAB ──────────────────────────────────────────────────────────
+  const renderOverview = () => (
+    <div style={{ display: "flex", gap: "20px" }}>
+      {/* Left 55% */}
+      <div style={{ flex: "0 0 55%", display: "flex", flexDirection: "column", gap: "16px" }}>
+        {/* Photo hero */}
+        <div style={{ height: "260px", borderRadius: "12px", background: "linear-gradient(135deg, #1e293b 0%, #334155 100%)", display: "flex", alignItems: "center", justifyContent: "center", position: "relative", flexDirection: "column", gap: "8px" }}>
+          <svg width="40" height="40" viewBox="0 0 40 40" fill="none"><path d="M5 20L20 7l15 13v16H25V26h-10v10H5V20z" fill="rgba(255,255,255,0.2)" stroke="rgba(255,255,255,0.3)" strokeWidth="1.5"/></svg>
+          <span style={{ color: "rgba(255,255,255,0.7)", fontSize: "13px", fontWeight: 600 }}>Photo Gallery</span>
+          <span style={{ color: "rgba(255,255,255,0.4)", fontSize: "11.5px" }}>No photos uploaded yet</span>
+        </div>
+        {/* Stats strip */}
+        <div style={{ display: "flex", alignItems: "center", background: "#fff", border: "1px solid #e5e7eb", borderRadius: "10px", padding: "10px 16px", gap: "0" }}>
+          {[
+            { icon: <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M1 11V7a2 2 0 012-2h10a2 2 0 012 2v4" stroke="#6b7280" strokeWidth="1.3" strokeLinecap="round"/><path d="M1 11h14M4 5V3" stroke="#6b7280" strokeWidth="1.3" strokeLinecap="round"/></svg>, val: listing.bedrooms || "—", label: "Beds" },
+            { icon: <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 10V4a2 2 0 014 0" stroke="#6b7280" strokeWidth="1.3" strokeLinecap="round"/><path d="M1 10h14v1a3 3 0 01-3 3H4a3 3 0 01-3-3v-1z" stroke="#6b7280" strokeWidth="1.3"/></svg>, val: listing.bathrooms || "—", label: "Baths" },
+            { icon: <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="1" y="6" width="14" height="7" rx="2" stroke="#6b7280" strokeWidth="1.3"/><path d="M4 6l1.5-3h5L12 6" stroke="#6b7280" strokeWidth="1.3" strokeLinejoin="round"/></svg>, val: listing.carSpaces || "—", label: "Car" },
+            { icon: <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="1" stroke="#6b7280" strokeWidth="1.3"/></svg>, val: listing.landSize ? listing.landSize + "m²" : "—", label: "Land" },
+            { icon: <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M2 14V7l6-5 6 5v7H2z" stroke="#6b7280" strokeWidth="1.3"/></svg>, val: listing.homeSize ? listing.homeSize + "m²" : "—", label: "Home" },
+          ].map((s, i, arr) => (
+            <div key={s.label} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: "2px", borderRight: i < arr.length - 1 ? "1px solid #f3f4f6" : "none", padding: "4px 8px" }}>
+              {s.icon}
+              <span style={{ fontSize: "14px", fontWeight: 700, color: "#111827" }}>{s.val}</span>
+              <span style={{ fontSize: "10.5px", color: "#9ca3af" }}>{s.label}</span>
+            </div>
+          ))}
+        </div>
+        {/* Headline */}
+        <div style={{ fontSize: "15px", fontWeight: 700, color: "#111827" }}>{listing.headline || "No marketing headline added"}</div>
+        {/* Description excerpt */}
+        <div style={{ fontSize: "13px", color: "#6b7280", lineHeight: 1.6 }}>{(listing.description || "No description added.").slice(0, 200)}{(listing.description || "").length > 200 ? "…" : ""}</div>
+      </div>
+
+      {/* Right 45% */}
+      <div style={{ flex: "0 0 calc(45% - 20px)", display: "flex", flexDirection: "column", gap: "0" }}>
+        {sectionCard("", <>
+          {/* Listing Status */}
+          <div style={{ marginBottom: "14px" }}>
+            <div style={{ fontSize: "11px", fontWeight: 700, color: "#9ca3af", letterSpacing: "0.06em", textTransform: "uppercase" as const, marginBottom: "8px" }}>Listing Status</div>
+            <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" as const }}>
+              <span style={statusBadgeStyle(listing.status)}>{statusLabel[listing.status] || listing.status}</span>
+              <span style={{ background: listing.type === "sale" ? "#f0fdf4" : "#eff6ff", color: listing.type === "sale" ? "#166534" : "#1d4ed8", padding: "3px 10px", borderRadius: "20px", fontSize: "11.5px", fontWeight: 700 }}>{listing.type === "sale" ? "For Sale" : "For Rent"}</span>
+              <span style={{ background: "#f3f4f6", color: "#374151", padding: "3px 10px", borderRadius: "20px", fontSize: "11.5px", fontWeight: 600 }}>{listing.propertyType}</span>
+            </div>
+          </div>
+          <div style={{ height: "1px", background: "#f3f4f6", marginBottom: "14px" }} />
+          {/* Listing Details */}
+          <div style={{ marginBottom: "14px" }}>
+            <div style={{ fontSize: "11px", fontWeight: 700, color: "#9ca3af", letterSpacing: "0.06em", textTransform: "uppercase" as const, marginBottom: "8px" }}>Listing Details</div>
+            {dRow("Listed Date", listing.listedDate)}
+            {dRow("Agency Expiry", listing.agencyExpiry || "—")}
+            {dRow("Listed By", listing.agent || "—")}
+            {dRow("Days on Market", `${daysOnMarket()} days`)}
+            {dRow("REA Status", <span style={{ display: "flex", alignItems: "center", gap: "5px" }}><span style={{ width: "7px", height: "7px", borderRadius: "50%", background: listing.portalStatus?.rea === "live" ? "#22c55e" : listing.portalStatus?.rea === "pending" ? "#f59e0b" : "#e5e7eb", display: "inline-block" }} />{listing.portalStatus?.rea || "idle"}</span>)}
+            {dRow("Domain Status", <span style={{ display: "flex", alignItems: "center", gap: "5px" }}><span style={{ width: "7px", height: "7px", borderRadius: "50%", background: listing.portalStatus?.domain === "live" ? "#22c55e" : listing.portalStatus?.domain === "pending" ? "#f59e0b" : "#e5e7eb", display: "inline-block" }} />{listing.portalStatus?.domain || "idle"}</span>, true)}
+          </div>
+          <div style={{ height: "1px", background: "#f3f4f6", marginBottom: "14px" }} />
+          {/* Vendor Details */}
+          <div style={{ marginBottom: "14px" }}>
+            <div style={{ fontSize: "11px", fontWeight: 700, color: "#9ca3af", letterSpacing: "0.06em", textTransform: "uppercase" as const, marginBottom: "8px" }}>Vendor Details</div>
+            {dRow("Owner", listing.owner || "—")}
+            {listing.vendorPhone && dRow("Phone", listing.vendorPhone)}
+            {listing.vendorEmail && dRow("Email", listing.vendorEmail, true)}
+            {!listing.vendorPhone && !listing.vendorEmail && dRow("Contact", "—", true)}
+          </div>
+          <div style={{ height: "1px", background: "#f3f4f6", marginBottom: "14px" }} />
+          {/* Agent */}
+          <div>
+            <div style={{ fontSize: "11px", fontWeight: 700, color: "#9ca3af", letterSpacing: "0.06em", textTransform: "uppercase" as const, marginBottom: "8px" }}>Agent</div>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <div style={{ width: "30px", height: "30px", borderRadius: "50%", background: "#f3f4f6", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "11px", fontWeight: 700, color: "#374151" }}>{(listing.agent || "?").split(" ").map(n => n[0]).join("").slice(0, 2)}</div>
+              <span style={{ fontSize: "13px", fontWeight: 600, color: "#111827" }}>{listing.agent || "Unassigned"}</span>
+            </div>
+          </div>
+        </>)}
+      </div>
+    </div>
+  );
+
+  // ── GENERAL TAB ──────────────────────────────────────────────────────────
+  const renderGeneral = () => {
+    const gRow = (label: string, value: React.ReactNode, last = false) => (
+      <div style={{ display: "grid", gridTemplateColumns: "160px 1fr", padding: "10px 0", borderBottom: last ? "none" : "1px solid #f3f4f6", alignItems: "center" }}>
+        <span style={{ fontSize: "13px", color: "#6b7280", fontWeight: 500 }}>{label}</span>
+        <span style={{ fontSize: "13px", color: "#111827", fontWeight: 600 }}>{value}</span>
+      </div>
+    );
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+        {sectionCard("Property Classification", <>
+          {gRow("Status", <span style={statusBadgeStyle(listing.status)}>{statusLabel[listing.status] || listing.status}</span>)}
+          {gRow("For Sale/Lease", <span style={{ background: listing.type === "sale" ? "#f0fdf4" : "#eff6ff", color: listing.type === "sale" ? "#166534" : "#1d4ed8", padding: "2px 8px", borderRadius: "6px", fontSize: "12px", fontWeight: 700 }}>{listing.type === "sale" ? "For Sale" : "For Lease"}</span>)}
+          {gRow("Type", "Residential")}
+          {gRow("Category", listing.propertyType || "—")}
+          {gRow("Sale Method", listing.saleMethod || "Private Treaty")}
+          {gRow("Authority", listing.authority || "Exclusive", true)}
+        </>)}
+        {sectionCard("Address", <>
+          {gRow("Street Address", listing.address)}
+          {gRow("Suburb", listing.suburb)}
+          {gRow("State", listing.state || "NSW")}
+          {gRow("Postcode", listing.postcode || "—")}
+          {gRow("Full Display Address", `${listing.address}, ${listing.suburb} ${listing.state || "NSW"} ${listing.postcode || ""}`.trim(), true)}
+        </>)}
+        {sectionCard("Options", <>
+          <div style={{ display: "flex", gap: "10px" }}>
+            <span style={{ background: "#f3f4f6", color: "#374151", padding: "4px 12px", borderRadius: "20px", fontSize: "12px", fontWeight: 500 }}>Off-Market Listing: No</span>
+            <span style={{ background: "#f3f4f6", color: "#374151", padding: "4px 12px", borderRadius: "20px", fontSize: "12px", fontWeight: 500 }}>Hidden Listing: No</span>
+          </div>
+        </>)}
+      </div>
+    );
+  };
+
+  // ── FOR SALE TAB ──────────────────────────────────────────────────────────
+  const renderForSale = () => (
+    <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+        {sectionCard("Listing Dates & Pricing", <>
+          {dRow("Listing Date", listing.listedDate)}
+          {dRow("Agency Expiry", listing.agencyExpiry || "—")}
+          {dRow("Expected On Market", "—")}
+          {dRow("Search Price", listing.searchPrice ? "$" + listing.searchPrice : "—")}
+          {dRow("Display Price", listing.displayPrice || "—")}
+          {dRow("Quote Price", listing.quotePrice || "—")}
+          {dRow("GST", "Not Applicable", true)}
+        </>)}
+        {sectionCard("Rates & Charges", <>
+          {dRow("Water Rates", listing.waterRates ? `$${listing.waterRates} per quarter` : "—")}
+          {dRow("Council Rates", listing.councilRates ? `$${listing.councilRates} per quarter` : "—")}
+          {dRow("Land Tax", "—")}
+          {dRow("Strata Admin Fund", "—")}
+          {dRow("Strata Sinking Fund", "—")}
+          {dRow("Total Outgoings", "0 per year", true)}
+        </>)}
+      </div>
+      {sectionCard("Investment Details", <>
+        {dRow("Investment?", "No")}
+        {dRow("Lease Potential", "—")}
+        {dRow("Return %", "—")}
+        {dRow("Tenanted?", "No", true)}
+      </>)}
+    </div>
+  );
+
+  // ── FEATURES TAB ──────────────────────────────────────────────────────────
+  const renderFeatures = () => {
+    const descLen = (listing.description || "").length;
+    const attrs: { label: string; val: string }[] = [
+      { label: "Bedrooms", val: listing.bedrooms || "—" },
+      { label: "Bathrooms", val: listing.bathrooms || "—" },
+      { label: "Lounge Rooms", val: listing.loungeRooms || "—" },
+      { label: "Toilets", val: listing.toilets || "—" },
+      { label: "Pools", val: "—" },
+      { label: "Garages", val: listing.garages || "—" },
+      { label: "Carports", val: "—" },
+      { label: "Car Spaces", val: listing.carSpaces || "—" },
+      { label: "Land Size", val: listing.landSize ? listing.landSize + " sqm" : "—" },
+      { label: "Home Size", val: listing.homeSize ? listing.homeSize + " sqm" : "—" },
+      { label: "Frontage", val: "—" },
+      { label: "Construction", val: "—" },
+      { label: "Energy Rating", val: "—" },
+    ];
+    return (
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+        {sectionCard("Marketing Copy", <>
+          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+            <div>
+              <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "5px" }}>Main Headline</label>
+              <textarea readOnly value={listing.headline || ""} placeholder="Add main headline…" style={{ width: "100%", height: "80px", padding: "8px 10px", borderRadius: "7px", border: "1px solid #e5e7eb", fontSize: "13px", fontFamily: "var(--font-inter)", color: "#111827", resize: "none", boxSizing: "border-box" as const, outline: "none" }} />
+            </div>
+            <div>
+              <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "5px" }}>Property Description</label>
+              <textarea readOnly value={listing.description || ""} placeholder="Add property description…" style={{ width: "100%", height: "180px", padding: "8px 10px", borderRadius: "7px", border: "1px solid #e5e7eb", fontSize: "13px", fontFamily: "var(--font-inter)", color: "#111827", resize: "none", boxSizing: "border-box" as const, outline: "none" }} />
+              <div style={{ fontSize: "11.5px", color: "#9ca3af", marginTop: "4px" }}>Characters: {descLen} / 6000</div>
+            </div>
+          </div>
+        </>)}
+        {sectionCard("Property Attributes", <>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0" }}>
+            {attrs.map((a, i) => (
+              <div key={a.label} style={{ display: "flex", justifyContent: "space-between", padding: "8px 6px", borderBottom: "1px solid #f3f4f6" }}>
+                <span style={{ fontSize: "12.5px", color: "#6b7280" }}>{a.label}</span>
+                <span style={{ fontSize: "12.5px", fontWeight: 600, color: "#111827" }}>{a.val}</span>
+              </div>
+            ))}
+          </div>
+        </>)}
+      </div>
+    );
+  };
+
+  // ── OFI TAB ──────────────────────────────────────────────────────────────
+  const renderOfi = () => {
+    const allOfis = listing.ofis || [];
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+        {sectionCard("Schedule New Inspection", <>
+          <div style={{ display: "flex", gap: "10px", alignItems: "flex-end", flexWrap: "wrap" as const }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+              <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151" }}>Open Type</label>
+              <select style={{ padding: "8px 10px", borderRadius: "7px", border: "1px solid #e5e7eb", fontSize: "13px", fontFamily: "var(--font-inter)", color: "#111827", background: "#fff", outline: "none" }}>
+                <option>Public Open</option>
+                <option>Private Inspection</option>
+              </select>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+              <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151" }}>Open Date</label>
+              <input type="date" style={{ padding: "8px 10px", borderRadius: "7px", border: "1px solid #e5e7eb", fontSize: "13px", fontFamily: "var(--font-inter)", color: "#111827", outline: "none" }} />
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+              <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151" }}>From</label>
+              <input type="time" style={{ padding: "8px 10px", borderRadius: "7px", border: "1px solid #e5e7eb", fontSize: "13px", fontFamily: "var(--font-inter)", color: "#111827", outline: "none" }} />
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+              <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151" }}>Duration</label>
+              <select style={{ padding: "8px 10px", borderRadius: "7px", border: "1px solid #e5e7eb", fontSize: "13px", fontFamily: "var(--font-inter)", color: "#111827", background: "#fff", outline: "none" }}>
+                <option>30 min</option>
+                <option>45 min</option>
+                <option>1 hr</option>
+              </select>
+            </div>
+            <button style={{ padding: "8px 14px", background: "#111827", color: "#fff", border: "none", borderRadius: "8px", fontSize: "12.5px", fontWeight: 600, cursor: "pointer", fontFamily: "var(--font-inter)" }}>Add Open Time</button>
+          </div>
+        </>)}
+
+        {sectionCard("Upcoming Inspection Times", <>
+          {allOfis.length === 0 ? (
+            <div style={{ border: "1px solid #e5e7eb", borderRadius: "8px", padding: "24px", textAlign: "center", color: "#9ca3af", fontSize: "13px" }}>No upcoming OFI dates exist.</div>
+          ) : (
+            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <thead>
+                <tr>{["", "Day", "Date", "Month", "Year", "From", "To", "Duration"].map(h => <th key={h} style={{ padding: "8px 10px", textAlign: "left", fontSize: "10.5px", fontWeight: 700, color: "#6b7280", letterSpacing: "0.07em", textTransform: "uppercase" as const, borderBottom: "1px solid #e5e7eb" }}>{h}</th>)}</tr>
+              </thead>
+              <tbody>
+                {allOfis.map((o, i) => {
+                  const d = new Date(o.date);
+                  return (
+                    <tr key={i} style={{ borderBottom: "1px solid #f3f4f6" }}>
+                      <td style={{ padding: "8px 10px" }}><button style={{ background: "none", border: "none", color: "#ef4444", cursor: "pointer", fontSize: "14px" }}>×</button></td>
+                      <td style={{ padding: "8px 10px", fontSize: "13px", color: "#374151" }}>{d.toLocaleDateString("en-AU", { weekday: "long" })}</td>
+                      <td style={{ padding: "8px 10px", fontSize: "13px", color: "#374151" }}>{d.getDate()}</td>
+                      <td style={{ padding: "8px 10px", fontSize: "13px", color: "#374151" }}>{d.toLocaleDateString("en-AU", { month: "long" })}</td>
+                      <td style={{ padding: "8px 10px", fontSize: "13px", color: "#374151" }}>{d.getFullYear()}</td>
+                      <td style={{ padding: "8px 10px", fontSize: "13px", color: "#374151" }}>{o.from}</td>
+                      <td style={{ padding: "8px 10px", fontSize: "13px", color: "#374151" }}>{o.to}</td>
+                      <td style={{ padding: "8px 10px", fontSize: "13px", color: "#374151" }}>30 min</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
+        </>)}
+
+        {sectionCard("Self Check-In QR Code", <>
+          <p style={{ fontSize: "13px", color: "#6b7280", margin: "0 0 12px" }}>Generate and display a QR Code to allow inspection attendees to check themselves in at scheduled inspections.</p>
+          <div style={{ display: "flex", gap: "8px" }}>
+            <button style={{ padding: "7px 14px", background: "#f3f4f6", color: "#374151", border: "none", borderRadius: "8px", fontSize: "12.5px", fontWeight: 600, cursor: "pointer" }}>Print Self Check-In Brochure</button>
+            <button style={{ padding: "7px 14px", background: "#f3f4f6", color: "#374151", border: "none", borderRadius: "8px", fontSize: "12.5px", fontWeight: 600, cursor: "pointer" }}>Download QR Code Image</button>
+          </div>
+        </>)}
+
+        {sectionCard("Past Inspections", <>
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <thead>
+              <tr>{["Day", "Date", "Month", "Year", "Start", "Finish", "Attendees", "Add Attendee"].map(h => <th key={h} style={{ padding: "8px 10px", textAlign: "left", fontSize: "10.5px", fontWeight: 700, color: "#6b7280", letterSpacing: "0.07em", textTransform: "uppercase" as const, borderBottom: "1px solid #e5e7eb" }}>{h}</th>)}</tr>
+            </thead>
+            <tbody>
+              {allOfis.length > 0 ? allOfis.map((o, i) => {
+                const d = new Date(o.date);
+                return (
+                  <tr key={i} style={{ borderBottom: "1px solid #f3f4f6" }}>
+                    <td style={{ padding: "8px 10px", fontSize: "13px", color: "#374151" }}>{d.toLocaleDateString("en-AU", { weekday: "long" })}</td>
+                    <td style={{ padding: "8px 10px", fontSize: "13px", color: "#374151" }}>{d.getDate()}</td>
+                    <td style={{ padding: "8px 10px", fontSize: "13px", color: "#374151" }}>{d.toLocaleDateString("en-AU", { month: "long" })}</td>
+                    <td style={{ padding: "8px 10px", fontSize: "13px", color: "#374151" }}>{d.getFullYear()}</td>
+                    <td style={{ padding: "8px 10px", fontSize: "13px", color: "#374151" }}>{o.from} AM</td>
+                    <td style={{ padding: "8px 10px", fontSize: "13px", color: "#374151" }}>{o.to} AM</td>
+                    <td style={{ padding: "8px 10px", fontSize: "13px", color: "#374151" }}>{o.attendees} Attendee(s)</td>
+                    <td style={{ padding: "8px 10px" }}><button style={{ fontSize: "11.5px", fontWeight: 600, color: "#6d28d9", background: "#f5f3ff", border: "1px solid #ede9fe", borderRadius: "6px", padding: "3px 8px", cursor: "pointer" }}>+ Add Attendee</button></td>
+                  </tr>
+                );
+              }) : (
+                <tr style={{ borderBottom: "1px solid #f3f4f6" }}>
+                  <td style={{ padding: "8px 10px", fontSize: "13px", color: "#374151" }}>Saturday</td>
+                  <td style={{ padding: "8px 10px", fontSize: "13px", color: "#374151" }}>26</td>
+                  <td style={{ padding: "8px 10px", fontSize: "13px", color: "#374151" }}>July</td>
+                  <td style={{ padding: "8px 10px", fontSize: "13px", color: "#374151" }}>2026</td>
+                  <td style={{ padding: "8px 10px", fontSize: "13px", color: "#374151" }}>10:30 AM</td>
+                  <td style={{ padding: "8px 10px", fontSize: "13px", color: "#374151" }}>11:00 AM</td>
+                  <td style={{ padding: "8px 10px", fontSize: "13px", color: "#374151" }}>8 Attendee(s)</td>
+                  <td style={{ padding: "8px 10px" }}><button style={{ fontSize: "11.5px", fontWeight: 600, color: "#6d28d9", background: "#f5f3ff", border: "1px solid #ede9fe", borderRadius: "6px", padding: "3px 8px", cursor: "pointer" }}>+ Add Attendee</button></td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </>)}
+      </div>
+    );
+  };
+
+  // ── CONTACTS TAB ──────────────────────────────────────────────────────────
+  const renderContacts = () => (
+    <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+      {sectionCard("Assign related Agents", <>
+        <div style={{ display: "flex", gap: "10px", alignItems: "flex-end", marginBottom: "14px" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "4px", minWidth: "160px" }}>
+            <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151" }}>Role</label>
+            <select style={{ padding: "8px 10px", borderRadius: "7px", border: "1px solid #e5e7eb", fontSize: "13px", fontFamily: "var(--font-inter)", color: "#111827", background: "#fff", outline: "none" }}>
+              <option>Listing Agent</option>
+              <option>Property Manager</option>
+              <option>Assistant Agent</option>
+            </select>
+          </div>
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "4px" }}>
+            <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151" }}>Agent</label>
+            <input placeholder="Search agent…" style={{ padding: "8px 10px", borderRadius: "7px", border: "1px solid #e5e7eb", fontSize: "13px", fontFamily: "var(--font-inter)", color: "#111827", outline: "none", width: "100%", boxSizing: "border-box" as const }} />
+          </div>
+          <button style={{ padding: "8px 14px", background: "#111827", color: "#fff", border: "none", borderRadius: "8px", fontSize: "12.5px", fontWeight: 600, cursor: "pointer" }}>Add</button>
+        </div>
+        {listing.agent && (
+          <div>
+            <div style={{ fontSize: "11px", fontWeight: 700, color: "#9ca3af", letterSpacing: "0.06em", textTransform: "uppercase" as const, marginBottom: "8px" }}>Selected Agents</div>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", padding: "6px 0" }}>
+              <input type="checkbox" checked readOnly />
+              <span style={{ fontSize: "13px", color: "#111827", fontWeight: 500 }}>{listing.agent} <span style={{ color: "#9ca3af", fontWeight: 400 }}>(Listing Agent)</span></span>
+            </div>
+            <div style={{ fontSize: "11px", fontWeight: 700, color: "#9ca3af", letterSpacing: "0.06em", textTransform: "uppercase" as const, marginBottom: "8px", marginTop: "10px" }}>Appear on Site</div>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", padding: "6px 0" }}>
+              <input type="checkbox" checked readOnly />
+              <span style={{ fontSize: "13px", color: "#111827", fontWeight: 500 }}>{listing.agent}</span>
+            </div>
+          </div>
+        )}
+      </>)}
+      {sectionCard("Assign related Contacts", <>
+        <div style={{ display: "flex", gap: "10px", alignItems: "flex-end", marginBottom: "14px" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "4px", minWidth: "160px" }}>
+            <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151" }}>Role</label>
+            <select style={{ padding: "8px 10px", borderRadius: "7px", border: "1px solid #e5e7eb", fontSize: "13px", fontFamily: "var(--font-inter)", color: "#111827", background: "#fff", outline: "none" }}>
+              <option>Vendor</option>
+              <option>Buyer</option>
+              <option>Solicitor</option>
+              <option>Property Manager</option>
+            </select>
+          </div>
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "4px" }}>
+            <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151" }}>Contact</label>
+            <input placeholder="Search contact…" style={{ padding: "8px 10px", borderRadius: "7px", border: "1px solid #e5e7eb", fontSize: "13px", fontFamily: "var(--font-inter)", color: "#111827", outline: "none", width: "100%", boxSizing: "border-box" as const }} />
+          </div>
+          <button style={{ padding: "8px 14px", background: "#111827", color: "#fff", border: "none", borderRadius: "8px", fontSize: "12.5px", fontWeight: 600, cursor: "pointer" }}>Add</button>
+        </div>
+        {listing.owner && (
+          <div>
+            <div style={{ fontSize: "11px", fontWeight: 700, color: "#9ca3af", letterSpacing: "0.06em", textTransform: "uppercase" as const, marginBottom: "8px" }}>Selected Contacts</div>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", padding: "6px 0" }}>
+              <input type="checkbox" checked readOnly />
+              <div>
+                <span style={{ fontSize: "13px", color: "#111827", fontWeight: 500 }}>{listing.owner} <span style={{ color: "#9ca3af", fontWeight: 400 }}>(Vendor)</span></span>
+                {listing.vendorPhone && <div style={{ fontSize: "11.5px", color: "#6b7280", marginTop: "1px" }}>{listing.vendorPhone}</div>}
+              </div>
+            </div>
+          </div>
+        )}
+      </>)}
+    </div>
+  );
+
+  // ── RESOURCES TAB ──────────────────────────────────────────────────────────
+  const renderResources = () => (
+    <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+      {sectionCard("Property Photos", <>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+          <span style={{ fontSize: "13px", color: "#6b7280" }}>Upload property photos to display on portals and marketing.</span>
+          <button style={{ padding: "7px 14px", background: "#111827", color: "#fff", border: "none", borderRadius: "8px", fontSize: "12.5px", fontWeight: 600, cursor: "pointer" }}>Photo(s) Upload</button>
+        </div>
+        <div style={{ border: "2px dashed #e5e7eb", borderRadius: "10px", padding: "32px", textAlign: "center", color: "#9ca3af", fontSize: "13px" }}>
+          Drag and drop photos here, or click Upload. High res images recommended (min 1920×1280px). Max 8MB per photo.
+        </div>
+      </>)}
+      {sectionCard("Floorplans", <>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+          <span style={{ fontSize: "13px", color: "#6b7280" }}>Upload floorplan images for portal display.</span>
+          <button style={{ padding: "7px 14px", background: "#111827", color: "#fff", border: "none", borderRadius: "8px", fontSize: "12.5px", fontWeight: 600, cursor: "pointer" }}>Floorplan Upload</button>
+        </div>
+        <div style={{ border: "2px dashed #e5e7eb", borderRadius: "10px", padding: "32px", textAlign: "center", color: "#9ca3af", fontSize: "13px" }}>
+          Drag and drop floorplan images here, or click Upload.
+        </div>
+      </>)}
+      {sectionCard("Documents", <>
+        {[
+          { label: "Agency Agreement", btnLabel: "Agreement Upload" },
+          { label: "Property Contract", btnLabel: "Contract Upload" },
+          { label: "Sustainability Declaration", btnLabel: "Declaration Upload" },
+          { label: "Other Documents", btnLabel: "Upload Document" },
+        ].map((doc, i, arr) => (
+          <div key={doc.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: i < arr.length - 1 ? "1px solid #f3f4f6" : "none" }}>
+            <div>
+              <div style={{ fontSize: "13px", fontWeight: 600, color: "#111827" }}>{doc.label}</div>
+              <div style={{ fontSize: "12px", color: "#9ca3af" }}>No document uploaded</div>
+            </div>
+            <button style={{ padding: "6px 12px", background: "#f3f4f6", color: "#374151", border: "none", borderRadius: "8px", fontSize: "12px", fontWeight: 600, cursor: "pointer" }}>{doc.btnLabel}</button>
+          </div>
+        ))}
+      </>)}
+      {sectionCard("Links", <>
+        <textarea placeholder="Add portal URLs, virtual tour links, video links…" style={{ width: "100%", height: "80px", padding: "8px 10px", borderRadius: "7px", border: "1px solid #e5e7eb", fontSize: "13px", fontFamily: "var(--font-inter)", color: "#111827", resize: "none", boxSizing: "border-box" as const, outline: "none" }} />
+      </>)}
+    </div>
+  );
+
+  // ── OFFERS TAB ──────────────────────────────────────────────────────────
+  const renderOffers = () => {
+    const offers = listing.offers || [];
+    const selectedOffer = offers.find(o => o.id === selectedOfferId) || null;
+    const offerStatusStyle = (st: string): React.CSSProperties => {
+      if (st === "Unconditional") return { color: "#dc2626", fontWeight: 800 };
+      return { color: "#1d4ed8", fontWeight: 800 };
+    };
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ display: "flex", gap: "0", border: "1px solid #e5e7eb", borderRadius: "8px", overflow: "hidden" }}>
+            {["Offers", "Contracts", "All"].map(f => (
+              <button key={f} onClick={() => setOfferFilter(f)} style={{ padding: "6px 14px", border: "none", background: offerFilter === f ? "#111827" : "#fff", color: offerFilter === f ? "#fff" : "#374151", fontSize: "12.5px", fontWeight: 600, cursor: "pointer", fontFamily: "var(--font-inter)" }}>{f}</button>
+            ))}
+          </div>
+          <button style={{ padding: "7px 14px", background: "#111827", color: "#fff", border: "none", borderRadius: "8px", fontSize: "12.5px", fontWeight: 600, cursor: "pointer" }}>Add Offer</button>
+        </div>
+        {sectionCard("", <>
+          {offers.length === 0 ? (
+            <div style={{ textAlign: "center", padding: "40px", color: "#9ca3af" }}>
+              <div style={{ fontSize: "14px", fontWeight: 600, color: "#374151", marginBottom: "6px" }}>No offers yet</div>
+              <div style={{ fontSize: "12.5px", marginBottom: "16px" }}>Offers will appear here once submitted.</div>
+              <button style={{ padding: "8px 16px", background: "#111827", color: "#fff", border: "none", borderRadius: "8px", fontSize: "12.5px", fontWeight: 600, cursor: "pointer" }}>Add Offer</button>
+            </div>
+          ) : (
+            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <thead>
+                <tr>{["Created", "Ref #", "Buyer(s)", "Offer Date", "$", "Status", ""].map(h => <th key={h} style={{ padding: "10px 12px", textAlign: "left", fontSize: "10.5px", fontWeight: 700, color: "#6b7280", letterSpacing: "0.07em", textTransform: "uppercase" as const, borderBottom: "1px solid #e5e7eb" }}>{h}</th>)}</tr>
+              </thead>
+              <tbody>
+                {offers.map(o => (
+                  <tr key={o.id} onClick={() => setSelectedOfferId(o.id)} style={{ borderBottom: "1px solid #f3f4f6", cursor: "pointer", background: selectedOfferId === o.id ? "#f0f9ff" : "transparent" }}>
+                    <td style={{ padding: "10px 12px", fontSize: "12.5px", color: "#374151" }}>{o.offerDate}</td>
+                    <td style={{ padding: "10px 12px", fontSize: "12.5px", color: "#374151", fontWeight: 600 }}>{o.refNo}</td>
+                    <td style={{ padding: "10px 12px", fontSize: "12.5px", color: "#111827", fontWeight: 600 }}>{o.buyer}</td>
+                    <td style={{ padding: "10px 12px", fontSize: "12.5px", color: "#374151" }}>{o.offerDate}</td>
+                    <td style={{ padding: "10px 12px", fontSize: "13px", fontWeight: 700, color: "#111827" }}>{o.amount}</td>
+                    <td style={{ padding: "10px 12px" }}><span style={offerStatusStyle(o.status)}>{o.status}</span></td>
+                    <td style={{ padding: "10px 12px" }}><button onClick={(e) => e.stopPropagation()} style={{ background: "none", border: "none", color: "#ef4444", cursor: "pointer", fontSize: "16px" }}>×</button></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </>)}
+        {selectedOffer && (
+          <div style={{ background: selectedOffer.status === "Unconditional" ? "#fffbeb" : "#fff", border: "1px solid #e5e7eb", borderRadius: "12px", padding: "18px 20px", boxShadow: "0 1px 2px rgba(0,0,0,0.04)" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px" }}>
+              <div style={{ fontSize: "13.5px", fontWeight: 700, color: "#111827" }}>Selected Offer / Contract</div>
+              <label style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", color: "#6b7280", cursor: "pointer" }}>
+                <input type="checkbox" /> Tick to edit
+              </label>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "12px" }}>
+              <div>
+                <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "4px" }}>Ref #</label>
+                <input readOnly value={selectedOffer.refNo} style={{ padding: "8px 10px", borderRadius: "7px", border: "1px solid #e5e7eb", fontSize: "13px", fontFamily: "var(--font-inter)", color: "#111827", background: "#f9fafb", width: "100%", boxSizing: "border-box" as const, outline: "none" }} />
+              </div>
+              <div>
+                <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "4px" }}>Buyer Name</label>
+                <input readOnly value={selectedOffer.buyer} style={{ padding: "8px 10px", borderRadius: "7px", border: "1px solid #e5e7eb", fontSize: "13px", fontFamily: "var(--font-inter)", color: "#111827", background: "#f9fafb", width: "100%", boxSizing: "border-box" as const, outline: "none" }} />
+              </div>
+            </div>
+            <div style={{ marginBottom: "12px" }}>
+              <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "4px" }}>Status</label>
+              <div style={{ fontSize: "14px", ...offerStatusStyle(selectedOffer.status) }}>{selectedOffer.status}</div>
+            </div>
+            {selectedOffer.status === "Unconditional" && (
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "12px" }}>
+                {dRow("Contract Date", selectedOffer.contractDate || "—")}
+                {dRow("Unconditional Date", selectedOffer.unconditionalDate || "—")}
+                {dRow("Contract Price", selectedOffer.amount)}
+                {dRow("Deposit", selectedOffer.deposit || "—")}
+                {(() => { const c = calcComm(); return c ? <>{dRow("Gross Comm (exGST)", fmtCurrency(c.exGST))}{dRow("Gross Comm (incGST)", fmtCurrency(c.incGST))}</> : null; })()}
+              </div>
+            )}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+              <div>
+                <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "4px" }}>Expected Settlement</label>
+                <input type="date" style={{ padding: "8px 10px", borderRadius: "7px", border: "1px solid #e5e7eb", fontSize: "13px", fontFamily: "var(--font-inter)", color: "#111827", width: "100%", boxSizing: "border-box" as const, outline: "none" }} />
+              </div>
+              <div style={{ display: "flex", alignItems: "flex-end", gap: "8px", paddingBottom: "2px" }}>
+                <input type="checkbox" />
+                <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151" }}>Settlement Date Confirmed</label>
+              </div>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginTop: "12px" }}>
+              <div>
+                <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "4px" }}>Buyer</label>
+                <div style={{ display: "flex", gap: "6px" }}>
+                  <input placeholder="Assign your buyers" style={{ flex: 1, padding: "8px 10px", borderRadius: "7px", border: "1px solid #e5e7eb", fontSize: "13px", fontFamily: "var(--font-inter)", color: "#111827", outline: "none" }} />
+                  <button style={{ padding: "8px 10px", background: "#f3f4f6", border: "none", borderRadius: "7px", fontSize: "12px", cursor: "pointer" }}>Add</button>
+                </div>
+              </div>
+              <div>
+                <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "4px" }}>Buyer Solicitor</label>
+                <div style={{ display: "flex", gap: "6px" }}>
+                  <input placeholder="Assign your solicitors" style={{ flex: 1, padding: "8px 10px", borderRadius: "7px", border: "1px solid #e5e7eb", fontSize: "13px", fontFamily: "var(--font-inter)", color: "#111827", outline: "none" }} />
+                  <button style={{ padding: "8px 10px", background: "#f3f4f6", border: "none", borderRadius: "7px", fontSize: "12px", cursor: "pointer" }}>Add</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // ── COMMISSION TAB ──────────────────────────────────────────────────────────
+  const renderCommission = () => {
+    const comm = calcComm();
+    const offers = listing.offers || [];
+    const firstOffer = offers[0] || null;
+    const purchaser = firstOffer ? firstOffer.buyer : "—";
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+        {sectionCard("Transaction Details", <>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0" }}>
+            {[
+              { l: "Property Address", v: `${listing.address}, ${listing.suburb}` },
+              { l: "Agent(s)", v: listing.agent || "—" },
+              { l: "Vendor(s)", v: listing.owner || "—" },
+              { l: "Purchaser(s)", v: purchaser },
+              { l: "Sale Price", v: listing.price },
+              { l: "Contract Date", v: firstOffer?.contractDate || "—" },
+              { l: "Gross Commission (incGST)", v: comm ? fmtCurrency(comm.incGST) : "—" },
+              { l: "GST", v: comm ? fmtCurrency(comm.gst) : "—" },
+              { l: "Gross Commission (exGST)", v: comm ? fmtCurrency(comm.exGST) : "—" },
+              { l: "Unconditional Date", v: firstOffer?.unconditionalDate || "—" },
+              { l: "Settlement Date", v: "—" },
+              { l: "Deposit Amount", v: firstOffer?.deposit || "—" },
+            ].map((r, i) => (
+              <div key={r.l} style={{ padding: "10px 0", borderBottom: "1px solid #f3f4f6" }}>
+                <div style={{ fontSize: "11.5px", color: "#9ca3af", fontWeight: 500, marginBottom: "2px" }}>{r.l}</div>
+                <div style={{ fontSize: "13px", fontWeight: 600, color: "#111827" }}>{r.v}</div>
+              </div>
+            ))}
+          </div>
+        </>)}
+        {offers.length === 0 && (
+          <div style={{ background: "#fffbeb", border: "1px solid #fbbf24", borderRadius: "10px", padding: "12px 16px", display: "flex", alignItems: "center", gap: "10px" }}>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1L1 14h14L8 1z" stroke="#f59e0b" strokeWidth="1.3" strokeLinejoin="round"/><path d="M8 6v4M8 11.5v.5" stroke="#f59e0b" strokeWidth="1.3" strokeLinecap="round"/></svg>
+            <span style={{ fontSize: "13px", color: "#92400e", fontWeight: 500 }}>Commission splits require adjustment / confirmation.</span>
+          </div>
+        )}
+        {sectionCard("Gross Commission Allocation", <>
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <thead>
+              <tr>{["Type", "Office", "Split", "Split %", "Sale Value $", "Gross Comm ($incGST)", "Gross Comm ($exGST)", "Agent Allocation"].map(h => <th key={h} style={{ padding: "10px 10px", textAlign: "left", fontSize: "10.5px", fontWeight: 700, color: "#6b7280", letterSpacing: "0.07em", textTransform: "uppercase" as const, borderBottom: "1px solid #e5e7eb" }}>{h}</th>)}</tr>
+            </thead>
+            <tbody>
+              <tr style={{ borderBottom: "1px solid #f3f4f6" }}>
+                <td style={{ padding: "10px 10px", fontSize: "13px", color: "#374151" }}>Internal</td>
+                <td style={{ padding: "10px 10px", fontSize: "13px", color: "#374151" }}>Spinelli Real Estate</td>
+                <td style={{ padding: "10px 10px", fontSize: "13px", color: "#374151" }}>100 %</td>
+                <td style={{ padding: "10px 10px", fontSize: "13px", color: "#374151" }}>100.00%</td>
+                <td style={{ padding: "10px 10px", fontSize: "13px", fontWeight: 600, color: "#111827" }}>{listing.price}</td>
+                <td style={{ padding: "10px 10px", fontSize: "13px", fontWeight: 600, color: "#111827" }}>{comm ? fmtCurrency(comm.incGST) : "—"}</td>
+                <td style={{ padding: "10px 10px", fontSize: "13px", fontWeight: 600, color: "#111827" }}>{comm ? fmtCurrency(comm.exGST) : "—"}</td>
+                <td style={{ padding: "10px 10px", fontSize: "13px", color: "#374151" }}>{listing.agent || "—"}</td>
+              </tr>
+              <tr style={{ borderBottom: "1px solid #e5e7eb", fontWeight: 700 }}>
+                <td colSpan={4} style={{ padding: "10px 10px", fontSize: "13px", fontWeight: 700, color: "#111827" }}>Total</td>
+                <td style={{ padding: "10px 10px", fontSize: "13px", fontWeight: 700, color: "#111827" }}>{listing.price}</td>
+                <td style={{ padding: "10px 10px", fontSize: "13px", fontWeight: 700, color: "#111827" }}>{comm ? fmtCurrency(comm.incGST) : "—"}</td>
+                <td style={{ padding: "10px 10px", fontSize: "13px", fontWeight: 700, color: "#111827" }}>{comm ? fmtCurrency(comm.exGST) : "—"}</td>
+                <td></td>
+              </tr>
+              <tr>
+                <td colSpan={4} style={{ padding: "10px 10px", fontSize: "13px", color: "#0d9488" }}>Unallocated</td>
+                <td style={{ padding: "10px 10px", fontSize: "13px", color: "#0d9488" }}>$0.00</td>
+                <td style={{ padding: "10px 10px", fontSize: "13px", color: "#0d9488" }}>$0.00</td>
+                <td style={{ padding: "10px 10px", fontSize: "13px", color: "#0d9488" }}>$0.00</td>
+                <td></td>
+              </tr>
+            </tbody>
+          </table>
+        </>)}
+      </div>
+    );
+  };
+
+  const renderTab = () => {
+    if (tab === "overview") return renderOverview();
+    if (tab === "general") return renderGeneral();
+    if (tab === "forsale") return renderForSale();
+    if (tab === "features") return renderFeatures();
+    if (tab === "ofi") return renderOfi();
+    if (tab === "contacts") return renderContacts();
+    if (tab === "resources") return renderResources();
+    if (tab === "offers") return renderOffers();
+    if (tab === "commission") return renderCommission();
+    return null;
+  };
+
+  return (
+    <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "calc(100vh - 56px)", overflow: "hidden" }}>
+      {/* Header bar */}
+      <div style={{ height: "52px", background: "#111827", display: "flex", alignItems: "center", padding: "0 24px", gap: "12px", flexShrink: 0 }}>
+        <button onClick={onBack} style={{ background: "rgba(255,255,255,0.1)", border: "none", borderRadius: "6px", padding: "5px 8px", cursor: "pointer", color: "rgba(255,255,255,0.7)", display: "flex", alignItems: "center", gap: "5px", fontSize: "12px", fontWeight: 600, fontFamily: "var(--font-inter)" }}>
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M10 3L5 8l5 5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          Back
+        </button>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px", flex: 1 }}>
+          <span style={{ fontSize: "14px", fontWeight: 700, color: "#fff" }}>{listing.address}, {listing.suburb}</span>
+          <span style={statusBadgeStyle(listing.status)}>{statusLabel[listing.status] || listing.status}</span>
+        </div>
+        <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+          {[
+            <svg key="eye" width="16" height="16" viewBox="0 0 16 16" fill="none"><ellipse cx="8" cy="8" rx="6" ry="4" stroke="currentColor" strokeWidth="1.3"/><circle cx="8" cy="8" r="2" stroke="currentColor" strokeWidth="1.3"/></svg>,
+            <svg key="mail" width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="3" width="14" height="10" rx="2" stroke="currentColor" strokeWidth="1.3"/><path d="M1 5l7 5 7-5" stroke="currentColor" strokeWidth="1.3"/></svg>,
+            <svg key="sms" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 2h12a1 1 0 011 1v8a1 1 0 01-1 1H5l-4 3V3a1 1 0 011-1z" stroke="currentColor" strokeWidth="1.3"/></svg>,
+            <svg key="edit" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M11 2l3 3-9 9H2v-3L11 2z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/></svg>,
+          ].map((icon, i) => (
+            <button key={i} style={{ background: "rgba(255,255,255,0.08)", border: "none", borderRadius: "6px", padding: "6px", cursor: "pointer", color: "rgba(255,255,255,0.7)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              {icon}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Tab nav */}
+      <div style={{ display: "flex", overflowX: "auto", borderBottom: "1px solid #e5e7eb", background: "#fff", padding: "0 24px", flexShrink: 0 }}>
+        {tabs.map(t => (
+          <button key={t.key} onClick={() => setTab(t.key)}
+            style={{ padding: "11px 16px", fontSize: "13px", cursor: "pointer", border: "none", background: "transparent", whiteSpace: "nowrap", fontFamily: "var(--font-inter)", letterSpacing: "-0.01em", fontWeight: tab === t.key ? 600 : 500, color: tab === t.key ? "#111827" : "#6b7280", borderBottom: tab === t.key ? "2px solid #111827" : "2px solid transparent" }}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Tab content */}
+      <div style={{ flex: 1, overflow: "auto", padding: "28px 36px", background: "#f9fafb" }}>
+        {renderTab()}
+      </div>
+    </div>
+  );
+}
+
 // ─── Active Listings — functional with Add modal + compliance sync ─────────────
 
 const BLANK_LISTING: Omit<CrmListing, "id" | "status" | "complianceSynced"> = {
@@ -8494,10 +9234,14 @@ const BLANK_LISTING: Omit<CrmListing, "id" | "status" | "complianceSynced"> = {
   type: "sale", propertyType: "", bedrooms: "", bathrooms: "", carSpaces: "",
   landSize: "", agent: "", listedDate: new Date().toISOString().slice(0, 10),
   availableDate: "", leaseTerm: "", bond: "", petsAllowed: "", furnished: "",
+  headline: "", description: "", quotePrice: "", searchPrice: "", saleMethod: "Private Treaty",
+  authority: "Exclusive", agencyExpiry: "", state: "NSW", postcode: "", homeSize: "",
+  loungeRooms: "", garages: "", toilets: "", waterRates: "", councilRates: "",
+  vendorPhone: "", vendorEmail: "", commissionRate: "1.5", ofis: [], offers: [],
 };
 
 const DEMO_LISTINGS: CrmListing[] = [
-  { id: "dl1", address: "22 Surf Parade", suburb: "Thirroul", owner: "Greg Hollis", price: "$1,580,000", displayPrice: "Offers Over $1,550,000", type: "sale", propertyType: "House", bedrooms: "5", bathrooms: "3", carSpaces: "2", landSize: "620", agent: "Sarah Mitchell", listedDate: "2026-07-14", status: "active", complianceSynced: true, portalStatus: { rea: "live", domain: "live" } },
+  { id: "dl1", address: "22 Surf Parade", suburb: "Thirroul", owner: "Greg Hollis", price: "$1,580,000", displayPrice: "Offers Over $1,550,000", type: "sale", propertyType: "House", bedrooms: "5", bathrooms: "3", carSpaces: "2", landSize: "620", agent: "Sarah Mitchell", listedDate: "2026-07-14", status: "active", complianceSynced: true, portalStatus: { rea: "live", domain: "live" }, headline: "Contemporary Coastal Living – Walk to the Beach", description: "Positioned just 200m from Thirroul Beach, this stunning five-bedroom home offers the ultimate coastal lifestyle. Featuring open-plan living, a gourmet kitchen with stone benchtops, a sundrenched alfresco entertaining area, and a double lock-up garage. The master suite boasts a walk-in robe and ensuite with ocean views. Walk to Thirroul village cafes, the beach, and train station.", quotePrice: "$1,550,000 – $1,650,000", searchPrice: "1550000", saleMethod: "Private Treaty", authority: "Exclusive", agencyExpiry: "2026-10-14", state: "NSW", postcode: "2515", homeSize: "320", loungeRooms: "2", garages: "2", toilets: "3", waterRates: "320", councilRates: "620", vendorPhone: "0412 111 222", vendorEmail: "g.hollis@email.com", commissionRate: "1.5", ofis: [{ date: "2026-08-09", from: "10:30", to: "11:00", type: "Open", attendees: 8 }, { date: "2026-07-26", from: "10:30", to: "11:00", type: "Open", attendees: 6 }], offers: [{ id: "o1", refNo: "1P2061-S001", buyer: "Daniel Russo", offerDate: "2026-07-28", amount: "$1,450,000", status: "Offer Submitted" }, { id: "o2", refNo: "1P2061-S002", buyer: "Kylie & Matt Turner", offerDate: "2026-08-01", amount: "$1,480,000", status: "Offer Submitted" }] },
   { id: "dl2", address: "14 Wentworth Ave", suburb: "Wollongong", owner: "Robert & Susan Park", price: "$1,250,000", displayPrice: "Guide $1,200,000–$1,280,000", type: "sale", propertyType: "Townhouse", bedrooms: "4", bathrooms: "2", carSpaces: "2", landSize: "380", agent: "Tom Briggs", listedDate: "2026-07-18", status: "active", complianceSynced: true, portalStatus: { rea: "live", domain: "pending" } },
   { id: "dl3", address: "7 Blue Haven Cres", suburb: "Keiraville", owner: "Anne & David Walsh", price: "$980,000", displayPrice: "$960,000–$1,010,000", type: "sale", propertyType: "House", bedrooms: "3", bathrooms: "2", carSpaces: "1", landSize: "510", agent: "Sarah Mitchell", listedDate: "2026-07-22", status: "active", complianceSynced: false, portalStatus: { rea: "live", domain: "idle" } },
   { id: "dl4", address: "3 Illawarra Rd", suburb: "Figtree", owner: "Anne Walsh", price: "$620", displayPrice: "$620 per week", type: "rental", propertyType: "Unit / Apartment", bedrooms: "2", bathrooms: "1", carSpaces: "1", landSize: "", agent: "Tom Briggs", listedDate: "2026-07-28", status: "active", complianceSynced: true, portalStatus: { rea: "live", domain: "live" } },
@@ -8521,6 +9265,7 @@ function CrmActiveListingsPage({
   const [typeFilter, setTypeFilter] = useState<"all" | "sale" | "rental">("all");
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState<"date" | "price" | "days">("date");
+  const [selectedListing, setSelectedListing] = useState<CrmListing | null>(null);
 
   const allListings = [...DEMO_LISTINGS, ...listings.filter(l => l.status === "active")];
   const active = allListings.filter(l => {
@@ -8571,6 +9316,10 @@ function CrmActiveListingsPage({
   };
 
   const cardGrads = ["linear-gradient(135deg,#6366f1,#8b5cf6)", "linear-gradient(135deg,#0ea5e9,#6366f1)", "linear-gradient(135deg,#10b981,#0ea5e9)", "linear-gradient(135deg,#f59e0b,#ef4444)", "linear-gradient(135deg,#ec4899,#8b5cf6)"];
+
+  if (selectedListing) {
+    return <CrmListingDetailView listing={selectedListing} staffRows={staffRows} onBack={() => setSelectedListing(null)} />;
+  }
 
   return (
     <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "calc(100vh - 56px)", overflow: "hidden", padding: "28px 36px", gap: "20px" }}>
@@ -8640,7 +9389,7 @@ function CrmActiveListingsPage({
               const domPct = Math.min((days / 60) * 100, 100);
               const domColor = days > 45 ? "#dc2626" : days > 25 ? "#f59e0b" : "#10b981";
               return (
-                <div key={l.id} style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: "14px", overflow: "hidden", display: "flex", flexDirection: "column" }}>
+                <div key={l.id} onClick={() => setSelectedListing(l)} style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: "14px", overflow: "hidden", display: "flex", flexDirection: "column", cursor: "pointer" }}>
                   {/* Property card header */}
                   <div style={{ height: "80px", background: cardGrads[idx % cardGrads.length], position: "relative", display: "flex", alignItems: "flex-end", padding: "10px 14px" }}>
                     <span style={{ padding: "2px 8px", background: "rgba(255,255,255,0.25)", backdropFilter: "blur(4px)", borderRadius: "6px", fontSize: "11px", fontWeight: 700, color: "#fff", textTransform: "uppercase" as const }}>{l.type === "sale" ? "For Sale" : "For Rent"}</span>
@@ -8682,8 +9431,8 @@ function CrmActiveListingsPage({
                     </div>
                     {/* Actions */}
                     <div style={{ display: "flex", gap: "8px" }}>
-                      <button onClick={() => setPublishingListing(l)} style={{ flex: 1, padding: "7px 0", background: "#f5f3ff", color: "#6d28d9", border: "1px solid #ede9fe", borderRadius: "8px", fontSize: "12px", fontWeight: 700, cursor: "pointer" }}>Publish →</button>
-                      <button style={{ padding: "7px 12px", background: "#f9fafb", color: "#374151", border: "1px solid #e5e7eb", borderRadius: "8px", fontSize: "12px", cursor: "pointer" }}>
+                      <button onClick={(e) => { e.stopPropagation(); setPublishingListing(l); }} style={{ flex: 1, padding: "7px 0", background: "#f5f3ff", color: "#6d28d9", border: "1px solid #ede9fe", borderRadius: "8px", fontSize: "12px", fontWeight: 700, cursor: "pointer" }}>Publish →</button>
+                      <button onClick={(e) => e.stopPropagation()} style={{ padding: "7px 12px", background: "#f9fafb", color: "#374151", border: "1px solid #e5e7eb", borderRadius: "8px", fontSize: "12px", cursor: "pointer" }}>
                         <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><circle cx="4" cy="8" r="1.5" fill="currentColor"/><circle cx="8" cy="8" r="1.5" fill="currentColor"/><circle cx="12" cy="8" r="1.5" fill="currentColor"/></svg>
                       </button>
                     </div>
@@ -8715,7 +9464,7 @@ function CrmActiveListingsPage({
                   const days = daysAgo(l.listedDate);
                   const domColor = days > 45 ? "#dc2626" : days > 25 ? "#f59e0b" : "#10b981";
                   return (
-                    <tr key={l.id} style={{ borderBottom: "1px solid #f3f4f6" }} onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "#f9fafb"; }} onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = ""; }}>
+                    <tr key={l.id} onClick={() => setSelectedListing(l)} style={{ borderBottom: "1px solid #f3f4f6", cursor: "pointer" }} onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "#f9fafb"; }} onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = ""; }}>
                       <td style={{ padding: "12px 16px" }}>
                         <div style={{ fontSize: "13px", fontWeight: 600, color: "#111827" }}>{l.address}</div>
                         <div style={{ fontSize: "11.5px", color: "#9ca3af" }}>{l.suburb} · {l.propertyType}</div>
@@ -8732,7 +9481,7 @@ function CrmActiveListingsPage({
                         </div>
                       </td>
                       <td style={{ padding: "12px 16px" }}>{l.complianceSynced ? <span style={{ fontSize: "11px", color: "#16a34a", fontWeight: 600 }}>✓ Synced</span> : <span style={{ fontSize: "11px", color: "#9ca3af" }}>—</span>}</td>
-                      <td style={{ padding: "12px 16px" }}><button onClick={() => setPublishingListing(l)} style={{ fontSize: "12px", fontWeight: 600, color: "#6d28d9", background: "#f5f3ff", border: "1px solid #ede9fe", borderRadius: "6px", padding: "4px 10px", cursor: "pointer" }}>Publish →</button></td>
+                      <td style={{ padding: "12px 16px" }}><button onClick={(e) => { e.stopPropagation(); setPublishingListing(l); }} style={{ fontSize: "12px", fontWeight: 600, color: "#6d28d9", background: "#f5f3ff", border: "1px solid #ede9fe", borderRadius: "6px", padding: "4px 10px", cursor: "pointer" }}>Publish →</button></td>
                     </tr>
                   );
                 })}
@@ -8762,58 +9511,69 @@ function CrmActiveListingsPage({
             {/* Scrollable body */}
             <div style={{ overflowY: "auto", flex: 1, padding: "20px 24px", display: "flex", flexDirection: "column", gap: "16px" }}>
 
-              {/* Sale / Rent toggle */}
-              <div style={{ display: "flex", background: "#f3f4f6", borderRadius: "10px", padding: "4px", gap: "4px" }}>
-                {(["sale", "rental"] as const).map(t => (
-                  <button key={t} onClick={() => setType(t)}
-                    style={{ flex: 1, padding: "9px 0", borderRadius: "7px", border: "none", cursor: "pointer", fontFamily: "var(--font-inter)", fontSize: "13.5px", fontWeight: 600, letterSpacing: "-0.01em", transition: "all 0.15s", background: form.type === t ? "#111827" : "transparent", color: form.type === t ? "#fff" : "#6b7280" }}>
-                    {t === "sale" ? "For Sale" : "For Rent"}
-                  </button>
-                ))}
-              </div>
-
-              {/* Common: address + suburb */}
+              {/* Section 1: Property Type & Location */}
               <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                <p style={{ fontSize: "11px", fontWeight: 700, color: "#9ca3af", letterSpacing: "0.06em", textTransform: "uppercase" as const, margin: 0 }}>Property Type &amp; Location</p>
+                {/* Sale / Rent toggle */}
+                <div style={{ display: "flex", background: "#f3f4f6", borderRadius: "10px", padding: "4px", gap: "4px" }}>
+                  {(["sale", "rental"] as const).map(t => (
+                    <button key={t} onClick={() => setType(t)}
+                      style={{ flex: 1, padding: "9px 0", borderRadius: "7px", border: "none", cursor: "pointer", fontFamily: "var(--font-inter)", fontSize: "13.5px", fontWeight: 600, letterSpacing: "-0.01em", transition: "all 0.15s", background: form.type === t ? "#111827" : "transparent", color: form.type === t ? "#fff" : "#6b7280" }}>
+                      {t === "sale" ? "For Sale" : "For Rent"}
+                    </button>
+                  ))}
+                </div>
                 {fld("Property Address", "address", "text", undefined, "123 Example Street")}
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
                   {fld("Suburb", "suburb", "text", undefined, "Suburb")}
                   {fld("Property Type", "propertyType", "text", ["", "House", "Unit / Apartment", "Townhouse", "Villa", "Land", "Rural", "Other"])}
                 </div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                  {fld("State", "state", "text", ["NSW", "VIC", "QLD", "WA", "SA", "TAS", "ACT", "NT"])}
+                  {fld("Postcode", "postcode", "text", undefined, "2500")}
+                </div>
               </div>
 
               <div style={{ height: "1px", background: "#f3f4f6" }} />
 
-              {/* Sale-specific fields */}
+              {/* Section 2: Sale Method & Authority */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                <p style={{ fontSize: "11px", fontWeight: 700, color: "#9ca3af", letterSpacing: "0.06em", textTransform: "uppercase" as const, margin: 0 }}>Sale Method &amp; Authority</p>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                  {fld("Sale Method", "saleMethod", "text", ["Private Treaty", "Auction", "Expression of Interest", "Tender"])}
+                  {fld("Authority", "authority", "text", ["Exclusive", "Open Agency", "Conjunction"])}
+                </div>
+              </div>
+
+              <div style={{ height: "1px", background: "#f3f4f6" }} />
+
+              {/* Section 3: Pricing */}
               {isSale ? (
                 <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                  <p style={{ fontSize: "11px", fontWeight: 700, color: "#9ca3af", letterSpacing: "0.06em", textTransform: "uppercase", margin: 0 }}>Sale Details</p>
+                  <p style={{ fontSize: "11px", fontWeight: 700, color: "#9ca3af", letterSpacing: "0.06em", textTransform: "uppercase" as const, margin: 0 }}>Pricing</p>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
-                    {fld("Vendor Name", "owner", "text", undefined, "John Smith")}
-                    {fld("Listing Agent", "agent", "text", ["", ...staffRows.map(s => s.name)])}
+                    {fld("Sale / Guide Price", "price", "text", undefined, "$850,000")}
+                    {fld("Quote Price Range", "quotePrice", "text", undefined, "$820,000 – $880,000")}
                   </div>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
-                    {fld("Sale Price", "price", "text", undefined, "$850,000")}
+                    {fld("Search Price", "searchPrice", "text", undefined, "820000")}
                     {fld("Display Price", "displayPrice", "text", undefined, "Offers Over $820,000")}
                   </div>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "12px" }}>
-                    {fld("Land Size (m²)", "landSize", "text", undefined, "600")}
-                    {fld("Listed Date", "listedDate", "date")}
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                    {fld("Agency Agreement Expiry", "agencyExpiry", "date")}
+                    {fld("Commission Rate (%)", "commissionRate", "text", undefined, "1.5")}
                   </div>
+                  {fld("Listing Date", "listedDate", "date")}
                 </div>
               ) : (
-                /* Rental-specific fields */
                 <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                  <p style={{ fontSize: "11px", fontWeight: 700, color: "#9ca3af", letterSpacing: "0.06em", textTransform: "uppercase", margin: 0 }}>Rental Details</p>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
-                    {fld("Landlord Name", "owner", "text", undefined, "Jane Smith")}
-                    {fld("Listing Agent / PM", "agent", "text", ["", ...staffRows.map(s => s.name)])}
-                  </div>
+                  <p style={{ fontSize: "11px", fontWeight: 700, color: "#9ca3af", letterSpacing: "0.06em", textTransform: "uppercase" as const, margin: 0 }}>Rental Details</p>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
                     {fld("Rent (per week)", "price", "text", undefined, "$650")}
-                    {fld("Display Rent", "displayPrice", "text", undefined, "$650 per week")}
+                    {fld("Bond Amount", "bond", "text", undefined, "$2,600 (4 weeks)")}
                   </div>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
-                    {fld("Bond Amount", "bond", "text", undefined, "$2,600 (4 weeks)")}
+                    {fld("Display Rent", "displayPrice", "text", undefined, "$650 per week")}
                     {fld("Available Date", "availableDate", "date")}
                   </div>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
@@ -8829,19 +9589,68 @@ function CrmActiveListingsPage({
 
               <div style={{ height: "1px", background: "#f3f4f6" }} />
 
-              {/* Common: property features */}
+              {/* Section 4: Marketing */}
               <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                <p style={{ fontSize: "11px", fontWeight: 700, color: "#9ca3af", letterSpacing: "0.06em", textTransform: "uppercase", margin: 0 }}>Property Features</p>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "12px" }}>
-                  {fld("Bedrooms", "bedrooms", "text", ["", "Studio", "1", "2", "3", "4", "5", "6+"])}
-                  {fld("Bathrooms", "bathrooms", "text", ["", "1", "2", "3", "4+"])}
-                  {fld("Car Spaces", "carSpaces", "text", ["", "0", "1", "2", "3", "4+"])}
+                <p style={{ fontSize: "11px", fontWeight: 700, color: "#9ca3af", letterSpacing: "0.06em", textTransform: "uppercase" as const, margin: 0 }}>Marketing</p>
+                {fld("Main Headline", "headline", "text", undefined, "Contemporary Family Living…")}
+                <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
+                  <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151" }}>Property Description</label>
+                  <textarea value={form.description || ""} onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
+                    placeholder="Write your property description here…"
+                    style={{ padding: "8px 10px", borderRadius: "7px", border: "1px solid #e5e7eb", fontSize: "13px", fontFamily: "var(--font-inter)", color: "#111827", outline: "none", width: "100%", boxSizing: "border-box" as const, height: "100px", resize: "vertical" as const }} />
                 </div>
               </div>
 
               <div style={{ height: "1px", background: "#f3f4f6" }} />
 
-              {/* Compliance sync */}
+              {/* Section 5: Property Features */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                <p style={{ fontSize: "11px", fontWeight: 700, color: "#9ca3af", letterSpacing: "0.06em", textTransform: "uppercase" as const, margin: 0 }}>Property Features</p>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "12px" }}>
+                  {fld("Bedrooms", "bedrooms", "text", ["", "Studio", "1", "2", "3", "4", "5", "6+"])}
+                  {fld("Bathrooms", "bathrooms", "text", ["", "1", "2", "3", "4+"])}
+                  {fld("Car Spaces", "carSpaces", "text", ["", "0", "1", "2", "3", "4+"])}
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                  {fld("Home Size (m²)", "homeSize", "text", undefined, "220")}
+                  {fld("Land Size (m²)", "landSize", "text", undefined, "600")}
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                  {fld("Garages", "garages", "text", ["", "0", "1", "2", "3", "4+"])}
+                  {fld("Lounge Rooms", "loungeRooms", "text", ["", "0", "1", "2", "3+"])}
+                </div>
+              </div>
+
+              {isSale && <>
+                <div style={{ height: "1px", background: "#f3f4f6" }} />
+                {/* Section 6: Vendor Details */}
+                <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                  <p style={{ fontSize: "11px", fontWeight: 700, color: "#9ca3af", letterSpacing: "0.06em", textTransform: "uppercase" as const, margin: 0 }}>Vendor Details</p>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                    {fld("Vendor Name", "owner", "text", undefined, "John Smith")}
+                    {fld("Vendor Phone", "vendorPhone", "text", undefined, "0412 000 000")}
+                  </div>
+                  {fld("Vendor Email", "vendorEmail", "text", undefined, "vendor@email.com")}
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                    {fld("Listing Agent", "agent", "text", ["", ...staffRows.map(s => s.name)])}
+                  </div>
+                </div>
+              </>}
+
+              {!isSale && <>
+                <div style={{ height: "1px", background: "#f3f4f6" }} />
+                <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                  <p style={{ fontSize: "11px", fontWeight: 700, color: "#9ca3af", letterSpacing: "0.06em", textTransform: "uppercase" as const, margin: 0 }}>Landlord &amp; Agent</p>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                    {fld("Landlord Name", "owner", "text", undefined, "Jane Smith")}
+                    {fld("Listing Agent / PM", "agent", "text", ["", ...staffRows.map(s => s.name)])}
+                  </div>
+                </div>
+              </>}
+
+              <div style={{ height: "1px", background: "#f3f4f6" }} />
+
+              {/* Section 7: Compliance sync */}
               <div style={{ background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: "10px", padding: "12px 14px", display: "flex", alignItems: "flex-start", gap: "12px" }}>
                 <button onClick={() => setSyncCompliance(v => !v)}
                   style={{ width: "36px", height: "20px", borderRadius: "100px", background: syncCompliance ? "#111827" : "#e5e7eb", border: "none", cursor: "pointer", position: "relative", flexShrink: 0, marginTop: "2px", transition: "background 0.15s" }}>
